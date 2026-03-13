@@ -1,0 +1,15 @@
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router';
+import App from '../App.jsx';
+
+describe('App', () => {
+  it("affiche le titre de la page d'accueil", () => {
+    render(
+      <MemoryRouter>
+        <App />
+      </MemoryRouter>
+    );
+    expect(screen.getByRole('heading', { name: 'CinéDélices' })).toBeInTheDocument();
+  });
+});

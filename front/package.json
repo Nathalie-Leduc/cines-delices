@@ -1,0 +1,36 @@
+{
+  "name": "cines-delices-front",
+  "version": "1.0.0",
+  "description": "CinéDélices — Front-end",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint .",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router": "^7.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^16.0.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "globals": "^15.0.0",
+    "jsdom": "^26.0.0",
+    "sass": "^1.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}

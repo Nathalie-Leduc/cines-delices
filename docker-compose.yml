@@ -1,0 +1,48 @@
+services:
+  back:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./back:/app
+      - back_node_modules:/app/node_modules
+    env_file:
+      - ./back/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # prisma db push synchronise le schéma sans créer de fichiers de migration (idéal en dev)
+    # remplacer par "npx prisma migrate deploy" quand vous utilisez les migrations
+    command: sh -c "npm install && npx prisma generate && npx prisma db push && npm run dev"
+
+  front:
+    image: node:24-alpine
+    working_dir: /app
+    volumes:
+      - ./front:/app
+      - front_node_modules:/app/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host"
+
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: cinesdelices
+      POSTGRES_PASSWORD: cinesdelices
+      POSTGRES_DB: cinesdelices
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cinesdelices"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  back_node_modules:
+  front_node_modules:
+  db_data:
