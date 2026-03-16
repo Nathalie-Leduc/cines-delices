@@ -11,6 +11,15 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL})
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+<<<<<<< HEAD
+=======
+
+// adapter obligaoire avec Prisma V7
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL})
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
+>>>>>>> d36286c (fix seed)
 
 async function main() {
   console.log('🌱 Démarrage du seed Ciné Délices v2...\n');
@@ -76,9 +85,55 @@ async function main() {
     where: { email: 'admin@cinesdelices.fr' }, update: {},
     create: { email: 'admin@cinesdelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
   });
+<<<<<<< HEAD
   const userMarie = await prisma.user.upsert({
     where: { email: 'marie@cinesdelices.fr' }, update: {},
     create: { email: 'marie@cinesdelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
+=======
+
+  const mediaChocolat = await prisma.media.upsert({
+    where:  { tmdbId: 8467 },
+    update: {},
+    create: {
+      tmdbId:    8467,
+      titre:     'Chocolat',
+      type:      'MOVIE',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/7sbyD6e7Y4aNNuRxz2a0aUxBvGk.jpg',
+      synopsis:  'Une femme ouvre une chocolaterie dans un village bourguignon conservateur.',
+      annee:     2000,
+      genres:    { create: [{ genreId: genreDrame.id }] },
+    },
+  });
+
+  const mediaBreakingBad = await prisma.media.upsert({
+    where:  { tmdbId: 1396 },
+    update: {},
+    create: {
+      tmdbId:    1396,
+      titre:     'Breaking Bad',
+      type:      'SERIES',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
+      synopsis:  'Un professeur de chimie se reconvertit dans la fabrication de méthamphétamine.',
+      annee:     2008,
+      genres:    { create: [{ genreId: genreDrame.id }] },
+    },
+  });
+  console.log('✅ Genres TMDB :', [mediaRatatouille, mediaChocolat, mediaBreakingBad].map(m => m.titre).join(', '));
+
+// 4. Utilisateurs
+const adminHash = await argon2.hash('Admin1234!');
+const memberHash = await argon2.hash('Member1234!');
+
+const userAdmin = await prisma.user.upsert({
+  where:  { email: 'admin@cinedelices.fr' },
+    update: {},
+    create: { email: 'admin@cinedelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
+});
+const userMarie = await prisma.user.upsert({
+    where:  { email: 'marie@cinedelices.fr' },
+    update: {},
+    create: { email: 'marie@cinedelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
+>>>>>>> d36286c (fix seed)
   });
   const userRemy = await prisma.user.upsert({
     where: { email: 'remy@cinesdelices.fr' }, update: {},
@@ -106,6 +161,7 @@ async function main() {
     'lentilles', 'pois chiches',
   ];
 
+<<<<<<< HEAD
   const allIngredients = await Promise.all(
     nomsIngredients.map(nom =>
       prisma.ingredient.upsert({
@@ -116,6 +172,23 @@ async function main() {
     )
   );
   console.log(`✅ ${allIngredients.length} ingrédients créés`);
+=======
+// 5. Ingrédients de base
+// Normalisé : trim() + tolowerCase() appliqués à la création
+const ingredients = await Promise.all([
+  'courgette', 'aubergine', 'tomate', 'oignon', 'poivron rouge',
+  'huile d\'olive', 'herbes de provence', 'sel', 'poivre',
+  'lait entier', 'chocolat noir 70%', 'cannelle', 'piment de cayenne', 'sucre',
+  'bœuf (paleron)', 'vin rouge', 'lardons', 'champignon', 'carotte', 'farine'
+].map(nom =>
+  prisma.ingredient.upsert({
+    where: { nom : nom.trim().toLowerCase()},
+    update: {},
+    create: { nom : nom.trim().toLowerCase()},    
+  })
+));
+console.log(`✅ ${ingredients.length} ingrédients créés`);   
+>>>>>>> d36286c (fix seed)
 
   // Helper — lance une erreur claire si l'ingrédient est introuvable
   const ing = (nom) => {

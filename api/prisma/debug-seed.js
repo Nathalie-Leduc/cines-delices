@@ -1,4 +1,5 @@
-
+// debug-seed.js — diagnostic rapide
+// Coller ce fichier dans prisma/ et lancer : node prisma/debug-seed.js
 
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
