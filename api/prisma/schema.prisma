@@ -1,4 +1,5 @@
 // ajout champs slug sur Recipe et Media
+// ajout champ imageUrl sur Recipe
 
 generator client {
   provider = "prisma-client-js"
@@ -6,6 +7,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+
 }
 
 // =====
@@ -118,17 +120,20 @@ model Media {
 // =============================
 // RECIPE - recettes de cuisine
 // =============================
-// Ajout du champ slug unique
+// Ajout du slug
+// Ajout du champ image Url
 model Recipe {
   id               String       @id @default(uuid())
   titre            String
-  slug             String       @unique // ex: "ratatouille-de-remy"
+  slug             String       @unique           // ex: "ratatouille-de-remy"
+  imageUrl         String?      @map("image_url") // 🆕 URL image de la recette
   instructions     String
   nombrePersonnes  Int?         @map("nombre_personnes")
   tempsPreparation Int?         @map("temps_preparation") // en minutes
   tempsCuisson     Int?         @map("temps_cuisson")     // en minutes
   status           RecipeStatus @default(DRAFT)
   rejectionReason  String?      @map("rejection_reason")
+
 
   // FK obligatoires
   userId     String @map("user_id")
