@@ -6,8 +6,37 @@
   padding: 0;
 }
 
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* Base application */
+
 body {
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #0f0f0f;
+  color: #ffffff;
   line-height: 1.5;
-  color: #1a1a1a;
+}
+
+/* Images */
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Links */
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Layout */
+
+main {
+  min-height: calc(100vh - 120px);
 }
