@@ -1,7 +1,7 @@
 {
-  "name": "cines-delices-back",
+  "name": "cines-delices-api",
   "version": "1.0.0",
-  "description": "CinéDélices — API back-end",
+  "description": "CinéDélices — API",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
