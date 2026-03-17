@@ -4,10 +4,10 @@
 
 import { ZodError } from "zod";
 
-export const validate = (schema) => (req, res, next) => {
+export const validate = (shema) => (req, res, next) => {
   try {
     // safeParse ne lève pas d'exception : retourne ( success, data, error )
-    const result = schema.safeParse({
+    const result = shema.safeParse({
       body:   req.body,
       params: req.params,
       query:  req.query,
@@ -31,26 +31,21 @@ export const validate = (schema) => (req, res, next) => {
 
       // Erreurs globales (ex: refine sur l'objet entier)
       formatted.formErrors.forEach(msg => messages.push(msg));
-
+      
       return res.status(400).json({
-        success: false,
-        message: 'Données invalides',
-        errors: messages.map((msg) => ({ message: msg })),
-        data: null,
+        error: 'Données invalides',
+        details: messages,
       });
     }
 
     // Données valides et transformées (ex: email normalisé en lowercase)
     // On réinjecte les données nettoyées dans req pour que le controller
     // récupère des données propres sans refaire le travail
-    req.body   = result.data.body   ?? req.body;
-    req.params = result.data.params ?? req.params;
-    // Sur Express récent, req.query est un getter (read-only) : on merge sans réassigner.
-    if (result.data.query && typeof req.query === 'object' && req.query !== null) {
-      Object.assign(req.query, result.data.query);
-    }
-
-    next();
+    req.body    = result.data.body    ?? req.body;
+    req.params  = result.data.params  ?? req.params;
+    req.query   = result.data.query   ?? req.query;
+    
+    next()
 
   } catch (error) {
     // Ne devrait pas arriver mais ceinture-bretelles
