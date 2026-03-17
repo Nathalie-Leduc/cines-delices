@@ -6,6 +6,7 @@ import Home from './pages/Home/Home.jsx';
 import Membre from './pages/MemberInterface/MemberInterface.jsx';
 import MesRecettes from './pages/MemberRecipes/MemberRecipes.jsx';
 import Profil from './pages/MemberProfile/MemberProfile.jsx';
+import CreateRecipe from './pages/CreateRecipe/CreateRecipe.jsx';
 import Recipes from './pages/Recipes/Recipes.jsx';
 import Movies from './pages/Movies/Movies.jsx';
 import Series from './pages/Series/Series.jsx';
@@ -42,6 +43,7 @@ function App() {
         <Route index element={<Membre />} />
         <Route path="profil" element={<Profil />} />
         <Route path="mes-recettes" element={<MesRecettes />} />
+        <Route path="creer-recette" element={<CreateRecipe />} />
       </Route>
       <Route path="/admin/*" element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
