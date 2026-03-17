@@ -1,0 +1,29 @@
+.adminSidebar {
+    width: 250px;
+    background: #1F1D1E;
+    color: white;
+    padding: 1rem;
+    height: 100vh; 
+    position: fixed;
+    transition: transform 0.3s ease;
+    transform: translateX(0);
+    &.closed {
+      transform: translateX(-100%);
+    }
+  
+    nav ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+  
+      li {
+        padding: 0.5rem 0;
+        cursor: pointer;
+  
+        &:hover {
+          background-color:  #8E1F2F;
+        }
+      }
+    }
+  }
+  

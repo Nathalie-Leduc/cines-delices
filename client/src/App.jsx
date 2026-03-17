@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom';
+import AdminLayout from './layouts/AdminLayout/AdminLayout.jsx';
 import MembreLayout from './layouts/MemberLayout/MemberLayout.jsx';
 import PublicLayout from './layouts/PublicLayout/PublicLayout.jsx';
 import Home from './pages/Home/Home.jsx';
@@ -27,7 +28,7 @@ function App() {
 
       {/* Layout membre (protégé) */}
       <Route
-        path="/membre"
+        path="/membre/*"
         element={
           <ProtectedRoute>
             <MembreLayout />
@@ -38,6 +39,7 @@ function App() {
         <Route path="profil" element={<Profil />} />
         <Route path="mes-recettes" element={<MesRecettes />} />
       </Route>
+      <Route path="/admin/*" element={<AdminLayout />} />
     </Routes>
   );
 }
