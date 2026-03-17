@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './Profil.module.scss';
+import styles from './MemberProfile.module.scss';
 
 const mockUser = {
   nom: 'DOE',
@@ -16,7 +16,7 @@ const mockUser = {
   dateInscription: '2026-03-10',
 };
 
-export default function Profil() {
+export default function MemberProfile() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [showModal, setShowModal] = useState(false);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './MesRecettes.module.scss';
+import styles from './MemberRecipes.module.scss';
 
 const mockRecettes = [
   {
@@ -52,6 +52,7 @@ const categories = [
 export default function MesRecettes() {
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState('Tous');
+  const [newRecipeName, setNewRecipeName] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [recetteToDelete, setRecetteToDelete] = useState(null);
 
@@ -113,8 +114,17 @@ export default function MesRecettes() {
       <div className={styles.createBlock}>
         <p className={styles.createLabel}>Créer une nouvelle recette</p>
         <div className={styles.createInput}>
-          <span className={styles.createPlaceholder}>Entrer son nom</span>
-          <button className={styles.createBtn} aria-label="Creer une nouvelle recette">+</button>
+          <input
+            className={styles.createNameInput}
+            type="text"
+            aria-label="Nom de la nouvelle recette"
+            placeholder="Nom de la recette"
+            value={newRecipeName}
+            onChange={e => setNewRecipeName(e.target.value)}
+          />
+          <button className={styles.createBtn} aria-label="Aller au formulaire de création de recette" onClick={() => navigate('/membre/creer-recette')}>
+            +
+          </button>
         </div>
       </div>
 
@@ -127,7 +137,7 @@ export default function MesRecettes() {
             </span>
             <button
               className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
-              aria-label={`Filtrer les recettes par ${cat.label}`}
+              aria-label={`Filtrer les recettes: ${cat.label}`}
               onClick={() => setActiveFilter(cat.label)}
             >
               {cat.label}

@@ -45,6 +45,20 @@
   color: rgba(246, 241, 232, 0.35);
 }
 
+.createNameInput {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #f6f1e8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(246, 241, 232, 0.35);
+  }
+}
+
 .createBtn {
   background-color: transparent;
   border: 1.5px solid #C9A45C;
