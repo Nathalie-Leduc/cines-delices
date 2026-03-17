@@ -1,6 +1,6 @@
 import styles from './Home.module.scss';
 
-function Home() {
+export default function Home() {
   return (
     <main className={styles.container}>
       {/*<h1 className={styles.title}>CinéDélices</h1> */}
@@ -9,4 +9,3 @@ function Home() {
   );
 }
 
-export default Home;
