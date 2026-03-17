@@ -1,4 +1,5 @@
 // Vérification du token JWT dans le header Authorization
+// utilisation dans un router
 
 import { jwt } from 'jsonwebtoken';
 
