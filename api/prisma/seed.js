@@ -3,7 +3,7 @@ import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-import { generateUniqueSlug } from '../src/utils/slug.js';
+import { generateSlug, generateUniqueSlug } from '../src/utils/slug.js';
 
 
 // adapter obligaoire avec Prisma V7
@@ -11,22 +11,13 @@ const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL})
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
-<<<<<<< HEAD
-=======
-
-// adapter obligaoire avec Prisma V7
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL})
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
->>>>>>> d36286c (fix seed)
 
 async function main() {
   console.log('🌱 Démarrage du seed Ciné Délices v2...\n');
   
   //utilisation de "upsert" => crée si absent, ne touche pas si déjà présent
 
-   // ── 1. Catégories ────────────────────────────────────────
+  // ── 1. Catégories ────────────────────────────────────────
   const [catEntree, catPlat, catDessert, catBoisson] = await Promise.all([
     prisma.category.upsert({ where: { nom: 'Entrée' },   update: {}, create: { nom: 'Entrée',   description: 'Amuse-bouches et entrées' } }),
     prisma.category.upsert({ where: { nom: 'Plat' },     update: {}, create: { nom: 'Plat',     description: 'Plats principaux' } }),
@@ -85,55 +76,9 @@ async function main() {
     where: { email: 'admin@cinesdelices.fr' }, update: {},
     create: { email: 'admin@cinesdelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
   });
-<<<<<<< HEAD
   const userMarie = await prisma.user.upsert({
     where: { email: 'marie@cinesdelices.fr' }, update: {},
     create: { email: 'marie@cinesdelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
-=======
-
-  const mediaChocolat = await prisma.media.upsert({
-    where:  { tmdbId: 8467 },
-    update: {},
-    create: {
-      tmdbId:    8467,
-      titre:     'Chocolat',
-      type:      'MOVIE',
-      posterUrl: 'https://image.tmdb.org/t/p/w500/7sbyD6e7Y4aNNuRxz2a0aUxBvGk.jpg',
-      synopsis:  'Une femme ouvre une chocolaterie dans un village bourguignon conservateur.',
-      annee:     2000,
-      genres:    { create: [{ genreId: genreDrame.id }] },
-    },
-  });
-
-  const mediaBreakingBad = await prisma.media.upsert({
-    where:  { tmdbId: 1396 },
-    update: {},
-    create: {
-      tmdbId:    1396,
-      titre:     'Breaking Bad',
-      type:      'SERIES',
-      posterUrl: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
-      synopsis:  'Un professeur de chimie se reconvertit dans la fabrication de méthamphétamine.',
-      annee:     2008,
-      genres:    { create: [{ genreId: genreDrame.id }] },
-    },
-  });
-  console.log('✅ Genres TMDB :', [mediaRatatouille, mediaChocolat, mediaBreakingBad].map(m => m.titre).join(', '));
-
-// 4. Utilisateurs
-const adminHash = await argon2.hash('Admin1234!');
-const memberHash = await argon2.hash('Member1234!');
-
-const userAdmin = await prisma.user.upsert({
-  where:  { email: 'admin@cinedelices.fr' },
-    update: {},
-    create: { email: 'admin@cinedelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
-});
-const userMarie = await prisma.user.upsert({
-    where:  { email: 'marie@cinedelices.fr' },
-    update: {},
-    create: { email: 'marie@cinedelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
->>>>>>> d36286c (fix seed)
   });
   const userRemy = await prisma.user.upsert({
     where: { email: 'remy@cinesdelices.fr' }, update: {},
@@ -161,7 +106,6 @@ const userMarie = await prisma.user.upsert({
     'lentilles', 'pois chiches',
   ];
 
-<<<<<<< HEAD
   const allIngredients = await Promise.all(
     nomsIngredients.map(nom =>
       prisma.ingredient.upsert({
@@ -172,23 +116,6 @@ const userMarie = await prisma.user.upsert({
     )
   );
   console.log(`✅ ${allIngredients.length} ingrédients créés`);
-=======
-// 5. Ingrédients de base
-// Normalisé : trim() + tolowerCase() appliqués à la création
-const ingredients = await Promise.all([
-  'courgette', 'aubergine', 'tomate', 'oignon', 'poivron rouge',
-  'huile d\'olive', 'herbes de provence', 'sel', 'poivre',
-  'lait entier', 'chocolat noir 70%', 'cannelle', 'piment de cayenne', 'sucre',
-  'bœuf (paleron)', 'vin rouge', 'lardons', 'champignon', 'carotte', 'farine'
-].map(nom =>
-  prisma.ingredient.upsert({
-    where: { nom : nom.trim().toLowerCase()},
-    update: {},
-    create: { nom : nom.trim().toLowerCase()},    
-  })
-));
-console.log(`✅ ${ingredients.length} ingrédients créés`);   
->>>>>>> d36286c (fix seed)
 
   // Helper — lance une erreur claire si l'ingrédient est introuvable
   const ing = (nom) => {
@@ -214,7 +141,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Bruschetta façon Ratatouille',
-    imageUrl: 'https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=600',
     instructions: '1. Griller des tranches de pain au four à 200°C (5 min).\n2. Frotter chaque tranche avec une gousse d\'ail.\n3. Déposer des dés de tomates, aubergine et basilic frais.\n4. Arroser d\'huile d\'olive et assaisonner.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 5,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[2062].id,
@@ -230,7 +157,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Gaspacho de Breaking Bad',
-    imageUrl: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600',
     instructions: '1. Mixer tomates, poivron rouge, oignon, ail et concombre.\n2. Ajouter huile d\'olive, vinaigre balsamique, sel.\n3. Réfrigérer 2h minimum.\n4. Servir bien frais avec des croûtons grillés.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catEntree.id, mediaId: medias[1396].id,
@@ -246,7 +173,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Velouté de champignons de The Bear',
-    imageUrl: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=600',
     instructions: '1. Faire revenir champignons et oignon dans le beurre (10 min).\n2. Ajouter bouillon de légumes et cuire 20 min.\n3. Mixer finement jusqu\'à texture soyeuse.\n4. Incorporer la crème fraîche, assaisonner et servir.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 30,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[44217].id,
@@ -261,7 +188,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Salade César de Julie Child',
-    imageUrl: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1546793665-c74683f339c1?w=600',
     instructions: '1. Préparer la sauce : mixer anchois, ail, citron, fromage râpé, huile.\n2. Griller les croûtons au beurre jusqu\'à dorure.\n3. Couper la laitue romaine en morceaux et assaisonner.\n4. Garnir de croûtons, fromage râpé et servir.',
     nombrePersonnes: 4, tempsPreparation: 20, tempsCuisson: 5,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catEntree.id, mediaId: medias[24094].id,
@@ -277,7 +204,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Tartare de saumon du Festin de Babette',
-    imageUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600',
     instructions: '1. Couper le saumon très frais en petits dés réguliers.\n2. Assaisonner avec jus de citron, câpres et ciboulette ciselée.\n3. Ajouter une cuillère d\'huile d\'olive, sel, poivre.\n4. Dresser dans un emporte-pièce et servir immédiatement.',
     nombrePersonnes: 4, tempsPreparation: 20, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[14290].id,
@@ -292,7 +219,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Soupe à l\'oignon de Soul Kitchen',
-    imageUrl: 'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=600',
     instructions: '1. Émincer les oignons et les caraméliser 30 min à feu doux dans le beurre.\n2. Déglacer au vin blanc et laisser évaporer.\n3. Ajouter le bouillon et mijoter 15 min.\n4. Verser en cocotte sur des croûtons, recouvrir de fromage râpé et gratiner 5 min.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 50,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catEntree.id, mediaId: medias[37735].id,
@@ -307,7 +234,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Ceviche de crevettes de Pulp Fiction',
-    imageUrl: 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?w=600',
     instructions: '1. Décortiquer les crevettes et les couper en morceaux.\n2. Faire mariner dans le jus de citron vert 20 min — elles "cuisent" à l\'acide.\n3. Ajouter oignon rouge émincé, tomate, piment et coriandre.\n4. Assaisonner et servir immédiatement avec des chips.',
     nombrePersonnes: 4, tempsPreparation: 30, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[680].id,
@@ -322,7 +249,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Gougères au fromage du Hobbit',
-    imageUrl: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a318?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1486297678162-eb2a19b0a318?w=600',
     instructions: '1. Porter à ébullition eau, beurre et sel.\n2. Hors du feu, incorporer la farine d\'un coup et dessécher 2 min.\n3. Ajouter les œufs un par un puis le fromage râpé.\n4. Dresser des petites boules sur plaque et cuire 20 min à 180°C.',
     nombrePersonnes: 6, tempsPreparation: 20, tempsCuisson: 20,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catEntree.id, mediaId: medias[120].id,
@@ -337,7 +264,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Rillettes de saumon du Bear',
-    imageUrl: 'https://images.unsplash.com/photo-1534482421-64566f976cfa?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1534482421-64566f976cfa?w=600',
     instructions: '1. Pocher le saumon 10 min dans de l\'eau frémissante salée.\n2. Effeuiller et mélanger avec crème fraîche, citron et câpres.\n3. Assaisonner généreusement et réfrigérer 1h.\n4. Servir sur des toasts grillés avec de la ciboulette.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[44217].id,
@@ -352,7 +279,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Tartines chèvre-miel du Joker',
-    imageUrl: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=600',
     instructions: '1. Griller les tranches de pain de campagne.\n2. Écraser le fromage de chèvre frais et le répartir.\n3. Arroser de miel et parsemer de noix concassées et de thym.\n4. Passer 3 min sous le gril du four jusqu\'à légère dorure.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 5,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catEntree.id, mediaId: medias[475557].id,
@@ -374,7 +301,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Ratatouille de Rémy',
-    imageUrl: 'https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=600',
     instructions: '1. Préchauffer le four à 180°C.\n2. Couper courgette, aubergine, tomates et poivron en rondelles fines (3mm).\n3. Faire revenir l\'oignon dans l\'huile, ajouter les tomates en dés, sel, poivre — mijoter 15 min et mixer.\n4. Étaler la sauce en fond de plat à gratin.\n5. Disposer les rondelles en rosace en alternant les légumes.\n6. Arroser d\'huile, saupoudrer d\'herbes, couvrir de papier sulfurisé.\n7. Cuire 40 min puis 10 min à découvert pour dorer.',
     nombrePersonnes: 4, tempsPreparation: 20, tempsCuisson: 50,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[2062].id,
@@ -393,7 +320,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Bœuf bourguignon de Julia Child',
-    imageUrl: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=600',
     instructions: '1. Couper le bœuf en morceaux et les faire dorer par fournées dans une cocotte.\n2. Faire revenir lardons, oignons et carottes dans la même cocotte.\n3. Remettre la viande, saupoudrer de farine, verser le vin rouge et le bouillon.\n4. Ajouter thym et laurier, couvrir et cuire 2h30 à 160°C.\n5. Ajouter les champignons sautés 30 min avant la fin.',
     nombrePersonnes: 6, tempsPreparation: 30, tempsCuisson: 150,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catPlat.id, mediaId: medias[24094].id,
@@ -410,7 +337,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Poulet rôti du Festin de Babette',
-    imageUrl: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c3?w=600',
     instructions: '1. Sortir le poulet 30 min à température ambiante.\n2. Badigeonner de beurre mou mélangé à thym et ail haché.\n3. Saler, poivrer intérieur et extérieur, farcir avec thym et laurier.\n4. Rôtir 1h20 à 200°C en arrosant toutes les 20 min.\n5. Laisser reposer 15 min sous alu avant de découper.',
     nombrePersonnes: 4, tempsPreparation: 20, tempsCuisson: 80,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[14290].id,
@@ -426,7 +353,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Pasta al Forno de Soul Kitchen',
-    imageUrl: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e4?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e4?w=600',
     instructions: '1. Cuire les pâtes al dente et égoutter.\n2. Faire revenir les lardons, ajouter concentré de tomates et basilic.\n3. Mélanger pâtes et sauce, transférer dans un plat à gratin.\n4. Couvrir de mozzarella tranchée et gratiner 20 min à 180°C.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 35,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catPlat.id, mediaId: medias[37735].id,
@@ -441,7 +368,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Risotto parmesan de The Bear',
-    imageUrl: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600',
     instructions: '1. Faire revenir l\'oignon haché dans le beurre à feu doux.\n2. Ajouter le riz à risotto et nacrer 2 min.\n3. Verser le vin blanc et laisser absorber.\n4. Incorporer le bouillon chaud louche par louche en remuant constamment (18-20 min).\n5. Hors du feu, mantecare avec beurre froid et fromage râpé. Poivrer.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 25,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[44217].id,
@@ -457,7 +384,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Burger Royale de Pulp Fiction',
-    imageUrl: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600',
     instructions: '1. Former 4 steaks avec la viande hachée, saler et poivrer.\n2. Griller 3 min de chaque côté sur plancha très chaude.\n3. Toaster les pains au beurre dans la même plancha.\n4. Monter : pain, salade, steak, fromage fondu, tomate, oignon et sauce au choix.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catPlat.id, mediaId: medias[680].id,
@@ -473,7 +400,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Ragoût du Comté de Hobbiton',
-    imageUrl: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1534939561126-855b8675edd7?w=600',
     instructions: '1. Faire dorer les morceaux de bœuf en cocotte, réserver.\n2. Faire revenir oignon, ail et carottes 5 min.\n3. Remettre la viande, ajouter pommes de terre, thym, laurier et bouillon.\n4. Mijoter 2h à feu très doux jusqu\'à ce que la viande soit fondante.',
     nombrePersonnes: 6, tempsPreparation: 25, tempsCuisson: 120,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[120].id,
@@ -490,7 +417,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Saumon en papillote du Festin',
-    imageUrl: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600',
     instructions: '1. Déposer le filet de saumon sur une feuille d\'alu.\n2. Assaisonner avec citron, herbes de Provence, sel et poivre.\n3. Fermer hermétiquement la papillote.\n4. Cuire 20 min au four à 180°C — la vapeur garde tout le moelleux.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 20,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catPlat.id, mediaId: medias[14290].id,
@@ -505,7 +432,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Tacos au poulet épicé de Breaking Bad',
-    imageUrl: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=600',
     instructions: '1. Mariner le poulet 1h avec citron, cumin, paprika, ail et huile.\n2. Griller 6-7 min de chaque côté sur plancha chaude.\n3. Laisser reposer 5 min puis trancher en lamelles.\n4. Garnir les tortillas avec poulet, tomate, crème fraîche et coriandre.',
     nombrePersonnes: 4, tempsPreparation: 20, tempsCuisson: 15,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[1396].id,
@@ -521,7 +448,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Moules marinières du Joker',
-    imageUrl: 'https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1617196034183-421b4040ed20?w=600',
     instructions: '1. Gratter et laver soigneusement les moules.\n2. Faire revenir échalote et ail dans le beurre 2 min.\n3. Verser le vin blanc, ajouter les moules, couvrir.\n4. Cuire à feu vif 5 min en secouant la casserole.\n5. Jeter les moules fermées et parsemer de persil ciselé.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catPlat.id, mediaId: medias[475557].id,
@@ -544,7 +471,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Crème brûlée de Babette',
-    imageUrl: 'https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=600',
     instructions: '1. Fouetter 5 jaunes d\'œufs avec 80g de sucre jusqu\'au ruban.\n2. Chauffer la crème avec la vanille et verser doucement sur les œufs.\n3. Filtrer et répartir dans des ramequins.\n4. Cuire au bain-marie 45 min à 150°C.\n5. Réfrigérer 3h minimum, saupoudrer de sucre et caraméliser au chalumeau.',
     nombrePersonnes: 4, tempsPreparation: 20, tempsCuisson: 45,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catDessert.id, mediaId: medias[14290].id,
@@ -558,7 +485,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Mousse au chocolat de Ratatouille',
-    imageUrl: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=600',
     instructions: '1. Faire fondre le chocolat au bain-marie avec le beurre, laisser tiédir.\n2. Incorporer les jaunes d\'œufs un par un.\n3. Monter les blancs en neige très ferme avec une pincée de sel.\n4. Incorporer 1/3 des blancs énergiquement puis le reste délicatement.\n5. Réfrigérer minimum 2h avant de servir.',
     nombrePersonnes: 6, tempsPreparation: 25, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[2062].id,
@@ -573,7 +500,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Tarte aux pommes normande de Julie Child',
-    imageUrl: 'https://images.unsplash.com/photo-1562007908-17c67e878c88?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1562007908-17c67e878c88?w=600',
     instructions: '1. Préparer la pâte brisée : sabler farine et beurre, ajouter œuf et eau froide.\n2. Foncer un moule à tarte, piquer le fond et précuire 10 min à blanc.\n3. Peler et émincer les pommes en fines lamelles.\n4. Les disposer en rosace, saupoudrer de sucre et cannelle.\n5. Cuire 35 min à 180°C jusqu\'à belle dorure.',
     nombrePersonnes: 6, tempsPreparation: 30, tempsCuisson: 45,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catDessert.id, mediaId: medias[24094].id,
@@ -589,7 +516,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Fondant au chocolat coulant de Breaking Bad',
-    imageUrl: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600',
     instructions: '1. Faire fondre chocolat et beurre au bain-marie.\n2. Fouetter œufs et sucre jusqu\'au ruban.\n3. Incorporer la préparation chocolatée puis la farine tamisée.\n4. Beurrer et fariner des moules individuels, verser la pâte.\n5. Cuire exactement 10-12 min à 200°C — le cœur doit rester coulant.',
     nombrePersonnes: 6, tempsPreparation: 15, tempsCuisson: 12,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[1396].id,
@@ -604,7 +531,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Profiteroles de Soul Kitchen',
-    imageUrl: 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1516880711640-ef7db81be3e1?w=600',
     instructions: '1. Préparer la pâte à choux : bouillir eau, beurre, sel, incorporer farine, dessécher, ajouter les œufs.\n2. Dresser des petites boules à la poche, cuire 20 min à 180°C.\n3. Préparer une ganache : verser crème chaude sur le chocolat, émulsionner.\n4. Garnir les choux de glace vanille et napper de ganache chaude.',
     nombrePersonnes: 6, tempsPreparation: 30, tempsCuisson: 20,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catDessert.id, mediaId: medias[37735].id,
@@ -619,7 +546,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Tiramisu du Bear',
-    imageUrl: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600',
     instructions: '1. Séparer les œufs. Fouetter jaunes et sucre jusqu\'au ruban.\n2. Incorporer le mascarpone en 3 fois, puis les blancs montés en neige.\n3. Tremper rapidement les biscuits dans le café froid.\n4. Alterner couches de crème et biscuits (2 fois).\n5. Réfrigérer 6h minimum. Saupoudrer de cacao avant de servir.',
     nombrePersonnes: 8, tempsPreparation: 30, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[44217].id,
@@ -634,7 +561,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Banoffee Pie de Pulp Fiction',
-    imageUrl: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600',
     instructions: '1. Écraser les biscuits et mélanger avec le beurre fondu, tasser dans un moule.\n2. Faire un caramel avec sucre et beurre, incorporer la crème — laisser épaissir.\n3. Verser le caramel sur la base biscuitée, réfrigérer 30 min.\n4. Disposer les tranches de banane.\n5. Recouvrir de chantilly et râper du chocolat noir dessus.',
     nombrePersonnes: 8, tempsPreparation: 25, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catDessert.id, mediaId: medias[680].id,
@@ -649,7 +576,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Lembas du Comté (shortbread aux amandes)',
-    imageUrl: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=600',
     instructions: '1. Mélanger farine, sucre glace et amandes en poudre.\n2. Incorporer le beurre froid en morceaux et sabler.\n3. Ajouter miel et extrait de vanille, former une boule.\n4. Étaler à 1cm, couper en carrés et marquer une croix.\n5. Cuire 18-20 min à 175°C — dorés mais pas trop cuits.',
     nombrePersonnes: 12, tempsPreparation: 20, tempsCuisson: 20,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[120].id,
@@ -665,7 +592,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Panna cotta chocolat du Joker',
-    imageUrl: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=600',
     instructions: '1. Faire tremper la gélatine dans l\'eau froide.\n2. Chauffer crème, lait, sucre et chocolat en morceaux — remuer jusqu\'à fonte.\n3. Hors du feu, incorporer la gélatine essorée.\n4. Verser dans des ramequins et réfrigérer minimum 4h.\n5. Démouler sur assiette et décorer d\'un coulis de framboise.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catDessert.id, mediaId: medias[475557].id,
@@ -680,7 +607,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Madeleines au citron de Julie Child',
-    imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600',
     instructions: '1. Fouetter œufs et sucre 5 min jusqu\'au ruban.\n2. Incorporer farine, levure, zeste de citron et beurre fondu.\n3. Laisser reposer la pâte 1h au réfrigérateur — c\'est le secret de la bosse.\n4. Beurrer les moules à madeleines, remplir aux 3/4.\n5. Cuire 12 min à 200°C — sortir dès que les bords sont dorés.',
     nombrePersonnes: 12, tempsPreparation: 20, tempsCuisson: 12,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[24094].id,
@@ -703,7 +630,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Chocolat chaud épicé de Vianne',
-    imageUrl: 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?w=600',
     instructions: '1. Casser le chocolat en petits morceaux.\n2. Chauffer le lait à feu moyen sans laisser bouillir.\n3. Hors du feu, incorporer le chocolat en fouettant jusqu\'à fonte complète.\n4. Ajouter cannelle, piment de Cayenne et sucre selon goût.\n5. Remettre à feu doux et fouetter vigoureusement pour faire mousser. Servir chaud.',
     nombrePersonnes: 2, tempsPreparation: 5, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catBoisson.id, mediaId: medias[8467].id,
@@ -718,7 +645,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Pour-over café de The Bear',
-    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600',
     instructions: '1. Moudre 20g de café à mouture moyenne-fine.\n2. Chauffer l\'eau à exactement 93°C (retirer du feu 30 sec après ébullition).\n3. Rincer le filtre, verser le café, faire un "bloom" : verser 40ml d\'eau, attendre 30s.\n4. Verser le reste de l\'eau en cercles réguliers sur 3-4 min.\n5. Le café doit couler lentement — déguster noir.',
     nombrePersonnes: 2, tempsPreparation: 5, tempsCuisson: 5,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[44217].id,
@@ -729,7 +656,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Milkshake fraise de Pulp Fiction',
-    imageUrl: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600',
     instructions: '1. Laver et équeuter les fraises fraîches.\n2. Mixer fraises, lait entier froid et sirop de grenadine à pleine puissance.\n3. Ajouter 2-3 boules de glace vanille, mixer à nouveau rapidement.\n4. Verser dans un grand verre givré, garnir de chantilly et d\'une fraise entière.',
     nombrePersonnes: 2, tempsPreparation: 5, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catBoisson.id, mediaId: medias[680].id,
@@ -743,7 +670,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Thé de l\'Après-midi au Comté',
-    imageUrl: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=600',
     instructions: '1. Porter l\'eau à 90°C (ne pas faire bouillir — cela rendrait le thé amer).\n2. Préchauffer la théière avec un peu d\'eau chaude puis vider.\n3. Mettre 1 cuillère à café de thé par tasse, infuser exactement 3 min.\n4. Filtrer dans des tasses, ajouter miel et une tranche de citron.\n5. Servir avec des biscuits sablés.',
     nombrePersonnes: 4, tempsPreparation: 5, tempsCuisson: 5,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[120].id,
@@ -756,7 +683,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Mojito de Soul Kitchen',
-    imageUrl: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600',
     instructions: '1. Déposer les feuilles de menthe et le sucre dans un verre.\n2. Presser le citron vert, verser le jus et piler doucement (muddling) — sans brutaliser la menthe.\n3. Remplir le verre de glace pilée.\n4. Verser le rhum blanc, compléter d\'eau gazeuse très froide.\n5. Mélanger délicatement et garnir d\'un brin de menthe.',
     nombrePersonnes: 1, tempsPreparation: 5, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catBoisson.id, mediaId: medias[37735].id,
@@ -770,7 +697,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Whisky Sour de Breaking Bad',
-    imageUrl: 'https://images.unsplash.com/photo-1527761939622-933c972a8b17?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1527761939622-933c972a8b17?w=600',
     instructions: '1. Verser whisky, jus de citron fraîchement pressé, sucre et blanc d\'œuf dans un shaker.\n2. Shaker sans glace 15 sec (dry shake) pour émulsionner le blanc d\'œuf.\n3. Ajouter des glaçons et reshaker vigoureusement 15 sec.\n4. Double-filtrer dans un verre à cocktail refroidi.\n5. Décorer d\'un zeste de citron et de quelques gouttes d\'Angostura.',
     nombrePersonnes: 1, tempsPreparation: 5, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[1396].id,
@@ -784,7 +711,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Champagne rosé du Festin de Babette',
-    imageUrl: 'https://images.unsplash.com/photo-1600456899121-68eda5b33ef7?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1600456899121-68eda5b33ef7?w=600',
     instructions: '1. Réfrigérer la bouteille 3h minimum — idéalement toute une nuit.\n2. Ouvrir délicatement sans faire sauter le bouchon (tenir à 45°, faire tourner la bouteille).\n3. Incliner légèrement les flûtes pour verser doucement le long du verre.\n4. Déposer une framboise fraîche dans chaque flûte — elle libère des bulles.\n5. Servir immédiatement, très froid.',
     nombrePersonnes: 6, tempsPreparation: 2, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catBoisson.id, mediaId: medias[14290].id,
@@ -796,7 +723,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Limonade du Joker',
-    imageUrl: 'https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=600',
     instructions: '1. Presser tous les citrons, récupérer le jus (environ 20cl).\n2. Préparer un sirop : chauffer 100ml d\'eau avec le sucre jusqu\'à dissolution complète. Laisser refroidir.\n3. Mélanger jus de citron et sirop dans un pichet.\n4. Compléter d\'eau gazeuse très froide, ajouter des glaçons.\n5. Décorer de tranches de citron et feuilles de menthe. Servir immédiatement.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[475557].id,
@@ -809,7 +736,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Kir champêtre de Ratatouille',
-    imageUrl: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=600',
     instructions: '1. Placer les verres à vin au congélateur 10 min pour les givrer légèrement.\n2. Verser environ 1 c.à.s de sirop de grenadine (ou crème de cassis) au fond de chaque verre.\n3. Verser délicatement le vin blanc bien frais en inclinant le verre — ne pas mélanger.\n4. Les couleurs se marient naturellement à la dégustation. Servir avec des gougères.',
     nombrePersonnes: 4, tempsPreparation: 2, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userRemy.id, categoryId: catBoisson.id, mediaId: medias[2062].id,
@@ -821,7 +748,7 @@ console.log(`✅ ${ingredients.length} ingrédients créés`);
 
   await createRecipe({
     titre: 'Smoothie vert détox de Julie Child',
-    imageUrl: 'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1610970881699-44a5587cabec?w=600',
     instructions: '1. Éplucher et vider la pomme, peler et trancher le gingembre.\n2. Presser le citron.\n3. Tout mettre dans le blender avec 150ml d\'eau froide.\n4. Mixer à pleine puissance 1 min.\n5. Goûter et ajuster avec le miel si trop acide. Servir immédiatement.',
     nombrePersonnes: 2, tempsPreparation: 5, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[24094].id,
