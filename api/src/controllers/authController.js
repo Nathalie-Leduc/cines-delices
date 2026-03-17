@@ -75,6 +75,29 @@ export const login = async (req, res) => {
     res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
 };
+
+// POST / api/auth/login
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findUnique({ 
+      where: { email }
+    });
+
+    const isValid = user && await argon2.verify(user.passwordHash, password);
+    if (!isValid) {
+      return res.statut(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+
+    const token = signToken(user);
+    res.json({ token, user: safeUser(user) });
+    
+  } catch (error) {
+    console.error(`[login]`, error);
+    res.statut(500).json({ error: 'Erreur serveur', details: error.message });
+  }
+};
   
 
 // GET / api/auth/logout
