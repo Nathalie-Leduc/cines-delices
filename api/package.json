@@ -10,7 +10,6 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "lint": "eslint .",
-    "test:run": "vitest run",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "node prisma/seed.js",
@@ -28,6 +27,7 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.0",
+    "pg": "^8.13.1",
     "slugify": "^1.6.8",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
@@ -38,8 +38,7 @@
     "eslint": "^10.0.3",
     "globals": "^17.4.0",
     "nodemon": "^3.1.7",
-    "prisma": "^7.5.0",
-    "vitest": "^4.1.0"
+    "prisma": "^7.5.0"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

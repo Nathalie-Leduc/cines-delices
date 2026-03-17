@@ -1,7 +1,6 @@
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
-import { successResponse, asyncHandler } from '../lib/responseHelper.js';
 
 // Helper : signe un JWT
 function signToken(user) {
@@ -20,123 +19,137 @@ function safeUser(user) {
 
 // POST / api/auth/register
 // ZOD va validé et normalisé email, pseudo et password
-export const register = asyncHandler(async (req, res) => {
-  const { email, pseudo, password } = req.body;
+export const register = async (req, res) => {
+  try {
+    const { email, pseudo, password } = req.body;
 
-  // Vérification de  l'unicité email + pseudo en une seule requête
-  const existing  = await prisma.user.findFirst({
-    where: { OR: [{ email }, { pseudo }]},
-  });
-  if (existing) {
-    const field = existing.email === email ? 'email' : 'pseudo';
-    const err = new Error(`Ce ${field} est déjà utilisé`);
-    err.statusCode = 409;
-    throw err;
+       // Vérification de  l'unicité email + pseudo en une seule requête
+    const existing  = await prisma.user.findFirst({
+      where: { OR: [{ email }, { pseudo }]},
+    });
+    if (existing) {
+      const field = existing.email === email ? 'email' : 'pseudo';
+      return res.status(409).json({ error: `Ce ${field} est déjà utilisé` });
+    }
+
+    // Hashage du MDP avec argon2
+    const passwordHash = await argon2.hash(password);
+
+    // 4. Création de l'utilisateur
+    const user = await prisma.user.create({
+      data: { email, pseudo, passwordHash },
+    });
+
+    // Génération du JWT et renvoi sans le hash
+    const token = signToken(user);
+    res.status(201).json({
+      message: `Compte créé avec succès 🎬 `,
+      token,
+      user: safeUser(user),
+    });
+  } catch (error) {
+    console.error('[register]', error);
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
-
-  // Hashage du MDP avec argon2
-  const passwordHash = await argon2.hash(password);
-
-  // Création de l'utilisateur
-  const user = await prisma.user.create({
-    data: { email, pseudo, passwordHash },
-  });
-
-  // Génération du JWT et renvoi sans le hash
-  const token = signToken(user);
-  res.status(201).json({
-    ...successResponse(
-      {
-        token,
-        user: safeUser(user),
-      },
-      'Compte créé avec succès 🎬',
-      201
-    ),
-  });
-});
+};
 
 // POST / api/auth/login
-export const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  
-  // Récupération de l'utilisateur
-  const user = await prisma.user.findUnique({ where: { email } });
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // Récupération de l'utilisateur
+    const user = await prisma.user.findUnique({ where: { email } });
 
-  // Vérification du MDP avec argon2
-  const isValid = user && await argon2.verify(user.passwordHash, password);
-  if (!isValid) {
-    const err = new Error('Email ou mot de passe incorrect');
-    err.statusCode = 401;
-    throw err;
+    // Vérification du MDP avec argon2
+    const isValid = user && await argon2.verify(user.passwordHash, password);
+    if (!isValid) {
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
+    }
+
+    const token = signToken(user);
+    res.json({ token, user: safeUser(user) });
+    
+  } catch (error) {
+    console.error(`[login]`, error);
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
-
-  const token = signToken(user);
-  res.json(
-    successResponse(
-      { token, user: safeUser(user) },
-      'Connexion réussie'
-    )
-  );
-});
+};
   
 
 // GET / api/auth/logout
 export const logout = (_req, res) => {
-  res.json(successResponse(null, 'Déconnecté avec succès'))
+  res.json({ message: 'Déconnecté avec succès' })
 };
 
 
 // GET / api/auth/me
 // Route protégée - req.user injecté par authMiddleware
-export const getMe = asyncHandler(async (req, res) => {
-  const user = await prisma.user.findUnique({
-    where:  { id: req.user.id },
-    select: {
-      id:        true,
-      email:     true,
-      pseudo:    true,
-      role:      true,
-      createdAt: true,
-      _count:    { select: { recipes: true } },
-    },
-  });
+export const getMe = async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where:  { id: req.user.id },
+      select: {
+        id:        true,
+        email:     true,
+        pseudo:    true,
+        role:      true,
+        createdAt: true,
+        _count:    { select: { recipes: true } },
+      },
+    });
 
-  if (!user) {
-    const err = new Error('Utilisateur introuvable');
-    err.statusCode = 404;
-    throw err;
-  }
+    if (!user) return res.status(404).json({ error : 'Utilisateur introuvable' }); 
 
-  res.json(successResponse(user, 'Profil récupéré'));
-});
+    res.json(user);
+    
+  } catch (error) {
+    console.error('[getMe]', error);
+    res.status(500).json({ error: 'Erreur serveur', details: error.message })
+  };
+};
 
 // PATCH / api/auth/me
-// Zod valide au moins un champ présent et email normalisé
-export const updateMe = asyncHandler(async (req, res) => {
-  const { pseudo, email } = req.body;
+// Zod valide au - un champ présent et email normalisé
+export const updateMe = async (req, res) => {
+  try {
+    const { pseudo, email } = req.body;
 
-  const data = {};
-  if (pseudo) data.pseudo = pseudo;
-  if (email) data.email = email;
+    const data = {};
+    if (pseudo) data.pseudo = pseudo;
+    if (email) data.email = email;
 
-  const updated = await prisma.user.update({
-    where: { id: req.user.id },
-    data,
-    select: {
-      id:        true,
-      email:     true,
-      pseudo:    true,
-      role:      true,
-      createdAt: true,
-    },
-  });
+    const updated = await prisma.user.update({
+      where: { id: req.user.id },
+      data,
+      select: {
+        id:        true,
+        email:     true,
+        pseudo:    true,
+        role:      true,
+        createdAt: true,
+        },
+      });
 
-  res.json(successResponse(updated, 'Profil mis à jour'));
-});
+      res.json({ message: 'Profil mis à jour', user: updated });
+
+  } catch (error) {
+    if (error.code === 'P2002') {
+      return res.status(409).json({ error: 'Email ou pseudo déjà utilisé' });
+    }
+    console.error('[updateMe]', error);
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
+  }
+};
 
 // DELETE /api/auth/me
-export const deleteMe = asyncHandler(async (req, res) => {
-  await prisma.user.delete({ where: { id: req.user.id } });
-  res.json(successResponse(null, 'Compte supprimé'));
-})
+export const deleteMe = async (req, res) => {
+  try {
+    await prisma.user.delete({ where: { id: req.user.id } });
+    res.json({ message: 'Compte supprimé' });
+
+  } catch (error) {
+    console.error('[deleteMe]', error);
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
+  }
+}
