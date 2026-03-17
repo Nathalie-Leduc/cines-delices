@@ -1,0 +1,107 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+.page {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  min-height: 100vh;
+  background-color: #1F1D1E;
+}
+
+/* ===== TITRE ===== */
+.title {
+  font-family: 'Playfair Display', serif;
+  color: #C9A45C;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 3rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(201, 164, 92, 0.3);
+}
+
+/* ===== SECTIONS ===== */
+.section {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2.5rem;
+  border-bottom: 1px solid rgba(246, 241, 232, 0.08);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.sectionTitle {
+  font-family: 'Playfair Display', serif;
+  color: #C9A45C;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+p {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  color: rgba(246, 241, 232, 0.75);
+  line-height: 1.7;
+  margin-bottom: 0.75rem;
+}
+
+/* ===== LISTE ===== */
+.list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+
+  li {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: rgba(246, 241, 232, 0.75);
+    line-height: 1.5;
+    padding-left: 1rem;
+    border-left: 2px solid rgba(201, 164, 92, 0.3);
+  }
+}
+
+.label {
+  color: #C9A45C;
+  font-weight: 600;
+  margin-right: 0.4rem;
+}
+
+/* ===== TMDB ===== */
+.tmdb {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(201, 164, 92, 0.08);
+  border-radius: 8px;
+  border-left: 3px solid #C9A45C;
+  font-size: 0.85rem !important;
+  color: rgba(246, 241, 232, 0.6) !important;
+  font-style: italic;
+}
+
+/* ===== LINK ===== */
+.link {
+  color: #C9A45C;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  &:hover {
+    color: #FBDCA6;
+  }
+}
+
+/* ===== DESKTOP ===== */
+@media (min-width: 1024px) {
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.4rem;
+  }
+}

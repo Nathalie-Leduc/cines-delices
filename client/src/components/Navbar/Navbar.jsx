@@ -78,12 +78,12 @@ export default function Navbar() {
             </form>
 
             <div className={styles.userBlock}>
-              <div className={styles.userText}>
+              <NavLink to="/membre" className={styles.userTextLink}>
                 <span className={styles.userGreeting}>Bonjour,</span>
                 <span className={styles.userName}>{userName}</span>
-              </div>
-              <button
-                type="button"
+              </NavLink>
+              <NavLink
+                to="/membre"
                 className={styles.userIcon}
                 aria-label="Mon compte"
               >
@@ -92,7 +92,7 @@ export default function Navbar() {
                   alt="Profil"
                   className={styles.profileIcon}
                 />
-              </button>
+              </NavLink>
             </div>
           </div>
 

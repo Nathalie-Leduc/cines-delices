@@ -133,6 +133,14 @@
   line-height: 1.1;
 }
 
+.userTextLink {
+  text-decoration: none;
+}
+
+.userTextLink:hover .userName {
+  color: #c9a45c;
+}
+
 .userGreeting {
   font-size: 0.9rem;
   color: rgba(246, 241, 232, 0.7);

@@ -13,11 +13,8 @@ import Series from './pages/Series';
 import Contact from './pages/Contact';
 import MentionsLegales from './pages/MentionsLegales/MentionsLegales.jsx';
 import Login from './pages/Login';
-import Dashboard from './pages/Admin/Dashboard.jsx';
-import Recettes from './pages/Admin/Recettes.jsx';
-import Categories from './pages/Admin/Categories.jsx';
-import Utilisateurs from './pages/Admin/Utilisateurs.jsx';
-import ProtectedRoute from './router/ProtectedRoute.jsx';
+import { Dashboard, Recettes, Categories, Utilisateurs } from './pages/Admin';
+import ProtectedRoute from './router';
 
 function App() {
   return (
