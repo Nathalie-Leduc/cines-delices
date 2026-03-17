@@ -5,8 +5,11 @@ const router = express.Router();
 
 router.get("/medias/", getAllMedias);
 router.get("/medias/search", searchMedia);
-router.get("/medias/:type", getAllMedias);
 router.get("/medias/:type/:id", getMediaById);
+router.get("/medias/:type", getAllMedias);
+
+
+
 
 
 export default router;

@@ -1,4 +1,7 @@
 import { mapMedia } from "../mappers/mediaMapper.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const getAllMedias = async (req,res) =>{
     try {
@@ -45,9 +48,8 @@ export const getAllMedias = async (req,res) =>{
 export const getMediaById = async (req, res) =>{
     try{
         // On récupère l'ID du film depuis l'URL
-        const id = req.params.id;
          // Optionnel : type du média, par défaut "movie"
-        const type = req.query.type || "movie" // "movie" ou "tv"
+        const {type = "movie", id} = req.params;  // "movie" ou "tv"
         // Si aucun ID n'est fourni, on renvoie une erreur HTTP 400 (Bad Request)
         if (!id) return res.status(400).json({message: "ID requis"})
          // Construction de l'URL TMDB pour récupérer le film par son ID    
@@ -63,6 +65,7 @@ export const getMediaById = async (req, res) =>{
         // Si c'est un film, on récupère le réalisateur via l'endpoint /credits
         if (type === "movie"){
             const creditsUrl = `${process.env.TMDB_BASE_URL}/movie/${id}/credits?api_key=${process.env.TMDB_API_KEY}&language=fr-FR`;
+            
             const creditsRes = await fetch(creditsUrl);
             // Si la requête credits réussit
             if (creditsRes.ok){
@@ -94,7 +97,7 @@ export const searchMedia = async (req,res)=>{
     // Type de média recherché : movie, tv ou multi
     // "multi" permet de chercher films + séries.
     // "multi" valeur par défaut.
-    const type = req.query.type || "multi";
+    const type = req.params.type || "multi";
     // Construction de l'URL TMDB pour la recherche
     // "multi" permet de rechercher films + séries en même temps.
     // on prend ce que l’utilisateur tape {encodeURIComponent} le convertit pour qu’il soit valide dans une URL.
