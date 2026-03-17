@@ -1,10 +1,10 @@
 import { Route, Routes } from 'react-router-dom';
-import MembreLayout from './components/membre/MembreLayout.jsx';
+import MembreLayout from './layouts/MemberLayout/MemberLayout.jsx';
 import PublicLayout from './layouts/PublicLayout/PublicLayout.jsx';
 import Home from './pages/Home/Home.jsx';
-import Membre from './pages/Membre/Membre.jsx';
-import MesRecettes from './pages/Membre/MesRecettes.jsx';
-import Profil from './pages/Membre/Profil.jsx';
+import Membre from './pages/MemberInterface/MemberInterface.jsx';
+import MesRecettes from './pages/MemberRecipes/MemberRecipes.jsx';
+import Profil from './pages/MemberProfile/MemberProfile.jsx';
 import ProtectedRoute from './router/ProtectedRoute.jsx';
 
 function App() {

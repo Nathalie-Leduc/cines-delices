@@ -1,0 +1,312 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+.profil {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 3rem;
+  min-height: 100vh;
+  background-color: #1F1D1E;
+}
+
+/* ===== TITRE ===== */
+.title {
+  font-family: 'Playfair Display', serif;
+  color: #C9A45C;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* ===== CHAMPS ===== */
+.fields {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.field {
+  background-color: #4A3428;
+  border-radius: 12px;
+  padding: 0.9rem 1.2rem;
+}
+
+.label {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  color: rgba(246, 241, 232, 0.5);
+  margin-bottom: 4px;
+}
+
+.value {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  color: #F6F1E8;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid rgba(201, 164, 92, 0.25);
+  border-radius: 8px;
+  background-color: rgba(31, 29, 30, 0.35);
+  color: #F6F1E8;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.5rem 0.65rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    border-color: #C9A45C;
+    box-shadow: 0 0 0 2px rgba(201, 164, 92, 0.2);
+  }
+}
+
+/* ===== MOT DE PASSE ===== */
+.passwordHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.editBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.passwordRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.eyeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: rgba(246, 241, 232, 0.6);
+  padding: 0;
+
+  &:hover {
+    color: #C9A45C;
+  }
+}
+
+/* ===== BLOC RECETTES ===== */
+.recettesBlock {
+  width: 100%;
+  max-width: 400px;
+  background-color: #4A3428;
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+  margin-bottom: 2rem;
+}
+
+.recettesTitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: rgba(246, 241, 232, 0.5);
+  margin-bottom: 0.75rem;
+  font-weight: 400;
+}
+
+.tags {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.tag {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  padding: 3px 0;
+  border-radius: 20px;
+  font-weight: 500;
+  border: 1.5px solid transparent;
+  text-align: center;
+}
+
+.entree {
+  border-color: #6E8B5B;
+  color: #6E8B5B;
+}
+
+.plat {
+  color: #8E1F2F;
+  border-color: #8E1F2F;
+}
+
+.dessert {
+  border-color: #C9A45C;
+  color: #C9A45C;
+}
+
+.boisson {
+  border-color: #3A8A9A;
+  color: #3A8A9A;
+}
+
+.counts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+}
+
+.count {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  color: #F6F1E8;
+  font-weight: 700;
+  text-align: center;
+}
+
+.divider {
+  display: none;
+}
+
+/* ===== BOUTONS ===== */
+.saveBtn,
+.deleteBtn {
+  width: 100%;
+  max-width: 400px;
+  padding: 1.1rem;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.saveBtn {
+  background-color: transparent;
+  color: #C9A45C;
+  border: 1.5px solid #C9A45C;
+  margin-bottom: 1rem;
+
+  &:hover {
+    background-color: rgba(201, 164, 92, 0.1);
+  }
+}
+
+.deleteBtn {
+  background-color: #8E1F2F;
+  color: #FFFFFF;
+  border: none;
+
+  &:hover {
+    background-color: #a02436;
+  }
+}
+
+.fieldHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+/* ===== DESKTOP ===== */
+@media (min-width: 1024px) {
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .fields,
+  .recettesBlock,
+  .saveBtn,
+  .deleteBtn {
+    max-width: 480px; 
+  }
+}
+
+
+/* ===== MODALE ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 1rem;
+}
+
+.modal {
+  background-color: #F6F1E8;
+  border-radius: 14px;
+  padding: 2rem 1.5rem;
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.modalText {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  color: #1F1D1E;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.modalButtons {
+  display: flex;
+  gap: 1rem;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 0.9rem;
+  background-color: #4A3428;
+  color: #F6F1E8;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #5a4030;
+  }
+}
+
+.confirmBtn {
+  flex: 1;
+  padding: 0.9rem;
+  background-color: #8E1F2F;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #a02436;
+  }
+}

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import styles from './Membre.module.scss';
+import styles from './MembreInterface.module.scss';
 
 export default function Membre() {
   const navigate = useNavigate();

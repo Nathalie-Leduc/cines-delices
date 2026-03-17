@@ -1,9 +1,9 @@
 import { Outlet } from 'react-router-dom';
-import styles from './MembreLayout.module.scss';
+import styles from './MemberLayout.module.scss';
 
-export default function MembreLayout() {
+export default function MemberLayout() {
   return (
-    <div className={styles.membreLayout}>
+    <div className={styles.memberLayout}>
       <header className={styles.header}>
         <button className={styles.burger}>☰</button>
         <img
