@@ -35,7 +35,7 @@ export default function Membre() {
       <h1 className={styles.title}>Mon compte</h1>
       <p className={styles.welcome}>
         Bonjour <strong>John</strong>,<br />
-        bienvenue chez Ciné Délices !
+        Bienvenue chez Ciné Délices !
       </p>
 
       <nav className={styles.menu}>

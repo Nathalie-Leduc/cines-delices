@@ -50,28 +50,6 @@
   font-weight: 500;
 }
 
-<<<<<<< HEAD
-.input {
-  width: 100%;
-  border: 1px solid rgba(201, 164, 92, 0.25);
-  border-radius: 8px;
-  background-color: rgba(31, 29, 30, 0.35);
-  color: #F6F1E8;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  font-weight: 500;
-  padding: 0.5rem 0.65rem;
-  outline: none;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-
-  &:focus {
-    border-color: #C9A45C;
-    box-shadow: 0 0 0 2px rgba(201, 164, 92, 0.2);
-  }
-}
-
-=======
->>>>>>> 120867d (organisation des fichiers et rename)
 /* ===== MOT DE PASSE ===== */
 .passwordHeader {
   display: flex;

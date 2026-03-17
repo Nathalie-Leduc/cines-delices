@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import styles from './MemberProfile.module.scss';
+import styles from './Profil.module.scss';
 
 const mockUser = {
   nom: 'DOE',
@@ -18,15 +18,9 @@ const mockUser = {
 
 export default function Profil() {
   const navigate = useNavigate();
-  const [userData, setUserData] = useState(mockUser);
   const [showPassword, setShowPassword] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUserData(prev => ({ ...prev, [name]: value }));
-  };
 
   function handleDelete() {
     localStorage.removeItem('token');
@@ -46,14 +40,12 @@ export default function Profil() {
             <div className={styles.modalButtons}>
               <button
                 className={styles.cancelBtn}
-                aria-label="Annuler la suppression du compte"
                 onClick={() => setShowModal(false)}
               >
                 Annuler
               </button>
               <button
                 className={styles.confirmBtn}
-                aria-label="Confirmer la suppression du compte"
                 onClick={handleDelete}
               >
                 Valider
@@ -73,14 +65,12 @@ export default function Profil() {
       <div className={styles.modalButtons}>
         <button
           className={styles.cancelBtn}
-          aria-label="Annuler la modification du profil"
           onClick={() => setShowEditModal(false)}
         >
           Annuler
         </button>
         <button
           className={styles.confirmBtn}
-          aria-label="Confirmer la modification du profil"
           onClick={() => {
             setShowEditModal(false);
           }}
@@ -97,49 +87,31 @@ export default function Profil() {
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
             <label className={styles.label}>Nom</label>
-            <button className={styles.editBtn} aria-label="Modifier le nom">✏️</button>
+            <button className={styles.editBtn}>✏️</button>
           </div>
-          <input
-            className={styles.input}
-            name="nom"
-            value={userData.nom}
-            onChange={handleChange}
-            aria-label="Nom"
-          />
+          <span className={styles.value}>{mockUser.nom}</span>
         </div>
 
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
             <label className={styles.label}>Prénom</label>
-            <button className={styles.editBtn} aria-label="Modifier le prenom">✏️</button>
+            <button className={styles.editBtn}>✏️</button>
           </div>
-          <input
-            className={styles.input}
-            name="prenom"
-            value={userData.prenom}
-            onChange={handleChange}
-            aria-label="Prenom"
-          />
+          <span className={styles.value}>{mockUser.prenom}</span>
         </div>
 
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
             <label className={styles.label}>E-mail</label>
-            <button className={styles.editBtn} aria-label="Modifier l'email">✏️</button>
+            <button className={styles.editBtn}>✏️</button>
           </div>
-          <input
-            className={styles.input}
-            name="email"
-            value={userData.email}
-            onChange={handleChange}
-            aria-label="Email"
-          />
+          <span className={styles.value}>{mockUser.email}</span>
         </div>
 
         <div className={styles.field}>
           <div className={styles.passwordHeader}>
             <label className={styles.label}>Mot de passe</label>
-            <button className={styles.editBtn} aria-label="Modifier le mot de passe">✏️</button>
+            <button className={styles.editBtn}>✏️</button>
           </div>
           <div className={styles.passwordRow}>
             <span className={styles.value}>
@@ -147,7 +119,6 @@ export default function Profil() {
             </span>
             <button
               className={styles.eyeBtn}
-              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               onClick={() => setShowPassword(!showPassword)}
             >
               {showPassword ? '🙈' : '👁'}
@@ -165,16 +136,15 @@ export default function Profil() {
           <span className={`${styles.tag} ${styles.boisson}`}>Boisson</span>
         </div>
         <div className={styles.counts}>
-          <span className={styles.count}>{userData.recettes.entrees}</span>
-          <span className={styles.count}>{userData.recettes.plats.toString().padStart(2, '0')}</span>
-          <span className={styles.count}>{userData.recettes.desserts}</span>
-          <span className={styles.count}>{userData.recettes.boissons.toString().padStart(2, '0')}</span>
+          <span className={styles.count}>{mockUser.recettes.entrees}</span>
+          <span className={styles.count}>{mockUser.recettes.plats.toString().padStart(2, '0')}</span>
+          <span className={styles.count}>{mockUser.recettes.desserts}</span>
+          <span className={styles.count}>{mockUser.recettes.boissons.toString().padStart(2, '0')}</span>
         </div>
       </div>
 
     <button
   className={styles.saveBtn}
-      aria-label="Sauvegarder les modifications du profil"
   onClick={() => setShowEditModal(true)}
 >
   Sauvegarder les modifications
@@ -182,7 +152,6 @@ export default function Profil() {
 
       <button
         className={styles.deleteBtn}
-        aria-label="Supprimer mon compte"
         onClick={() => setShowModal(true)}
       >
         Supprimer mon compte
