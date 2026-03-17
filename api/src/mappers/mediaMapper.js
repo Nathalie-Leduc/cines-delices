@@ -8,5 +8,4 @@ export const mapMedia = (item, type, extra = {}) => ({
     : null,
   year: (item.release_date || item.first_air_date)?.slice(0, 4),
   ...extra,
-
 });

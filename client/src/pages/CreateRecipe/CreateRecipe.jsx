@@ -1,13 +1,37 @@
 import { useRef, useState } from 'react';
 import styles from './CreateRecipe.module.scss';
+import Alert from '../../components/Alert/Alert.jsx';
 
 const categoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
-const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API || 'http://localhost:3000/api/ingredients/search';
-const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API || 'http://localhost:3000/api/ingredients';
+const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
+  || import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
+  || 'http://localhost:3000/api/ingredients/search';
+const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
+  || (import.meta.env.VITE_INGREDIENT_SEARCH_API_URL ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '') : '')
+  || 'http://localhost:3000/api/ingredients';
+const RECIPE_CREATE_API = import.meta.env.VITE_RECIPE_CREATE_API
+  || import.meta.env.VITE_RECIPE_API_URL
+  || 'http://localhost:3000/api/recipes';
+
+const INITIAL_FORM = {
+  titre: '',
+  film: '',
+  type: '',
+  image: null,
+  imageUrl: '',
+  categorie: '',
+  tempsPréparation: '',
+  tempsCuisson: '',
+  nbPersonnes: '',
+  ingredients: [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
+  etapes: [''],
+};
 
 export default function CreerRecette() {
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [alert, setAlert] = useState({ type: 'info', message: '' });
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [imageError, setImageError] = useState('');
   const [ingredientSearchResults, setIngredientSearchResults] = useState({});
@@ -15,19 +39,7 @@ export default function CreerRecette() {
   const [ingredientSearchError, setIngredientSearchError] = useState({});
   const [creatingIngredient, setCreatingIngredient] = useState({});
   const ingredientSearchTimeouts = useRef({});
-  const [form, setForm] = useState({
-    titre: '',
-    film: '',
-    type: '',
-    image: null,
-    imageUrl: '',
-    categorie: '',
-    tempsPréparation: '',
-    tempsCuisson: '',
-    nbPersonnes: '',
-    ingredients: [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
-    etapes: [''],
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
 
   // ===== HANDLERS GÉNÉRAUX =====
   function handleChange(field, value) {
@@ -232,10 +244,132 @@ export default function CreerRecette() {
     }));
   }
 
+  function getApiMessage(payload) {
+    if (!payload || typeof payload !== 'object') {
+      return '';
+    }
+
+    if (typeof payload.message === 'string') {
+      return payload.message;
+    }
+
+    if (typeof payload.error === 'string') {
+      return payload.error;
+    }
+
+    if (Array.isArray(payload.errors) && payload.errors.length > 0) {
+      return payload.errors
+        .map(err => err?.message || err?.msg || err)
+        .filter(Boolean)
+        .join(' ');
+    }
+
+    return '';
+  }
+
+  function buildRecipePayload() {
+    return {
+      titre: form.titre.trim(),
+      film: form.film.trim(),
+      type: form.type,
+      categorie: form.categorie,
+      imageUrl: form.imageUrl.trim(),
+      tempsPreparation: form.tempsPréparation.trim(),
+      tempsCuisson: form.tempsCuisson.trim(),
+      nbPersonnes: form.nbPersonnes ? Number(form.nbPersonnes) : null,
+      ingredients: form.ingredients
+        .map(item => ({
+          ingredientId: item.ingredientId,
+          nom: item.nom.trim(),
+          quantite: item.quantite,
+          unite: item.unite,
+        }))
+        .filter(item => item.nom),
+      etapes: form.etapes.map(step => step.trim()).filter(Boolean),
+    };
+  }
+
   // ===== SUBMIT =====
-  function handleSubmit() {
-    console.log('Formulaire soumis :', form);
-    setShowSubmitModal(false);
+  async function handleSubmit() {
+    const payload = buildRecipePayload();
+
+    if (!payload.titre || !payload.categorie || payload.ingredients.length === 0 || payload.etapes.length === 0) {
+      setAlert({
+        type: 'error',
+        message: 'Veuillez remplir les champs obligatoires avant de valider.',
+      });
+      setShowSubmitModal(false);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
+
+      const response = await fetch(RECIPE_CREATE_API, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+
+      let responsePayload = null;
+      try {
+        responsePayload = await response.json();
+      } catch {
+        responsePayload = null;
+      }
+
+      if (!response.ok) {
+        const apiMessage = getApiMessage(responsePayload);
+
+        if (response.status === 400 || response.status === 422) {
+          setShowSubmitModal(false);
+          setAlert({
+            type: 'error',
+            message: apiMessage || 'Champs manquants ou invalides. Vérifie le formulaire.',
+          });
+        } else if (response.status === 401 || response.status === 403) {
+          setShowSubmitModal(false);
+          setAlert({
+            type: 'error',
+            message: apiMessage || 'Vous devez être connecté(e) pour créer une recette.',
+          });
+        } else {
+          setShowSubmitModal(false);
+          setAlert({
+            type: 'error',
+            message: apiMessage || 'Erreur serveur lors de la création de la recette.',
+          });
+        }
+
+        return;
+      }
+
+      setAlert({
+        type: 'success',
+        message: 'Recette créée avec succès.',
+      });
+      setShowSubmitModal(false);
+      setImageError('');
+      setIngredientSearchResults({});
+      setIngredientSearchLoading({});
+      setIngredientSearchError({});
+      setCreatingIngredient({});
+      setForm(INITIAL_FORM);
+    } catch {
+      setShowSubmitModal(false);
+      setAlert({
+        type: 'error',
+        message: 'Impossible de joindre le serveur. Réessaie dans quelques instants.',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function openSubmitModal() {
@@ -259,7 +393,7 @@ export default function CreerRecette() {
                 Annuler
               </button>
               <button className={styles.confirmBtn} aria-label="Valider la création de la recette" onClick={handleSubmit}>
-                Valider
+                {isSubmitting ? 'Création...' : 'Valider'}
               </button>
             </div>
           </div>
@@ -267,6 +401,11 @@ export default function CreerRecette() {
       )}
 
       <h1 className={styles.title}>Mes recettes</h1>
+      <Alert
+        type={alert.type}
+        message={alert.message}
+        onClose={() => setAlert(prev => ({ ...prev, message: '' }))}
+      />
 
       {/* TITRE */}
       <div className={styles.titreBlock}>
