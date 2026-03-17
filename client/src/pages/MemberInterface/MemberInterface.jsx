@@ -6,19 +6,19 @@ export default function Membre() {
 
   const menuItems = [
     {
-      icon: '📋',
+      icon: '/icon/Recipes.svg',
       label: 'Mes recettes',
       sub: '15 recettes',
       path: '/membre/mes-recettes',
     },
     {
-      icon: '👤',
+      icon: '/icon/User.svg',
       label: 'Mes informations',
       sub: 'johndoe@email.com',
       path: '/membre/profil',
     },
     {
-      icon: '✉️',
+      icon: '/icon/Contact.svg',
       label: 'Contact',
       sub: 'help@support.cine-delices.com',
       path: '/contact',
@@ -45,7 +45,9 @@ export default function Membre() {
             className={styles.menuItem}
             onClick={() => navigate(item.path)}
           >
-            <span className={styles.icon}>{item.icon}</span>
+            <span className={styles.icon}>
+              <img src={item.icon} alt="" aria-hidden="true" />
+            </span>
             <div className={styles.menuText}>
               <span className={styles.menuLabel}>{item.label}</span>
               <span className={styles.menuSub}>{item.sub}</span>
@@ -55,7 +57,9 @@ export default function Membre() {
         ))}
 
         <button className={styles.logout} onClick={handleLogout}>
-          <span className={styles.icon}>⏻</span>
+          <span className={styles.icon}>
+            <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
+          </span>
           <span className={styles.menuLabel}>Se déconnecter</span>
           <span className={styles.arrow}>›</span>
         </button>

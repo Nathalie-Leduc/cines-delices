@@ -1,2 +1,2 @@
-export { default as MemberInterface } from './MemberInterface.jsx';
+export { default } from './MemberInterface.jsx';
 

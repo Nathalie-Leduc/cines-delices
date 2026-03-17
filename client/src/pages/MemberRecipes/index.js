@@ -1,1 +1,1 @@
-export { default as MemberRecipes } from './MemberRecipes.jsx';
+export { default } from './MemberRecipes.jsx';

@@ -1,1 +1,1 @@
-export { default as CreateRecipe } from './CreateRecipe.jsx';
+export { default } from './CreateRecipe.jsx';

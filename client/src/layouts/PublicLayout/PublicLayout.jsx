@@ -1,6 +1,7 @@
-import { Outlet } from "react-router-dom";
-import Navbar from "../../components/Navbar";
-import styles from "./PublicLayout.module.scss";
+import { Outlet } from 'react-router-dom';
+import Footer from '../../components/Footer';
+import Navbar from '../../components/Navbar';
+import styles from './PublicLayout.module.scss';
 
 export default function PublicLayout() {
   return (
@@ -11,9 +12,7 @@ export default function PublicLayout() {
         <Outlet />
       </main>
 
-      <footer className={styles.footer}>
-        <p>© CinéDélices</p>
-      </footer>
+      <Footer />
     </>
   );
 }

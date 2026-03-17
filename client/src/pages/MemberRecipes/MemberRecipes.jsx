@@ -64,6 +64,29 @@ const mockRecettes = [
 
 export default function MesRecettes() {
   const navigate = useNavigate();
+  const accountItems = [
+    {
+      icon: '/icon/Recipes.svg',
+      label: 'Mes recettes',
+      sub: `${mockRecettes.length} recettes`,
+      path: '/membre/mes-recettes',
+      active: true,
+    },
+    {
+      icon: '/icon/User.svg',
+      label: 'Mes informations',
+      sub: 'johndoe@email.com',
+      path: '/membre/profil',
+      active: false,
+    },
+    {
+      icon: '/icon/Contact.svg',
+      label: 'Contact',
+      sub: 'help@support.cine-delices.com',
+      path: '/contact',
+      active: false,
+    },
+  ];
   const [recipes, setRecipes] = useState(mockRecettes);
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [newRecipeName, setNewRecipeName] = useState('');
@@ -413,6 +436,11 @@ export default function MesRecettes() {
     setShowEditConfirmModal(true);
   }
 
+  function handleLogout() {
+    localStorage.removeItem('token');
+    navigate('/');
+  }
+
   return (
     <div className={styles.mesRecettes}>
 
@@ -753,86 +781,133 @@ export default function MesRecettes() {
         </div>
       )}
 
-      <h1 className={styles.title}>Mes recettes</h1>
-
-      {/* CRÉER UNE RECETTE */}
-      <div className={styles.createBlock}>
-        <p className={styles.createLabel}>Créer une nouvelle recette</p>
-        <div className={styles.createInput}>
-          <input
-            className={styles.createNameInput}
-            type="text"
-            aria-label="Nom de la nouvelle recette"
-            placeholder="Nom de la recette"
-            value={newRecipeName}
-            onChange={e => setNewRecipeName(e.target.value)}
-          />
-          <button className={styles.createBtn} aria-label="Aller au formulaire de création de recette" onClick={() => navigate('/membre/creer-recette')}>
-            +
-          </button>
-        </div>
+      <div className={styles.pageHeader}>
+        <h1 className={styles.pageTitle}>Mon compte</h1>
       </div>
+      <p className={styles.welcomeText}>
+        Bonjour <strong>John</strong>, bienvenue chez Cine Delices !
+      </p>
 
-      {/* FILTRES */}
-      <div className={styles.filters}>
-        {categories.map(cat => (
-          <div key={cat.label} className={styles.filterItem}>
-            <span className={`${styles.filterCount} ${styles[cat.color]}`}>
-              {cat.count}
-            </span>
-            <button
-              className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
-              aria-label={`Filtrer les recettes: ${cat.label}`}
-              onClick={() => setActiveFilter(cat.label)}
-            >
-              {cat.label}
-            </button>
+      <div className={styles.desktopLayout}>
+        <aside className={styles.accountPanel}>
+          <div className={styles.accountLinks}>
+            {accountItems.map(item => (
+              <button
+                key={item.path}
+                type="button"
+                className={`${styles.accountItem} ${item.active ? styles.accountItemActive : ''}`}
+                onClick={() => navigate(item.path)}
+              >
+                <span className={styles.accountIcon}>
+                  <img src={item.icon} alt="" aria-hidden="true" />
+                </span>
+                <span className={styles.accountContent}>
+                  <strong>{item.label}</strong>
+                  <small>{item.path === '/membre/mes-recettes' ? `${recipes.length} recettes` : item.sub}</small>
+                </span>
+                <span className={styles.accountArrow}>›</span>
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* RECETTES GROUPÉES */}
-      {Object.entries(grouped).map(([categorie, recettes]) => (
-        <div key={categorie} className={styles.section}>
-          <h2 className={styles.sectionTitle}>{categorie}s</h2>
-          <div className={styles.grid}>
-            {recettes.map(recette => (
-              <div key={recette.id} className={styles.card}>
-                <div className={styles.cardImage}>
-                  <img src={recette.image} alt="Illustration de la recette" />
-                  <div className={styles.cardActions}>
-                    <button
-                      className={styles.actionBtn}
-                      aria-label={`Modifier la recette ${recette.titre}`}
-                      onClick={() => handleEditClick(recette)}
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className={styles.actionBtn}
-                      aria-label={`Supprimer la recette ${recette.titre}`}
-                      onClick={() => handleDeleteClick(recette)}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                  <span className={`${styles.cardTag} ${styles[recette.categorie.toLowerCase()]}`}>
-                    {recette.categorie}
-                  </span>
-                </div>
-                <div className={styles.cardBody}>
-                  <h3 className={styles.cardTitle}>{recette.titre}</h3>
-                  <p className={styles.cardFilm}>🎬 {recette.film}</p>
-                  <div className={styles.cardFooter}>
-                    <span className={styles.cardTemps}>⏱ {recette.temps}</span>
-                    <span className={styles.cardType}>{recette.type}</span>
-                  </div>
-                </div>
+          <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
+            <span className={styles.logoutIcon}>
+              <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
+            </span>
+            <span>Se déconnecter</span>
+            <span>›</span>
+          </button>
+        </aside>
+
+        <section className={styles.recipesPanel}>
+          <h2 className={styles.title}>Mes recettes</h2>
+
+          {/* CRÉER UNE RECETTE */}
+          <div className={styles.createBlock}>
+            <p className={styles.createLabel}>Créer une nouvelle recette</p>
+            <div className={styles.createInput}>
+              <input
+                className={styles.createNameInput}
+                type="text"
+                aria-label="Nom de la nouvelle recette"
+                placeholder="Entrer son nom"
+                value={newRecipeName}
+                onChange={e => setNewRecipeName(e.target.value)}
+              />
+              <button className={styles.createBtn} aria-label="Aller au formulaire de création de recette" onClick={() => navigate('/membre/creer-recette')}>
+                +
+              </button>
+            </div>
+          </div>
+
+          {/* FILTRES */}
+          <div className={styles.filters}>
+            {categories.map(cat => (
+              <div key={cat.label} className={styles.filterItem}>
+                <span className={`${styles.filterCount} ${styles[cat.color]}`}>
+                  {cat.count}
+                </span>
+                <button
+                  className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
+                  aria-label={`Filtrer les recettes: ${cat.label}`}
+                  onClick={() => setActiveFilter(cat.label)}
+                >
+                  {cat.label}
+                </button>
               </div>
             ))}
           </div>
-        </div>
-      ))}
+
+          {/* RECETTES GROUPÉES */}
+          {Object.entries(grouped).map(([categorie, recettes]) => (
+            <div key={categorie} className={styles.section}>
+              <h2 className={styles.sectionTitle}>{categorie}s</h2>
+              <div className={styles.grid}>
+                {recettes.map(recette => (
+                  <div key={recette.id} className={styles.card}>
+                    <div className={styles.cardImage}>
+                      <img src={recette.image} alt="Illustration de la recette" />
+                      <div className={styles.cardActions}>
+                        <button
+                          className={styles.actionBtn}
+                          aria-label={`Modifier la recette ${recette.titre}`}
+                          onClick={() => handleEditClick(recette)}
+                        >
+                          <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+                        </button>
+                        <button
+                          className={styles.actionBtn}
+                          aria-label={`Supprimer la recette ${recette.titre}`}
+                          onClick={() => handleDeleteClick(recette)}
+                        >
+                          <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                        </button>
+                      </div>
+                      <span className={`${styles.cardTag} ${styles[recette.categorie.toLowerCase()]}`}>
+                        {recette.categorie}
+                      </span>
+                    </div>
+                    <div className={styles.cardBody}>
+                      <h3 className={styles.cardTitle}>{recette.titre}</h3>
+                      <p className={styles.cardFilm}>
+                        <img src="/icon/Menu.svg" alt="" aria-hidden="true" />
+                        <span>{recette.film}</span>
+                      </p>
+                      <div className={styles.cardFooter}>
+                        <span className={styles.cardTemps}>
+                          <img src="/icon/Search.svg" alt="" aria-hidden="true" />
+                          <span>{recette.temps}</span>
+                        </span>
+                        <span className={styles.cardType}>{recette.type}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      </div>
 
     </div>
   );

@@ -3,35 +3,188 @@
 .mesRecettes {
   display: flex;
   flex-direction: column;
-  padding: 2rem 1rem 3rem;
+  padding: 1.2rem 0.85rem 2rem;
   min-height: 100vh;
-  background-color: #1F1D1E;
+  background-image: linear-gradient(rgba(31, 29, 30, 0.9), rgba(31, 29, 30, 0.9)), url('/img/rocky-wall.png');
+  background-size: cover;
+  background-position: center;
+  color: #F6F1E8;
+}
+
+.pageHeader {
+  display: none;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+
+  &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background-color: rgba(232, 220, 200, 0.35);
+  }
+}
+
+.pageTitle {
+  font-family: 'Playfair Display', serif;
+  color: #E8DCC8;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.welcomeText {
+  display: none;
+  font-family: 'Inter', sans-serif;
+  color: rgba(246, 241, 232, 0.88);
+  font-size: 1rem;
+  margin-bottom: 1.25rem;
+
+  strong {
+    font-family: 'Playfair Display', serif;
+    color: #FBDCA6;
+    font-size: 1.45rem;
+    font-weight: 700;
+  }
+}
+
+.desktopLayout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.accountPanel {
+  display: none;
+  border: 1px solid rgba(232, 220, 200, 0.35);
+  border-radius: 16px;
+  background-color: rgba(31, 29, 30, 0.58);
+  padding: 0.6rem;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.accountLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.accountItem {
+  border: 0;
+  background-color: transparent;
+  border-radius: 12px;
+  padding: 0.7rem;
+  color: #F6F1E8;
+  text-align: left;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  cursor: pointer;
+}
+
+.accountItemActive {
+  background-color: rgba(246, 241, 232, 0.08);
+}
+
+.accountIcon {
+  width: 22px;
+  height: 22px;
+  text-align: center;
+  margin-top: 2px;
+
+  img {
+    width: 18px;
+    height: 18px;
+    display: block;
+    margin: 0 auto;
+  }
+}
+
+.accountContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  flex: 1;
+  font-family: 'Inter', sans-serif;
+
+  strong {
+    color: #E8DCC8;
+    font-size: 0.98rem;
+    font-weight: 600;
+  }
+
+  small {
+    color: rgba(246, 241, 232, 0.58);
+    font-size: 0.72rem;
+  }
+}
+
+.accountArrow {
+  color: #E8DCC8;
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.logoutBtn {
+  border: 0;
+  border-radius: 12px;
+  background-color: #8E1F2F;
+  color: #F6F1E8;
+  padding: 0.9rem 0.85rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.logoutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+}
+
+.recipesPanel {
+  min-width: 0;
 }
 
 /* ===== TITRE ===== */
 .title {
   font-family: 'Playfair Display', serif;
   color: #C9A45C;
-  font-size: 3rem;
+  font-size: 2.85rem;
   font-weight: 700;
   text-align: center;
-  margin-bottom: 2rem;
-  letter-spacing: -1px;
+  margin-bottom: 1.1rem;
+  letter-spacing: -0.4px;
+
+  &::after {
+    display: none;
+  }
 
   @media (max-width: 768px) {
-    font-size: 2.2rem;
-    margin-bottom: 1.5rem;
+    font-size: 3rem;
+    margin-bottom: 1rem;
   }
 }
 
 /* ===== CRÉER ===== */
 .createBlock {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .createLabel {
   font-family: 'Inter', sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: rgba(246, 241, 232, 0.7);
   margin-bottom: 0.5rem;
@@ -41,9 +194,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #4A3428;
+  background-color: rgba(246, 241, 232, 0.15);
   border-radius: 10px;
-  padding: 0.9rem 1rem;
+  border: 1px solid rgba(232, 220, 200, 0.25);
+  padding: 0.95rem 1rem;
 }
 
 .createPlaceholder {
@@ -67,12 +221,12 @@
 }
 
 .createBtn {
-  background-color: transparent;
-  border: 2px solid #C9A45C;
-  color: #C9A45C;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  background-color: rgba(31, 29, 30, 0.65);
+  border: 1px solid rgba(232, 220, 200, 0.4);
+  color: #E8DCC8;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
   font-size: 1.25rem;
   cursor: pointer;
   display: flex;
@@ -82,8 +236,8 @@
   font-weight: 600;
 
   &:hover {
-    background-color: rgba(201, 164, 92, 0.15);
-    transform: scale(1.05);
+    background-color: rgba(232, 220, 200, 0.16);
+    transform: scale(1.03);
   }
 
   &:active {
@@ -95,8 +249,9 @@
 .filters {
   display: flex;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.2rem;
   overflow-x: auto;
+  justify-content: center;
   padding-bottom: 0.25rem;
 }
 
@@ -125,9 +280,9 @@
   border: 1.5px solid rgba(246, 241, 232, 0.3);
   color: rgba(246, 241, 232, 0.65);
   border-radius: 24px;
-  padding: 6px 14px;
+  padding: 5px 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.25s ease;
@@ -158,7 +313,7 @@
 .sectionTitle {
   font-family: 'Playfair Display', serif;
   color: #C9A45C;
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-bottom: 1.25rem;
   padding-bottom: 0.75rem;
@@ -169,21 +324,21 @@
 /* ===== GRID ===== */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
 }
 
 /* ===== CARD ===== */
 .card {
-  background-color: #1F1D1E;
+  background-color: rgba(20, 19, 20, 0.84);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(201, 164, 92, 0.1);
+  border: 1px solid rgba(232, 220, 200, 0.2);
 }
 
 .cardImage {
   position: relative;
-  height: 120px;
+  height: 88px;
 
   img {
     width: 100%;
@@ -194,20 +349,20 @@
 
 .cardActions {
   position: absolute;
-  top: 6px;
-  left: 6px;
+  top: 5px;
+  left: 5px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .actionBtn {
   background-color: rgba(0, 0, 0, 0.65);
   border: none;
-  border-radius: 8px;
-  width: 32px;
-  height: 32px;
-  font-size: 0.85rem;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -224,16 +379,22 @@
   &:active {
     transform: translateY(0);
   }
+
+  img {
+    width: 10px;
+    height: 10px;
+    display: block;
+  }
 }
 
 .cardTag {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 5px;
+  right: 5px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 600;
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 20px;
 
   &.entrée, &.entr\00e9e {
@@ -255,12 +416,12 @@
 }
 
 .cardBody {
-  padding: 0.6rem 0.7rem;
+  padding: 0.42rem 0.5rem;
 }
 
 .cardTitle {
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   color: #F6F1E8;
   font-weight: 600;
   margin-bottom: 4px;
@@ -269,9 +430,18 @@
 
 .cardFilm {
   font-family: 'Inter', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   color: rgba(246, 241, 232, 0.5);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  img {
+    width: 9px;
+    height: 9px;
+    display: block;
+  }
 }
 
 .cardFooter {
@@ -282,18 +452,28 @@
 
 .cardTemps {
   font-family: 'Inter', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   color: rgba(246, 241, 232, 0.5);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  img {
+    width: 9px;
+    height: 9px;
+    display: block;
+  }
 }
 
 .cardType {
-  width: 22px;
-  height: 22px;
+  width: 16px;
+  height: 16px;
   border-radius: 4px;
-  background-color: #4A3428;
-  color: #C9A45C;
+  background-color: rgba(31, 29, 30, 0.85);
+  border: 1px solid rgba(232, 220, 200, 0.25);
+  color: #E8DCC8;
   font-family: 'Inter', sans-serif;
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -590,19 +770,184 @@
   }
 }
 
-/* ===== DESKTOP ===== */
-@media (min-width: 768px) {
-  .grid {
-    grid-template-columns: repeat(3, 1fr);
+/* ===== MOBILE STRICT ===== */
+@media (max-width: 1023px) {
+  .pageHeader,
+  .welcomeText,
+  .accountPanel {
+    display: none !important;
+  }
+
+  .desktopLayout {
+    display: block;
+  }
+
+  .recipesPanel {
+    width: 100%;
   }
 }
 
-@media (min-width: 1024px) {
+@media (max-width: 389px) {
+  .mesRecettes {
+    padding: 1.1rem 0.7rem 1.9rem;
+  }
+
+  .title {
+    font-size: 2.55rem;
+  }
+
+  .grid {
+    gap: 0.45rem;
+  }
+
+  .cardImage {
+    height: 84px;
+  }
+
+  .cardTitle {
+    font-size: 0.72rem;
+  }
+}
+
+@media (min-width: 390px) and (max-width: 429px) {
+  .mesRecettes {
+    padding: 1.2rem 0.85rem 2rem;
+  }
+
+  .title {
+    font-size: 2.85rem;
+  }
+}
+
+@media (min-width: 430px) and (max-width: 767px) {
+  .mesRecettes {
+    padding: 1.3rem 1rem 2.1rem;
+  }
+
+  .createLabel {
+    font-size: 0.86rem;
+  }
+
+  .filterBtn {
+    font-size: 0.76rem;
+  }
+
+  .cardImage {
+    height: 96px;
+  }
+}
+
+/* ===== DESKTOP ===== */
+@media (min-width: 768px) {
+  .mesRecettes {
+    padding: 2rem 2.25rem 2.8rem;
+  }
+
   .title {
     font-size: 2.5rem;
   }
 
+  .sectionTitle {
+    font-size: 2rem;
+  }
+
+  .cardTitle {
+    font-size: 0.95rem;
+  }
+
+  .cardFilm,
+  .cardTemps {
+    font-size: 0.72rem;
+  }
+
+  .cardType {
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
+
+  .actionBtn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+  }
+
   .grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+
+  .cardImage {
+    height: 112px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mesRecettes {
+    padding: 1.8rem 3rem 3rem;
+  }
+
+  .pageTitle {
+    font-size: 2.8rem;
+  }
+
+  .welcomeText {
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+
+  .pageHeader {
+    display: flex;
+  }
+
+  .desktopLayout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 1.6rem;
+    align-items: start;
+  }
+
+  .accountPanel {
+    display: flex;
+    min-height: 520px;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: left;
+    font-size: 2.65rem;
+    margin-bottom: 1rem;
+
+    &::after {
+      display: block;
+      content: '';
+      flex: 1;
+      height: 1px;
+      background-color: rgba(201, 164, 92, 0.45);
+    }
+  }
+
+  .createInput {
+    padding: 0.85rem 1rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.95rem;
+  }
+
+  .sectionTitle {
+    font-size: 2.1rem;
+  }
+}
+
+@media (min-width: 1360px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

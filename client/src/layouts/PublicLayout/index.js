@@ -1,1 +1,1 @@
-export { default as PublicLayout } from './PublicLayout.jsx';
+export { default } from './PublicLayout.jsx';

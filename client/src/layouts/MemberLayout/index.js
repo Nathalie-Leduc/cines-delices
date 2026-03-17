@@ -1,1 +1,1 @@
-export { default as MemberLayout } from './MemberLayout.jsx';
+export { default } from './MemberLayout.jsx';
