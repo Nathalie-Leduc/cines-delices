@@ -1,4 +1,4 @@
-import AdminLayout from './layouts/AdminLayout';
+import AdminLayout from '../Layouts/AdminLayout';
 const router = createBrowserRouter([
   {
     path: '/admin',
