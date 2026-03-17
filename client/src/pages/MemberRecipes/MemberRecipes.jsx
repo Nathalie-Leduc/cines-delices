@@ -1,13 +1,22 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
+
+const FILM_SEARCH_API = import.meta.env.VITE_FILM_SEARCH_API || 'http://localhost:3000/api/titles/search';
+const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API || 'http://localhost:3000/api/ingredients/search';
+const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API || 'http://localhost:3000/api/ingredients';
+const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
 const mockRecettes = [
   {
     id: 1,
     titre: 'Bruschetta Toscane',
     categorie: 'Entrée',
+    filmId: 101,
     film: 'Le Parrain',
+    ingredients: ['Tomates', 'Basilic', 'Pain'],
+    tempsPreparation: '15 min',
+    tempsCuisson: '10 min',
     temps: '25 min',
     type: 'F',
     image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=400',
@@ -16,7 +25,11 @@ const mockRecettes = [
     id: 2,
     titre: 'Mini Burgers BBQ',
     categorie: 'Entrée',
+    filmId: 202,
     film: 'Stranger Things',
+    ingredients: ['Pain burger', 'Steak', 'Sauce BBQ'],
+    tempsPreparation: '30 min',
+    tempsCuisson: '20 min',
     temps: '50 min',
     type: 'S',
     image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
@@ -25,7 +38,11 @@ const mockRecettes = [
     id: 3,
     titre: 'Bruschetta Toscane',
     categorie: 'Plat',
+    filmId: 101,
     film: 'Le Parrain',
+    ingredients: ['Tomates', 'Basilic', 'Pain'],
+    tempsPreparation: '15 min',
+    tempsCuisson: '10 min',
     temps: '25 min',
     type: 'F',
     image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=400',
@@ -34,31 +51,63 @@ const mockRecettes = [
     id: 4,
     titre: 'Mini Burgers BBQ',
     categorie: 'Dessert',
+    filmId: 202,
     film: 'Stranger Things',
+    ingredients: ['Pain burger', 'Steak', 'Sauce BBQ'],
+    tempsPreparation: '30 min',
+    tempsCuisson: '20 min',
     temps: '50 min',
     type: 'S',
     image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
   },
 ];
 
-const categories = [
-  { label: 'Tous', count: mockRecettes.length, color: 'tous' },
-  { label: 'Entrée', count: mockRecettes.filter(r => r.categorie === 'Entrée').length, color: 'entree' },
-  { label: 'Plat', count: mockRecettes.filter(r => r.categorie === 'Plat').length, color: 'plat' },
-  { label: 'Dessert', count: mockRecettes.filter(r => r.categorie === 'Dessert').length, color: 'dessert' },
-  { label: 'Boisson', count: mockRecettes.filter(r => r.categorie === 'Boisson').length, color: 'boisson' },
-];
-
 export default function MesRecettes() {
   const navigate = useNavigate();
+  const [recipes, setRecipes] = useState(mockRecettes);
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [newRecipeName, setNewRecipeName] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
+  const [filmResults, setFilmResults] = useState([]);
+  const [filmSearchLoading, setFilmSearchLoading] = useState(false);
+  const [filmSearchError, setFilmSearchError] = useState('');
+  const [editImageError, setEditImageError] = useState('');
+  const [editIngredientSearchResults, setEditIngredientSearchResults] = useState({});
+  const [editIngredientSearchLoading, setEditIngredientSearchLoading] = useState({});
+  const [editIngredientSearchError, setEditIngredientSearchError] = useState({});
+  const [creatingEditIngredient, setCreatingEditIngredient] = useState({});
+  const filmSearchTimeoutRef = useRef(null);
+  const editIngredientSearchTimeouts = useRef({});
   const [recetteToDelete, setRecetteToDelete] = useState(null);
+  const [editForm, setEditForm] = useState({
+    id: null,
+    titre: '',
+    categorie: 'Entrée',
+    filmId: null,
+    film: '',
+    image: '',
+    tempsPreparation: '',
+    tempsCuisson: '',
+    nbPersonnes: '',
+    ingredients: [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
+    etapes: [''],
+    temps: '',
+    type: 'F',
+  });
+
+  const categories = [
+    { label: 'Tous', count: recipes.length, color: 'tous' },
+    { label: 'Entrée', count: recipes.filter(r => r.categorie === 'Entrée').length, color: 'entree' },
+    { label: 'Plat', count: recipes.filter(r => r.categorie === 'Plat').length, color: 'plat' },
+    { label: 'Dessert', count: recipes.filter(r => r.categorie === 'Dessert').length, color: 'dessert' },
+    { label: 'Boisson', count: recipes.filter(r => r.categorie === 'Boisson').length, color: 'boisson' },
+  ];
 
   const filtered = activeFilter === 'Tous'
-    ? mockRecettes
-    : mockRecettes.filter(r => r.categorie === activeFilter);
+    ? recipes
+    : recipes.filter(r => r.categorie === activeFilter);
 
   // Grouper par catégorie
   const grouped = filtered.reduce((acc, recette) => {
@@ -73,9 +122,295 @@ export default function MesRecettes() {
   }
 
   function handleDeleteConfirm() {
-    // suppression réelle plus tard
+    setRecipes(prev => prev.filter(recette => recette.id !== recetteToDelete?.id));
     setShowDeleteModal(false);
     setRecetteToDelete(null);
+  }
+
+  function handleEditClick(recette) {
+    setEditForm({
+      id: recette.id,
+      titre: recette.titre,
+      categorie: recette.categorie,
+      filmId: recette.filmId || null,
+      film: recette.film,
+      image: recette.image,
+      tempsPreparation: recette.tempsPreparation || recette.temps || '',
+      tempsCuisson: recette.tempsCuisson || '',
+      nbPersonnes: recette.nbPersonnes || '',
+      ingredients: (recette.ingredients || []).length > 0
+        ? recette.ingredients.map(item => ({
+            ingredientId: item?.ingredientId || null,
+            nom: typeof item === 'string' ? item : (item?.nom || ''),
+            quantite: typeof item === 'string' ? '' : (item?.quantite || ''),
+            unite: typeof item === 'string' ? '' : (item?.unite || ''),
+          }))
+        : [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
+      etapes: recette.etapes && recette.etapes.length > 0 ? recette.etapes : [''],
+      temps: recette.temps,
+      type: recette.type,
+    });
+    setFilmResults([]);
+    setFilmSearchError('');
+    setEditImageError('');
+    setEditIngredientSearchResults({});
+    setEditIngredientSearchLoading({});
+    setEditIngredientSearchError({});
+    setCreatingEditIngredient({});
+    setShowEditModal(true);
+  }
+
+  function handleEditChange(field, value) {
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'film' ? { filmId: null } : {}),
+    }));
+  }
+
+  function handleEditIngredientChange(index, field, value) {
+    const updated = [...editForm.ingredients];
+    updated[index][field] = value;
+
+    if (field === 'nom') {
+      updated[index].ingredientId = null;
+    }
+
+    setEditForm(prev => ({ ...prev, ingredients: updated }));
+  }
+
+  function addEditIngredient() {
+    setEditForm(prev => ({
+      ...prev,
+      ingredients: [...prev.ingredients, { ingredientId: null, nom: '', quantite: '', unite: '' }],
+    }));
+  }
+
+  function removeEditIngredient(index) {
+    setEditForm(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index),
+    }));
+
+    setEditIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
+    setEditIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
+    setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+  }
+
+  function handleEditEtapeChange(index, value) {
+    const updated = [...editForm.etapes];
+    updated[index] = value;
+    setEditForm(prev => ({ ...prev, etapes: updated }));
+  }
+
+  function addEditEtape() {
+    setEditForm(prev => ({ ...prev, etapes: [...prev.etapes, ''] }));
+  }
+
+  function removeEditEtape(index) {
+    setEditForm(prev => ({
+      ...prev,
+      etapes: prev.etapes.filter((_, i) => i !== index),
+    }));
+  }
+
+  function clearEditIngredientSearchState(index) {
+    setEditIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
+    setEditIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
+    setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+  }
+
+  async function searchEditIngredients(index, query) {
+    const trimmed = query.trim();
+
+    if (trimmed.length < 2) {
+      clearEditIngredientSearchState(index);
+      return;
+    }
+
+    setEditIngredientSearchLoading(prev => ({ ...prev, [index]: true }));
+    setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+
+    try {
+      const response = await fetch(`${INGREDIENT_SEARCH_API}?q=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const rawList = Array.isArray(payload) ? payload : payload.data || [];
+      const normalized = rawList.map(item => ({
+        id: item.id,
+        name: item.name || item.nom || '',
+      })).filter(item => item.name);
+
+      setEditIngredientSearchResults(prev => ({ ...prev, [index]: normalized }));
+    } catch {
+      setEditIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
+      setEditIngredientSearchError(prev => ({
+        ...prev,
+        [index]: "Impossible de rechercher les ingrédients pour l'instant.",
+      }));
+    } finally {
+      setEditIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
+    }
+  }
+
+  function handleEditIngredientNameInput(index, value) {
+    handleEditIngredientChange(index, 'nom', value);
+
+    clearTimeout(editIngredientSearchTimeouts.current[index]);
+    editIngredientSearchTimeouts.current[index] = setTimeout(() => {
+      searchEditIngredients(index, value);
+    }, 300);
+  }
+
+  function selectEditIngredient(index, ingredient) {
+    const updated = [...editForm.ingredients];
+    updated[index].ingredientId = ingredient.id || null;
+    updated[index].nom = ingredient.name;
+    setEditForm(prev => ({ ...prev, ingredients: updated }));
+    clearEditIngredientSearchState(index);
+  }
+
+  async function createEditIngredient(index) {
+    const name = editForm.ingredients[index]?.nom?.trim();
+    if (!name) {
+      return;
+    }
+
+    setCreatingEditIngredient(prev => ({ ...prev, [index]: true }));
+    setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+
+    try {
+      const response = await fetch(INGREDIENT_CREATE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const created = await response.json();
+      selectEditIngredient(index, {
+        id: created.id,
+        name: created.name || created.nom || name,
+      });
+    } catch {
+      setEditIngredientSearchError(prev => ({
+        ...prev,
+        [index]: "Impossible de créer l'ingrédient pour l'instant.",
+      }));
+    } finally {
+      setCreatingEditIngredient(prev => ({ ...prev, [index]: false }));
+    }
+  }
+
+  function isPngFile(file) {
+    return Boolean(file) && (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png'));
+  }
+
+  function handleEditImageChange(file) {
+    if (!file) {
+      return;
+    }
+
+    if (!isPngFile(file)) {
+      setEditImageError('Veuillez utiliser une image .png.');
+      return;
+    }
+
+    setEditImageError('');
+    setEditForm(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+  }
+
+  async function searchFilms(query) {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setFilmResults([]);
+      setFilmSearchLoading(false);
+      setFilmSearchError('');
+      return;
+    }
+
+    setFilmSearchLoading(true);
+    setFilmSearchError('');
+
+    try {
+      const response = await fetch(`${FILM_SEARCH_API}?q=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const rawList = Array.isArray(payload) ? payload : payload.data || [];
+      const normalized = rawList.map(item => ({
+        id: item.id,
+        title: item.title || item.titre || item.name || item.nom || '',
+        type: item.type || item.mediaType || '',
+      })).filter(item => item.title);
+
+      setFilmResults(normalized);
+    } catch {
+      setFilmResults([]);
+      setFilmSearchError("Impossible de rechercher les films/series pour l'instant.");
+    } finally {
+      setFilmSearchLoading(false);
+    }
+  }
+
+  function handleFilmInput(value) {
+    handleEditChange('film', value);
+    clearTimeout(filmSearchTimeoutRef.current);
+    filmSearchTimeoutRef.current = setTimeout(() => {
+      searchFilms(value);
+    }, 300);
+  }
+
+  function selectFilm(film) {
+    setEditForm(prev => ({
+      ...prev,
+      filmId: film.id || null,
+      film: film.title,
+      type: film.type?.toLowerCase().includes('serie') ? 'S' : prev.type,
+    }));
+    setFilmResults([]);
+  }
+
+  function handleEditSave() {
+    const computedTime = [editForm.tempsPreparation, editForm.tempsCuisson]
+      .filter(Boolean)
+      .join(' + ')
+      .trim();
+
+    setRecipes(prev => prev.map(recette => (
+      recette.id === editForm.id
+        ? {
+            ...recette,
+            titre: editForm.titre,
+            categorie: editForm.categorie,
+            filmId: editForm.filmId,
+            film: editForm.film,
+            nbPersonnes: editForm.nbPersonnes,
+            ingredients: editForm.ingredients,
+            etapes: editForm.etapes,
+            tempsPreparation: editForm.tempsPreparation,
+            tempsCuisson: editForm.tempsCuisson,
+            temps: computedTime || editForm.temps,
+            type: editForm.type,
+            image: editForm.image,
+          }
+        : recette
+    )));
+
+    setShowEditModal(false);
+    setShowEditConfirmModal(false);
+  }
+
+  function openEditConfirmModal() {
+    setShowEditConfirmModal(true);
   }
 
   return (
@@ -102,6 +437,316 @@ export default function MesRecettes() {
                 onClick={handleDeleteConfirm}
               >
                 Valider
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className={styles.overlay}>
+          <div className={`${styles.modal} ${styles.editModal}`}>
+            <h2 className={styles.editTitle}>Modifier la recette</h2>
+
+            <div className={styles.editFields}>
+              <label className={styles.editLabel}>
+                Titre
+                <input
+                  className={styles.editInput}
+                  type="text"
+                  value={editForm.titre}
+                  onChange={e => handleEditChange('titre', e.target.value)}
+                />
+              </label>
+
+              <label className={styles.editLabel}>
+                Catégorie
+                <select
+                  className={styles.editInput}
+                  value={editForm.categorie}
+                  onChange={e => handleEditChange('categorie', e.target.value)}
+                >
+                  <option value="Entrée">Entrée</option>
+                  <option value="Plat">Plat</option>
+                  <option value="Dessert">Dessert</option>
+                  <option value="Boisson">Boisson</option>
+                </select>
+              </label>
+
+              <label className={styles.editLabel}>
+                Film ou série
+                <input
+                  className={styles.editInput}
+                  type="text"
+                  value={editForm.film}
+                  onChange={e => handleFilmInput(e.target.value)}
+                />
+              </label>
+
+              {(filmSearchLoading || filmSearchError || filmResults.length > 0) && (
+                <div className={styles.filmSearchBox}>
+                  {filmSearchLoading && (
+                    <p className={styles.filmSearchText}>Recherche en cours...</p>
+                  )}
+
+                  {filmSearchError && (
+                    <p className={styles.filmSearchError}>{filmSearchError}</p>
+                  )}
+
+                  {filmResults.length > 0 && (
+                    <ul className={styles.filmSuggestionList}>
+                      {filmResults.map(result => (
+                        <li key={result.id || result.title}>
+                          <button
+                            type="button"
+                            className={styles.filmSuggestionBtn}
+                            onClick={() => selectFilm(result)}
+                          >
+                            {result.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              <label className={styles.editLabel}>
+                Type
+                <select
+                  className={styles.editInput}
+                  value={editForm.type}
+                  onChange={e => handleEditChange('type', e.target.value)}
+                >
+                  <option value="F">Film</option>
+                  <option value="S">Série</option>
+                </select>
+              </label>
+
+              <label className={styles.editLabel}>
+                Nombre de personnes
+                <input
+                  className={styles.editInput}
+                  type="number"
+                  value={editForm.nbPersonnes}
+                  onChange={e => handleEditChange('nbPersonnes', e.target.value)}
+                />
+              </label>
+
+              <div className={styles.editLabelBlock}>
+                <span className={styles.editLabelTitle}>Ingrédients</span>
+                {editForm.ingredients.map((ing, index) => (
+                  <div key={index} className={styles.editIngredientRow}>
+                    <input
+                      className={styles.editInput}
+                      type="text"
+                      placeholder="Rechercher un ingrédient..."
+                      value={ing.nom}
+                      onChange={e => handleEditIngredientNameInput(index, e.target.value)}
+                    />
+
+                    {(editIngredientSearchLoading[index]
+                      || (editIngredientSearchResults[index] && editIngredientSearchResults[index].length > 0)
+                      || editIngredientSearchError[index]
+                      || (ing.nom.trim().length >= 2 && !editIngredientSearchLoading[index]
+                        && (!editIngredientSearchResults[index] || editIngredientSearchResults[index].length === 0))) && (
+                      <div className={styles.filmSearchBox}>
+                        {editIngredientSearchLoading[index] && (
+                          <p className={styles.filmSearchText}>Recherche en cours...</p>
+                        )}
+
+                        {editIngredientSearchError[index] && (
+                          <p className={styles.filmSearchError}>{editIngredientSearchError[index]}</p>
+                        )}
+
+                        {editIngredientSearchResults[index] && editIngredientSearchResults[index].length > 0 && (
+                          <ul className={styles.filmSuggestionList}>
+                            {editIngredientSearchResults[index].map(result => (
+                              <li key={result.id || result.name}>
+                                <button
+                                  type="button"
+                                  className={styles.filmSuggestionBtn}
+                                  onClick={() => selectEditIngredient(index, result)}
+                                >
+                                  {result.name}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+
+                        {!editIngredientSearchLoading[index]
+                          && !editIngredientSearchError[index]
+                          && ing.nom.trim().length >= 2
+                          && (!editIngredientSearchResults[index] || editIngredientSearchResults[index].length === 0) && (
+                            <button
+                              type="button"
+                              className={styles.createIngredientBtn}
+                              onClick={() => createEditIngredient(index)}
+                              disabled={creatingEditIngredient[index]}
+                            >
+                              {creatingEditIngredient[index]
+                                ? 'Creation...'
+                                : `Creer l'ingredient "${ing.nom.trim()}"`}
+                            </button>
+                          )}
+                      </div>
+                    )}
+
+                    <div className={styles.editIngredientBottom}>
+                      <input
+                        className={`${styles.editInput} ${styles.editQuantiteInput}`}
+                        type="number"
+                        placeholder="Qté"
+                        value={ing.quantite}
+                        onChange={e => handleEditIngredientChange(index, 'quantite', e.target.value)}
+                      />
+
+                      <select
+                        className={styles.editInput}
+                        value={ing.unite}
+                        onChange={e => handleEditIngredientChange(index, 'unite', e.target.value)}
+                      >
+                        <option value="">Unité</option>
+                        {unitesOptions.map(unite => (
+                          <option key={unite} value={unite}>{unite}</option>
+                        ))}
+                      </select>
+
+                      {editForm.ingredients.length > 1 && (
+                        <button
+                          type="button"
+                          className={styles.removeSmallBtn}
+                          onClick={() => removeEditIngredient(index)}
+                        >
+                          −
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className={styles.addSmallBtn}
+                  onClick={addEditIngredient}
+                >
+                  + Ajouter un ingrédient
+                </button>
+              </div>
+
+              <label className={styles.editLabel}>
+                Temps de préparation
+                <input
+                  className={styles.editInput}
+                  type="text"
+                  value={editForm.tempsPreparation}
+                  onChange={e => handleEditChange('tempsPreparation', e.target.value)}
+                />
+              </label>
+
+              <label className={styles.editLabel}>
+                Temps de cuisson
+                <input
+                  className={styles.editInput}
+                  type="text"
+                  value={editForm.tempsCuisson}
+                  onChange={e => handleEditChange('tempsCuisson', e.target.value)}
+                />
+              </label>
+
+              <div className={styles.editLabelBlock}>
+                <span className={styles.editLabelTitle}>Étapes de préparation</span>
+                {editForm.etapes.map((etape, index) => (
+                  <div key={index} className={styles.editEtapeRow}>
+                    <span className={styles.editEtapeNumber}>{index + 1}</span>
+                    <textarea
+                      className={styles.editTextarea}
+                      placeholder={`Étape ${index + 1}...`}
+                      value={etape}
+                      onChange={e => handleEditEtapeChange(index, e.target.value)}
+                      rows={2}
+                    />
+                    {editForm.etapes.length > 1 && (
+                      <button
+                        type="button"
+                        className={styles.removeSmallBtn}
+                        onClick={() => removeEditEtape(index)}
+                      >
+                        −
+                      </button>
+                    )}
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className={styles.addSmallBtn}
+                  onClick={addEditEtape}
+                >
+                  + Ajouter une étape
+                </button>
+              </div>
+
+              <label className={styles.editLabel}>
+                Image (.png)
+                <input
+                  className={styles.editInput}
+                  type="file"
+                  accept=".png,image/png"
+                  onChange={e => handleEditImageChange(e.target.files?.[0])}
+                />
+              </label>
+
+              <label className={styles.editLabel}>
+                Ou URL image
+                <input
+                  className={styles.editInput}
+                  type="url"
+                  value={editForm.image}
+                  onChange={e => handleEditChange('image', e.target.value)}
+                />
+              </label>
+
+              {editImageError && <p className={styles.editErrorText}>{editImageError}</p>}
+            </div>
+
+            <div className={styles.modalButtons}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setShowEditModal(false)}
+              >
+                Annuler
+              </button>
+              <button
+                className={styles.confirmBtn}
+                onClick={openEditConfirmModal}
+              >
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditConfirmModal && (
+        <div className={`${styles.overlay} ${styles.confirmOverlay}`}>
+          <div className={`${styles.modal} ${styles.confirmModal}`}>
+            <p className={styles.modalText}>
+              Voulez-vous confirmer les modifications de cette recette ?
+            </p>
+            <div className={styles.modalButtons}>
+              <button
+                className={styles.cancelBtn}
+                onClick={() => setShowEditConfirmModal(false)}
+              >
+                Annuler
+              </button>
+              <button
+                className={styles.confirmBtn}
+                onClick={handleEditSave}
+              >
+                Confirmer
               </button>
             </div>
           </div>
@@ -154,12 +799,12 @@ export default function MesRecettes() {
             {recettes.map(recette => (
               <div key={recette.id} className={styles.card}>
                 <div className={styles.cardImage}>
-                  <img src={recette.image} alt="Photo de recette" />
+                  <img src={recette.image} alt="Illustration de la recette" />
                   <div className={styles.cardActions}>
                     <button
                       className={styles.actionBtn}
                       aria-label={`Modifier la recette ${recette.titre}`}
-                      onClick={() => navigate(`/recettes/${recette.id}/edit`)}
+                      onClick={() => handleEditClick(recette)}
                     >
                       ✏️
                     </button>
