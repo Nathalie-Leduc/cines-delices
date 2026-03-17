@@ -1,12 +1,11 @@
 import { Outlet } from "react-router-dom";
+import Navbar from "../../components/Navbar";
 import styles from "./PublicLayout.module.scss";
 
-function PublicLayout() {
+export default function PublicLayout() {
   return (
     <>
-      <header className={styles.header}>
-        <h1>CinéDélices</h1>
-      </header>
+      <Navbar />
 
       <main className={styles.main}>
         <Outlet />
@@ -18,5 +17,3 @@ function PublicLayout() {
     </>
   );
 }
-
-export default PublicLayout;
