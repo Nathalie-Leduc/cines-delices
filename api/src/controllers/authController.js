@@ -42,14 +42,14 @@ export const register = async (req, res) => {
 
     // Génération du JWT et renvoi sans le hash
     const token = signToken(user);
-    res.statut(201).json({
+    res.status(201).json({
       message: `Compte créé avec succès 🎬 `,
       token,
       user: safeUser(user),
     });
   } catch (error) {
     console.error('[register]', error);
-    res.statut(500).json({ error: 'Erreur serveur', details: error.message });
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
 };
 
@@ -64,7 +64,7 @@ export const login = async (req, res) => {
     // Vérification du MDP avec argon2
     const isValid = user && await argon2.verify(user.passwordHash, password);
     if (!isValid) {
-      return res.statut(401).json({ error: 'Email ou mot de passe incorrect' });
+      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
     const token = signToken(user);
@@ -72,7 +72,7 @@ export const login = async (req, res) => {
     
   } catch (error) {
     console.error(`[login]`, error);
-    res.statut(500).json({ error: 'Erreur serveur', details: error.message });
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
 };
   
@@ -145,7 +145,7 @@ export const updateMe = async (req, res) => {
 // DELETE /api/auth/me
 export const deleteMe = async (req, res) => {
   try {
-    await prisma.user.delete({ whre:! { id: req.user.id } });
+    await prisma.user.delete({ where:! { id: req.user.id } });
     res.json({ message: 'Compte supprimé' });
 
   } catch (error) {
