@@ -11,6 +11,10 @@ import Movies from './pages/Movies/Movies.jsx';
 import Series from './pages/Series/Series.jsx';
 import Contact from './pages/Contact/Contact.jsx';
 import Login from './pages/Login/Login.jsx';
+import Dashboard from './pages/Admin/Dashboard.jsx';
+import Recettes from './pages/Admin/Recettes.jsx';
+import Categories from './pages/Admin/Categories.jsx';
+import Utilisateurs from './pages/Admin/Utilisateurs.jsx';
 import ProtectedRoute from './router/ProtectedRoute.jsx';
 
 function App() {
@@ -39,7 +43,12 @@ function App() {
         <Route path="profil" element={<Profil />} />
         <Route path="mes-recettes" element={<MesRecettes />} />
       </Route>
-      <Route path="/admin/*" element={<AdminLayout />} />
+      <Route path="/admin/*" element={<AdminLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="recettes" element={<Recettes />} />
+        <Route path="categories" element={<Categories />} />
+        <Route path="utilisateurs" element={<Utilisateurs />} />
+      </Route>
     </Routes>
   );
 }

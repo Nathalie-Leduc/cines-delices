@@ -1,3 +1,4 @@
+import { NavLink } from 'react-router-dom';
 import styles from './AdminSidebar.module.scss';
 
 export default function AdminSidebar() {
@@ -5,9 +6,10 @@ export default function AdminSidebar() {
     <aside className={styles.adminSidebar}>
       <nav>
         <ul>
-          <li>Recettes</li>
-          <li>Catégories</li>
-          <li>Utilisateurs</li>
+        <li><NavLink to="/admin">Tableau de bord</NavLink></li>
+        <li><NavLink to="/admin/recettes">Recettes</NavLink></li>
+        <li><NavLink to="/admin/categories">Catégories</NavLink></li>
+        <li><NavLink to="/admin/utilisateurs">Utilisateurs</NavLink></li>
         </ul>
       </nav>
     </aside>
