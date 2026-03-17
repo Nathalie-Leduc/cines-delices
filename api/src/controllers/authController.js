@@ -42,14 +42,14 @@ export const register = async (req, res) => {
 
     // Génération du JWT et renvoi sans le hash
     const token = signToken(user);
-    res.status(201).json({
+    res.statut(201).json({
       message: `Compte créé avec succès 🎬 `,
       token,
       user: safeUser(user),
     });
   } catch (error) {
     console.error('[register]', error);
-    res.status(500).json({ error: 'Erreur serveur', details: error.message });
+    res.statut(500).json({ error: 'Erreur serveur', details: error.message });
   }
 };
 
@@ -62,29 +62,6 @@ export const login = async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email } });
 
     // Vérification du MDP avec argon2
-    const isValid = user && await argon2.verify(user.passwordHash, password);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
-    }
-
-    const token = signToken(user);
-    res.json({ token, user: safeUser(user) });
-    
-  } catch (error) {
-    console.error(`[login]`, error);
-    res.status(500).json({ error: 'Erreur serveur', details: error.message });
-  }
-};
-
-// POST / api/auth/login
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await prisma.user.findUnique({ 
-      where: { email }
-    });
-
     const isValid = user && await argon2.verify(user.passwordHash, password);
     if (!isValid) {
       return res.statut(401).json({ error: 'Email ou mot de passe incorrect' });
@@ -132,7 +109,7 @@ export const getMe = async (req, res) => {
   };
 };
 
-// PATCH / api/auth/me
+// PUT / api/auth/me
 // Zod valide au - un champ présent et email normalisé
 export const updateMe = async (req, res) => {
   try {
@@ -168,7 +145,7 @@ export const updateMe = async (req, res) => {
 // DELETE /api/auth/me
 export const deleteMe = async (req, res) => {
   try {
-    await prisma.user.delete({ where: { id: req.user.id } });
+    await prisma.user.delete({ whre:! { id: req.user.id } });
     res.json({ message: 'Compte supprimé' });
 
   } catch (error) {
