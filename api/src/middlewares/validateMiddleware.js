@@ -39,11 +39,15 @@ export const validate = (shema) => (req, res, next) => {
     }
 
     // Données valides et transformées (ex: email normalisé en lowercase)
-    // On réinjecte les données nettoyées dans req pour que le controller
-    // récupère des données propres sans refaire le travail
-    req.body    = result.data.body    ?? req.body;
-    req.params  = result.data.params  ?? req.params;
-    req.query   = result.data.query   ?? req.query;
+    // On réinjecte les données nettoyées dans req 
+    // req.body et req.params sont modifiables — req.query est en lecture
+    // seule dans Express, on copie ses propriétés plutôt que de le remplacer
+    if (result.data.body) req.body = result.data.body;
+    if (result.data.params) req.params = result.data.params;
+    if (result.data.query) {
+      // req.query est un getter - on copie les propriétés une par une
+      Object.assign(req.query, result.data.query);
+    }
     
     next()
 
