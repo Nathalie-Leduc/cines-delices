@@ -7,9 +7,9 @@ import { Router } from "express";
 import { register, login, logout, getMe, updateMe, deleteMe } from "../controllers/authController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { validate } from "../middlewares/validateMiddleware.js";
-import { registerSchema, loginSchema,updateMeSchema } from "../validators/auth.validator.js";
+import { registerSchema, loginSchema,updateMeSchema } from "../validators/authValidator.js";
 
-const router = Router;
+const router = Router();
 
 router.post('/register', validate(registerSchema), register);
 
@@ -19,7 +19,7 @@ router.get('/logout', logout);
 
 router.get('/me', authMiddleware, getMe);
 
-router.put('/me', authMiddleware, validate(updateMeSchema), updateMe);
+router.patch('/me', authMiddleware, validate(updateMeSchema), updateMe);
 
 router.delete('/me', authMiddleware, deleteMe);
 

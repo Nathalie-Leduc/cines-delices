@@ -1,7 +1,7 @@
 // Vérification du token JWT dans le header Authorization
 // Utilisation dans un router
 
-import { jwt } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
 export const authMiddleware = (req, res, next) => {
   // Recherche du header Authorization au format attendu

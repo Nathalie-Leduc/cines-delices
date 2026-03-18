@@ -109,7 +109,7 @@ export const getMe = async (req, res) => {
   };
 };
 
-// PUT / api/auth/me
+// PATCH / api/auth/me
 // Zod valide au - un champ présent et email normalisé
 export const updateMe = async (req, res) => {
   try {
