@@ -1,7 +1,11 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import App from '../src/App.jsx';
+
+vi.mock('../src/services/mediaService.js', () => ({
+  fetchMedia: vi.fn(() => new Promise(() => {})),
+}));
 
 describe('App', () => {
   it("affiche le titre de la page d'accueil", () => {
@@ -19,5 +23,3 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'CinéDélices' })).toBeInTheDocument();
   });
 });
-
-

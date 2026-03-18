@@ -1,48 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
-
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
-  gap: 2rem;
-  background-color: #1F1D1E;
+  min-height: 100%;
+  padding: 4rem 2rem;
+  gap: 1.5rem;
+  text-align: center;
 }
 
 .title {
-  font-family: 'Playfair Display', serif;
   font-size: 4rem;
   font-weight: 700;
-  color: #C9A45C;
-  text-align: center;
+  color: #c9a45c;
   letter-spacing: -1.5px;
   line-height: 1.1;
-
-  @media (max-width: 768px) {
-    font-size: 2.5rem;
-  }
 }
 
 .subtitle {
-  font-family: 'Inter', sans-serif;
   font-size: 1.1rem;
   font-weight: 500;
   color: rgba(246, 241, 232, 0.8);
-  text-align: center;
   max-width: 500px;
-  line-height: 1.6;
 }
 
 .description {
-  font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
-  color: rgba(246, 241, 232, 0.6);
-  text-align: center;
+  color: rgba(246, 241, 232, 0.65);
   max-width: 600px;
   line-height: 1.7;
-  margin-top: 0.5rem;
 }
 
 .buttonGroup {
@@ -50,65 +36,80 @@
   gap: 1rem;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: 1rem;
-
-  @media (max-width: 480px) {
-    flex-direction: column;
-    width: 100%;
-  }
 }
 
-.primaryBtn {
+.primaryBtn,
+.secondaryBtn {
   padding: 1rem 2rem;
-  background-color: #8E1F2F;
-  color: #FFFFFF;
-  border: none;
   border-radius: 12px;
-  font-family: 'Inter', sans-serif;
   font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+}
+
+.primaryBtn {
+  background-color: #8e1f2f;
+  color: #fff;
 
   &:hover {
     background-color: #a02436;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(142, 31, 47, 0.35);
-  }
-
-  &:active {
-    transform: translateY(-1px);
   }
 }
 
 .secondaryBtn {
-  padding: 1rem 2rem;
-  background-color: transparent;
-  color: #C9A45C;
-  border: 2px solid #C9A45C;
-  border-radius: 12px;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
+  border: 2px solid #c9a45c;
+  color: #c9a45c;
 
   &:hover {
     background-color: rgba(201, 164, 92, 0.15);
-    transform: translateY(-3px);
+  }
+}
+
+.searchBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(100%, 520px);
+}
+
+.searchLabel {
+  text-align: left;
+  color: #f6f1e8;
+  font-weight: 600;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(201, 164, 92, 0.4);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f1e8;
+}
+
+.mediaList {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 520px);
+  list-style: none;
+}
+
+.mediaItem {
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #f6f1e8;
+  text-align: left;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 3rem 1rem;
   }
 
-  &:active {
-    transform: translateY(-1px);
+  .title {
+    font-size: 2.8rem;
   }
 }

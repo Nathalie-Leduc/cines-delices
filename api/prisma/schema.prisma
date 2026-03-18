@@ -4,17 +4,13 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  
+  url      = env("DATABASE_URL")
 }
 
-// =====
-// ENUMS
-// =====
-
 enum Role {
-  MEMBER // membre standard : peut créer / soumettre ses recettes
-  ADMIN // modérateur : publie ou refuse les recettes PENDING
-  }
+  MEMBER
+  ADMIN
+}
 
 enum RecipeStatus {
   DRAFT
@@ -27,9 +23,6 @@ enum MediaType {
   SERIES
 }
 
-// ===================================
-// USER - le membre ou l'admin du site
-// ===================================
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -37,109 +30,75 @@ model User {
   passwordHash String   @map("password_hash")
   role         Role     @default(MEMBER)
   createdAt    DateTime @default(now()) @map("created_at")
-
-  // Relations
-  recipes Recipe[]
+  recipes      Recipe[]
 
   @@index([email])
   @@map("users")
 }
 
-
-// ==========================================================
-// CATEGORY- type de recette (Entrée, Plat, Dessert, Boisson)
-// ==========================================================
 model Category {
   id          String  @id @default(uuid())
   nom         String  @unique
   description String?
-
-  // Relations
-  recipes Recipe[]
+  recipes     Recipe[]
 
   @@map("categories")
 }
 
-// ===========================================
-// GENRE - Genre media (horreur, comédie, etc)
-// ===========================================
 model Genre {
-  id          String @id @default(uuid())
+  id          String       @id @default(uuid())
   nom         String
-  tmdbGenreId Int    @unique @map("tmdb_genre_id")
-
-  // Relations
-  media MediaGenre[]
+  tmdbGenreId Int          @unique @map("tmdb_genre_id")
+  media       MediaGenre[]
 
   @@map("genres")
 }
 
-// ==============================
-// MEDIA_GENRE - table de liaison
-// ==============================
 model MediaGenre {
-  mediaId     String @map("media_id")
-  genreId     String @map("genre_id")
-
-    // Relations
-  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  genre    Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+  mediaId String @map("media_id")
+  genreId String @map("genre_id")
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
   @@id([mediaId, genreId])
   @@map("media_genres")
 }
 
-
-// ====================================================
-// MEDIA - Données Films ou Séries issues de l'API TMDB
-// ====================================================
-// On stock le tmdbId pour resynchroniser sans dépendrede
-// de l'API à chaque affichage 
 model Media {
-  id        String    @id @default(uuid())
-  tmdbId    Int       @unique @map("tmdb_id")
+  id        String      @id @default(uuid())
+  tmdbId    Int         @unique @map("tmdb_id")
   titre     String
   type      MediaType
-  posterUrl String?   @map("poster_url")
+  posterUrl String?     @map("poster_url")
   synopsis  String?
   annee     Int?
-  createdAt DateTime  @default(now()) @map("created_at")
-
-  // Relations
-  genres  MediaGenre[]
-  recipes Recipe[]
+  createdAt DateTime    @default(now()) @map("created_at")
+  genres    MediaGenre[]
+  recipes   Recipe[]
 
   @@index([tmdbId])
   @@index([type])
   @@map("media")
 }
 
-// =============================
-// RECIPE - recettes de cuisine
-// =============================
 model Recipe {
-  id               String       @id @default(uuid())
+  id               String             @id @default(uuid())
   titre            String
   instructions     String
-  nombrePersonnes  Int?         @map("nombre_personnes")
-  tempsPreparation Int?         @map("temps_preparation") // en minutes
-  tempsCuisson     Int?         @map("temps_cuisson")     // en minutes
-  status           RecipeStatus @default(DRAFT)
-  rejectionReason  String?      @map("rejection_reason")
-
-  // FK obligatoires
-  userId     String @map("user_id")
-  categoryId String @map("category_id")
-  mediaId    String @map("media_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt       @map("updated_at")
-
-  // Relations
-  user        User               @relation(fields: [userId],     references: [id], onDelete: Cascade)
-  category    Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  media       Media              @relation(fields: [mediaId],    references: [id], onDelete: Restrict)
-  ingredients RecipeIngredient[]
+  nombrePersonnes  Int?               @map("nombre_personnes")
+  tempsPreparation Int?               @map("temps_preparation")
+  tempsCuisson     Int?               @map("temps_cuisson")
+  status           RecipeStatus       @default(DRAFT)
+  rejectionReason  String?            @map("rejection_reason")
+  userId           String             @map("user_id")
+  categoryId       String             @map("category_id")
+  mediaId          String             @map("media_id")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category         Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  media            Media              @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+  ingredients      RecipeIngredient[]
 
   @@index([status])
   @@index([userId])
@@ -148,35 +107,23 @@ model Recipe {
   @@map("recipes")
 }
 
-// ===================================================
-// RECIPE-INGEDIENTS - table de liaison avec attributs
-// ===================================================
 model RecipeIngredient {
-  recipeId     String  @map("recipe_id")
-  ingredientId String  @map("ingredient_id")
+  recipeId     String     @map("recipe_id")
+  ingredientId String     @map("ingredient_id")
   quantity     String?
   unit         String?
-
-  // relations
-  recipe     Recipe     @relation(fields: [recipeId],     references: [id], onDelete: Cascade)
-  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
 
   @@id([recipeId, ingredientId])
   @@map("recipe_ingredients")
 }
 
-
-// ==========
-// INGEDIENTS
-// ==========
 model Ingredient {
   id      String             @id @default(uuid())
-  nom     String             @unique // normalisé côté applicatif (trim+ lowercase)
-
-  // Relations
+  nom     String             @unique
   recipes RecipeIngredient[]
 
   @@index([nom])
   @@map("ingredients")
 }
-
