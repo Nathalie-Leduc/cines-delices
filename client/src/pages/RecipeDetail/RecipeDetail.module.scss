@@ -1,0 +1,200 @@
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.back {
+  margin-bottom: 1rem;
+  background: transparent;
+  border: none;
+  color: #f6f1e8;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.hero {
+  position: relative;
+  margin-bottom: 1.5rem;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.heroImage {
+  width: 100%;
+  max-height: 460px;
+  object-fit: cover;
+  display: block;
+}
+
+.heroContent {
+  position: absolute;
+  left: 2rem;
+  bottom: 2rem;
+  max-width: 520px;
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  color: #f6f1e8;
+  font-family: "Playfair Display", serif;
+  font-size: clamp(2rem, 4vw, 4rem);
+  line-height: 1.05;
+}
+
+.subtitle {
+  display: inline-block;
+  margin: 0;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  background: #8e1f2f;
+  color: #f6f1e8;
+}
+
+.category {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: #6e8b5b;
+  color: #f6f1e8;
+}
+
+.metaStrip {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border-top: 1px solid rgba(246, 241, 232, 0.15);
+  border-bottom: 1px solid rgba(246, 241, 232, 0.15);
+}
+
+.metaItem {
+  color: #f6f1e8;
+  text-align: center;
+}
+
+.mainContent {
+  display: grid;
+  gap: 2rem;
+}
+
+.leftColumn,
+.rightColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.block {
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background:
+    linear-gradient(rgba(31, 29, 30, 0.82), rgba(31, 29, 30, 0.82)),
+    url("/img/rocky-wall.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem;
+  color: #f6f1e8;
+  font-family: "Playfair Display", serif;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
+.ingredientsList,
+.stepsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ingredientItem {
+  padding: 0.9rem 1rem;
+  border-radius: 0.65rem;
+  background: rgba(246, 241, 232, 0.92);
+  color: #1f1d1e;
+}
+
+.ingredientItem + .ingredientItem {
+  margin-top: 0.75rem;
+}
+
+.stepItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.stepItem + .stepItem {
+  margin-top: 1.25rem;
+}
+
+.stepNumber {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #6e8b5b;
+  color: #f6f1e8;
+  font-weight: 700;
+}
+
+.stepItem p {
+  margin: 0;
+  color: #f6f1e8;
+}
+
+.mediaBadge {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  background: #8e1f2f;
+  color: #f6f1e8;
+}
+
+.mediaInfo {
+  margin-bottom: 1.5rem;
+  color: #f6f1e8;
+}
+
+.mediaInfo p {
+  margin: 0.2rem 0;
+}
+
+.synopsis p {
+  margin: 0;
+  color: #f6f1e8;
+  opacity: 0.9;
+  line-height: 1.5;
+}
+
+.similarGrid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 768px) {
+  .metaStrip {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 2rem 2rem 4rem;
+  }
+
+  .mainContent {
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+    align-items: start;
+  }
+}

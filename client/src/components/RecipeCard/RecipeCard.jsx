@@ -7,7 +7,7 @@ export default function RecipeCard({ recipe }) {
   const { id, image, title, category, mediaTitle, duration } = recipe;
 
   return (
-    <Link to={`/recipes/${id}`} className={styles.cardLink}>
+    <Link to={`/recipes/${recipe.slug || recipe.id}`} className={styles.cardLink}>
       <article className={styles.card}>
         <div className={styles.imageWrapper}>
           <img src={image} alt={title} className={styles.image} />

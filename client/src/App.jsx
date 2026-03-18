@@ -8,6 +8,7 @@ import MemberRecipes from './pages/MemberRecipes';
 import MemberProfile from './pages/MemberProfile';
 import CreateRecipe from './pages/CreateRecipe';
 import RecipesPage from './pages/RecipesPage';
+import RecipeDetail from "./pages/RecipeDetail";
 import Movies from './pages/Movies';
 import Series from './pages/Series';
 import Contact from './pages/Contact';
@@ -22,6 +23,7 @@ function App() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/recipes" element={<RecipesPage />} />
+        <Route path="/recipes/:slug" element={<RecipeDetail />} />
         <Route path="/films" element={<Movies />} />
         <Route path="/series" element={<Series />} />
         <Route path="/contact" element={<Contact />} />
