@@ -2,19 +2,21 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MemberProfile.module.scss';
 
-// Données temporaires de l'utilisateur (à remplacer par un appel API)
-const mockUser = {
-  nom: 'DOE',
-  prenom: 'JOHN',
-  email: 'john.doe@email.com',
-  motDePasse: 'monmotdepasse',
+const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
+const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
+
+const initialUser = {
+  nom: '',
+  prenom: '',
+  email: '',
+  motDePasse: '********',
   recettes: {
     entrees: 0,
     plats: 0,
     desserts: 0,
     boissons: 0,
   },
-  dateInscription: '2026-03-10',
+  dateInscription: '',
 };
 
 export default function Profil() {
@@ -22,7 +24,7 @@ export default function Profil() {
 
   // Liens du panneau de navigation latéral (sidebar)
   // Données du profil affichées dans les champs
-  const [userData, setUserData] = useState(mockUser);
+  const [userData, setUserData] = useState(initialUser);
   // Contrôle la visibilité du mot de passe
   const [showPassword, setShowPassword] = useState(false);
   // Contrôle l'affichage de la modale de suppression de compte
@@ -31,103 +33,118 @@ export default function Profil() {
   const [showEditModal, setShowEditModal] = useState(false);
   // Contient le champ en cours de modification (nom, type, valeur)
   const [editModalData, setEditModalData] = useState(null);
+  const [profileFeedback, setProfileFeedback] = useState({ type: '', message: '' });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  function syncDisplayName(name) {
+    const trimmed = String(name || '').trim();
+
+    if (!trimmed) {
+      return;
+    }
+
+    const normalizedName = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+    localStorage.setItem('displayName', normalizedName);
+    window.dispatchEvent(new Event('user-display-name-updated'));
+  }
+
+  async function fetchProfile() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
+
+    const response = await fetch(PROFILE_API, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Erreur lors de la récupération du profil');
+    }
+
+    const payload = await response.json();
+    const user = payload?.data ?? payload;
+    const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
+      ? user.prenom
+      : (typeof user?.pseudo === 'string' && user.pseudo.trim())
+        ? user.pseudo
+        : '';
+
+    const normalizedName = rawName
+      ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
+      : '';
+
+    setUserData((prev) => ({
+      ...prev,
+      nom: user?.nom || '',
+      prenom: normalizedName,
+      email: user?.email || prev.email,
+      dateInscription: user?.createdAt || prev.dateInscription,
+    }));
+
+    if (normalizedName) {
+      syncDisplayName(normalizedName);
+    }
+  }
+
+  async function fetchRecipes() {
+    // Récupère le JWT stocké après connexion
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return;
+    }
+
+    const response = await fetch(USER_RECIPES_API, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch recipes');
+    }
+
+    const payload = await response.json();
+    const recipes = Array.isArray(payload?.data) ? payload.data : [];
+
+    const counts = {
+      entrees: 0,
+      plats: 0,
+      desserts: 0,
+      boissons: 0,
+    };
+
+    recipes.forEach((recipe) => {
+      if (recipe.category && recipe.category.nom) {
+        const nomLower = recipe.category.nom.toLowerCase();
+        if (nomLower === 'entrée') counts.entrees++;
+        else if (nomLower === 'plat') counts.plats++;
+        else if (nomLower === 'dessert') counts.desserts++;
+        else if (nomLower === 'boisson') counts.boissons++;
+      }
+    });
+
+    setUserData((prev) => ({
+      ...prev,
+      recettes: counts,
+    }));
+  }
 
   // Au montage du composant : récupère les recettes de l'utilisateur connecté
   // et met à jour les compteurs par catégorie
   useEffect(() => {
-    const fetchProfile = async () => {
+    const loadProfileData = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          return;
-        }
-
-        const response = await fetch('http://localhost:3000/api/users/me', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const user = await response.json();
-        const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
-          ? user.prenom
-          : (typeof user?.pseudo === 'string' && user.pseudo.trim())
-            ? user.pseudo
-            : '';
-
-        const normalizedName = rawName
-          ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
-          : mockUser.prenom;
-
-        setUserData((prev) => ({
-          ...prev,
-          prenom: normalizedName,
-          email: user?.email || prev.email,
-        }));
-
-        localStorage.setItem('displayName', normalizedName);
-        window.dispatchEvent(new Event('user-display-name-updated'));
+        await fetchProfile();
+        await fetchRecipes();
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Error loading profile:', error);
       }
     };
 
-    const fetchRecipes = async () => {
-      try {
-        // Récupère le JWT stocké après connexion
-        const token = localStorage.getItem('token');
-        if (!token) {
-          // Si l'utilisateur n'est pas connecté, on ne fait pas l'appel
-          return;
-        }
-
-        const response = await fetch('http://localhost:3000/api/users/me/recipes', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch recipes');
-        }
-
-        const recipes = await response.json();
-
-        // Initialise les compteurs à 0 pour chaque catégorie
-        const counts = {
-          entrees: 0,
-          plats: 0,
-          desserts: 0,
-          boissons: 0,
-        };
-
-        // Parcourt toutes les recettes et incrémente le bon compteur
-        recipes.forEach((recipe) => {
-          if (recipe.category && recipe.category.nom) {
-            const nomLower = recipe.category.nom.toLowerCase();
-            if (nomLower === 'entrée') counts.entrees++;
-            else if (nomLower === 'plat') counts.plats++;
-            else if (nomLower === 'dessert') counts.desserts++;
-            else if (nomLower === 'boisson') counts.boissons++;
-          }
-        });
-
-        // Met à jour uniquement les compteurs de recettes dans l'état
-        setUserData((prev) => ({
-          ...prev,
-          recettes: counts,
-        }));
-      } catch (error) {
-        console.error('Error fetching recipes:', error);
-      }
-    };
-
-    fetchProfile();
-    fetchRecipes();
+    loadProfileData();
   }, []);
 
   const totalRecipes = Object.values(userData.recettes).reduce(
@@ -159,6 +176,7 @@ export default function Profil() {
 
   // Ouvre la modale de modification en pré-remplissant les infos du champ cliqué
   function openEditModal(fieldName, label, type = 'text') {
+    setProfileFeedback({ type: '', message: '' });
     setEditModalData({
       fieldName,
       label,
@@ -174,19 +192,90 @@ export default function Profil() {
   }
 
   // Applique la modification dans userData et ferme la modale
-  function handleEditModalConfirm() {
+  async function handleEditModalConfirm() {
     if (!editModalData) {
       return;
     }
 
-    // Mise à jour dynamique du champ modifié via la clé fieldName
-    setUserData(prev => ({
-      ...prev,
-      [editModalData.fieldName]: editModalData.value,
-    }));
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setProfileFeedback({ type: 'error', message: 'Vous devez être connecté pour modifier votre profil.' });
+      return;
+    }
 
-    setShowEditModal(false);
-    setEditModalData(null);
+    const trimmedValue = String(editModalData.value || '').trim();
+
+    if (!trimmedValue) {
+      setProfileFeedback({ type: 'error', message: 'La valeur ne peut pas être vide.' });
+      return;
+    }
+
+    let body = null;
+
+    if (editModalData.fieldName === 'prenom') {
+      body = { pseudo: trimmedValue };
+    } else if (editModalData.fieldName === 'email') {
+      body = { email: trimmedValue };
+    } else {
+      setProfileFeedback({
+        type: 'error',
+        message: 'Seuls le prénom affiché et l\'e-mail sont modifiables pour le moment.',
+      });
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const response = await fetch(PROFILE_API, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = payload?.message
+          || payload?.error
+          || 'Impossible de mettre à jour le profil.';
+        setProfileFeedback({ type: 'error', message: errorMessage });
+        return;
+      }
+
+      const updatedUser = payload?.data ?? payload;
+      const nextPseudo = String(updatedUser?.pseudo || userData.prenom || '').trim();
+      const nextDisplayName = nextPseudo
+        ? nextPseudo.charAt(0).toUpperCase() + nextPseudo.slice(1).toLowerCase()
+        : '';
+
+      setUserData((prev) => ({
+        ...prev,
+        prenom: nextDisplayName || prev.prenom,
+        email: updatedUser?.email || prev.email,
+      }));
+
+      if (nextDisplayName) {
+        syncDisplayName(nextDisplayName);
+      }
+
+      setProfileFeedback({
+        type: 'success',
+        message: payload?.message || 'Profil mis à jour.',
+      });
+      setShowEditModal(false);
+      setEditModalData(null);
+    } catch {
+      setProfileFeedback({
+        type: 'error',
+        message: 'Impossible de joindre le serveur pour mettre à jour le profil.',
+      });
+    } finally {
+      setIsSavingProfile(false);
+    }
   }
 
   // Supprime le token JWT et redirige vers l'accueil (déconnexion / suppression)
@@ -197,13 +286,11 @@ export default function Profil() {
 
   // Valide les données du profil local et synchronise le nom affiché globalement.
   function handleValidateProfile() {
-    const displayName = (userData.prenom || '').trim();
-
-    if (displayName) {
-      const normalizedName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
-      localStorage.setItem('displayName', normalizedName);
-      window.dispatchEvent(new Event('user-display-name-updated'));
-    }
+    syncDisplayName(userData.prenom);
+    setProfileFeedback({
+      type: 'success',
+      message: 'Les informations affichées sont synchronisées avec votre profil.',
+    });
   }
 
  return (
@@ -272,8 +359,9 @@ export default function Profil() {
           className={styles.confirmBtn}
           aria-label="Confirmer la modification du profil"
           onClick={handleEditModalConfirm}
+          disabled={isSavingProfile}
         >
-          Valider
+          {isSavingProfile ? 'Enregistrement...' : 'Valider'}
         </button>
       </div>
     </div>
@@ -320,6 +408,12 @@ export default function Profil() {
         <section className={styles.profilePanel}>
           <h1 className={styles.title}>Mes informations</h1>
 
+          {profileFeedback.message && (
+            <p className={profileFeedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess}>
+              {profileFeedback.message}
+            </p>
+          )}
+
           <div className={styles.fields}>
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
@@ -327,7 +421,7 @@ export default function Profil() {
             <button
               type="button"
               className={styles.editBtn}
-              aria-label="Modifier le nom"
+              aria-label="Modification du nom indisponible"
               onClick={() => openEditModal('nom', 'Nom')}
             >
               <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
@@ -390,7 +484,7 @@ export default function Profil() {
             <button
               type="button"
               className={styles.editBtn}
-              aria-label="Modifier le mot de passe"
+              aria-label="Modification du mot de passe indisponible"
               onClick={() => openEditModal('motDePasse', 'Mot de passe', 'password')}
             >
               <img src="/icon/Edit.svg" alt="" aria-hidden="true" />

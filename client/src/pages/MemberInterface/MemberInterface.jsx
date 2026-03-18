@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MembreInterface.module.scss';
 
+const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
+const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
+
 // Décode le payload d'un JWT stocké dans le localStorage sans bibliothèque externe
 function parseJwtPayload(token) {
   try {
@@ -45,12 +48,13 @@ export default function Membre() {
     // Appel API pour récupérer le profil : prénom et nom
     const fetchProfile = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/users/me', {
+        const response = await fetch(PROFILE_API, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Erreur lors de la récupération du profil');
 
-        const user = await response.json();
+        const payload = await response.json();
+        const user = payload?.data ?? payload;
         const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
           ? user.prenom
           : (typeof user?.pseudo === 'string' && user.pseudo.trim())
@@ -71,12 +75,13 @@ export default function Membre() {
     // Appel API pour récupérer les recettes et en compter le total
     const fetchRecipes = async () => {
       try {
-        const response = await fetch('http://localhost:3000/api/users/me/recipes', {
+        const response = await fetch(USER_RECIPES_API, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Erreur lors de la récupération des recettes');
 
-        const recipes = await response.json();
+        const payload = await response.json();
+        const recipes = Array.isArray(payload?.data) ? payload.data : [];
         setRecipeCount(recipes.length);
       } catch (error) {
         console.error('Erreur fetchRecipes:', error);

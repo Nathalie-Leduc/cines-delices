@@ -14,7 +14,7 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
     : '')
   || 'http://localhost:3000/api/ingredients';
 const RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
-const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/users/me';
+const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
 function normalizeCategoryLabel(value) {
@@ -183,7 +183,8 @@ export default function MesRecettes() {
           return;
         }
 
-        const user = await response.json();
+        const payload = await response.json();
+        const user = payload?.data ?? payload;
         const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
           ? user.prenom
           : (typeof user?.pseudo === 'string' && user.pseudo.trim())
@@ -234,8 +235,9 @@ export default function MesRecettes() {
           throw new Error(`Erreur ${response.status} lors de la récupération des recettes`);
         }
 
-        const data = await response.json();
-        const normalizedRecipes = (Array.isArray(data) ? data : []).map(normalizeRecipe);
+        const payload = await response.json();
+        const data = Array.isArray(payload?.data) ? payload.data : [];
+        const normalizedRecipes = data.map(normalizeRecipe);
         setRecipes(normalizedRecipes);
         setError('');
       } catch (err) {

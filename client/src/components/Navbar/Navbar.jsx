@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
 
+const PROFILE_API = import.meta.env.VITE_PROFILE_API || "http://localhost:3000/api/auth/me";
+
 function parseJwtPayload(rawToken) {
   if (!rawToken || typeof rawToken !== "string") {
     return null;
@@ -68,7 +70,7 @@ export default function Navbar() {
       }
 
       try {
-        const response = await fetch("http://localhost:3000/api/users/me", {
+        const response = await fetch(PROFILE_API, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -78,7 +80,8 @@ export default function Navbar() {
           return;
         }
 
-        const user = await response.json();
+        const payload = await response.json();
+        const user = payload?.data ?? payload;
 
         const rawName = typeof user?.prenom === "string" && user.prenom.trim()
           ? user.prenom

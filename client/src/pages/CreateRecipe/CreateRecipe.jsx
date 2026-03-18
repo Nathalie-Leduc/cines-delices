@@ -19,6 +19,7 @@ const TMDB_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
 const INITIAL_FORM = {
   titre: '',
   film: '',
+  filmId: null,
   type: '',
   image: null,
   imageUrl: '',
@@ -158,7 +159,11 @@ export default function CreerRecette() {
   }
 
   function handleFilmInput(value) {
-    handleChange('film', value);
+    setForm((prev) => ({
+      ...prev,
+      film: value,
+      filmId: null,
+    }));
 
     clearTimeout(filmSearchTimeoutRef.current);
     filmSearchTimeoutRef.current = setTimeout(() => {
@@ -167,7 +172,11 @@ export default function CreerRecette() {
   }
 
   function selectFilm(media) {
-    handleChange('film', media.title);
+    setForm((prev) => ({
+      ...prev,
+      film: media.title,
+      filmId: media.id ?? null,
+    }));
 
     const normalizedType = String(media.type || '').toLowerCase();
     if (normalizedType === 'movie') {
@@ -335,6 +344,17 @@ export default function CreerRecette() {
       return '';
     }
 
+    if (Array.isArray(payload.errors) && payload.errors.length > 0) {
+      const detailed = payload.errors
+        .map(err => err?.message || err?.msg || err)
+        .filter(Boolean)
+        .join(' ');
+
+      if (detailed) {
+        return detailed;
+      }
+    }
+
     if (typeof payload.message === 'string') {
       return payload.message;
     }
@@ -343,35 +363,41 @@ export default function CreerRecette() {
       return payload.error;
     }
 
-    if (Array.isArray(payload.errors) && payload.errors.length > 0) {
-      return payload.errors
-        .map(err => err?.message || err?.msg || err)
-        .filter(Boolean)
-        .join(' ');
-    }
-
     return '';
   }
 
   function buildRecipePayload() {
+    const parseNullableNumber = (value) => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+
+      const parsed = Number(value);
+      return Number.isNaN(parsed) ? undefined : parsed;
+    };
+
+    const normalizedSteps = form.etapes.map(step => step.trim()).filter(Boolean);
+
     return {
       titre: form.titre.trim(),
       film: form.film.trim(),
+      filmId: form.filmId,
       type: form.type,
       categorie: form.categorie,
       imageUrl: form.imageUrl.trim(),
-      tempsPreparation: form.tempsPréparation.trim(),
-      tempsCuisson: form.tempsCuisson.trim(),
-      nbPersonnes: form.nbPersonnes ? Number(form.nbPersonnes) : null,
+      instructions: normalizedSteps.join('\n'),
+      etapes: normalizedSteps,
+      tempsPreparation: parseNullableNumber(form.tempsPréparation),
+      tempsCuisson: parseNullableNumber(form.tempsCuisson),
+      nbPersonnes: parseNullableNumber(form.nbPersonnes),
       ingredients: form.ingredients
         .map(item => ({
           ingredientId: item.ingredientId,
           nom: item.nom.trim(),
-          quantite: item.quantite,
-          unite: item.unite,
+          quantity: item.quantite,
+          unit: item.unite,
         }))
         .filter(item => item.nom),
-      etapes: form.etapes.map(step => step.trim()).filter(Boolean),
     };
   }
 
@@ -379,10 +405,10 @@ export default function CreerRecette() {
   async function handleSubmit() {
     const payload = buildRecipePayload();
 
-    if (!payload.titre || !payload.categorie || payload.ingredients.length === 0 || payload.etapes.length === 0) {
+    if (!payload.titre || !payload.categorie || !payload.filmId || payload.ingredients.length === 0 || payload.etapes.length === 0) {
       setAlert({
         type: 'error',
-        message: 'Veuillez remplir les champs obligatoires avant de valider.',
+        message: 'Veuillez remplir les champs obligatoires et sélectionner un film/série depuis la liste.',
       });
       setShowSubmitModal(false);
       return;
