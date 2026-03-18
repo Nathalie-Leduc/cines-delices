@@ -950,4 +950,162 @@
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .cardTitle {
+    font-size: 0.95rem;
+  }
+
+  .cardFilm,
+  .cardTemps {
+    font-size: 0.72rem;
+  }
+
+  .cardType {
+    width: 24px;
+    height: 24px;
+    font-size: 0.72rem;
+  }
+
+  .actionBtn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+  }
+
+  .cardImage {
+    height: 112px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mesRecettes {
+    padding: 1.8rem 3rem 3rem;
+  }
+
+  .pageTitle {
+    font-size: 2.8rem;
+  }
+
+  .welcomeText {
+    display: block;
+    margin-bottom: 1.5rem;
+  }
+
+  .pageHeader {
+    display: flex;
+  }
+
+  .desktopLayout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 1.6rem;
+    align-items: start;
+  }
+
+  .accountPanel {
+    display: flex;
+    min-height: 520px;
+    position: sticky;
+    top: 1rem;
+  }
+
+  .title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: left;
+    font-size: 2.65rem;
+    margin-bottom: 1rem;
+
+    &::after {
+      display: block;
+      content: '';
+      flex: 1;
+      height: 1px;
+      background-color: rgba(201, 164, 92, 0.45);
+    }
+  }
+
+  .createInput {
+    padding: 0.85rem 1rem;
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.95rem;
+  }
+
+  .sectionTitle {
+    font-size: 2.1rem;
+  }
+}
+
+@media (min-width: 1360px) {
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* États de chargement, erreur et liste vide */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 2rem 1rem;
+}
+
+.loadingText {
+  font-family: 'Inter', sans-serif;
+  color: rgba(246, 241, 232, 0.7);
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.errorContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  padding: 2rem 1rem;
+  background-color: rgba(220, 59, 59, 0.15);
+  border: 1px solid rgba(220, 59, 59, 0.4);
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.errorText {
+  font-family: 'Inter', sans-serif;
+  color: #FF6B6B;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.emptyContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 250px;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.emptyText {
+  font-family: 'Playfair Display', serif;
+  color: #FBDCA6;
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.emptySubText {
+  font-family: 'Inter', sans-serif;
+  color: rgba(246, 241, 232, 0.7);
+  font-size: 1rem;
 }

@@ -1,12 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
 
 const FILM_SEARCH_API = import.meta.env.VITE_FILM_SEARCH_API || 'http://localhost:3000/api/titles/search';
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API || 'http://localhost:3000/api/ingredients/search';
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API || 'http://localhost:3000/api/ingredients';
+const RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
+// Données de démonstration conservées comme référence de structure.
+// Le composant charge désormais ses données depuis l'API `RECIPES_API`.
 const mockRecettes = [
   {
     id: 1,
@@ -64,11 +67,73 @@ const mockRecettes = [
 
 export default function MesRecettes() {
   const navigate = useNavigate();
+  const [recipes, setRecipes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [activeFilter, setActiveFilter] = useState('Tous');
+  const [newRecipeName, setNewRecipeName] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
+  const [filmResults, setFilmResults] = useState([]);
+  const [filmSearchLoading, setFilmSearchLoading] = useState(false);
+  const [filmSearchError, setFilmSearchError] = useState('');
+  const [editImageError, setEditImageError] = useState('');
+  const [editIngredientSearchResults, setEditIngredientSearchResults] = useState({});
+  const [editIngredientSearchLoading, setEditIngredientSearchLoading] = useState({});
+  const [editIngredientSearchError, setEditIngredientSearchError] = useState({});
+  const [creatingEditIngredient, setCreatingEditIngredient] = useState({});
+  // Références pour debounce des recherches afin d'éviter trop d'appels API.
+  const filmSearchTimeoutRef = useRef(null);
+  const editIngredientSearchTimeouts = useRef({});
+  const [recetteToDelete, setRecetteToDelete] = useState(null);
+
+  // Récupérer les recettes au montage du composant
+  useEffect(() => {
+    const fetchRecipes = async () => {
+      try {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          setError('Token manquant. Veuillez vous reconnecter.');
+          setIsLoading(false);
+          return;
+        }
+
+        const response = await fetch(RECIPES_API, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentification échouée. Veuillez vous reconnecter.');
+          }
+          throw new Error(`Erreur ${response.status} lors de la récupération des recettes`);
+        }
+
+        const data = await response.json();
+        setRecipes(data || []);
+        setError('');
+      } catch (err) {
+        setError(err.message || 'Erreur lors de la récupération des recettes');
+        setRecipes([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, []);
+
+  // Navigation latérale du compte membre.
   const accountItems = [
     {
       icon: '/icon/Recipes.svg',
       label: 'Mes recettes',
-      sub: `${mockRecettes.length} recettes`,
+      sub: `${recipes.length} recettes`,
       path: '/membre/mes-recettes',
       active: true,
     },
@@ -87,23 +152,6 @@ export default function MesRecettes() {
       active: false,
     },
   ];
-  const [recipes, setRecipes] = useState(mockRecettes);
-  const [activeFilter, setActiveFilter] = useState('Tous');
-  const [newRecipeName, setNewRecipeName] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
-  const [filmResults, setFilmResults] = useState([]);
-  const [filmSearchLoading, setFilmSearchLoading] = useState(false);
-  const [filmSearchError, setFilmSearchError] = useState('');
-  const [editImageError, setEditImageError] = useState('');
-  const [editIngredientSearchResults, setEditIngredientSearchResults] = useState({});
-  const [editIngredientSearchLoading, setEditIngredientSearchLoading] = useState({});
-  const [editIngredientSearchError, setEditIngredientSearchError] = useState({});
-  const [creatingEditIngredient, setCreatingEditIngredient] = useState({});
-  const filmSearchTimeoutRef = useRef(null);
-  const editIngredientSearchTimeouts = useRef({});
-  const [recetteToDelete, setRecetteToDelete] = useState(null);
   const [editForm, setEditForm] = useState({
     id: null,
     titre: '',
@@ -120,6 +168,7 @@ export default function MesRecettes() {
     type: 'F',
   });
 
+  // Compteurs dynamiques par catégorie à partir des recettes chargées.
   const categories = [
     { label: 'Tous', count: recipes.length, color: 'tous' },
     { label: 'Entrée', count: recipes.filter(r => r.categorie === 'Entrée').length, color: 'entree' },
@@ -128,6 +177,7 @@ export default function MesRecettes() {
     { label: 'Boisson', count: recipes.filter(r => r.categorie === 'Boisson').length, color: 'boisson' },
   ];
 
+  // Application du filtre actif.
   const filtered = activeFilter === 'Tous'
     ? recipes
     : recipes.filter(r => r.categorie === activeFilter);
@@ -139,17 +189,20 @@ export default function MesRecettes() {
     return acc;
   }, {});
 
+  // Ouvre la confirmation de suppression pour une recette ciblée.
   function handleDeleteClick(recette) {
     setRecetteToDelete(recette);
     setShowDeleteModal(true);
   }
 
+  // Suppression locale de la recette sélectionnée (UI-only pour l'instant).
   function handleDeleteConfirm() {
     setRecipes(prev => prev.filter(recette => recette.id !== recetteToDelete?.id));
     setShowDeleteModal(false);
     setRecetteToDelete(null);
   }
 
+  // Pré-remplit le formulaire d'édition avec les données de la carte sélectionnée.
   function handleEditClick(recette) {
     setEditForm({
       id: recette.id,
@@ -183,6 +236,7 @@ export default function MesRecettes() {
     setShowEditModal(true);
   }
 
+  // Mise à jour générique d'un champ du formulaire d'édition.
   function handleEditChange(field, value) {
     setEditForm(prev => ({
       ...prev,
@@ -191,6 +245,7 @@ export default function MesRecettes() {
     }));
   }
 
+  // Mise à jour d'un ingrédient dans une ligne du formulaire.
   function handleEditIngredientChange(index, field, value) {
     const updated = [...editForm.ingredients];
     updated[index][field] = value;
@@ -237,12 +292,14 @@ export default function MesRecettes() {
     }));
   }
 
+  // Réinitialise l'état UI de recherche d'ingrédient pour une ligne donnée.
   function clearEditIngredientSearchState(index) {
     setEditIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
     setEditIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
     setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
   }
 
+  // Recherche d'ingrédients côté API avec normalisation des formats renvoyés.
   async function searchEditIngredients(index, query) {
     const trimmed = query.trim();
 
@@ -279,6 +336,7 @@ export default function MesRecettes() {
     }
   }
 
+  // Debounce sur la saisie d'un ingrédient pour limiter la charge réseau.
   function handleEditIngredientNameInput(index, value) {
     handleEditIngredientChange(index, 'nom', value);
 
@@ -288,6 +346,7 @@ export default function MesRecettes() {
     }, 300);
   }
 
+  // Sélectionne un ingrédient suggéré et renseigne son identifiant.
   function selectEditIngredient(index, ingredient) {
     const updated = [...editForm.ingredients];
     updated[index].ingredientId = ingredient.id || null;
@@ -296,6 +355,7 @@ export default function MesRecettes() {
     clearEditIngredientSearchState(index);
   }
 
+  // Création à la volée d'un ingrédient si aucune suggestion n'existe.
   async function createEditIngredient(index) {
     const name = editForm.ingredients[index]?.nom?.trim();
     if (!name) {
@@ -331,10 +391,12 @@ export default function MesRecettes() {
     }
   }
 
+  // Validation minimaliste: seules les images PNG sont acceptées dans l'éditeur.
   function isPngFile(file) {
     return Boolean(file) && (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png'));
   }
 
+  // Stocke un aperçu local de l'image sélectionnée pour feedback immédiat.
   function handleEditImageChange(file) {
     if (!file) {
       return;
@@ -349,6 +411,7 @@ export default function MesRecettes() {
     setEditForm(prev => ({ ...prev, image: URL.createObjectURL(file) }));
   }
 
+  // Recherche de films/séries avec normalisation des clés de réponse.
   async function searchFilms(query) {
     const trimmed = query.trim();
     if (trimmed.length < 2) {
@@ -384,6 +447,7 @@ export default function MesRecettes() {
     }
   }
 
+  // Debounce sur la recherche de titre depuis le champ "film".
   function handleFilmInput(value) {
     handleEditChange('film', value);
     clearTimeout(filmSearchTimeoutRef.current);
@@ -392,6 +456,7 @@ export default function MesRecettes() {
     }, 300);
   }
 
+  // Hydrate le film sélectionné dans le formulaire.
   function selectFilm(film) {
     setEditForm(prev => ({
       ...prev,
@@ -402,6 +467,7 @@ export default function MesRecettes() {
     setFilmResults([]);
   }
 
+  // Persiste les modifications dans l'état local des recettes.
   function handleEditSave() {
     const computedTime = [editForm.tempsPreparation, editForm.tempsCuisson]
       .filter(Boolean)
@@ -436,6 +502,7 @@ export default function MesRecettes() {
     setShowEditConfirmModal(true);
   }
 
+  // Déconnexion utilisateur locale.
   function handleLogout() {
     localStorage.removeItem('token');
     navigate('/');
