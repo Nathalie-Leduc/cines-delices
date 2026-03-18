@@ -13,6 +13,8 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
 const RECIPE_CREATE_API = import.meta.env.VITE_RECIPE_CREATE_API
   || import.meta.env.VITE_RECIPE_API_URL
   || 'http://localhost:3000/api/recipes';
+const TMDB_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
+  || 'http://localhost:3000/api/tmdb/medias/search';
 
 const INITIAL_FORM = {
   titre: '',
@@ -34,10 +36,14 @@ export default function CreerRecette() {
   const [alert, setAlert] = useState({ type: 'info', message: '' });
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [imageError, setImageError] = useState('');
+  const [filmSearchResults, setFilmSearchResults] = useState([]);
+  const [filmSearchLoading, setFilmSearchLoading] = useState(false);
+  const [filmSearchError, setFilmSearchError] = useState('');
   const [ingredientSearchResults, setIngredientSearchResults] = useState({});
   const [ingredientSearchLoading, setIngredientSearchLoading] = useState({});
   const [ingredientSearchError, setIngredientSearchError] = useState({});
   const [creatingIngredient, setCreatingIngredient] = useState({});
+  const filmSearchTimeoutRef = useRef(null);
   const ingredientSearchTimeouts = useRef({});
   const [form, setForm] = useState(INITIAL_FORM);
 
@@ -104,6 +110,76 @@ export default function CreerRecette() {
     setForm(prev => ({ ...prev, image: null }));
   }
 
+  // ===== FILM / SÉRIE (TMDB) =====
+  async function searchFilms(query) {
+    const trimmed = query.trim();
+
+    if (trimmed.length < 2) {
+      setFilmSearchResults([]);
+      setFilmSearchError('');
+      setFilmSearchLoading(false);
+      return;
+    }
+
+    setFilmSearchLoading(true);
+    setFilmSearchError('');
+
+    try {
+      const response = await fetch(`${TMDB_SEARCH_API}?searchTerm=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) {
+        let payload = null;
+
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+
+        throw new Error(payload?.message || `HTTP ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const rawList = Array.isArray(payload) ? payload : payload.data || [];
+      const normalized = rawList
+        .map(item => ({
+          id: item.id,
+          title: item.title || item.name || item.titre || '',
+          type: item.type || item.media_type || '',
+        }))
+        .filter(item => item.title);
+
+      setFilmSearchResults(normalized.slice(0, 8));
+    } catch (error) {
+      setFilmSearchResults([]);
+      setFilmSearchError(error?.message || "Impossible de rechercher les films/séries pour l'instant.");
+    } finally {
+      setFilmSearchLoading(false);
+    }
+  }
+
+  function handleFilmInput(value) {
+    handleChange('film', value);
+
+    clearTimeout(filmSearchTimeoutRef.current);
+    filmSearchTimeoutRef.current = setTimeout(() => {
+      searchFilms(value);
+    }, 300);
+  }
+
+  function selectFilm(media) {
+    handleChange('film', media.title);
+
+    const normalizedType = String(media.type || '').toLowerCase();
+    if (normalizedType === 'movie') {
+      handleChange('type', 'F');
+    } else if (normalizedType === 'tv' || normalizedType === 'series') {
+      handleChange('type', 'S');
+    }
+
+    setFilmSearchResults([]);
+    setFilmSearchError('');
+  }
+
   // ===== INGRÉDIENTS =====
   function handleIngredientChange(index, field, value) {
     const updated = [...form.ingredients];
@@ -145,6 +221,16 @@ export default function CreerRecette() {
         id: item.id,
         name: item.name || item.nom || '',
       })).filter(item => item.name);
+
+      const normalizedQuery = trimmed.toLowerCase();
+      const exactMatch = normalized.find(
+        item => item.name.trim().toLowerCase() === normalizedQuery,
+      );
+
+      if (exactMatch) {
+        selectIngredient(index, exactMatch);
+        return;
+      }
 
       setIngredientSearchResults(prev => ({ ...prev, [index]: normalized }));
     } catch {
@@ -431,11 +517,41 @@ export default function CreerRecette() {
             aria-label="Film ou série"
             placeholder="Rechercher un film ou une série"
             value={form.film}
-            onChange={e => handleChange('film', e.target.value)}
+            onChange={e => handleFilmInput(e.target.value)}
           />
           <span className={styles.inputIconRight}>🔍</span>
         </div>
-        <p className={styles.hint}>* L'appel à l'API TMDB sera branché ici</p>
+
+        {(filmSearchLoading || filmSearchError || filmSearchResults.length > 0 || form.film.trim().length >= 2) && (
+          <div className={styles.ingredientSearchBox}>
+            {filmSearchLoading && (
+              <p className={styles.ingredientSearchText}>Recherche en cours...</p>
+            )}
+
+            {filmSearchError && (
+              <p className={styles.ingredientSearchError}>{filmSearchError}</p>
+            )}
+
+            {!filmSearchLoading && !filmSearchError && filmSearchResults.length > 0 && (
+              <ul className={styles.ingredientSuggestionList}>
+                {filmSearchResults.map(result => (
+                  <li key={`${result.id}-${result.type}`}>
+                    <button
+                      type="button"
+                      className={styles.ingredientSuggestionBtn}
+                      aria-label={`Sélectionner ${result.title}`}
+                      onClick={() => selectFilm(result)}
+                    >
+                      {result.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <p className={styles.hint}>* Recherche connectée à l'API TMDB</p>
       </div>
 
       {/* TYPE */}

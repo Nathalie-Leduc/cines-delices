@@ -151,6 +151,27 @@
   color: #f6f1e8;
 }
 
+.desktopLoginLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-family: "Playfair Display", serif;
+  font-size: 1.25rem;
+  color: #f6f1e8;
+  background: #8e1f2f;
+  border: 0;
+  border-radius: 0.6rem;
+  padding: 1.15rem 1.5rem;
+  line-height: 1;
+  transition: background-color 0.2s ease;
+}
+
+.desktopLoginLink:hover {
+  color: #f6f1e8;
+  background-color: #a02436;
+}
+
 .burger,
 .mobileSearch,
 .closeButton {
@@ -235,6 +256,7 @@
   place-items: center;
   color: #c9a45c;
   font-size: 1.5rem;
+  text-decoration: none;
 }
 
 .mobileUserText {
@@ -242,6 +264,15 @@
   flex-direction: column;
   color: #f6f1e8;
   font-size: 1rem;
+}
+
+.mobileUserLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.mobileUserLink:hover {
+  color: #c9a45c;
 }
 
 .mobileNav {

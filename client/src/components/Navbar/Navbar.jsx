@@ -1,15 +1,123 @@
-import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
 
-export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+function parseJwtPayload(rawToken) {
+  if (!rawToken || typeof rawToken !== "string") {
+    return null;
+  }
 
-  const isLoggedIn = false;
-  const userName = "John Doe";
+  const token = rawToken.startsWith("Bearer ") ? rawToken.slice(7) : rawToken;
+  const parts = token.split(".");
+
+  if (parts.length !== 3) {
+    return null;
+  }
+
+  try {
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+    return JSON.parse(atob(padded));
+  } catch {
+    return null;
+  }
+}
+
+function getUserName(payload) {
+  if (!payload) {
+    return null;
+  }
+
+  if (typeof payload.name === "string" && payload.name.trim()) {
+    return payload.name.trim();
+  }
+
+  if (typeof payload.email === "string" && payload.email.includes("@")) {
+    const userFromEmail = payload.email.split("@")[0].trim();
+
+    if (userFromEmail) {
+      return userFromEmail.charAt(0).toUpperCase() + userFromEmail.slice(1);
+    }
+  }
+
+  return "Membre";
+}
+
+export default function Navbar() {
+  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [profileFirstName, setProfileFirstName] = useState(localStorage.getItem("displayName") || "");
+
+  const token = localStorage.getItem("token");
+  const payload = parseJwtPayload(token);
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
+  const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
+
+  useEffect(() => {
+    const refreshDisplayName = () => {
+      setProfileFirstName(localStorage.getItem("displayName") || "");
+    };
+
+    window.addEventListener("user-display-name-updated", refreshDisplayName);
+
+    const fetchProfileFirstName = async () => {
+      if (!token || !isLoggedIn) {
+        setProfileFirstName("");
+        return;
+      }
+
+      try {
+        const response = await fetch("http://localhost:3000/api/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const user = await response.json();
+
+        const rawName = typeof user?.prenom === "string" && user.prenom.trim()
+          ? user.prenom
+          : typeof user?.pseudo === "string" && user.pseudo.trim()
+            ? user.pseudo
+            : "";
+
+        if (rawName) {
+          const trimmed = rawName.trim();
+          const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+          localStorage.setItem("displayName", normalized);
+          setProfileFirstName(normalized);
+        }
+      } catch {
+        // Fallback handled by getUserName(payload)
+      }
+    };
+
+    fetchProfileFirstName();
+
+    return () => {
+      window.removeEventListener("user-display-name-updated", refreshDisplayName);
+    };
+  }, [token, isLoggedIn]);
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const handleMobileAction = () => {
+    if (isLoggedIn) {
+      localStorage.removeItem("token");
+      closeMenu();
+      navigate("/");
+      return;
+    }
+
+    closeMenu();
+    navigate("/login");
   };
 
   const navItems = [
@@ -77,23 +185,29 @@ export default function Navbar() {
               </button>
             </form>
 
-            <div className={styles.userBlock}>
-              <NavLink to="/membre" className={styles.userTextLink}>
-                <span className={styles.userGreeting}>Bonjour,</span>
-                <span className={styles.userName}>{userName}</span>
+            {isLoggedIn ? (
+              <div className={styles.userBlock}>
+                <NavLink to="/membre" className={styles.userTextLink}>
+                  <span className={styles.userGreeting}>Bonjour,</span>
+                  <span className={styles.userName}>{userName}</span>
+                </NavLink>
+                <NavLink
+                  to="/membre"
+                  className={styles.userIcon}
+                  aria-label="Mon compte"
+                >
+                  <img
+                    src="/icon/Profil.svg"
+                    alt="Profil"
+                    className={styles.profileIcon}
+                  />
+                </NavLink>
+              </div>
+            ) : (
+              <NavLink to="/login" className={styles.desktopLoginLink}>
+                Se connecter
               </NavLink>
-              <NavLink
-                to="/membre"
-                className={styles.userIcon}
-                aria-label="Mon compte"
-              >
-                <img
-                  src="/icon/Profil.svg"
-                  alt="Profil"
-                  className={styles.profileIcon}
-                />
-              </NavLink>
-            </div>
+            )}
           </div>
 
           <button
@@ -123,16 +237,27 @@ export default function Navbar() {
         <div className={styles.mobilePanelHeader}>
           {isLoggedIn ? (
             <div className={styles.mobileUser}>
-              <div className={styles.mobileAvatar}>
+              <NavLink
+                to="/membre/profil"
+                onClick={closeMenu}
+                className={styles.mobileAvatar}
+                aria-label="Mon profil"
+              >
                 <img
                   src="/icon/Profil.svg"
                   alt="Profil"
                   className={styles.profileIcon}
                 />
-              </div>
+              </NavLink>
               <div className={styles.mobileUserText}>
                 <span>Bonjour,</span>
-                <strong>{userName}</strong>
+                <NavLink
+                  to="/membre/profil"
+                  onClick={closeMenu}
+                  className={styles.mobileUserLink}
+                >
+                  <strong>{userName}</strong>
+                </NavLink>
               </div>
             </div>
           ) : (
@@ -182,7 +307,11 @@ export default function Navbar() {
         </nav>
 
         <div className={styles.mobileBottom}>
-          <button type="button" className={styles.mobileActionButton}>
+          <button
+            type="button"
+            className={styles.mobileActionButton}
+            onClick={handleMobileAction}
+          >
             {isLoggedIn ? "Se déconnecter" : "Se connecter"}
           </button>
 

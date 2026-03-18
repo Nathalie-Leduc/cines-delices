@@ -2,11 +2,83 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
 
-const FILM_SEARCH_API = import.meta.env.VITE_FILM_SEARCH_API || 'http://localhost:3000/api/titles/search';
-const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API || 'http://localhost:3000/api/ingredients/search';
-const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API || 'http://localhost:3000/api/ingredients';
+const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
+  || import.meta.env.VITE_FILM_SEARCH_API
+  || 'http://localhost:3000/api/tmdb/medias/search';
+const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
+  || import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
+  || 'http://localhost:3000/api/ingredients/search';
+const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
+  || (import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
+    ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '')
+    : '')
+  || 'http://localhost:3000/api/ingredients';
 const RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
+const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/users/me';
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
+
+function normalizeCategoryLabel(value) {
+  const source = String(value || '').trim().toLowerCase();
+
+  if (!source) {
+    return 'Autre';
+  }
+
+  if (source === 'entree' || source === 'entrée') {
+    return 'Entrée';
+  }
+
+  if (source === 'plat') {
+    return 'Plat';
+  }
+
+  if (source === 'dessert') {
+    return 'Dessert';
+  }
+
+  if (source === 'boisson') {
+    return 'Boisson';
+  }
+
+  return source.charAt(0).toUpperCase() + source.slice(1);
+}
+
+function normalizeRecipe(rawRecipe) {
+  const minutesPreparation = Number(rawRecipe?.tempsPreparation);
+  const minutesCuisson = Number(rawRecipe?.tempsCuisson);
+  const totalMinutes = [minutesPreparation, minutesCuisson]
+    .filter(Number.isFinite)
+    .reduce((sum, value) => sum + value, 0);
+
+  const categoryLabel = normalizeCategoryLabel(rawRecipe?.categorie || rawRecipe?.category?.nom || rawRecipe?.category);
+  const mediaType = String(rawRecipe?.type || rawRecipe?.media?.type || '').toLowerCase();
+  const normalizedIngredients = (rawRecipe?.ingredients || []).map(item => ({
+    ingredientId: item?.ingredientId || item?.ingredient?.id || null,
+    nom: item?.nom || item?.ingredient?.nom || item?.name || '',
+    quantite: item?.quantite || item?.quantity || '',
+    unite: item?.unite || item?.unit || '',
+  }));
+
+  return {
+    ...rawRecipe,
+    titre: rawRecipe?.titre || rawRecipe?.title || 'Recette sans titre',
+    categorie: categoryLabel,
+    filmId: rawRecipe?.filmId || rawRecipe?.mediaId || rawRecipe?.media?.id || null,
+    film: rawRecipe?.film || rawRecipe?.media?.titre || 'Sans titre',
+    image: rawRecipe?.image || rawRecipe?.imageUrl || rawRecipe?.media?.posterUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400',
+    nbPersonnes: rawRecipe?.nbPersonnes || rawRecipe?.nombrePersonnes || '',
+    ingredients: normalizedIngredients,
+    etapes: Array.isArray(rawRecipe?.etapes)
+      ? rawRecipe.etapes
+      : (typeof rawRecipe?.instructions === 'string' && rawRecipe.instructions.trim())
+        ? [rawRecipe.instructions]
+        : [''],
+    tempsPreparation: rawRecipe?.tempsPreparation || '',
+    tempsCuisson: rawRecipe?.tempsCuisson || '',
+    temps: rawRecipe?.temps || (totalMinutes > 0 ? `${totalMinutes} min` : ''),
+    type: rawRecipe?.type || (mediaType === 'series' ? 'S' : 'F'),
+  };
+}
 
 // Données de démonstration conservées comme référence de structure.
 // Le composant charge désormais ses données depuis l'API `RECIPES_API`.
@@ -68,6 +140,8 @@ const mockRecettes = [
 export default function MesRecettes() {
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
+  const [userDisplayName, setUserDisplayName] = useState(localStorage.getItem('displayName') || '');
+  const [userEmail, setUserEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tous');
@@ -87,6 +161,52 @@ export default function MesRecettes() {
   const filmSearchTimeoutRef = useRef(null);
   const editIngredientSearchTimeouts = useRef({});
   const [recetteToDelete, setRecetteToDelete] = useState(null);
+
+  // Récupérer le profil au montage pour afficher un nom/e-mail dynamiques.
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+          return;
+        }
+
+        const response = await fetch(PROFILE_API, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const user = await response.json();
+        const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
+          ? user.prenom
+          : (typeof user?.pseudo === 'string' && user.pseudo.trim())
+            ? user.pseudo
+            : '';
+
+        if (rawName) {
+          const normalizedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
+          setUserDisplayName(normalizedName);
+          localStorage.setItem('displayName', normalizedName);
+          window.dispatchEvent(new Event('user-display-name-updated'));
+        }
+
+        if (typeof user?.email === 'string') {
+          setUserEmail(user.email);
+        }
+      } catch {
+        // Le fallback localStorage/displayName reste actif.
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   // Récupérer les recettes au montage du composant
   useEffect(() => {
@@ -115,7 +235,8 @@ export default function MesRecettes() {
         }
 
         const data = await response.json();
-        setRecipes(data || []);
+        const normalizedRecipes = (Array.isArray(data) ? data : []).map(normalizeRecipe);
+        setRecipes(normalizedRecipes);
         setError('');
       } catch (err) {
         setError(err.message || 'Erreur lors de la récupération des recettes');
@@ -140,7 +261,7 @@ export default function MesRecettes() {
     {
       icon: '/icon/User.svg',
       label: 'Mes informations',
-      sub: 'johndoe@email.com',
+      sub: userEmail,
       path: '/membre/profil',
       active: false,
     },
@@ -324,6 +445,16 @@ export default function MesRecettes() {
         name: item.name || item.nom || '',
       })).filter(item => item.name);
 
+      const normalizedQuery = trimmed.toLowerCase();
+      const exactMatch = normalized.find(
+        item => item.name.trim().toLowerCase() === normalizedQuery,
+      );
+
+      if (exactMatch) {
+        selectEditIngredient(index, exactMatch);
+        return;
+      }
+
       setEditIngredientSearchResults(prev => ({ ...prev, [index]: normalized }));
     } catch {
       setEditIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
@@ -425,9 +556,17 @@ export default function MesRecettes() {
     setFilmSearchError('');
 
     try {
-      const response = await fetch(`${FILM_SEARCH_API}?q=${encodeURIComponent(trimmed)}`);
+      const response = await fetch(`${FILM_SEARCH_API}?searchTerm=${encodeURIComponent(trimmed)}`);
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        let payload = null;
+
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
+        }
+
+        throw new Error(payload?.message || `HTTP ${response.status}`);
       }
 
       const payload = await response.json();
@@ -435,13 +574,13 @@ export default function MesRecettes() {
       const normalized = rawList.map(item => ({
         id: item.id,
         title: item.title || item.titre || item.name || item.nom || '',
-        type: item.type || item.mediaType || '',
+        type: item.type || item.mediaType || item.media_type || '',
       })).filter(item => item.title);
 
-      setFilmResults(normalized);
-    } catch {
+      setFilmResults(normalized.slice(0, 8));
+    } catch (error) {
       setFilmResults([]);
-      setFilmSearchError("Impossible de rechercher les films/series pour l'instant.");
+      setFilmSearchError(error?.message || "Impossible de rechercher les films/séries pour l'instant.");
     } finally {
       setFilmSearchLoading(false);
     }
@@ -458,11 +597,17 @@ export default function MesRecettes() {
 
   // Hydrate le film sélectionné dans le formulaire.
   function selectFilm(film) {
+    const normalizedType = String(film?.type || '').toLowerCase();
+
     setEditForm(prev => ({
       ...prev,
       filmId: film.id || null,
       film: film.title,
-      type: film.type?.toLowerCase().includes('serie') ? 'S' : prev.type,
+      type: normalizedType === 'movie'
+        ? 'F'
+        : (normalizedType === 'tv' || normalizedType === 'series' || normalizedType === 'serie' || normalizedType === 'série')
+          ? 'S'
+          : prev.type,
     }));
     setFilmResults([]);
   }
@@ -643,7 +788,7 @@ export default function MesRecettes() {
                     {(editIngredientSearchLoading[index]
                       || (editIngredientSearchResults[index] && editIngredientSearchResults[index].length > 0)
                       || editIngredientSearchError[index]
-                      || (ing.nom.trim().length >= 2 && !editIngredientSearchLoading[index]
+                      || (!ing.ingredientId && ing.nom.trim().length >= 2 && !editIngredientSearchLoading[index]
                         && (!editIngredientSearchResults[index] || editIngredientSearchResults[index].length === 0))) && (
                       <div className={styles.filmSearchBox}>
                         {editIngredientSearchLoading[index] && (
@@ -672,6 +817,7 @@ export default function MesRecettes() {
 
                         {!editIngredientSearchLoading[index]
                           && !editIngredientSearchError[index]
+                          && !ing.ingredientId
                           && ing.nom.trim().length >= 2
                           && (!editIngredientSearchResults[index] || editIngredientSearchResults[index].length === 0) && (
                             <button
@@ -852,7 +998,7 @@ export default function MesRecettes() {
         <h1 className={styles.pageTitle}>Mon compte</h1>
       </div>
       <p className={styles.welcomeText}>
-        Bonjour <strong>John</strong>, bienvenue chez Cine Delices !
+        Bonjour <strong>{userDisplayName || 'toi'}</strong>, bienvenue chez Cine Delices !
       </p>
 
       <div className={styles.desktopLayout}>
@@ -950,8 +1096,8 @@ export default function MesRecettes() {
                           <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
                         </button>
                       </div>
-                      <span className={`${styles.cardTag} ${styles[recette.categorie.toLowerCase()]}`}>
-                        {recette.categorie}
+                      <span className={`${styles.cardTag} ${styles[String(recette.categorie || 'autre').toLowerCase()]}`}>
+                        {recette.categorie || 'Autre'}
                       </span>
                     </div>
                     <div className={styles.cardBody}>

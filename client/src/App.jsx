@@ -14,6 +14,7 @@ import Series from './pages/Series';
 import Contact from './pages/Contact';
 import MentionsLegales from './pages/MentionsLegales';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import { Dashboard, Recettes, Categories, Utilisateurs } from './pages/Admin';
 import ProtectedRoute from './router';
 
@@ -29,6 +30,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
       </Route>
 
       <Route

@@ -1,34 +1,151 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MemberProfile.module.scss';
 
+// Données temporaires de l'utilisateur (à remplacer par un appel API)
 const mockUser = {
   nom: 'DOE',
   prenom: 'JOHN',
   email: 'john.doe@email.com',
   motDePasse: 'monmotdepasse',
   recettes: {
-    entrees: 15,
-    plats: 7,
-    desserts: 25,
-    boissons: 2,
+    entrees: 0,
+    plats: 0,
+    desserts: 0,
+    boissons: 0,
   },
   dateInscription: '2026-03-10',
 };
 
 export default function Profil() {
   const navigate = useNavigate();
+
+  // Liens du panneau de navigation latéral (sidebar)
+  // Données du profil affichées dans les champs
+  const [userData, setUserData] = useState(mockUser);
+  // Contrôle la visibilité du mot de passe
+  const [showPassword, setShowPassword] = useState(false);
+  // Contrôle l'affichage de la modale de suppression de compte
+  const [showModal, setShowModal] = useState(false);
+  // Contrôle l'affichage de la modale de modification d'un champ
+  const [showEditModal, setShowEditModal] = useState(false);
+  // Contient le champ en cours de modification (nom, type, valeur)
+  const [editModalData, setEditModalData] = useState(null);
+
+  // Au montage du composant : récupère les recettes de l'utilisateur connecté
+  // et met à jour les compteurs par catégorie
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          return;
+        }
+
+        const response = await fetch('http://localhost:3000/api/users/me', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          return;
+        }
+
+        const user = await response.json();
+        const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
+          ? user.prenom
+          : (typeof user?.pseudo === 'string' && user.pseudo.trim())
+            ? user.pseudo
+            : '';
+
+        const normalizedName = rawName
+          ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
+          : mockUser.prenom;
+
+        setUserData((prev) => ({
+          ...prev,
+          prenom: normalizedName,
+          email: user?.email || prev.email,
+        }));
+
+        localStorage.setItem('displayName', normalizedName);
+        window.dispatchEvent(new Event('user-display-name-updated'));
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    const fetchRecipes = async () => {
+      try {
+        // Récupère le JWT stocké après connexion
+        const token = localStorage.getItem('token');
+        if (!token) {
+          // Si l'utilisateur n'est pas connecté, on ne fait pas l'appel
+          return;
+        }
+
+        const response = await fetch('http://localhost:3000/api/users/me/recipes', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch recipes');
+        }
+
+        const recipes = await response.json();
+
+        // Initialise les compteurs à 0 pour chaque catégorie
+        const counts = {
+          entrees: 0,
+          plats: 0,
+          desserts: 0,
+          boissons: 0,
+        };
+
+        // Parcourt toutes les recettes et incrémente le bon compteur
+        recipes.forEach((recipe) => {
+          if (recipe.category && recipe.category.nom) {
+            const nomLower = recipe.category.nom.toLowerCase();
+            if (nomLower === 'entrée') counts.entrees++;
+            else if (nomLower === 'plat') counts.plats++;
+            else if (nomLower === 'dessert') counts.desserts++;
+            else if (nomLower === 'boisson') counts.boissons++;
+          }
+        });
+
+        // Met à jour uniquement les compteurs de recettes dans l'état
+        setUserData((prev) => ({
+          ...prev,
+          recettes: counts,
+        }));
+      } catch (error) {
+        console.error('Error fetching recipes:', error);
+      }
+    };
+
+    fetchProfile();
+    fetchRecipes();
+  }, []);
+
+  const totalRecipes = Object.values(userData.recettes).reduce(
+    (sum, value) => sum + Number(value || 0),
+    0,
+  );
+
   const accountItems = [
     {
       icon: '/icon/Recipes.svg',
       label: 'Mes recettes',
-      sub: '15 recettes',
+      sub: `${totalRecipes} recette${totalRecipes > 1 ? 's' : ''}`,
       path: '/membre/mes-recettes',
     },
     {
       icon: '/icon/User.svg',
       label: 'Mes informations',
-      sub: mockUser.email,
+      sub: userData.email,
       path: '/membre/profil',
       active: true,
     },
@@ -39,12 +156,8 @@ export default function Profil() {
       path: '/contact',
     },
   ];
-  const [userData, setUserData] = useState(mockUser);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editModalData, setEditModalData] = useState(null);
 
+  // Ouvre la modale de modification en pré-remplissant les infos du champ cliqué
   function openEditModal(fieldName, label, type = 'text') {
     setEditModalData({
       fieldName,
@@ -55,15 +168,18 @@ export default function Profil() {
     setShowEditModal(true);
   }
 
+  // Met à jour la valeur saisie dans l'input de la modale de modification
   function handleEditModalChange(value) {
     setEditModalData(prev => ({ ...prev, value }));
   }
 
+  // Applique la modification dans userData et ferme la modale
   function handleEditModalConfirm() {
     if (!editModalData) {
       return;
     }
 
+    // Mise à jour dynamique du champ modifié via la clé fieldName
     setUserData(prev => ({
       ...prev,
       [editModalData.fieldName]: editModalData.value,
@@ -73,9 +189,21 @@ export default function Profil() {
     setEditModalData(null);
   }
 
+  // Supprime le token JWT et redirige vers l'accueil (déconnexion / suppression)
   function handleDelete() {
     localStorage.removeItem('token');
     navigate('/');
+  }
+
+  // Valide les données du profil local et synchronise le nom affiché globalement.
+  function handleValidateProfile() {
+    const displayName = (userData.prenom || '').trim();
+
+    if (displayName) {
+      const normalizedName = displayName.charAt(0).toUpperCase() + displayName.slice(1).toLowerCase();
+      localStorage.setItem('displayName', normalizedName);
+      window.dispatchEvent(new Event('user-display-name-updated'));
+    }
   }
 
  return (
@@ -155,7 +283,7 @@ export default function Profil() {
         <h1 className={styles.pageTitle}>Mon compte</h1>
       </div>
       <p className={styles.welcomeText}>
-        Bonjour <strong>John</strong>, bienvenue chez Cine Delices !
+        Bonjour <strong>{userData.prenom}</strong>, bienvenue chez Cine Delices !
       </p>
 
       <div className={styles.desktopLayout}>
@@ -311,6 +439,15 @@ export default function Profil() {
             </div>
 
             <button
+              type="button"
+              className={styles.saveBtn}
+              aria-label="Valider les modifications du profil"
+              onClick={handleValidateProfile}
+            >
+              Valider les modifications
+            </button>
+
+            <button
               className={styles.deleteBtn}
               aria-label="Supprimer mon compte"
               onClick={() => setShowModal(true)}
@@ -318,14 +455,6 @@ export default function Profil() {
               Supprimer mon compte
             </button>
           </div>
-
-          <button
-            className={styles.saveBtn}
-            aria-label="Sauvegarder les modifications du profil"
-            onClick={() => setShowEditModal(true)}
-          >
-            Sauvegarder les modifications
-          </button>
         </section>
       </div>
 
