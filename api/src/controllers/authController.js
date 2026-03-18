@@ -145,7 +145,7 @@ export const updateMe = async (req, res) => {
 // DELETE /api/auth/me
 export const deleteMe = async (req, res) => {
   try {
-    await prisma.user.delete({ where:! { id: req.user.id } });
+    await prisma.user.delete({ where: { id: req.user.id } });
     res.json({ message: 'Compte supprimé' });
 
   } catch (error) {
