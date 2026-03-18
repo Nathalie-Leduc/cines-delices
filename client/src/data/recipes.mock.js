@@ -7,7 +7,7 @@ const recipesMock = [
     mediaTitle: "Le Parrain",
     mediaType: "film",
     duration: 25,
-    image: "/img/recipes/bruschetta-toscane.jpg",
+    image: "/img/plats.png",
   },
   {
     id: 2,
@@ -17,7 +17,7 @@ const recipesMock = [
     mediaTitle: "Stranger Things",
     mediaType: "série",
     duration: 50,
-    image: "/img/recipes/mini-burgers-bbq.jpg",
+    image: "/img/MiniburgersBBG.png",
   },
   {
      id: 3,
@@ -27,7 +27,7 @@ const recipesMock = [
   mediaTitle: "Ratatouille",
   mediaType: "film",
   duration: 45,
-  image: "/img/recipes/spaghetti-ratatouille.jpg",
+  image: "/img/Spaghetti.png",
   description:
     "Une assiette généreuse de spaghetti inspirée de l’univers de Ratatouille, avec une sauce tomate maison et du basilic frais.",
   servings: 4,
@@ -59,7 +59,7 @@ const recipesMock = [
     mediaTitle: "Breaking Bad",
     mediaType: "série",
     duration: 35,
-    image: "/img/recipes/los-pollos-hermanos.jpg",
+    image: "/img/lospolloshermanos.png",
   },
   {
     id: 5,
@@ -69,7 +69,7 @@ const recipesMock = [
     mediaTitle: "Blanche-Neige",
     mediaType: "film",
     duration: 45,
-    image: "/img/recipes/tarte-aux-pommes.jpg",
+    image: "/img/tarteauxpommes.png",
   },
   {
     id: 6,
@@ -79,7 +79,7 @@ const recipesMock = [
     mediaTitle: "Stranger Things",
     mediaType: "série",
     duration: 45,
-    image: "/img/recipes/gaufres-eleven.jpg",
+    image: "/img/gaufreseleven.png",
   },
   {
     id: 7,
@@ -89,7 +89,7 @@ const recipesMock = [
     mediaTitle: "Star Wars",
     mediaType: "film",
     duration: 15,
-    image: "/img/recipes/lait-bleu-galactique.jpg",
+    image: "/img/laitbleu.png",
   },
   {
     id: 8,
@@ -99,7 +99,7 @@ const recipesMock = [
     mediaTitle: "Riverdale",
     mediaType: "série",
     duration: 5,
-    image: "/img/recipes/cherry-cola.jpg",
+    image: "/img/cherrycola.png",
   },
 ];
 
