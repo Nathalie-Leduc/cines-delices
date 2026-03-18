@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { fetchMedia } from "../../services/mediaService.js";
 import styles from "./Navbar.module.scss";
 
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || "http://localhost:3000/api/auth/me";
@@ -49,12 +50,63 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileFirstName, setProfileFirstName] = useState(localStorage.getItem("displayName") || "");
+  // État pour stocker la valeur tapée dans l'input
+  const [search, setSearch] = useState('');
+  // État pour stocker les résultats retournés par l'API
+  const [results, setResults] = useState([]);
+  // Crée une référence vers le div qui contient le formulaire de recherche
+  // null = pas encore attaché au DOM
+  const searchRef = useRef(null);
 
   const token = localStorage.getItem("token");
   const payload = parseJwtPayload(token);
   const nowInSeconds = Math.floor(Date.now() / 1000);
   const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
   const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
+
+  useEffect(() => {
+    // Debounce : évite d'appeler l'API à chaque frappe
+    // On attend 500ms après la dernière frappe avant de lancer la recherche
+      const timer = setTimeout(() => {
+      if (search.length >= 4) {// Si l'utilisateur a tapé au moins 4 caractères, on appelle l'API
+        fetchMedia("movie", search).then(setResults);
+      } else {  // Sinon on vide les résultats (ex: l'utilisateur a effacé l'input)
+        setResults([]);
+      }
+    }, 500);
+      // Nettoyage : annule le timer si l'utilisateur retape avant les 500ms
+      return () => clearTimeout(timer);
+  }, [search]); // Se déclenche à chaque changement de la valeur search
+      // Mise à jour de l'état search à chaque frappe dans l'input
+      const handleSearch = (e) => {
+      setSearch(e.target.value);
+    };
+      // Gestion de la soumission du formulaire (clic sur le bouton ou touche Entrée)
+     const handleSubmit = (e) => {
+    e.preventDefault(); // Empêche le rechargement de la page
+    if (search.length >= 4) {  // Lance la recherche immédiatement sans attendre le debounce
+      fetchMedia("movie", search).then(setResults);
+    }
+  };
+
+  // Ferme la liste des résultats quand l'utilisateur clique en dehors
+useEffect(() => {
+  const handleClickOutside = (e) => {
+    // searchRef.current = le div du formulaire
+    // contains(e.target) = vérifie si le clic est à l'intérieur du div
+    if (searchRef.current && !searchRef.current.contains(e.target)) {
+      // Le clic est en dehors → on vide les résultats
+      setResults([]);
+    }
+  };
+
+  // On écoute tous les clics sur la page
+  document.addEventListener("mousedown", handleClickOutside);
+
+  // Nettoyage : supprime l'écouteur quand le composant est démonté
+  // Évite les fuites mémoire
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []); // [] = s'exécute une seule fois au montage du composant
 
   useEffect(() => {
     const refreshDisplayName = () => {
@@ -169,24 +221,43 @@ export default function Navbar() {
           </nav>
 
           <div className={styles.rightZone}>
-            <form className={styles.searchForm} role="search">
-              <input
-                type="search"
-                placeholder="Rechercher..."
-                className={styles.searchInput}
-              />
-              <button
-                type="submit"
-                className={styles.searchButton}
-                aria-label="Rechercher"
-              >
+            {/* Wrapper relatif pour positionner la liste sous l'input */}
+            <div ref={searchRef} className={styles.searchWrapper}>
+             {/* Formulaire de recherche */}
+              <form className={styles.searchForm} role="search" onSubmit={handleSubmit}>
+                <input
+                  type="search"
+                  value={search}  // Valeur contrôlée par le state
+                  onChange={handleSearch}  // Déclenché à chaque frappe
+                  placeholder="Rechercher..."
+                  className={styles.searchInput}
+                />
+                <button
+                  type="submit"
+                  className={styles.searchButton}
+                  aria-label="Rechercher"
+                >
                 <img
                   src="/icon/Search.svg"
                   alt=""
                   className={styles.searchIcon}
                 />
-              </button>
-            </form>
+                </button>
+              {/* Liste des résultats — visible uniquement si résultats */}
+              {results.length > 0 && (
+                <ul className={styles.searchResults}>
+                {results.map((media) => (
+                  <li key={media.id} className={styles.searchResultItem}>
+                    <NavLink to={`/films/${media.id}`} onClick={() => { setSearch(""); setResults([]); }}
+                    >
+                    {media.title || media.name}
+                    </NavLink>
+                  </li>
+                ))}
+                </ul>
+              )}
+              </form>
+            </div>
 
             {isLoggedIn ? (
               <div className={styles.userBlock}>
