@@ -52,7 +52,7 @@ export const validate = (shema) => (req, res, next) => {
     next()
 
   } catch (error) {
-    // Ne devrait pas arriver mais ceinture-bretelles
+    // Ne devrait pas arriver mais on fait ceinture-bretelles
     next(error);
   }
 };
