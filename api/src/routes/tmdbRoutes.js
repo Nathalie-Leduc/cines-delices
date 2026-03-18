@@ -1,5 +1,5 @@
-import express from 'express';
-import { getAllMedias, getMediaById, searchMedia } from '../controllers/tmdbConstrollers.js';
+import express from "express";
+import { getAllMedias, getMediaById, searchMedia } from "../controllers/index.js";
 
 const router = express.Router();
 

@@ -1,6 +1,8 @@
 import pg from 'pg';
-import { PrismaPg } from "@prisma/adapter-pg/dist";
-import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from '@prisma/adapter-pg';
+import prismaPkg from '@prisma/client';
+
+const { PrismaClient } = prismaPkg;
 
 //pg.Pool gère automatiquement les connexions ouvertes/fermées
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL})
