@@ -1,24 +1,43 @@
+import { Link } from "react-router-dom";
 import styles from "./RecipeCard.module.scss";
 
 export default function RecipeCard({ recipe }) {
+  if (!recipe) return null;
+
+  const { id, image, title, category, mediaTitle, duration } = recipe;
+
   return (
-    <article className={styles.card}>
-      <div className={styles.imageWrapper}>
-        <img src={recipe.image} alt={recipe.title} />
-        <span className={styles.category}>{recipe.category}</span>
-      </div>
+    <Link to={`/recipes/${id}`} className={styles.cardLink}>
+      <article className={styles.card}>
+        <div className={styles.imageWrapper}>
+          <img src={image} alt={title} className={styles.image} />
+          <span className={styles.category}>{category}</span>
+        </div>
 
-      <div className={styles.content}>
-        <h3 className={styles.title}>{recipe.title}</h3>
+        <div className={styles.content}>
+          <h3 className={styles.title}>{title}</h3>
 
-        <p className={styles.meta}>
-          {recipe.mediaType} • {recipe.mediaTitle}
-        </p>
+          <div className={styles.infoRow}>
+            <img
+              src="/icon/Movie.svg"
+              alt=""
+              className={styles.icon}
+              aria-hidden="true"
+            />
+            <span className={styles.metaText}>{mediaTitle}</span>
+          </div>
 
-        <p className={styles.duration}>
-          ⏱ {recipe.duration} min
-        </p>
-      </div>
-    </article>
+          <div className={styles.infoRow}>
+            <img
+              src="/icon/Time.svg"
+              alt=""
+              className={styles.icon}
+              aria-hidden="true"
+            />
+            <span className={styles.metaText}>{duration} min</span>
+          </div>
+        </div>
+      </article>
+    </Link>
   );
 }
