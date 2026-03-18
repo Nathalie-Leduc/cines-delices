@@ -84,19 +84,19 @@ const adminHash = await argon2.hash('Admin1234!');
 const memberHash = await argon2.hash('Member1234!');
 
 const userAdmin = await prisma.user.upsert({
-  where:  { email: 'admin@cinedelices.fr' },
+  where:  { email: 'admin@cinesdelices.fr' },
     update: {},
-    create: { email: 'admin@cinedelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
+    create: { email: 'admin@cinesdelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
 });
 const userMarie = await prisma.user.upsert({
-    where:  { email: 'marie@cinedelices.fr' },
+    where:  { email: 'marie@cinesdelices.fr' },
     update: {},
-    create: { email: 'marie@cinedelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
+    create: { email: 'marie@cinesdelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
   });
   const userRemy = await prisma.user.upsert({
-    where:  { email: 'remy@cinedelices.fr' },
+    where:  { email: 'remy@cinesdelices.fr' },
     update: {},
-    create: { email: 'remy@cinedelices.fr',  pseudo: 'ReMyChef', passwordHash: memberHash },
+    create: { email: 'remy@cinesdelices.fr',  pseudo: 'ReMyChef', passwordHash: memberHash },
   });
   console.log('✅ Users :', [userAdmin, userMarie, userRemy].map(u => u.email).join(', '));  
 
@@ -206,9 +206,9 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
 
   console.log('\n🎬 Seed terminé !\n');
   console.log('────────────────────────────────────────────────');
-  console.log('  ADMIN   : admin@cinedelices.fr  / Admin1234!');
-  console.log('  MEMBRE  : marie@cinedelices.fr  / Member1234!');
-  console.log('  MEMBRE  : remy@cinedelices.fr   / Member1234!');
+  console.log('  ADMIN   : admin@cinesdelices.fr  / Admin1234!');
+  console.log('  MEMBRE  : marie@cinesdelices.fr  / Member1234!');
+  console.log('  MEMBRE  : remy@cinesdelices.fr   / Member1234!');
   console.log('────────────────────────────────────────────────');
   console.log('  Prisma Studio  : npx prisma studio');
   console.log('  Test API       : node tests/test-api.js\n');
