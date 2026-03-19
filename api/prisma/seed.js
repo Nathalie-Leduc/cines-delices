@@ -3,7 +3,7 @@ import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-import { generateSlug, generateUniqueSlug } from '../src/utils/slug.js';
+import { generateUniqueSlug } from '../src/utils/slug.js';
 
 
 // adapter obligaoire avec Prisma V7
@@ -177,9 +177,6 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
   // Recette 2 : Chocolat chaud de Vianne (PUBLISHED)
   const existingR2 = await prisma.recipe.findFirst({ where: { titre: 'Chocolat chaud de Vianne' } });
   if (!existingR2) {
-    await prisma.recipe.create({
-      data: {
-        titre:           'Chocolat chaud de Vianne',
     const slug = await generateUniqueSlug('Chocolat chaud de Vianne',
       (s) => prisma.recipe.findUnique({ where: { slug: s} }));
     await prisma.recipe.create({
@@ -243,7 +240,7 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
   console.log('────────────────────────────────────────────────');
   console.log('  Prisma Studio  : npx prisma studio');
   console.log('  Test API       : node tests/test-api.js\n');
-},
+}
 
 main()
   .catch(e => { console.error('❌ Erreur seed :', e); process.exit(1); })

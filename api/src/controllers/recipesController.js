@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { successResponse, asyncHandler } from '../lib/responseHelper.js';
+import { generateUniqueSlug } from '../utils/slug.js';
 
 /**
  * Crée une nouvelle recette
@@ -101,6 +102,11 @@ export const createRecipe = asyncHandler(async (req, res) => {
       ? 'SERIES'
       : 'MOVIE';
 
+    const mediaSlug = await generateUniqueSlug(
+      `${normalizedTitle}-${new Date().getFullYear()}`,
+      (s) => prisma.media.findUnique({ where: { slug: s } }),
+    );
+
     const media = await prisma.media.upsert({
       where: { tmdbId },
       update: {
@@ -111,6 +117,7 @@ export const createRecipe = asyncHandler(async (req, res) => {
       create: {
         tmdbId,
         titre: normalizedTitle,
+        slug: mediaSlug,
         type: mediaType,
         posterUrl: imageUrl || null,
       },
@@ -128,9 +135,15 @@ export const createRecipe = asyncHandler(async (req, res) => {
   const normalizedNombrePersonnes = nombrePersonnes ?? nbPersonnes;
 
   // Créer la recette
+  const recipeSlug = await generateUniqueSlug(
+    titre,
+    (s) => prisma.recipe.findUnique({ where: { slug: s } }),
+  );
+
   const recipe = await prisma.recipe.create({
     data: {
       titre,
+      slug: recipeSlug,
       instructions: normalizedInstructions,
       userId,
       categoryId,
