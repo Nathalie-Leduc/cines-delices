@@ -247,46 +247,65 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: rgba(8, 8, 8, 0.7);
+  background: rgba(10, 9, 10, 0.72);
+  backdrop-filter: blur(1.5px);
+}
+
+.modalStack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .successModal {
-  width: min(100%, 26rem);
-  padding: 2rem 1.5rem;
-  border-radius: 1rem;
-  background: #f5f0e8;
+  width: min(100%, 30.5rem);
+  padding: 2.1rem 1.8rem 2rem;
+  border: 3px solid #a61f33;
+  border-radius: 0.55rem;
+  background: #ece0c8;
   text-align: center;
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
 }
 
 .successMessage {
   margin: 0;
   color: #a61f33;
   font-family: 'Playfair Display', serif;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: clamp(1.65rem, 3vw, 2.1rem);
+  font-weight: 500;
+  line-height: 1.05;
 }
 
 .successSubtext {
-  margin: 0.7rem 0 0;
-  color: #6b6661;
+  margin: 0.5rem 0 0;
+  color: #b22a39;
   font-family: 'Inter', sans-serif;
-  font-size: 0.98rem;
-  line-height: 1.45;
+  font-size: 0.95rem;
+  line-height: 1.35;
 }
 
 .okBtn {
-  min-width: 8rem;
-  margin-top: 1.5rem;
-  padding: 0.95rem 1.4rem;
+  min-width: 14.5rem;
+  margin-top: 1.15rem;
+  padding: 1rem 1.6rem;
   border: 0;
-  border-radius: 0.8rem;
+  border-radius: 0.65rem;
   background: #a61f33;
   color: #f6f1e8;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.98rem;
-  font-weight: 600;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1;
   cursor: pointer;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.okBtn:hover {
+  transform: translateY(-1px);
+  background: #921a2c;
 }
 
 @media (max-width: 767px) {
@@ -331,5 +350,24 @@
 
   .submitBtn {
     min-height: 4.25rem;
+  }
+
+  .successModal {
+    width: min(100%, 30rem);
+    padding: 1.7rem 1.2rem 1.6rem;
+  }
+
+  .successMessage {
+    font-size: 1.6rem;
+  }
+
+  .successSubtext {
+    font-size: 0.9rem;
+  }
+
+  .okBtn {
+    min-width: 12rem;
+    margin-top: 1rem;
+    font-size: 1rem;
   }
 }

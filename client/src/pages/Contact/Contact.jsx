@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Contact.module.scss';
 
 export default function Contact() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     nom: '',
     prenom: '',
@@ -78,17 +80,24 @@ export default function Contact() {
     }
   }
 
+  function handleSuccessClose() {
+    setShowSuccessModal(false);
+    navigate('/');
+  }
+
   return (
     <div className={styles.contact}>
       {/* MODAL SUCCÈS */}
       {showSuccessModal && (
         <div className={styles.overlay}>
-          <div className={styles.successModal}>
-            <p className={styles.successMessage}>Message envoyé !</p>
-            <p className={styles.successSubtext}>Nous reviendrons vers vous rapidement.</p>
+          <div className={styles.modalStack}>
+            <div className={styles.successModal}>
+              <p className={styles.successMessage}>Message envoyé !</p>
+              <p className={styles.successSubtext}>Nous reviendrons vers vous rapidement.</p>
+            </div>
             <button
               className={styles.okBtn}
-              onClick={() => setShowSuccessModal(false)}
+              onClick={handleSuccessClose}
             >
               OK
             </button>
