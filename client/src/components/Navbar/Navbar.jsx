@@ -279,7 +279,13 @@ useEffect(() => {
               </div>
             ) : (
               <NavLink to="/login" className={styles.desktopLoginLink}>
-                Se connecter
+                <img
+                  src="/icon/Profil.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.desktopLoginIcon}
+                />
+                <span>Se connecter</span>
               </NavLink>
             )}
           </div>

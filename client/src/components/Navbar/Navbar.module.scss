@@ -155,14 +155,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.65rem;
   text-decoration: none;
   font-family: "Playfair Display", serif;
-  font-size: 1.25rem;
+  font-size: 0.95rem;
   color: #f6f1e8;
   background: #8e1f2f;
   border: 0;
   border-radius: 0.6rem;
-  padding: 1.15rem 1.5rem;
+  min-width: 170px;
+  padding: 0.8rem 1.4rem;
   line-height: 1;
   transition: background-color 0.2s ease;
 }
@@ -170,6 +172,12 @@
 .desktopLoginLink:hover {
   color: #f6f1e8;
   background-color: #a02436;
+}
+
+.desktopLoginIcon {
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
 .burger,
@@ -380,6 +388,10 @@
   .mobilePanel,
   .overlay {
     display: none;
+  }
+
+  .userBlock {
+    gap: 1rem;
   }
 
   .burger img,
