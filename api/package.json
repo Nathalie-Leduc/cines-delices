@@ -7,10 +7,9 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
     "lint": "eslint .",
-    "test:run": "vitest run",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "node prisma/seed.js",
@@ -39,8 +38,7 @@
     "eslint": "^10.0.3",
     "globals": "^17.4.0",
     "nodemon": "^3.1.7",
-    "prisma": "^7.5.0",
-    "vitest": "^4.1.0"
+    "prisma": "^7.5.0"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

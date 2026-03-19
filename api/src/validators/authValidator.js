@@ -61,11 +61,6 @@ export const registerSchema = z.object({
       .max(30, 'Le pseudo ne peut pas dépasser 30 caractères')
       .trim(),
 
-    password: z
-      .string({ required_error: 'Le mot de passe est obligatoire' })
-      .min(8,  'Le mot de passe doit contenir au moins 8 caractères')
-      .max(72, 'Le mot de passe ne peut pas dépasser 72 caractères'),
-      // 72 = limite de argon2 (au-delà les caractères sont ignorés)
     password: passwordSchema,
   }),
 });

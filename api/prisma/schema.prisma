@@ -1,4 +1,6 @@
 // ajout champs slug sur Recipe et Media
+// ajout champ imageURL sur Recipe
+
 
 generator client {
   provider = "prisma-client-js"
@@ -6,6 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  
 }
 
 // =====
@@ -14,8 +17,8 @@ datasource db {
 
 enum Role {
   MEMBER // membre standard : peut créer / soumettre ses recettes
-  ADMIN  // modérateur : publie ou refuse les recettes PENDING
-}
+  ADMIN // modérateur : publie ou refuse les recettes PENDING
+  }
 
 enum RecipeStatus {
   DRAFT
@@ -46,8 +49,9 @@ model User {
   @@map("users")
 }
 
+
 // ==========================================================
-// CATEGORY - type de recette (Entrée, Plat, Dessert, Boisson)
+// CATEGORY- type de recette (Entrée, Plat, Dessert, Boisson)
 // ==========================================================
 model Category {
   id          String  @id @default(uuid())
@@ -78,22 +82,23 @@ model Genre {
 // MEDIA_GENRE - table de liaison
 // ==============================
 model MediaGenre {
-  mediaId String @map("media_id")
-  genreId String @map("genre_id")
+  mediaId     String @map("media_id")
+  genreId     String @map("genre_id")
 
-  // Relations
-  media Media @relation(fields: [mediaId], references: [id], onDelete: Cascade)
-  genre Genre @relation(fields: [genreId], references: [id], onDelete: Cascade)
+    // Relations
+  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  genre    Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
 
   @@id([mediaId, genreId])
   @@map("media_genres")
 }
 
+
 // ====================================================
 // MEDIA - Données Films ou Séries issues de l'API TMDB
 // ====================================================
-// On stock le tmdbId pour resynchroniser sans dépendre
-// de l'API à chaque affichage
+// On stock le tmdbId pour resynchroniser sans dépendrede
+// de l'API à chaque affichage 
 // Ajout du champ slug unique
 model Media {
   id        String    @id @default(uuid())
@@ -122,7 +127,8 @@ model Media {
 model Recipe {
   id               String       @id @default(uuid())
   titre            String
-  slug             String       @unique // ex: "ratatouille-de-remy"
+  slug             String       @unique // ex: ratatouille-de-remy"
+  imageURL         String?      @map("image_url") // URL image de la recette
   instructions     String
   nombrePersonnes  Int?         @map("nombre_personnes")
   tempsPreparation Int?         @map("temps_preparation") // en minutes
@@ -136,7 +142,7 @@ model Recipe {
   mediaId    String @map("media_id")
 
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt      @map("updated_at")
+  updatedAt DateTime @updatedAt       @map("updated_at")
 
   // Relations
   user        User               @relation(fields: [userId],     references: [id], onDelete: Cascade)
@@ -153,7 +159,7 @@ model Recipe {
 }
 
 // ===================================================
-// RECIPE_INGREDIENTS - table de liaison avec attributs
+// RECIPE-INGEDIENTS - table de liaison avec attributs
 // ===================================================
 model RecipeIngredient {
   recipeId     String  @map("recipe_id")
@@ -161,7 +167,7 @@ model RecipeIngredient {
   quantity     String?
   unit         String?
 
-  // Relations
+  // relations
   recipe     Recipe     @relation(fields: [recipeId],     references: [id], onDelete: Cascade)
   ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
 
@@ -169,12 +175,13 @@ model RecipeIngredient {
   @@map("recipe_ingredients")
 }
 
-// ===========
-// INGREDIENTS
-// ===========
+
+// ==========
+// INGEDIENTS
+// ==========
 model Ingredient {
-  id      String @id @default(uuid())
-  nom     String @unique // normalisé côté applicatif (trim + lowercase)
+  id      String             @id @default(uuid())
+  nom     String             @unique // normalisé côté applicatif (trim+ lowercase)
 
   // Relations
   recipes RecipeIngredient[]
@@ -182,3 +189,4 @@ model Ingredient {
   @@index([nom])
   @@map("ingredients")
 }
+

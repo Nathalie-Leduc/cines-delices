@@ -31,7 +31,6 @@ app.use((_req, res) => {
 });
 
 
-// Middleware d'erreur globAL (toujours en dernier)
 // Middleware d'erreur globaL (toujours en dernier)
 app.use(errorMiddleware);
 
