@@ -1,4 +1,4 @@
-const recipesMock = [
+const baseRecipes = [
   {
     id: 1,
     title: "Bruschetta Toscane",
@@ -20,36 +20,36 @@ const recipesMock = [
     image: "/img/MiniburgersBBG.png",
   },
   {
-     id: 3,
-  title: "Spaghetti Ratatouille",
-  slug: "spaghetti-ratatouille",
-  category: "Plat",
-  mediaTitle: "Ratatouille",
-  mediaType: "film",
-  duration: 45,
-  image: "/img/Spaghetti.png",
-  description:
-    "Une assiette généreuse de spaghetti inspirée de l’univers de Ratatouille, avec une sauce tomate maison et du basilic frais.",
-  servings: 4,
-  prepTime: 15,
-  cookTime: 30,
-  totalTime: 45,
-  director: "Disney - PIXAR",
-  year: 2007,
-  genre: "Animation",
-  ingredients: [
-    "400g de spaghetti",
-    "3 tomates",
-    "2 gousses d’ail",
-    "Huile d’olive",
-    "Basilic frais",
-  ],
-  steps: [
-    "Faire cuire les spaghetti dans une grande casserole d’eau bouillante salée.",
-    "Préparer une sauce tomate avec l’ail, les tomates et l’huile d’olive.",
-    "Mélanger les spaghetti à la sauce et laisser mijoter quelques minutes.",
-    "Servir chaud avec du basilic frais.",
-  ],
+    id: 3,
+    title: "Spaghetti Ratatouille",
+    slug: "spaghetti-ratatouille",
+    category: "Plat",
+    mediaTitle: "Ratatouille",
+    mediaType: "film",
+    duration: 45,
+    image: "/img/Spaghetti.png",
+    description:
+      "Une assiette généreuse de spaghetti inspirée de l’univers de Ratatouille, avec une sauce tomate maison et du basilic frais.",
+    servings: 4,
+    prepTime: 15,
+    cookTime: 30,
+    totalTime: 45,
+    director: "Disney - PIXAR",
+    year: 2007,
+    genre: "Animation",
+    ingredients: [
+      "400g de spaghetti",
+      "3 tomates",
+      "2 gousses d’ail",
+      "Huile d’olive",
+      "Basilic frais",
+    ],
+    steps: [
+      "Faire cuire les spaghetti dans une grande casserole d’eau bouillante salée.",
+      "Préparer une sauce tomate avec l’ail, les tomates et l’huile d’olive.",
+      "Mélanger les spaghetti à la sauce et laisser mijoter quelques minutes.",
+      "Servir chaud avec du basilic frais.",
+    ],
   },
   {
     id: 4,
@@ -102,5 +102,17 @@ const recipesMock = [
     image: "/img/cherrycola.png",
   },
 ];
+
+const DUPLICATION_COUNT = 5;
+
+const recipesMock = Array.from({ length: DUPLICATION_COUNT }, (_, duplicateIndex) =>
+  baseRecipes.map((recipe, recipeIndex) => ({
+    ...recipe,
+    id: duplicateIndex * baseRecipes.length + recipeIndex + 1,
+    slug: duplicateIndex === 0 ? recipe.slug : `${recipe.slug}-copy-${duplicateIndex + 1}`,
+    ingredients: recipe.ingredients ? [...recipe.ingredients] : undefined,
+    steps: recipe.steps ? [...recipe.steps] : undefined,
+  }))
+).flat();
 
 export default recipesMock;
