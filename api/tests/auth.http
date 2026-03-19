@@ -18,10 +18,8 @@
 # ──────────────────────────────────────────────────────────
 # Coller ici les tokens après les avoir récupérés via login
 # ──────────────────────────────────────────────────────────
-@token_member = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImRjYzU2NGMwLTUwYmMtNDkzZS1hZTBhLTAyMTYyNTQ2MjFiNiIsInBzZXVkbyI6IkFkbWluIiwicm9sZSI6IkFETUlOIiwiaWF0IjoxNzczODUwODc3LCJleHAiOjE3NzQ0NTU2Nzd9.2rjYAZj8i7BR_xF-xn246mRLwG16-aEpXPAXTuoVigQ"
-#COLLER_LE_TOKEN_MEMBRE_ICI
-@token_admin  =  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Ijg2NGUwMGYzLWQzNmItNDA2NS1hM2MwLTEzMTZjMGE1OTgyNCIsInBzZXVkbyI6Ik1hcmllIiwicm9sZSI6Ik1FTUJFUiIsImlhdCI6MTc3Mzg1MDc2OSwiZXhwIjoxNzc0NDU1NTY5fQ.tXlcdOx6u3iSB5WP9AAmY28o071athsZS-NIFw5xF7Q" 
-COLLER_LE_TOKEN_ADMIN_ICI
+@token_member = COLLER_LE_TOKEN_MEMBRE_ICI
+@token_admin  = COLLER_LE_TOKEN_ADMIN_ICI
 
 # ══════════════════════════════════════════════════════════
 # 1. HEALTH CHECK
