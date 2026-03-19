@@ -8,6 +8,8 @@ const baseRecipes = [
     mediaType: "film",
     duration: 25,
     image: "/img/plats.png",
+    heroImage: "/img/hero-bruchetta.png",
+    posterImage: "/img/parrain-poster.png",
   },
   {
     id: 2,
@@ -18,6 +20,8 @@ const baseRecipes = [
     mediaType: "série",
     duration: 50,
     image: "/img/MiniburgersBBG.png",
+    heroImage: "/img/hero-mini-burgers-bbq.png",
+    posterImage: "/img/stranger-thing-poster.png",
   },
   {
     id: 3,
@@ -28,8 +32,10 @@ const baseRecipes = [
     mediaType: "film",
     duration: 45,
     image: "/img/Spaghetti.png",
+    heroImage: "/img/hero-ratatouille.png",
+    posterImage: "/img/ratatouille-poster.jpg",
     description:
-      "Une assiette généreuse de spaghetti inspirée de l’univers de Ratatouille, avec une sauce tomate maison et du basilic frais.",
+      "Une assiette généreuse de spaghetti inspirée de l’univers de Ratatouille, avec une sauce tomate maison et du basilic frais. Cette version évoque la cuisine chaleureuse du film, entre gestes précis, produits simples et plaisir de partager un plat mijoté avec soin. Le résultat mise sur une texture fondante, une sauce parfumée et une présentation qui rappelle immédiatement l’énergie gourmande du long-métrage. Chaque bouchée cherche à retranscrire l’idée d’une cuisine accessible mais profondément réconfortante, où la technique se met au service d’un vrai moment de convivialité.",
     servings: 4,
     prepTime: 15,
     cookTime: 30,
@@ -60,6 +66,8 @@ const baseRecipes = [
     mediaType: "série",
     duration: 35,
     image: "/img/lospolloshermanos.png",
+    heroImage: "/img/hero-los-pollos-hermanos.png.jpg",
+    posterImage: "/img/breaking-bad-poster.png",
   },
   {
     id: 5,
@@ -70,6 +78,10 @@ const baseRecipes = [
     mediaType: "film",
     duration: 45,
     image: "/img/tarteauxpommes.png",
+    heroImage: "/img/hero-tarte-aux-pommes.png",
+    posterImage: "/img/blanche-neige-poster.png",
+    description:
+      "Cette tarte aux pommes reprend l’imaginaire doux et légèrement théâtral de Blanche-Neige, avec une pâte dorée, des fruits fondants et un parfum épicé qui rappelle les desserts de conte. L’idée est de proposer une recette simple à partager, visuellement chaleureuse, avec un équilibre entre le croustillant de la pâte et le moelleux des pommes. Le dessert cherche à prolonger l’univers du film à table en misant sur quelque chose de classique, généreux et immédiatement réconfortant, parfait pour une fin de repas familiale.",
   },
   {
     id: 6,
@@ -80,6 +92,8 @@ const baseRecipes = [
     mediaType: "série",
     duration: 45,
     image: "/img/gaufreseleven.png",
+    heroImage: "/img/hero-gauffre.png",
+    posterImage: "/img/stranger-thing-poster.png",
   },
   {
     id: 7,
@@ -90,6 +104,10 @@ const baseRecipes = [
     mediaType: "film",
     duration: 15,
     image: "/img/laitbleu.png",
+    heroImage: "/img/hero-lait-bleu.png",
+    posterImage: "/img/star-wars-poster.png",
+    description:
+      "Le lait bleu galactique s’inspire de l’esthétique culte de Star Wars avec une boisson à la fois intrigante, fraîche et très visuelle. Le but n’est pas seulement d’obtenir une couleur marquante, mais aussi de retrouver une sensation presque futuriste dans la présentation, comme si cette recette sortait directement d’une cantina lointaine. La préparation reste volontairement simple, mais le service, les contrastes de textures et la température jouent un rôle important pour transformer cette boisson en petit clin d’œil immersif à la saga.",
   },
   {
     id: 8,
@@ -100,6 +118,10 @@ const baseRecipes = [
     mediaType: "série",
     duration: 5,
     image: "/img/cherrycola.png",
+    heroImage: "/img/hero-cherry-cola.png",
+    posterImage: "/img/riverdale-poster.png",
+    description:
+      "Cherry Cola reprend l’ambiance pop et mystérieuse de Riverdale avec une boisson sombre, brillante et légèrement rétro. Le mélange veut rappeler les diners américains, les néons tardifs et l’univers adolescent de la série, tout en gardant quelque chose de festif et facile à préparer. C’est une recette pensée pour l’effet visuel autant que pour le goût, avec un jeu de couleurs, de glaçons et de garnitures qui permet de renforcer l’identité de la boisson et de l’intégrer pleinement dans une table inspirée de l’univers télévisuel.",
   },
 ];
 

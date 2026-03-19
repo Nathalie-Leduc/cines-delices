@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import styles from "./RecipesPage.module.scss";
 import recipesMock from "../../data/recipes.mock";
 import RecipeCard from "../../components/RecipeCard";
@@ -12,12 +11,35 @@ const FILTERS = [
   { label: "Boisson", value: "Boisson", key: "boisson" },
 ];
 
+const CATEGORY_PARAM_TO_FILTER = {
+  entree: "Entrée",
+  entrees: "Entrée",
+  plat: "Plat",
+  plats: "Plat",
+  dessert: "Dessert",
+  desserts: "Dessert",
+  boisson: "Boisson",
+  boissons: "Boisson",
+};
+
 export default function RecipesPage() {
-  const [activeFilter, setActiveFilter] = useState("Tous");
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const categoryParam = searchParams.get("category")?.toLowerCase() || "";
+  const activeFilter = CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
 
   const filteredRecipes = activeFilter === "Tous"
     ? recipesMock
     : recipesMock.filter((recipe) => recipe.category === activeFilter);
+
+  const handleFilterChange = (filter) => {
+    if (filter.value === "Tous") {
+      setSearchParams({});
+      return;
+    }
+
+    setSearchParams({ category: filter.key });
+  };
 
   return (
     <main className={styles.container}>
@@ -58,7 +80,7 @@ export default function RecipesPage() {
                   key={filter.value}
                   type="button"
                   className={`${styles.filterPill} ${isActive ? styles.active : ""} ${styles[filter.key] || ""}`}
-                  onClick={() => setActiveFilter(filter.value)}
+                  onClick={() => handleFilterChange(filter)}
                   aria-pressed={isActive}
                 >
                   {filter.label}
