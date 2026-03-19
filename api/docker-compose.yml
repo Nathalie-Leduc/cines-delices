@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: cinesdelices
       POSTGRES_DB:       cinesdelices
     ports:
-      - "5433:5432"      # accessible sur localhost:5432 ou 5433
+      - "5432"      # accessible sur localhost:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:

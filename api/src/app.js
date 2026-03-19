@@ -23,8 +23,11 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use('/api', routes);
-app.use('/api/auth', authRoutes);
+app.use("/api", routes);
+
+// Routes
+app.use('/api/auth', authRoutes)
+
 // Health Check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });

@@ -3,6 +3,7 @@ import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
+import { generateSlug, generateUniqueSlug } from '../src/utils/slug.js';
 
 
 // adapter obligaoire avec Prisma V7
@@ -36,12 +37,16 @@ async function main() {
 
 
   // 3. Médias (films/séries avec tmdbId réels
+  // Slug média : "titre-annee" pour éviter les collisions
+  // ex: "ratatouille-2007", "chocolat-2000", "breaking-bad-2008"
   const mediaRatatouille = await prisma.media.upsert({
     where:  { tmdbId: 2062 },
     update: {},
     create: {
       tmdbId:    2062,
       titre:     'Ratatouille',
+      slug:      await generateUniqueSlug('Ratatouille 2007',
+                  (s) => prisma.media.findUnique({ where: { slug: s } })),
       type:      'MOVIE',
       posterUrl: 'https://image.tmdb.org/t/p/w500/npHNjldbeTHdKKw28bJKs7lzqzj.jpg',
       synopsis:  'Un rat doué pour la cuisine s\'associe avec un jeune plongeur dans un restaurant parisien.',
@@ -56,6 +61,8 @@ async function main() {
     create: {
       tmdbId:    8467,
       titre:     'Chocolat',
+      slug:      await generateUniqueSlug('Chocolat 2000',
+                  (s) => prisma.media.findUnique({ where: { slug: s } })),
       type:      'MOVIE',
       posterUrl: 'https://image.tmdb.org/t/p/w500/7sbyD6e7Y4aNNuRxz2a0aUxBvGk.jpg',
       synopsis:  'Une femme ouvre une chocolaterie dans un village bourguignon conservateur.',
@@ -70,6 +77,8 @@ async function main() {
     create: {
       tmdbId:    1396,
       titre:     'Breaking Bad',
+      slug:      await generateUniqueSlug('Breaking Bad 2008',
+                  (s) => prisma.media.findUnique({ where: { slug: s } })),
       type:      'SERIES',
       posterUrl: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',
       synopsis:  'Un professeur de chimie se reconvertit dans la fabrication de méthamphétamine.',
@@ -78,6 +87,11 @@ async function main() {
     },
   });
   console.log('✅ Genres TMDB :', [mediaRatatouille, mediaChocolat, mediaBreakingBad].map(m => m.titre).join(', '));
+  console.log('✅ Médias :',
+    `${mediaRatatouille.titre} (${mediaRatatouille.slug})`,
+    `| ${mediaChocolat.titre} (${mediaChocolat.slug})`,
+    `| ${mediaBreakingBad.titre} (${mediaBreakingBad.slug})`
+  );
 
 // 4. Utilisateurs
 const adminHash = await argon2.hash('Admin1234!');
@@ -123,11 +137,16 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
 
 // 6. Recettes (Toutes PUBLISHED)
 // Recette 1 : Ratatouille de Rémy (PUBLISHED)
+// Slug recette : généré depuis le titre
+// ex: "ratatouille-de-remy", "chocolat-chaud-de-vianne"
   const existingR1 = await prisma.recipe.findFirst({ where: { titre: 'Ratatouille de Rémy' } });
   if (!existingR1) {
+    const slug = await generateUniqueSlug('Ratatouille de Rémy',
+      (s) => prisma.recipe.findUnique({ where: { slug: s} }));
     await prisma.recipe.create({
       data: {
         titre:           'Ratatouille de Rémy',
+        slug,
         instructions:    '1. Préchauffer le four à 180°C.\n2. Couper les légumes en rondelles fines (3mm).\n3. Préparer la sauce tomate : faire revenir l\'oignon, ajouter les tomates en dés, sel, poivre, mijoter 15 min.\n4. Mixer la sauce et l\'étaler dans un plat à gratin.\n5. Disposer les rondelles en rosace, arroser d\'huile d\'olive, saupoudrer d\'herbes.\n6. Couvrir de papier sulfurisé, enfourner 40 min.\n7. Retirer le papier les 10 dernières minutes pour dorer.',
         nombrePersonnes: 4,
         tempsPreparation: 20,
@@ -152,6 +171,7 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
       },
     });
     console.log('✅ Recette 1 : Ratatouille de Rémy (PUBLISHED)');
+    console.log(`✅ Recette 1 : Ratatouille de Rémy (slug: ${slug})`);
   }
 
   // Recette 2 : Chocolat chaud de Vianne (PUBLISHED)
@@ -160,6 +180,12 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
     await prisma.recipe.create({
       data: {
         titre:           'Chocolat chaud de Vianne',
+    const slug = await generateUniqueSlug('Chocolat chaud de Vianne',
+      (s) => prisma.recipe.findUnique({ where: { slug: s} }));
+    await prisma.recipe.create({
+      data: {
+        titre:           'Chocolat chaud de Vianne',
+        slug,
         instructions:    '1. Casser le chocolat en morceaux.\n2. Chauffer le lait à feu moyen sans bouillir.\n3. Incorporer le chocolat en remuant jusqu\'à fonte complète.\n4. Ajouter la cannelle, le piment de Cayenne, le sucre.\n5. Fouetter vigoureusement pour obtenir une mousse.\n6. Servir dans de grandes tasses.',
         nombrePersonnes: 2,
         tempsPreparation: 5,
@@ -180,14 +206,18 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
       },
     });
     console.log('✅ Recette 2 : Chocolat chaud de Vianne (PUBLISHED)');
+    console.log(`✅ Recette 2 : Chocolat chaud de Vianne (slug: ${slug})`);
   }
 
   // Recette 3 : Bœuf braisé de Gusteau (DRAFT — invisible du catalogue)
   const existingR3 = await prisma.recipe.findFirst({ where: { titre: 'Bœuf braisé de Gusteau' } });
   if (!existingR3) {
+    const slug = await generateUniqueSlug('Bœuf braisé de Gusteau',
+      (s) => prisma.recipe.findUnique({ where: { slug: s} }));
     await prisma.recipe.create({
       data: {
         titre:           'Bœuf braisé de Gusteau',
+        slug,
         instructions:    'À compléter...',
         status:          'DRAFT',
         userId:          userMarie.id,
@@ -202,6 +232,7 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
       },
     });
     console.log('✅ Recette 3 : Bœuf braisé de Gusteau (DRAFT — non visible)');
+    console.log(`✅ Recette 3 : Bœuf braisé de Gusteau (slug: ${slug})`);
   }
 
   console.log('\n🎬 Seed terminé !\n');
@@ -212,7 +243,7 @@ const ing = (nom) => ingredients.find(i => i.nom === nom.trim().toLowerCase());
   console.log('────────────────────────────────────────────────');
   console.log('  Prisma Studio  : npx prisma studio');
   console.log('  Test API       : node tests/test-api.js\n');
-}
+},
 
 main()
   .catch(e => { console.error('❌ Erreur seed :', e); process.exit(1); })

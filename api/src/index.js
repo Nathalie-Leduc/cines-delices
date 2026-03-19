@@ -1,12 +1,19 @@
 import express from 'express';
-import cors from 'cors';
+import cors from 'cors'; // sur toutes les routes
+import helmet from 'helmet'; // Sécurité HTTP headers sur toutes les routes
 import 'dotenv/config';
 import authRoutes from './routes/authRoutes.js';
+import { errorMiddleware } from './middlewares/errorMiddleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const CLIENT_URL = process.env.CLIENT_URL;
 
-app.use(cors());
+app.use(helmet());
+app.use(cors({
+  origin:      CLIENT_URL,
+  credentials: true,
+}));
 app.use(express.json());
 
 
@@ -25,11 +32,14 @@ app.use((_req, res) => {
 
 
 // Middleware d'erreur globAL (toujours en dernier)
+// Middleware d'erreur globaL (toujours en dernier)
+app.use(errorMiddleware);
 
 
 // Démarrage 
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
+  console.log(`Origine client autorisée : ${CLIENT_URL}`);
 });
 
 
