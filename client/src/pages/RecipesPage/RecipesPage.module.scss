@@ -81,6 +81,69 @@
   margin: 0 auto;
 }
 
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-bottom: 1.75rem;
+}
+
+.filterPill {
+  min-width: 0;
+  padding: 0.5rem 1.15rem;
+  border: 1.5px solid rgba(246, 241, 232, 0.92);
+  border-radius: 999px;
+  background: transparent;
+  color: #f6f1e8;
+  font-family: "Inter", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.filterPill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.filterPill.active {
+  color: #f6f1e8;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+}
+
+.filterPill.tous.active {
+  background: rgba(246, 241, 232, 0.12);
+  border-color: rgba(246, 241, 232, 0.95);
+}
+
+.filterPill.entree.active {
+  background: rgba(110, 139, 91, 0.95);
+  border-color: rgba(232, 220, 200, 0.96);
+}
+
+.filterPill.plat.active {
+  background: rgba(142, 31, 47, 0.95);
+  border-color: rgba(232, 220, 200, 0.96);
+}
+
+.filterPill.dessert.active {
+  background: rgba(74, 52, 40, 0.95);
+  border-color: rgba(232, 220, 200, 0.96);
+}
+
+.filterPill.boisson.active {
+  background: rgba(58, 138, 154, 0.95);
+  border-color: rgba(232, 220, 200, 0.96);
+}
+
 .titleRow {
   display: flex;
   align-items: center;
@@ -138,6 +201,17 @@
     margin-top: 1.25rem;
     padding: 0.9rem 1.3rem;
     font-size: 0.95rem;
+  }
+
+  .filters {
+    justify-content: center;
+    gap: 0.65rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .filterPill {
+    padding: 0.46rem 1rem;
+    font-size: 0.76rem;
   }
 
   .titleRow {
