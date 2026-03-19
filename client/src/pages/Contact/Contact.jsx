@@ -144,15 +144,18 @@ export default function Contact() {
             <label htmlFor="email" className={styles.label}>
               Adresse e-mail
             </label>
-            <input
-              id="email"
-              type="email"
-              className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
-              placeholder="Entrez votre e-mail"
-              value={form.email}
-              onChange={e => handleChange('email', e.target.value)}
-              disabled={isSubmitting}
-            />
+            <div className={styles.emailField}>
+              <span className={styles.emailIcon} aria-hidden="true" />
+              <input
+                id="email"
+                type="email"
+                className={`${styles.emailInput} ${errors.email ? styles.inputError : ''}`}
+                placeholder="Entrez votre e-mail"
+                value={form.email}
+                onChange={e => handleChange('email', e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
             {errors.email && (
               <p className={styles.errorText}>{errors.email}</p>
             )}
