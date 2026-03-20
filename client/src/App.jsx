@@ -15,7 +15,7 @@ import Contact from './pages/Contact';
 import MentionsLegales from './pages/MentionsLegales';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import { Dashboard, Recettes, Categories, Utilisateurs } from './pages/Admin';
+import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } from './pages/Admin';
 import ProtectedRoute from './router';
 
 function App() {
@@ -48,10 +48,12 @@ function App() {
       </Route>
 
       <Route path="/admin/*" element={<AdminLayout />}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<Recettes />} />
         <Route path="recettes" element={<Recettes />} />
         <Route path="categories" element={<Categories />} />
         <Route path="utilisateurs" element={<Utilisateurs />} />
+        <Route path="validation-recettes" element={<Dashboard />} />
+        <Route path="validation-ingredients" element={<IngredientsValidation />} />
       </Route>
     </Routes>
   );

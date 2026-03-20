@@ -46,7 +46,7 @@ function getUserName(payload) {
   return "Membre";
 }
 
-export default function Navbar() {
+export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileFirstName, setProfileFirstName] = useState(localStorage.getItem("displayName") || "");
@@ -189,8 +189,15 @@ useEffect(() => {
           <button
             type="button"
             className={styles.burger}
-            aria-label="Ouvrir le menu"
-            onClick={() => setIsMenuOpen(true)}
+            aria-label={mobileMenuMode === "external" ? "Ouvrir le menu admin" : "Ouvrir le menu"}
+            onClick={() => {
+              if (mobileMenuMode === "external") {
+                onBurgerClick?.();
+                return;
+              }
+
+              setIsMenuOpen(true);
+            }}
           >
             <img src="/icon/Menu.svg" alt="Menu" />
           </button>
@@ -304,16 +311,18 @@ useEffect(() => {
         </div>
       </header>
 
-      <div
-        className={`${styles.overlay} ${isMenuOpen ? styles.overlayVisible : ""}`}
-        onClick={closeMenu}
-        aria-hidden="true"
-      />
+      {mobileMenuMode === "default" && (
+        <>
+          <div
+            className={`${styles.overlay} ${isMenuOpen ? styles.overlayVisible : ""}`}
+            onClick={closeMenu}
+            aria-hidden="true"
+          />
 
-      <aside
-        className={`${styles.mobilePanel} ${isMenuOpen ? styles.mobilePanelOpen : ""}`}
-        aria-hidden={!isMenuOpen}
-      >
+          <aside
+            className={`${styles.mobilePanel} ${isMenuOpen ? styles.mobilePanelOpen : ""}`}
+            aria-hidden={!isMenuOpen}
+          >
         <div className={styles.mobilePanelHeader}>
           {isLoggedIn ? (
             <div className={styles.mobileUser}>
@@ -401,7 +410,9 @@ useEffect(() => {
             className={styles.mobileBottomLogo}
           />
         </div>
-      </aside>
+          </aside>
+        </>
+      )}
     </>
   );
 }
