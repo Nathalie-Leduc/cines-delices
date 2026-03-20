@@ -3,6 +3,7 @@ import express from "express";
 import tmdbRoutes from "./tmdbRoutes.js";
 import usersRoutes from "./usersRoutes.js";
 import adminRoutes from "./adminRoutes.js";
+import authRoutes from "./authRoutes.js";
 
 const router = express.Router()
 
@@ -10,5 +11,6 @@ const router = express.Router()
 router.use("/tmdb", tmdbRoutes);
 router.use('/users', usersRoutes);
 router.use('/admin', adminRoutes);
+router.use('/auth', authRoutes);
 
 export default router;
