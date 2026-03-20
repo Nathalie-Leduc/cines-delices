@@ -1,28 +1,20 @@
 import express from 'express';
-import routes from './routes/index.js';
 import cors from 'cors'; // sur toutes les routes
 import helmet from 'helmet'; // Sécurité HTTP headers sur toutes les routes
 import 'dotenv/config';
 import authRoutes from './routes/authRoutes.js';
+import routes from './routes/index.js'
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.CLIENT_URL;
 
+
+// Sécurité et parsing
 app.use(helmet());
 app.use(cors({
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.has(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`CORS origin non autorisée: ${origin}`));
-  }
-  
-}));
-
-
-  origin:      CLIENT_URL,
+  origin: CLIENT_URL,
   credentials: true,
 }));
 app.use(express.json());
@@ -34,7 +26,8 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authRoutes); // auth : register; login, me...
+app.use('api, routes');           // tmdb, users, admin,recipes  
 
 // Erreur 404 - route non trouvée
 app.use((_req, res) => {
