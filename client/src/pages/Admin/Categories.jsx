@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
-import { mockCategories } from '../../data/admin.mock.js';
+import {
+  createAdminCategory,
+  deleteAdminCategory,
+  getAdminCategories,
+  updateAdminCategory,
+} from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
 function AdminCategories() {
@@ -11,14 +16,21 @@ function AdminCategories() {
   const [selectedColor, setSelectedColor] = useState('#CC9A5C');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Using mock data for testing
-    setCategories(mockCategories);
+    setIsLoading(true);
+    getAdminCategories()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.data ?? [];
+        setCategories(list);
+      })
+      .catch((err) => setError(err.message || 'Impossible de charger les catégories.'))
+      .finally(() => setIsLoading(false));
   }, []);
 
-  function handleCreateCategory() {
+  async function handleCreateCategory() {
     const name = newCategoryName.trim();
 
     if (!name) {
@@ -36,10 +48,8 @@ function AdminCategories() {
     }
 
     try {
-      // Mock creation for testing
-      const newId = Math.max(...categories.map((c) => c.id), 0) + 1;
-      const category = { id: newId, name, color: '#C9A45C' };
-      setCategories((previous) => [category, ...previous]);
+      const created = await createAdminCategory({ name, color: selectedColor });
+      setCategories((previous) => [created, ...previous]);
       setNewCategoryName('');
       setError('');
     } catch (createError) {
@@ -70,8 +80,7 @@ function AdminCategories() {
     }
 
     try {
-      // Mock update for testing
-      const updatedCategory = { ...editingCategory, name: nextName, color: selectedColor };
+      const updatedCategory = await updateAdminCategory(editingCategory.id, { name: nextName, color: selectedColor });
       setCategories((previous) => previous.map((category) => (category.id === updatedCategory.id ? updatedCategory : category)));
       setShowEditModal(false);
       setEditingCategory(null);
@@ -88,7 +97,7 @@ function AdminCategories() {
     }
 
     try {
-      // Mock deletion for testing
+      await deleteAdminCategory(editingCategory.id);
       setCategories((previous) => previous.filter((category) => category.id !== editingCategory.id));
       setShowDeleteModal(false);
       setEditingCategory(null);
@@ -104,6 +113,8 @@ function AdminCategories() {
       <div className={styles.headerLine}>
         <h2>Gérer les catégories</h2>
       </div>
+
+      {isLoading ? <p>Chargement des catégories…</p> : null}
 
       {!editingCategory && (
         <>

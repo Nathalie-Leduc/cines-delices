@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import recipesMock from "../../data/recipes.mock";
 import RecipeCard from "../../components/RecipeCard";
 import styles from "./RecipeDetail.module.scss";
@@ -14,11 +14,42 @@ function normalizeCategory(category) {
   return category?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
 }
 
+function normalizeApiRecipe(apiRecipe) {
+  const ingredients = (apiRecipe.ingredients || []).map((ingredient) => {
+    if (typeof ingredient === 'string') return ingredient;
+    const parts = [];
+    if (ingredient.quantity) parts.push(ingredient.quantity);
+    if (ingredient.unit) parts.push(ingredient.unit);
+    parts.push(ingredient.name || ingredient.nom || '');
+    return parts.join(' ').trim();
+  });
+
+  const steps =
+    typeof apiRecipe.instructions === 'string'
+      ? apiRecipe.instructions.split('\n').filter(Boolean)
+      : Array.isArray(apiRecipe.steps)
+        ? apiRecipe.steps
+        : [];
+
+  return {
+    ...apiRecipe,
+    mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || '',
+    mediaType: apiRecipe.mediaType || (apiRecipe.media === 'S' ? 'serie' : 'film'),
+    servings: apiRecipe.servings ?? apiRecipe.nbPersonnes ?? undefined,
+    prepTime: apiRecipe.prepTime ?? apiRecipe.tempsPreparation ?? undefined,
+    cookTime: apiRecipe.cookTime ?? apiRecipe.tempsCuisson ?? undefined,
+    ingredients,
+    steps,
+  };
+}
+
 export default function RecipeDetail() {
   const navigate = useNavigate();
+  const { state } = useLocation();
   const { slug } = useParams();
 
-  const recipe = recipesMock.find((r) => r.slug === slug);
+  const mockRecipe = recipesMock.find((r) => r.slug === slug);
+  const recipe = mockRecipe || (state?.recipe ? normalizeApiRecipe(state.recipe) : null);
 
   if (!recipe) {
     return (

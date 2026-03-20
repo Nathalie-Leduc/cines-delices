@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
 import { deleteAdminUser, getAdminUsers } from '../../services/adminService.js';
-import { mockUsers } from '../../data/admin.mock.js';
 import styles from './AdminPages.module.scss';
 
 function AdminUtilisateurs() {
@@ -9,11 +8,18 @@ function AdminUtilisateurs() {
   const [query, setQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // Using mock data for testing
-    setUsers(mockUsers);
+    setIsLoading(true);
+    getAdminUsers()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.data ?? [];
+        setUsers(list);
+      })
+      .catch((err) => setError(err.message || 'Impossible de charger les utilisateurs.'))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const filteredUsers = useMemo(() => {
@@ -21,19 +27,15 @@ function AdminUtilisateurs() {
     if (!normalizedQuery) {
       return users;
     }
-
     return users.filter((user) => {
       return `${user.nom} ${user.prenom} ${user.email}`.toLowerCase().includes(normalizedQuery);
     });
   }, [query]);
 
   async function handleDeleteUser() {
-    if (!selectedUser) {
-      return;
-    }
-
+    if (!selectedUser) return;
     try {
-      // Mock deletion for testing
+      await deleteAdminUser(selectedUser.id);
       setUsers((previous) => previous.filter((user) => user.id !== selectedUser.id));
       setSelectedUser(null);
       setShowDeleteModal(false);
@@ -65,6 +67,7 @@ function AdminUtilisateurs() {
             <h3>Listes des utilisateurs</h3>
           </div>
 
+          {isLoading ? <p>Chargement des utilisateurs…</p> : null}
           {error ? <p>{error}</p> : null}
 
           <div className={styles.list}>
@@ -103,21 +106,18 @@ function AdminUtilisateurs() {
             <div className={styles.recipesBlock}>
               <span className={styles.blockLabel}>Recettes</span>
 
+              <div className={styles.countersRow}>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.entree || 0}</span>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.plat || 0}</span>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.dessert || 0}</span>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.boisson || 0}</span>
+              </div>
+
               <div className={styles.badgesRow}>
                 <span className={`${styles.badge} ${styles.entree}`.trim()}>Entrée</span>
                 <span className={`${styles.badge} ${styles.plat}`.trim()}>Plat</span>
                 <span className={`${styles.badge} ${styles.dessert}`.trim()}>Dessert</span>
                 <span className={`${styles.badge} ${styles.boisson}`.trim()}>Boisson</span>
-              </div>
-
-              <div className={styles.countersRow}>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.entree || 0}</span>
-                <span className={styles.separator}>|</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.plat || 0}</span>
-                <span className={styles.separator}>|</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.dessert || 0}</span>
-                <span className={styles.separator}>|</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.boisson || 0}</span>
               </div>
             </div>
           </div>

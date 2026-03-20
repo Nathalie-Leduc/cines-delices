@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
+import RecipeCard from '../../components/RecipeCard';
 import { approveAdminRecipe, getPendingRecipes, rejectAdminRecipe } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
-function badgeClass(category) {
-  const key = (category || '').toLowerCase();
-  if (key === 'entrée') return styles.badgeEntree;
-  if (key === 'plat') return styles.badgePlat;
-  if (key === 'dessert') return styles.badgeDessert;
-  return styles.badgeBoisson;
+function getDurationMinutes(duration) {
+  if (typeof duration === 'number' && Number.isFinite(duration)) {
+    return duration;
+  }
+  const parsed = parseInt(String(duration || '').replace(/[^\d]/g, ''), 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function AdminDashboard() {
@@ -120,30 +121,41 @@ function AdminDashboard() {
             <h3>{activeFilter === 'Tous' ? 'Toutes les recettes' : `${activeFilter}s`}</h3>
           </div>
 
-          <div className={styles.cardsGrid}>
-            {filteredPendingRecipes.map((recipe) => (
-              <article key={recipe.id} className={styles.recipeCard}>
-                <div className={styles.cardImage}>
-                  <img src={recipe.image} alt="Illustration de la recette" />
-                  <div className={styles.cardActions}>
-                    <button type="button" onClick={() => setSelectedRecipe(recipe)}>
+          <div className={styles.recipesGridExact}>
+            {filteredPendingRecipes.map((recipe) => {
+              const slug = recipe.slug || String(recipe.id);
+              const recipeForCatalogCard = {
+                id: recipe.id,
+                slug,
+                image: recipe.image || '/img/placeholder.jpg',
+                title: recipe.title,
+                category: recipe.category,
+                mediaTitle: recipe.movie || 'Film non renseigné',
+                mediaType: recipe.media === 'S' ? 'serie' : 'film',
+                duration: getDurationMinutes(recipe.duration),
+              };
+
+              return (
+                <div key={recipe.id} className={styles.adminRecipeCardWrap}>
+                  <RecipeCard recipe={recipeForCatalogCard} />
+                  <button
+                    type="button"
+                    className={styles.cardNavOverlay}
+                    aria-label={`Voir la recette ${recipe.title}`}
+                    onClick={() => setSelectedRecipe(recipe)}
+                  />
+                  <div className={styles.cardActionsExact}>
+                    <button
+                      type="button"
+                      aria-label="Voir la recette"
+                      onClick={(event) => { event.preventDefault(); event.stopPropagation(); setSelectedRecipe(recipe); }}
+                    >
                       <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
                     </button>
                   </div>
-                  <span className={`${styles.categoryBadge} ${badgeClass(recipe.category)}`.trim()}>{recipe.category}</span>
                 </div>
-                <div className={styles.cardBody}>
-                  <h4 className={styles.cardTitle}>{recipe.title}</h4>
-                  <div className={styles.cardMeta}>
-                    <span className={styles.metaInline}><img src="/icon/Movie.svg" alt="" aria-hidden="true" />{recipe.movie}</span>
-                    <div className={styles.cardMetaRow}>
-                      <span className={styles.metaInline}><img src="/icon/Time.svg" alt="" aria-hidden="true" />{recipe.duration}</span>
-                      <span className={styles.mediaTag}>{recipe.media}</span>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            ))}
+              );
+            })}
           </div>
         </>
       )}

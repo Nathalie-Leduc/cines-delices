@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
-import { mockRecipes } from '../../data/admin.mock.js';
+import RecipeCard from '../../components/RecipeCard';
+import { deleteAdminRecipe, getAdminRecipes } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
@@ -23,12 +24,13 @@ function toSlug(value) {
     .replace(/^-+|-+$/g, '');
 }
 
-function badgeClass(category) {
-  const key = category.toLowerCase();
-  if (key === 'entrée') return styles.badgeEntree;
-  if (key === 'plat') return styles.badgePlat;
-  if (key === 'dessert') return styles.badgeDessert;
-  return styles.badgeBoisson;
+function getDurationMinutes(duration) {
+  if (typeof duration === 'number' && Number.isFinite(duration)) {
+    return duration;
+  }
+
+  const parsed = parseInt(String(duration || '').replace(/[^\d]/g, ''), 10);
+  return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 function countClass(label) {
@@ -76,9 +78,14 @@ function AdminRecettes() {
   const ingredientSearchTimeouts = useRef({});
 
   useEffect(() => {
-    // Using mock data for testing
-    setRecipes(mockRecipes);
-    setIsLoading(false);
+    setIsLoading(true);
+    getAdminRecipes()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data?.data ?? [];
+        setRecipes(list);
+      })
+      .catch((err) => setError(err.message || 'Impossible de charger les recettes.'))
+      .finally(() => setIsLoading(false));
   }, []);
 
   const filteredRecipes = useMemo(() => {
@@ -111,7 +118,7 @@ function AdminRecettes() {
     }
 
     try {
-      // Mock deletion for testing
+      await deleteAdminRecipe(modalState.recipeId);
       setRecipes((previous) => previous.filter((recipe) => recipe.id !== modalState.recipeId));
       setModalState(null);
     } catch (deleteError) {
@@ -414,22 +421,42 @@ function AdminRecettes() {
         {error ? <p>{error}</p> : null}
 
         <div className={styles.recipesGridExact}>
-          {filteredRecipes.map((recipe) => (
-            <article key={recipe.id} className={styles.recipeCardExact}>
-              <div className={styles.cardImageExact}>
-                <img src={recipe.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200'} alt="Illustration de la recette" />
+          {filteredRecipes.map((recipe) => {
+            const slug = recipe.slug || toSlug(recipe.title);
+            const recipeForCatalogCard = {
+              id: recipe.id,
+              slug,
+              image: recipe.image || '/img/placeholder.jpg',
+              title: recipe.title,
+              category: recipe.category,
+              mediaTitle: recipe.movie || 'Film non renseigne',
+              mediaType: recipe.media === 'S' ? 'serie' : 'film',
+              duration: getDurationMinutes(recipe.duration),
+            };
+
+            return (
+              <div key={recipe.id} className={styles.adminRecipeCardWrap}>
+                <RecipeCard recipe={recipeForCatalogCard} />
+                <Link
+                  to={`/recipes/${slug}`}
+                  state={{ recipe }}
+                  className={styles.cardNavOverlay}
+                  aria-label={`Voir la recette ${recipe.title}`}
+                />
 
                 <div className={styles.cardActionsExact}>
                   <button
                     type="button"
                     aria-label="Voir la recette"
-                    onClick={() => {
-                      const slug = recipe.slug || toSlug(recipe.title);
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+
                       if (!slug) {
                         return;
                       }
 
-                      navigate(`/recipes/${slug}`);
+                      navigate(`/recipes/${slug}`, { state: { recipe } });
                     }}
                   >
                     <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
@@ -437,44 +464,29 @@ function AdminRecettes() {
                   <button
                     type="button"
                     aria-label="Modifier la recette"
-                    onClick={() => openEditModal(recipe)}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openEditModal(recipe);
+                    }}
                   >
                     <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
                     aria-label="Supprimer la recette"
-                    onClick={() => setModalState({ type: 'delete', recipeId: recipe.id, recipeTitle: recipe.title })}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setModalState({ type: 'delete', recipeId: recipe.id, recipeTitle: recipe.title });
+                    }}
                   >
                     <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
                   </button>
                 </div>
-
-                <span className={`${styles.categoryBadgeExact} ${badgeClass(recipe.category)}`.trim()}>
-                  {recipe.category}
-                </span>
               </div>
-
-              <div className={styles.cardBodyExact}>
-                <h4 className={styles.cardTitleExact}>{recipe.title}</h4>
-                <div className={styles.cardMetaExact}>
-                  <div className={styles.cardMetaLine}>
-                    <span className={styles.metaInlineExact}>
-                      <img src="/icon/Movie.svg" alt="" aria-hidden="true" />
-                      <span>{recipe.movie || 'Film non renseigne'}</span>
-                    </span>
-                  </div>
-                  <div className={styles.cardMetaLineBetween}>
-                    <span className={styles.metaInlineExact}>
-                      <img src="/icon/Time.svg" alt="" aria-hidden="true" />
-                      {recipe.duration || 'Duree non renseignee'}
-                    </span>
-                    <span className={styles.mediaTagExact}>{recipe.media || 'F'}</span>
-                  </div>
-                </div>
-              </div>
-            </article>
-          ))}
+            );
+          })}
         </div>
       </section>
 

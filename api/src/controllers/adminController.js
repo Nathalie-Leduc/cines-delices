@@ -428,13 +428,14 @@ export async function approveIngredient(req, res) {
 export async function deleteIngredient(req, res) {
   try {
     approvedIngredientIds.delete(req.params.id);
-    await prisma.ingredient.delete({
-      where: { id: req.params.id },
-    });
+    await prisma.$transaction([
+      prisma.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } }),
+      prisma.ingredient.delete({ where: { id: req.params.id } }),
+    ]);
 
     return res.status(204).send();
   } catch (error) {
-    return sendError(res, error, 'Erreur lors de la suppression de l’ingrédient.');
+    return sendError(res, error, "Erreur lors de la suppression de l'ingrédient.");
   }
 }
 
