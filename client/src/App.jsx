@@ -17,6 +17,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } from './pages/Admin';
 import ProtectedRoute from './router';
+import AdminRoute from './router/AdminRoute.jsx';
 
 function App() {
   return (
@@ -47,7 +48,14 @@ function App() {
         <Route path="creer-recette" element={<CreateRecipe />} />
       </Route>
 
-      <Route path="/admin/*" element={<AdminLayout />}>
+      <Route
+        path="/admin/*"
+        element={
+          <AdminRoute>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
         <Route index element={<Recettes />} />
         <Route path="recettes" element={<Recettes />} />
         <Route path="categories" element={<Categories />} />
