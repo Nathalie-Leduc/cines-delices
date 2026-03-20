@@ -2,7 +2,7 @@ export const mapMedia = (item, type, extra = {}) => ({
   id: item.id,
   type: item.media_type || type,
   title: item.title || item.name,
-  overview: item.overview,
+  overview: item.overview || "Pas de description",
   poster: item.poster_path
     ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
     : null,

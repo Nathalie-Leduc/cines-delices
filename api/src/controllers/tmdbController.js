@@ -81,7 +81,7 @@ export async function searchMedia(req, res) {
       return res.status(400).json({ message: "Paramètre 'searchTerm' requis" });
     }
 
-    const type = req.params.type || 'multi';
+    const type = req.params.type || 'movie';
     const response = await fetch(
       `${process.env.TMDB_BASE_URL}/search/${type}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&query=${encodeURIComponent(searchTerm)}`
     );

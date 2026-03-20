@@ -164,7 +164,8 @@
   border: 0;
   border-radius: 0.6rem;
   min-width: 170px;
-  padding: 0.8rem 1.4rem;
+  min-height: 48px;
+  padding: 0.65rem 1.4rem;
   line-height: 1;
   transition: background-color 0.2s ease;
 }
