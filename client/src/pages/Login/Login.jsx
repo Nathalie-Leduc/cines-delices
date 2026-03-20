@@ -1,20 +1,36 @@
 import { useState } from 'react';
-import { useNavigate, NavLink } from 'react-router-dom';
+import { useNavigate, NavLink, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { loginUser } from '../../services/authService.js';
 import styles from './Login.module.scss';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Appel API de connexion
-    console.log('Login:', { email, password });
-    // Après connexion réussie, stocker le token et rediriger
-    // localStorage.setItem('token', response.token);
-    // navigate('/membre');
+
+    setError('');
+    setIsSubmitting(true);
+
+    try {
+      const payload = await loginUser({ email, password });
+      login({ token: payload?.token, user: payload?.user ?? null });
+
+      const redirectPath = location.state?.from?.pathname || '/membre';
+      navigate(redirectPath, { replace: true });
+    } catch (requestError) {
+      setError(requestError.message || 'Connexion impossible');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -72,8 +88,10 @@ export default function Login() {
           </div>
 
           <button type="submit" className={styles.submitButton}>
-            Se connecter
+            {isSubmitting ? 'Connexion...' : 'Se connecter'}
           </button>
+
+          {error ? <p role="alert">{error}</p> : null}
         </form>
 
         <p className={styles.noAccount}>
