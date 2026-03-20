@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import styles from './CreateRecipe.module.scss';
 import Alert from '../../components/Alert/Alert.jsx';
 
+
 const categoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
@@ -47,6 +48,9 @@ export default function CreerRecette() {
   const filmSearchTimeoutRef = useRef(null);
   const ingredientSearchTimeouts = useRef({});
   const [form, setForm] = useState(INITIAL_FORM);
+  //Média sélectionné depuis TMDB
+  const [selectedMedia, setSelectedMedia] = useState(null); // état pour stocker le média choisi
+
 
   // ===== HANDLERS GÉNÉRAUX =====
   function handleChange(field, value) {
@@ -113,19 +117,20 @@ export default function CreerRecette() {
 
   // ===== FILM / SÉRIE (TMDB) =====
   async function searchFilms(query) {
-    const trimmed = query.trim();
-
+    const trimmed = query.trim(); // On enlève les espaces avant et après la saisie
+    // Si l'utilisateur tape moins de 2 caractères, on ne lance pas la recherche
     if (trimmed.length < 2) {
-      setFilmSearchResults([]);
-      setFilmSearchError('');
-      setFilmSearchLoading(false);
+      setFilmSearchResults([]); // vide les résultats
+      setFilmSearchError(''); // pas d'erreur
+      setFilmSearchLoading(false);// arrêt du loading
       return;
     }
 
     setFilmSearchLoading(true);
-    setFilmSearchError('');
+    setFilmSearchError('');// réinitialise l'erreur
 
     try {
+      // Appel API TMDB (ou ton endpoint qui fait le proxy vers TMDB)
       const response = await fetch(`${TMDB_SEARCH_API}?searchTerm=${encodeURIComponent(trimmed)}`);
       if (!response.ok) {
         let payload = null;
@@ -141,15 +146,16 @@ export default function CreerRecette() {
 
       const payload = await response.json();
       const rawList = Array.isArray(payload) ? payload : payload.data || [];
+      // Normalisation des résultats : on garde id, titre et type
       const normalized = rawList
         .map(item => ({
           id: item.id,
           title: item.title || item.name || item.titre || '',
           type: item.type || item.media_type || '',
         }))
-        .filter(item => item.title);
+        .filter(item => item.title); // on garde uniquement ceux qui ont un titre
 
-      setFilmSearchResults(normalized.slice(0, 8));
+      setFilmSearchResults(normalized.slice(0, 8)); // on limite à 8 résultats
     } catch (error) {
       setFilmSearchResults([]);
       setFilmSearchError(error?.message || "Impossible de rechercher les films/séries pour l'instant.");
@@ -157,27 +163,32 @@ export default function CreerRecette() {
       setFilmSearchLoading(false);
     }
   }
-
+  // Fonction appelée à chaque frappe dans l'input
   function handleFilmInput(value) {
+    // Mise à jour du formulaire
     setForm((prev) => ({
       ...prev,
-      film: value,
-      filmId: null,
+      film: value, // valeur affichée dans l'input
+      filmId: null,// on réinitialise l'id sélectionné
     }));
-
+    searchFilms(value);// On lance la recherche immédiatement
+    // Debounce : on relance la recherche après 300ms si l'utilisateur continue de taper
     clearTimeout(filmSearchTimeoutRef.current);
     filmSearchTimeoutRef.current = setTimeout(() => {
       searchFilms(value);
     }, 300);
   }
-
+  // Fonction pour sélectionner un film ou une série depuis la liste
   function selectFilm(media) {
+    setSelectedMedia(media);// on stocke le média choisi pour l'enregistrer plus tard
+    // Met à jour le formulaire avec le titre et l'id du média
     setForm((prev) => ({
       ...prev,
       film: media.title,
       filmId: media.id ?? null,
     }));
-
+    setFilmSearchResults([]);// on vide la liste
+     // On déduit le type de média pour le formulaire : 'F' = film, 'S' = série
     const normalizedType = String(media.type || '').toLowerCase();
     if (normalizedType === 'movie') {
       handleChange('type', 'F');
@@ -185,8 +196,8 @@ export default function CreerRecette() {
       handleChange('type', 'S');
     }
 
-    setFilmSearchResults([]);
-    setFilmSearchError('');
+    setFilmSearchResults([]);// on vide la liste
+    setFilmSearchError('');// on réinitialise l'erreur
   }
 
   // ===== INGRÉDIENTS =====
@@ -803,7 +814,6 @@ export default function CreerRecette() {
       aria-label={`Supprimer l'ingredient ${index + 1}`}
       onClick={() => removeIngredient(index)}
     >
-      −
     </button>
   )}
 

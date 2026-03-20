@@ -1,4 +1,5 @@
 import express from 'express';
+import routes from './routes/index.js';
 import cors from 'cors'; // sur toutes les routes
 import helmet from 'helmet'; // Sécurité HTTP headers sur toutes les routes
 import 'dotenv/config';
@@ -11,6 +12,16 @@ const CLIENT_URL = process.env.CLIENT_URL;
 
 app.use(helmet());
 app.use(cors({
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.has(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS origin non autorisée: ${origin}`));
+  }
+  
+}));
+
+
   origin:      CLIENT_URL,
   credentials: true,
 }));

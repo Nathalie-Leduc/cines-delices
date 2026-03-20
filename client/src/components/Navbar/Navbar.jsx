@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { fetchMedia } from "../../services/mediaService.js";
 import styles from "./Navbar.module.scss";
 
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || "http://localhost:3000/api/auth/me";
@@ -50,13 +49,52 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [profileFirstName, setProfileFirstName] = useState(localStorage.getItem("displayName") || "");
-  // État pour stocker la valeur tapée dans l'input
+  // Valeur de l'input de recherche
   const [search, setSearch] = useState('');
-  // État pour stocker les résultats retournés par l'API
+  // Résultats de recherche à afficher sous l'input
   const [results, setResults] = useState([]);
+ 
   // Crée une référence vers le div qui contient le formulaire de recherche
   // null = pas encore attaché au DOM
   const searchRef = useRef(null);
+
+   // Met simplement à jour le state search
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+  };
+
+  // FETCH API AVEC DEBOUNCE
+  // ---------------------------
+  useEffect(() => {
+    // Si input vide ou moins de 3 caractères, on vide les résultats et on ne fetch pas
+    if (!search || search.length < 4) {
+      setResults([]);
+      return;
+    }
+
+    // Définir un timeout pour attendre 400ms après la dernière frappe
+    const timeout = setTimeout(async () => {
+      try {
+          // Appel à ton API Node.js / Express qui interroge PostgreSQL
+          const response = await fetch(`http://localhost:3000/api/recipes?search=${encodeURIComponent(search)}`);
+          if (!response.ok) {
+          console.error("Erreur fetch API:", response.status);
+          setResults([]);
+          return;
+          }
+          // On suppose que l'API renvoie un tableau de recettes : [{id, title}, ...]
+          const data = await response.json();
+          console.log("résultats api:", data);
+          setResults(data);
+
+      } catch (err) {
+        console.error("Erreur fetch recettes :", err);
+        setResults([]);
+      }
+    }, 400); // 400ms de debounce
+      // Nettoyage : si l'utilisateur tape encore avant la fin du timeout
+    return () => clearTimeout(timeout);
+  }, [search]); // dépendance : se déclenche à chaque changement de search
 
   const token = localStorage.getItem("token");
   const payload = parseJwtPayload(token);
@@ -64,30 +102,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
   const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
 
-  useEffect(() => {
-    // Debounce : évite d'appeler l'API à chaque frappe
-    // On attend 500ms après la dernière frappe avant de lancer la recherche
-      const timer = setTimeout(() => {
-      if (search.length >= 4) {// Si l'utilisateur a tapé au moins 4 caractères, on appelle l'API
-        fetchMedia("movie", search).then(setResults);
-      } else {  // Sinon on vide les résultats (ex: l'utilisateur a effacé l'input)
-        setResults([]);
-      }
-    }, 500);
-      // Nettoyage : annule le timer si l'utilisateur retape avant les 500ms
-      return () => clearTimeout(timer);
-  }, [search]); // Se déclenche à chaque changement de la valeur search
-      // Mise à jour de l'état search à chaque frappe dans l'input
-      const handleSearch = (e) => {
-      setSearch(e.target.value);
-    };
-      // Gestion de la soumission du formulaire (clic sur le bouton ou touche Entrée)
-     const handleSubmit = (e) => {
-    e.preventDefault(); // Empêche le rechargement de la page
-    if (search.length >= 4) {  // Lance la recherche immédiatement sans attendre le debounce
-      fetchMedia("movie", search).then(setResults);
-    }
-  };
+  
 
   // Ferme la liste des résultats quand l'utilisateur clique en dehors
 useEffect(() => {
@@ -231,7 +246,10 @@ useEffect(() => {
             {/* Wrapper relatif pour positionner la liste sous l'input */}
             <div ref={searchRef} className={styles.searchWrapper}>
              {/* Formulaire de recherche */}
-              <form className={styles.searchForm} role="search" onSubmit={handleSubmit}>
+              <form className={styles.searchForm} role="search" onSubmit={(e) => {e.preventDefault()
+              console.log("Rechercher recette:", search);
+              }}
+              >
                 <input
                   type="search"
                   value={search}  // Valeur contrôlée par le state
@@ -250,14 +268,20 @@ useEffect(() => {
                   className={styles.searchIcon}
                 />
                 </button>
-              {/* Liste des résultats — visible uniquement si résultats */}
+              {/* Liste des résultats recettes — visible uniquement si résultats */}
               {results.length > 0 && (
                 <ul className={styles.searchResults}>
-                {results.map((media) => (
-                  <li key={media.id} className={styles.searchResultItem}>
-                    <NavLink to={`/films/${media.id}`} onClick={() => { setSearch(""); setResults([]); }}
+                {results.map((recipe) => (
+                  <li key={recipe.id} className={styles.searchResultItem}>
+                    {/* Lien vers la page du média : films ou séries selon le type */}
+                    <NavLink 
+                      to={`/recipes/${recipe.id}`}
+                      onClick={() => { 
+                        setSearch(""); // vider input
+                        setResults([]); // vider résultats
+                     }} 
                     >
-                    {media.title || media.name}
+                    {recipe.title}
                     </NavLink>
                   </li>
                 ))}

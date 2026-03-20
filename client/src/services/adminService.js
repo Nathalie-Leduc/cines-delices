@@ -2,10 +2,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || `${API_BASE_URL}/api/admin`;
 
 async function request(path, options = {}) {
+  const token = localStorage.getItem('token'); // récupération du token
+
   const response = await fetch(`${ADMIN_API_URL}${path}`, {
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
+       ...(token ? { 'Authorization': `Bearer ${token}` } : {}), // ajout du token si présent
     },
     ...options,
   });
