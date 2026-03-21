@@ -27,7 +27,7 @@ app.get('/api/health', (_req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes); // auth : register; login, me...
-app.use('api, routes');           // tmdb, users, admin,recipes  
+app.use('/api', routes);          // tmdb, users, admin, recipes
 
 // Erreur 404 - route non trouvée
 app.use((_req, res) => {
