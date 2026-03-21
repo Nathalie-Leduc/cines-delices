@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
+import { getMyRecipes } from '../../services/recipesService';
 
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
@@ -13,7 +14,6 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
     ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '')
     : '')
   || 'http://localhost:3000/api/ingredients';
-const RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
@@ -79,63 +79,6 @@ function normalizeRecipe(rawRecipe) {
     type: rawRecipe?.type || (mediaType === 'series' ? 'S' : 'F'),
   };
 }
-
-// Données de démonstration conservées comme référence de structure.
-// Le composant charge désormais ses données depuis l'API `RECIPES_API`.
-const mockRecettes = [
-  {
-    id: 1,
-    titre: 'Bruschetta Toscane',
-    categorie: 'Entrée',
-    filmId: 101,
-    film: 'Le Parrain',
-    ingredients: ['Tomates', 'Basilic', 'Pain'],
-    tempsPreparation: '15 min',
-    tempsCuisson: '10 min',
-    temps: '25 min',
-    type: 'F',
-    image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=400',
-  },
-  {
-    id: 2,
-    titre: 'Mini Burgers BBQ',
-    categorie: 'Entrée',
-    filmId: 202,
-    film: 'Stranger Things',
-    ingredients: ['Pain burger', 'Steak', 'Sauce BBQ'],
-    tempsPreparation: '30 min',
-    tempsCuisson: '20 min',
-    temps: '50 min',
-    type: 'S',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
-  },
-  {
-    id: 3,
-    titre: 'Bruschetta Toscane',
-    categorie: 'Plat',
-    filmId: 101,
-    film: 'Le Parrain',
-    ingredients: ['Tomates', 'Basilic', 'Pain'],
-    tempsPreparation: '15 min',
-    tempsCuisson: '10 min',
-    temps: '25 min',
-    type: 'F',
-    image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=400',
-  },
-  {
-    id: 4,
-    titre: 'Mini Burgers BBQ',
-    categorie: 'Dessert',
-    filmId: 202,
-    film: 'Stranger Things',
-    ingredients: ['Pain burger', 'Steak', 'Sauce BBQ'],
-    tempsPreparation: '30 min',
-    tempsCuisson: '20 min',
-    temps: '50 min',
-    type: 'S',
-    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400',
-  },
-];
 
 export default function MesRecettes() {
   const navigate = useNavigate();
@@ -221,22 +164,12 @@ export default function MesRecettes() {
           return;
         }
 
-        const response = await fetch(RECIPES_API, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            throw new Error('Authentification échouée. Veuillez vous reconnecter.');
-          }
-          throw new Error(`Erreur ${response.status} lors de la récupération des recettes`);
-        }
-
-        const payload = await response.json();
-        const data = Array.isArray(payload?.data) ? payload.data : [];
+        const payload = await getMyRecipes();
+        const data = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
         const normalizedRecipes = data.map(normalizeRecipe);
         setRecipes(normalizedRecipes);
         setError('');

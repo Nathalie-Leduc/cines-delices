@@ -1,7 +1,8 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styles from "./RecipesPage.module.scss";
-import recipesMock from "../../data/recipes.mock";
 import RecipeCard from "../../components/RecipeCard";
+import { getRecipesCatalog } from "../../services/recipesService";
 
 const FILTERS = [
   { label: "Tous", value: "Tous", key: "tous" },
@@ -22,15 +23,82 @@ const CATEGORY_PARAM_TO_FILTER = {
   boissons: "Boisson",
 };
 
+function normalizeCategoryLabel(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (normalized === "entree" || normalized === "entrée") return "Entrée";
+  if (normalized === "plat") return "Plat";
+  if (normalized === "dessert") return "Dessert";
+  if (normalized === "boisson") return "Boisson";
+
+  return value || "Autre";
+}
+
+function mapApiRecipeToCard(recipe) {
+  const prep = Number(recipe?.tempsPreparation);
+  const cook = Number(recipe?.tempsCuisson);
+  const duration = [prep, cook].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
+
+  return {
+    id: recipe?.id,
+    slug: recipe?.slug,
+    title: recipe?.titre || "Recette sans titre",
+    category: normalizeCategoryLabel(recipe?.category?.nom),
+    mediaTitle: recipe?.media?.titre || "Sans média",
+    mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
+    duration: duration > 0 ? duration : 0,
+    image: recipe?.media?.posterUrl || "/img/placeholder.jpg",
+  };
+}
+
 export default function RecipesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [recipes, setRecipes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const categoryParam = searchParams.get("category")?.toLowerCase() || "";
   const activeFilter = CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
 
-  const filteredRecipes = activeFilter === "Tous"
-    ? recipesMock
-    : recipesMock.filter((recipe) => recipe.category === activeFilter);
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRecipes = async () => {
+      try {
+        const payload = await getRecipesCatalog();
+        const rawRecipes = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+
+        if (!isMounted) return;
+
+        setRecipes(rawRecipes.map(mapApiRecipeToCard));
+        setError("");
+      } catch (fetchError) {
+        if (!isMounted) return;
+        setRecipes([]);
+        setError(fetchError?.message || "Impossible de charger les recettes.");
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchRecipes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filteredRecipes = useMemo(() => (
+    activeFilter === "Tous"
+      ? recipes
+      : recipes.filter((recipe) => recipe.category === activeFilter)
+  ), [activeFilter, recipes]);
 
   const handleFilterChange = (filter) => {
     if (filter.value === "Tous") {
@@ -94,11 +162,20 @@ export default function RecipesPage() {
             <span className={styles.titleLine} />
           </div>
 
-          <section className={styles.grid}>
-            {filteredRecipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))}
-          </section>
+          {isLoading && <p>Chargement des recettes...</p>}
+          {error && !isLoading && <p>{error}</p>}
+
+          {!isLoading && !error && (
+            <section className={styles.grid}>
+              {filteredRecipes.length === 0 && (
+                <p>Aucune recette disponible pour le moment.</p>
+              )}
+
+              {filteredRecipes.map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </section>
+          )}
         </div>
       </section>
     </main>

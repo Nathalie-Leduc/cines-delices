@@ -1,6 +1,7 @@
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import recipesMock from "../../data/recipes.mock";
 import RecipeCard from "../../components/RecipeCard";
+import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "./RecipeDetail.module.scss";
 
 const DEFAULT_STEPS = [
@@ -14,13 +15,28 @@ function normalizeCategory(category) {
   return category?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
 }
 
+function normalizeCategoryLabel(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  if (normalized === "entree" || normalized === "entrée") return "Entrée";
+  if (normalized === "plat") return "Plat";
+  if (normalized === "dessert") return "Dessert";
+  if (normalized === "boisson") return "Boisson";
+
+  return value || "Autre";
+}
+
 function normalizeApiRecipe(apiRecipe) {
+  const prep = Number(apiRecipe?.tempsPreparation);
+  const cook = Number(apiRecipe?.tempsCuisson);
+  const duration = [prep, cook].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
+
   const ingredients = (apiRecipe.ingredients || []).map((ingredient) => {
     if (typeof ingredient === 'string') return ingredient;
     const parts = [];
-    if (ingredient.quantity) parts.push(ingredient.quantity);
-    if (ingredient.unit) parts.push(ingredient.unit);
-    parts.push(ingredient.name || ingredient.nom || '');
+    if (ingredient.quantity || ingredient.quantite) parts.push(ingredient.quantity || ingredient.quantite);
+    if (ingredient.unit || ingredient.unite) parts.push(ingredient.unit || ingredient.unite);
+    parts.push(ingredient.name || ingredient.nom || ingredient.ingredient?.nom || '');
     return parts.join(' ').trim();
   });
 
@@ -32,9 +48,20 @@ function normalizeApiRecipe(apiRecipe) {
         : [];
 
   return {
-    ...apiRecipe,
-    mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || '',
-    mediaType: apiRecipe.mediaType || (apiRecipe.media === 'S' ? 'serie' : 'film'),
+    id: apiRecipe.id,
+    slug: apiRecipe.slug,
+    title: apiRecipe.title || apiRecipe.titre || 'Recette sans titre',
+    category: normalizeCategoryLabel(apiRecipe.category?.nom || apiRecipe.category),
+    image: apiRecipe.image || apiRecipe.media?.posterUrl || '/img/placeholder.jpg',
+    heroImage: apiRecipe.heroImage || apiRecipe.image || apiRecipe.media?.posterUrl || '/img/placeholder.jpg',
+    posterImage: apiRecipe.posterImage || apiRecipe.image || apiRecipe.media?.posterUrl || '/img/placeholder.jpg',
+    mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
+    mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
+    duration,
+    description: apiRecipe.description,
+    director: apiRecipe.director,
+    year: apiRecipe.year,
+    genre: apiRecipe.genre,
     servings: apiRecipe.servings ?? apiRecipe.nbPersonnes ?? undefined,
     prepTime: apiRecipe.prepTime ?? apiRecipe.tempsPreparation ?? undefined,
     cookTime: apiRecipe.cookTime ?? apiRecipe.tempsCuisson ?? undefined,
@@ -43,13 +70,105 @@ function normalizeApiRecipe(apiRecipe) {
   };
 }
 
+function mapApiRecipeToCard(recipe) {
+  const prep = Number(recipe?.tempsPreparation);
+  const cook = Number(recipe?.tempsCuisson);
+  const duration = [prep, cook].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
+
+  return {
+    id: recipe?.id,
+    slug: recipe?.slug,
+    title: recipe?.titre || "Recette sans titre",
+    category: normalizeCategoryLabel(recipe?.category?.nom),
+    mediaTitle: recipe?.media?.titre || "Sans média",
+    mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
+    duration: duration > 0 ? duration : 0,
+    image: recipe?.media?.posterUrl || "/img/placeholder.jpg",
+  };
+}
+
 export default function RecipeDetail() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { slug } = useParams();
+  const [recipes, setRecipes] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const mockRecipe = recipesMock.find((r) => r.slug === slug);
-  const recipe = mockRecipe || (state?.recipe ? normalizeApiRecipe(state.recipe) : null);
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchRecipes = async () => {
+      try {
+        const payload = await getRecipesCatalog();
+        const rawRecipes = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+
+        if (!isMounted) return;
+        setRecipes(rawRecipes);
+        setError("");
+      } catch (fetchError) {
+        if (!isMounted) return;
+        setRecipes([]);
+        setError(fetchError?.message || "Impossible de charger la recette.");
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchRecipes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const recipe = useMemo(() => {
+    const apiRecipe = recipes.find((item) => item.slug === slug);
+
+    if (apiRecipe) {
+      return normalizeApiRecipe(apiRecipe);
+    }
+
+    if (state?.recipe) {
+      return normalizeApiRecipe(state.recipe);
+    }
+
+    return null;
+  }, [recipes, slug, state]);
+
+  const similarRecipes = useMemo(() => (
+    recipes
+      .filter((item) => item.slug !== slug)
+      .filter((item) => normalizeCategoryLabel(item?.category?.nom) === recipe?.category)
+      .slice(0, 2)
+      .map(mapApiRecipeToCard)
+  ), [recipes, slug, recipe?.category]);
+
+  if (isLoading) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.contentWrap}>
+          <p className={styles.notFound}>Chargement de la recette...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.contentWrap}>
+          <p className={styles.notFound}>{error}</p>
+        </div>
+      </main>
+    );
+  }
 
   if (!recipe) {
     return (
@@ -97,10 +216,6 @@ export default function RecipeDetail() {
   const recipeYear = year ?? 2010;
   const recipeGenre = genre ?? "Cuisine fiction";
   const recipeDescription = description ?? `Une recette inspirée de l’univers de ${mediaTitle}, pensée pour retrouver à table l’ambiance du ${mediaType}.`;
-
-  const similarRecipes = recipesMock
-    .filter((r) => r.category === category && r.slug !== recipeSlug)
-    .slice(0, 2);
 
   return (
     <main className={styles.page}>
