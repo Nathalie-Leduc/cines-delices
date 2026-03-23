@@ -101,8 +101,8 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   // FETCH API AVEC DEBOUNCE
   // ---------------------------
   useEffect(() => {
-    // Si input vide ou moins de 3 caractères, on vide les résultats et on ne fetch pas
-    if (!search || search.length < 4) {
+    // Si input vide ou moins de 2 caractères, on vide les résultats et on ne fetch pas
+    if (!search || search.trim().length < 2) {
       setResults([]);
       return;
     }
