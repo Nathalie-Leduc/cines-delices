@@ -103,7 +103,7 @@ async function main() {
     'amandes', 'noix', 'noisettes', 'raisins secs', 'chapelure', 'semoule',
     'rhum', 'whisky', 'vin blanc', 'champagne',
     'sirop de grenadine', 'jus de citron', 'eau gazeuse', 'thé', 'café',
-    'lentilles', 'pois chiches',
+    'lentilles', 'pois chiches','mangue',
   ];
 
   const allIngredients = await Promise.all(
@@ -127,11 +127,12 @@ async function main() {
   // Helper — crée une recette seulement si elle n'existe pas encore (idempotent)
   const createRecipe = async (data) => {
     const existing = await prisma.recipe.findFirst({ where: { titre: data.titre } });
-    if (existing) { console.log(`  ⏭️  ${data.titre} (déjà présente)`); return; }
+    if (existing) { console.log(`  ⏭️  ${data.titre} (déjà présente)`); return existing; }
     const slug = await generateUniqueSlug(data.titre,
       (s) => prisma.recipe.findUnique({ where: { slug: s } }));
-    await prisma.recipe.create({ data: { ...data, slug } });
+    const created = await prisma.recipe.create({ data: { ...data, slug } });
     console.log(`  ✅ ${data.titre} (${slug})`);
+    return created;
   };
 
   // ════════════════════════════════════════════════════════
@@ -760,7 +761,53 @@ async function main() {
     ]},
   });
 
-  console.log('✅ 10 boissons créées\n');
+  console.log('✅ 10 boissons créées\n')
+  
+// RECETTES PENDING / DRAFT
+  console.log('✅ recette PENDING')
+
+  await createRecipe({
+    titre: 'Soupe exotique',
+    imageURL: 'https://images.unsplash.com/photo-1589308051-0b4c6b182b8c?w=600',
+    instructions: '1. Couper mangue et papaye.\n2. Mixer avec lait de coco et citron vert.\n3. Servir frais avec feuilles de menthe.',
+    nombrePersonnes: 4,
+    tempsPreparation: 15,
+    tempsCuisson: 0,
+    status: 'PENDING',   // <-- statut PENDING
+    userId: userMarie.id,
+    categoryId: catEntree.id,
+    mediaId: medias[2062].id, //  media associé
+    ingredients: { create: [
+      { ingredientId: ing('mangue').id, quantity: '1', unit: 'pièce' },
+      { ingredientId: ing('lait entier').id, quantity: '20', unit: 'cl' },
+      { ingredientId: ing('citron').id, quantity: '1', unit: 'pièce' },
+    ]},
+});
+
+
+console.log('✅ recette DRAFT');
+
+await createRecipe({
+    titre: 'Dessert chocolaté',
+    imageURL: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600',
+    instructions: '1. Mélanger chocolat fondu et lait.\n2. Ajouter sucre et œufs.\n3. Verser dans moules et réfrigérer.',
+    nombrePersonnes: 2,
+    tempsPreparation: 10,
+    tempsCuisson: 0,
+    status: 'DRAFT',      // <-- statut DRAFT
+    rejectionReason: 'La recette est incomplète, il manque la cuisson exacte.', // <-- raison
+    userId: userRemy.id,
+    categoryId: catDessert.id,
+    mediaId: medias[8467].id,
+    ingredients: { create: [
+      { ingredientId: ing('chocolat noir 70%').id, quantity: '100', unit: 'g' },
+      { ingredientId: ing('lait entier').id, quantity: '50', unit: 'cl' },
+      { ingredientId: ing('œuf').id, quantity: '2', unit: 'pièces' },
+    ]},
+});
+
+
+
 
   // ── Résumé final ─────────────────────────────────────────
   const [nEntree, nPlat, nDessert, nBoisson] = await Promise.all([
