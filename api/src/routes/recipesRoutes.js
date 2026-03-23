@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import express from 'express';
 import {
   createRecipe,
   deleteRecipe,
@@ -12,14 +12,14 @@ import {
   createRecipeSchema,
   deleteRecipeSchema,
   getRecipeSchema,
+  listRecipesSchema,
   updateRecipeSchema,
 } from '../validators/recipesValidator.js';
 
-const router = Router();
+const router = express.Router();
 
-router.get('/', getAllPublishedRecipes);
+router.get('/', validate(listRecipesSchema), getAllPublishedRecipes);
 router.get('/:id', validate(getRecipeSchema), getRecipe);
-
 router.post('/', authMiddleware, validate(createRecipeSchema), createRecipe);
 router.patch('/:id', authMiddleware, validate(updateRecipeSchema), updateRecipe);
 router.delete('/:id', authMiddleware, validate(deleteRecipeSchema), deleteRecipe);

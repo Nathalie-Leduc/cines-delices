@@ -153,6 +153,7 @@ model Recipe {
 
   @@index([slug])
   @@index([status])
+  @@index([status, categoryId])
   @@index([userId])
   @@index([categoryId])
   @@index([mediaId])
@@ -191,4 +192,3 @@ model Ingredient {
   @@index([nom])
   @@map("ingredients")
 }
-

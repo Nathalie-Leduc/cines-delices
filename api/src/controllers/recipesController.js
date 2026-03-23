@@ -358,13 +358,69 @@ export const deleteRecipe = async (req, res) => {
  * Récupère toutes les recettes publiées (pour les membres)
  * GET /api/recipes?published=true
  */
-export const getAllPublishedRecipes = async (req, res) => {
-  try {
-    const published = req.query.published === 'true';
+export const getAllPublishedRecipes = asyncHandler(async (req, res) => {
+  const page = Number(req.query.page || 1);
+  const requestedLimit = Number(req.query.limit || 12);
+  const limit = Math.min(Math.max(requestedLimit, 1), 50);
+  const skip = (page - 1) * limit;
+  const categoryFilter = String(req.query.category || '').trim();
+  const searchQuery = String(req.query.q || '').trim();
 
-    const recipes = await prisma.recipe.findMany({
-      where: published ? { status: 'PUBLISHED' } : {},
+  const andFilters = [{ status: 'PUBLISHED' }];
+
+  if (categoryFilter) {
+    andFilters.push({
+      OR: [
+        { categoryId: categoryFilter },
+        {
+          category: {
+            nom: {
+              equals: categoryFilter,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  if (searchQuery) {
+    andFilters.push({
+      OR: [
+        {
+          titre: {
+            contains: searchQuery,
+            mode: 'insensitive',
+          },
+        },
+        {
+          category: {
+            nom: {
+              contains: searchQuery,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          media: {
+            titre: {
+              contains: searchQuery,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ],
+    });
+  }
+
+  const where = { AND: andFilters };
+
+  const [recipes, totalItems] = await prisma.$transaction([
+    prisma.recipe.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
       include: {
         category: true,
         media: true,
@@ -380,11 +436,22 @@ export const getAllPublishedRecipes = async (req, res) => {
           },
         },
       },
-    });
+    }),
+    prisma.recipe.count({ where }),
+  ]);
 
-    return res.json(recipes);
-  } catch (error) {
-    console.error('[getAllPublishedRecipes]', error);
-    return res.status(500).json({ message: 'Erreur serveur lors de la récupération des recettes.' });
-  }
-};
+  const totalPages = totalItems === 0 ? 0 : Math.ceil(totalItems / limit);
+  const pagination = {
+    page,
+    limit,
+    totalItems,
+    totalPages,
+    hasNextPage: page < totalPages,
+    hasPreviousPage: page > 1 && totalPages > 0,
+  };
+
+  res.json({
+    recipes,
+    pagination,
+  });
+});

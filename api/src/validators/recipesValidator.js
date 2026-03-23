@@ -11,6 +11,15 @@ const optionalIntFromInput = z.preprocess((value) => {
   return Number.isNaN(parsed) ? value : parsed;
 }, z.number().int().positive().optional());
 
+const optionalTrimmedString = z.preprocess((value) => {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  const normalized = String(value).trim();
+  return normalized === '' ? undefined : normalized;
+}, z.string().optional());
+
 // Schéma pour un ingrédient dans une recette
 const ingredientSchema = z.object({
   nom: z
@@ -162,6 +171,16 @@ export const getRecipeSchema = z.object({
     id: z
       .string({ required_error: 'L\'ID de la recette est obligatoire' })
       .uuid('ID de recette invalide'),
+  }),
+});
+
+// GET /api/recipes?page=&limit=&category=&q=
+export const listRecipesSchema = z.object({
+  query: z.object({
+    page: optionalIntFromInput.default(1),
+    limit: optionalIntFromInput.default(12),
+    category: optionalTrimmedString,
+    q: optionalTrimmedString,
   }),
 });
 
