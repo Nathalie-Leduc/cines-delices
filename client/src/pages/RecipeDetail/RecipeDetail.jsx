@@ -52,9 +52,9 @@ function normalizeApiRecipe(apiRecipe) {
     slug: apiRecipe.slug,
     title: apiRecipe.title || apiRecipe.titre || 'Recette sans titre',
     category: normalizeCategoryLabel(apiRecipe.category?.nom || apiRecipe.category),
-    image: apiRecipe.image || apiRecipe.media?.posterUrl || '/img/placeholder.jpg',
-    heroImage: apiRecipe.heroImage || apiRecipe.image || apiRecipe.media?.posterUrl || '/img/placeholder.jpg',
-    posterImage: apiRecipe.posterImage || apiRecipe.image || apiRecipe.media?.posterUrl || '/img/placeholder.jpg',
+    image: apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
+    heroImage: apiRecipe.heroImage || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
+    posterImage: apiRecipe.posterImage || apiRecipe.media?.posterUrl || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
     duration,
@@ -83,7 +83,8 @@ function mapApiRecipeToCard(recipe) {
     mediaTitle: recipe?.media?.titre || "Sans média",
     mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
     duration: duration > 0 ? duration : 0,
-    image: recipe?.media?.posterUrl || "/img/placeholder.jpg",
+    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.png",
+    fallbackImage: recipe?.media?.posterUrl || "/img/hero-home.png",
   };
 }
 
@@ -100,12 +101,8 @@ export default function RecipeDetail() {
 
     const fetchRecipes = async () => {
       try {
-        const payload = await getRecipesCatalog();
-        const rawRecipes = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.data)
-            ? payload.data
-            : [];
+        const payload = await getRecipesCatalog({ limit: 50 });
+        const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
 
         if (!isMounted) return;
         setRecipes(rawRecipes);

@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
+import { getRecipesCatalog } from "../../services/recipesService";
 
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || "http://localhost:3000/api/auth/me";
 
@@ -63,6 +64,25 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     setSearch(e.target.value);
   };
 
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const normalized = search.trim();
+
+    if (!normalized) {
+      navigate("/recipes");
+      setResults([]);
+      return;
+    }
+
+    navigate(`/recipes?q=${encodeURIComponent(normalized)}`);
+    setResults([]);
+  };
+
+  const handleResultClick = () => {
+    setSearch("");
+    setResults([]);
+  };
+
   // FETCH API AVEC DEBOUNCE
   // ---------------------------
   useEffect(() => {
@@ -75,17 +95,21 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     // Définir un timeout pour attendre 400ms après la dernière frappe
     const timeout = setTimeout(async () => {
       try {
-          // Appel à ton API Node.js / Express qui interroge PostgreSQL
-          const response = await fetch(`http://localhost:3000/api/recipes?search=${encodeURIComponent(search)}`);
-          if (!response.ok) {
-          console.error("Erreur fetch API:", response.status);
-          setResults([]);
-          return;
-          }
-          // On suppose que l'API renvoie un tableau de recettes : [{id, title}, ...]
-          const data = await response.json();
-          console.log("résultats api:", data);
-          setResults(data);
+          const payload = await getRecipesCatalog({
+            q: search,
+            limit: 5,
+          });
+
+          const recipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
+          const mappedResults = recipes.map((recipe) => ({
+            id: recipe.id,
+            slug: recipe.slug,
+            title: recipe.titre || "Recette sans titre",
+            mediaTitle: recipe.media?.titre || "",
+            image: recipe.media?.posterUrl || recipe.imageURL || "/img/placeholder.jpg",
+          }));
+
+          setResults(mappedResults);
 
       } catch (err) {
         console.error("Erreur fetch recettes :", err);
@@ -245,11 +269,8 @@ useEffect(() => {
           <div className={styles.rightZone}>
             {/* Wrapper relatif pour positionner la liste sous l'input */}
             <div ref={searchRef} className={styles.searchWrapper}>
-             {/* Formulaire de recherche */}
-              <form className={styles.searchForm} role="search" onSubmit={(e) => {e.preventDefault()
-              console.log("Rechercher recette:", search);
-              }}
-              >
+              {/* Formulaire de recherche */}
+              <form className={styles.searchForm} role="search" onSubmit={handleSearchSubmit}>
                 <input
                   type="search"
                   value={search}  // Valeur contrôlée par le state
@@ -273,15 +294,21 @@ useEffect(() => {
                 <ul className={styles.searchResults}>
                 {results.map((recipe) => (
                   <li key={recipe.id} className={styles.searchResultItem}>
-                    {/* Lien vers la page du média : films ou séries selon le type */}
                     <NavLink 
-                      to={`/recipes/${recipe.id}`}
-                      onClick={() => { 
-                        setSearch(""); // vider input
-                        setResults([]); // vider résultats
-                     }} 
+                      to={`/recipes/${recipe.slug || recipe.id}`}
+                      onClick={handleResultClick}
                     >
-                    {recipe.title}
+                    <img
+                      src={recipe.image}
+                      alt={recipe.title}
+                      className={styles.searchResultThumb}
+                    />
+                    <span className={styles.searchResultCopy}>
+                      <span>{recipe.title}</span>
+                      {recipe.mediaTitle && (
+                        <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                      )}
+                    </span>
                     </NavLink>
                   </li>
                 ))}

@@ -1,18 +1,36 @@
 import { Link } from "react-router-dom";
 import styles from "./RecipeCard.module.scss";
 
+const RECIPE_IMAGE_FALLBACK = "/img/hero-home.png";
+
 export default function RecipeCard({ recipe }) {
   if (!recipe) return null;
 
-  const { id, image, title, category, mediaTitle, mediaType, duration } = recipe;
+  const { id, image, fallbackImage, title, category, mediaTitle, mediaType, duration } = recipe;
   const categoryKey = category?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const mediaTypeLabel = mediaType?.toLowerCase().startsWith("f") ? "F" : "S";
+
+  const handleImageError = (event) => {
+    const nextSource = event.currentTarget.dataset.fallbackSrc || RECIPE_IMAGE_FALLBACK;
+
+    if (event.currentTarget.src.endsWith(nextSource)) {
+      return;
+    }
+
+    event.currentTarget.src = nextSource;
+  };
 
   return (
     <Link to={`/recipes/${recipe.slug || recipe.id}`} className={styles.cardLink}>
       <article className={`${styles.card} ${styles[categoryKey] || ""}`}>
         <div className={styles.imageWrapper}>
-          <img src={image} alt={title} className={styles.image} />
+          <img
+            src={image || fallbackImage || RECIPE_IMAGE_FALLBACK}
+            alt={title}
+            className={styles.image}
+            data-fallback-src={fallbackImage || RECIPE_IMAGE_FALLBACK}
+            onError={handleImageError}
+          />
           <span className={`${styles.category} ${styles[categoryKey] || ""}`}>{category}</span>
         </div>
 
