@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { generateUniqueSlug } from '../utils/slug.js';
 
 const DEFAULT_CATEGORY_COLORS = {
   'entrée': '#84A767',
@@ -229,21 +230,74 @@ export async function deleteRecipe(req, res) {
 export async function updateAdminRecipe(req, res) {
   try {
     const { id } = req.params;
-    const { titre, instructions, nombrePersonnes, tempsPreparation, tempsCuisson, categoryId, categoryName, mediaId, tmdbId } = req.body;
+    const {
+      titre,
+      instructions,
+      nombrePersonnes,
+      tempsPreparation,
+      tempsCuisson,
+      categoryId,
+      categoryName,
+      mediaId,
+      tmdbId,
+      tmdbMedia,
+      ingredients,
+    } = req.body;
 
     const data = {};
-    if (titre !== undefined) data.titre = String(titre).trim();
+    if (titre !== undefined) {
+  data.titre = String(titre).trim();
+  data.slug = await generateUniqueSlug(
+    data.titre,
+    (candidate) => prisma.recipe.findUnique({ where: { slug: candidate } })
+  );
+}
     if (instructions !== undefined) data.instructions = String(instructions).trim();
     if (nombrePersonnes !== undefined) data.nombrePersonnes = nombrePersonnes ? parseInt(nombrePersonnes, 10) : null;
     if (tempsPreparation !== undefined) data.tempsPreparation = tempsPreparation ? parseInt(tempsPreparation, 10) : null;
     if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson ? parseInt(tempsCuisson, 10) : null;
 
-    // Résolution du média : par UUID direct ou par tmdbId
-    if (tmdbId !== undefined && tmdbId !== null) {
-      const media = await prisma.media.findUnique({ where: { tmdbId: parseInt(tmdbId, 10) } });
-      if (!media) {
-        return res.status(404).json({ message: 'Média introuvable en base. Veuillez choisir un film déjà présent.' });
+    // Résolution du média : UUID direct, ou création automatique depuis TMDB
+    if (tmdbMedia?.id || (tmdbId !== undefined && tmdbId !== null)) {
+      const incomingTmdbId = parseInt(tmdbMedia?.id ?? tmdbId, 10);
+      if (Number.isNaN(incomingTmdbId)) {
+        return res.status(400).json({ message: 'tmdbId invalide.' });
       }
+
+      let media = await prisma.media.findUnique({
+        where: { tmdbId: incomingTmdbId },
+      });
+
+      if (!media) {
+        const mediaTitle = String(tmdbMedia?.title || '').trim();
+        if (!mediaTitle) {
+          return res.status(400).json({ message: 'Sélectionnez un film/série depuis les suggestions TMDB.' });
+        }
+
+        const rawType = String(tmdbMedia?.type || '').toLowerCase();
+        const mediaType = rawType === 'tv' || rawType === 'series' || rawType === 'serie' || rawType === 'série'
+          ? 'SERIES'
+          : 'MOVIE';
+        const parsedYear = parseInt(String(tmdbMedia?.year || ''), 10);
+        const annee = Number.isNaN(parsedYear) ? null : parsedYear;
+        const slug = await generateUniqueSlug(
+          `${mediaTitle}${annee ? ` ${annee}` : ''}`,
+          (candidate) => prisma.media.findUnique({ where: { slug: candidate } }),
+        );
+
+        media = await prisma.media.create({
+          data: {
+            tmdbId: incomingTmdbId,
+            titre: mediaTitle,
+            slug,
+            type: mediaType,
+            posterUrl: tmdbMedia?.poster || null,
+            synopsis: tmdbMedia?.overview || null,
+            annee,
+          },
+        });
+      }
+
       data.mediaId = media.id;
     } else if (mediaId !== undefined && mediaId !== null) {
       data.mediaId = mediaId;
@@ -259,6 +313,61 @@ export async function updateAdminRecipe(req, res) {
       if (category) {
         data.categoryId = category.id;
       }
+    }
+
+    // Ingrédients : remplace la liste complète si fournie par le front
+    if (Array.isArray(ingredients)) {
+      const resolvedIngredients = [];
+
+      for (const item of ingredients) {
+        const rawIngredientId = item?.ingredientId || item?.id || null;
+        const quantity = item?.quantite ?? item?.quantity ?? null;
+        const unit = item?.unite ?? item?.unit ?? null;
+
+        if (rawIngredientId) {
+          resolvedIngredients.push({
+            ingredientId: rawIngredientId,
+            quantity: quantity ? String(quantity) : null,
+            unit: unit ? String(unit) : null,
+          });
+          continue;
+        }
+
+        const rawName = String(item?.nom ?? item?.name ?? '').trim().toLowerCase();
+        if (!rawName) {
+          continue;
+        }
+
+        const ingredient = await prisma.ingredient.upsert({
+          where: { nom: rawName },
+          update: {},
+          create: { nom: rawName },
+        });
+
+        resolvedIngredients.push({
+          ingredientId: ingredient.id,
+          quantity: quantity ? String(quantity) : null,
+          unit: unit ? String(unit) : null,
+        });
+      }
+
+      // Évite les doublons sur la clé composite (recipeId, ingredientId)
+      const deduped = Array.from(
+        new Map(resolvedIngredients.map((entry) => [entry.ingredientId, entry])).values(),
+      );
+
+      data.ingredients = {
+        deleteMany: {},
+        ...(deduped.length > 0
+          ? {
+              create: deduped.map((entry) => ({
+                ingredientId: entry.ingredientId,
+                quantity: entry.quantity,
+                unit: entry.unit,
+              })),
+            }
+          : {}),
+      };
     }
 
     if (Object.keys(data).length === 0) {

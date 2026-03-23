@@ -81,9 +81,8 @@ export async function searchMedia(req, res) {
       return res.status(400).json({ message: "Paramètre 'searchTerm' requis" });
     }
 
-    const type = req.params.type || 'movie';
     const response = await fetch(
-      `${process.env.TMDB_BASE_URL}/search/${type}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&query=${encodeURIComponent(searchTerm)}`
+      `${process.env.TMDB_BASE_URL}/search/multi?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&query=${encodeURIComponent(searchTerm)}`
     );
 
     if (!response.ok) {
@@ -91,7 +90,11 @@ export async function searchMedia(req, res) {
     }
 
     const data = await response.json();
-    return res.json(data.results.map((item) => mapMedia(item, type)));
+    const results = data.results
+      .filter((item) => item.media_type === 'movie' || item.media_type === 'tv')
+      .map((item) => mapMedia(item, item.media_type));
+
+    return res.json(results);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Erreur serveur lors de la recherche de média' });

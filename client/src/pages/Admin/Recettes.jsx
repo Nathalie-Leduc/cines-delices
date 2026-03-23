@@ -2,14 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import RecipeCard from '../../components/RecipeCard';
-import { deleteAdminRecipe, getAdminCategories, getAdminRecipes, updateAdminRecipe } from '../../services/adminService.js';
+import {
+  deleteAdminRecipe,
+  getAdminCategories,
+  getAdminIngredients,
+  getAdminRecipes,
+  updateAdminRecipe,
+} from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
   || 'http://localhost:3000/api/tmdb/medias/search';
-const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
-  || 'http://localhost:3000/api/ingredients/search';
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
   || 'http://localhost:3000/api/ingredients';
 const UNITES_OPTIONS = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
@@ -56,7 +60,9 @@ function AdminRecettes() {
     id: null,
     title: '',
     category: 'Entrée',
+    categoryId: null,
     movieId: null,
+    selectedTmdbMedia: null,
     movie: '',
     media: 'F',
     nbPersonnes: '',
@@ -141,13 +147,13 @@ function AdminRecettes() {
       category: recipe.category || 'Entrée',
       categoryId: recipe.categoryId || null,
       movieId: recipe.movieId || null,
-      selectedTmdbId: null,
+      selectedTmdbMedia: null,
       movie: recipe.movie || '',
       media: recipe.media || 'F',
       nbPersonnes: recipe.nbPersonnes ?? recipe.people ?? '',
       ingredients: Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0
         ? recipe.ingredients.map(item => ({
-            ingredientId: item?.ingredientId || null,
+            ingredientId: item?.ingredientId || item?.id || null,
             nom: typeof item === 'string' ? item : (item?.nom ?? item?.name ?? ''),
             quantite: typeof item === 'string' ? '' : (item?.quantite ?? item?.quantity ?? ''),
             unite: typeof item === 'string' ? '' : (item?.unite ?? item?.unit ?? ''),
@@ -174,7 +180,7 @@ function AdminRecettes() {
     setEditDraft(prev => ({
       ...prev,
       [field]: value,
-      ...(field === 'movie' ? { movieId: null } : {}),
+      ...(field === 'movie' ? { movieId: null, selectedTmdbMedia: null } : {}),
     }));
     if (error) setError('');
   }
@@ -212,6 +218,9 @@ function AdminRecettes() {
         id: item.id,
         title: item.title || item.titre || item.name || item.nom || '',
         type: item.type || item.mediaType || item.media_type || '',
+        poster: item.poster || item.posterUrl || null,
+        year: item.year || null,
+        overview: item.overview || null,
       })).filter(item => item.title);
       setFilmResults(normalized.slice(0, 8));
     } catch (err) {
@@ -232,7 +241,14 @@ function AdminRecettes() {
     const normalizedType = String(film?.type || '').toLowerCase();
     setEditDraft(prev => ({
       ...prev,
-      selectedTmdbId: film.id || null,
+      selectedTmdbMedia: {
+        id: film.id,
+        title: film.title,
+        type: film.type,
+        poster: film.poster || null,
+        year: film.year || null,
+        overview: film.overview || null,
+      },
       movieId: null,
       movie: film.title,
       media: normalizedType === 'movie'
@@ -256,9 +272,7 @@ function AdminRecettes() {
     setEditIngredientSearchLoading(prev => ({ ...prev, [index]: true }));
     setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
     try {
-      const response = await fetch(`${INGREDIENT_SEARCH_API}?q=${encodeURIComponent(trimmed)}`);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const payload = await response.json();
+      const payload = await getAdminIngredients(trimmed);
       const rawList = Array.isArray(payload) ? payload : payload.data || [];
       const normalized = rawList
         .map(item => ({ id: item.id, name: item.name || item.nom || '' }))
@@ -387,8 +401,9 @@ function AdminRecettes() {
       tempsCuisson: editDraft.tempsCuisson,
       categoryId: editDraft.categoryId,
       categoryName: editDraft.category,
-      ...(editDraft.selectedTmdbId
-        ? { tmdbId: editDraft.selectedTmdbId }
+      ingredients: editDraft.ingredients,
+      ...(editDraft.selectedTmdbMedia
+        ? { tmdbMedia: editDraft.selectedTmdbMedia }
         : editDraft.movieId ? { mediaId: editDraft.movieId } : {}),
     })
       .then((updatedRecipe) => {

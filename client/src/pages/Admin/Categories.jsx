@@ -18,6 +18,7 @@ function AdminCategories() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteModalError, setDeleteModalError] = useState('');
 
   useEffect(() => {
     setIsLoading(true);
@@ -96,15 +97,21 @@ function AdminCategories() {
       return;
     }
 
+    if ((editingCategory.recipesCount || 0) > 0) {
+      setDeleteModalError('Impossible de supprimer cette catégorie car elle est encore utilisée par des recettes.');
+      return;
+    }
+
     try {
       await deleteAdminCategory(editingCategory.id);
       setCategories((previous) => previous.filter((category) => category.id !== editingCategory.id));
       setShowDeleteModal(false);
       setEditingCategory(null);
       setEditingCategoryName('');
+      setDeleteModalError('');
       setError('');
     } catch (deleteError) {
-      setError(deleteError.message || 'Suppression impossible.');
+      setDeleteModalError(deleteError.message || 'Suppression impossible.');
     }
   }
 
@@ -162,6 +169,7 @@ function AdminCategories() {
                       setEditingCategory(category);
                       setEditingCategoryName(category.name);
                       setSelectedColor(category.color);
+                      setDeleteModalError('');
                       setError('');
                     }}
                   >
@@ -173,6 +181,7 @@ function AdminCategories() {
                     onClick={() => {
                       setEditingCategory(category);
                       setEditingCategoryName(category.name);
+                      setDeleteModalError('');
                       setShowDeleteModal(true);
                       setError('');
                     }}
@@ -230,8 +239,19 @@ function AdminCategories() {
       )}
 
       {showDeleteModal && (
-        <AdminModal onCancel={() => setShowDeleteModal(false)} onConfirm={handleDeleteCategory}>
-          Êtes-vous sûr de vouloir supprimer cette catégorie ?
+        <AdminModal
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setEditingCategory(null);
+            setEditingCategoryName('');
+            setDeleteModalError('');
+          }}
+          onConfirm={handleDeleteCategory}
+        >
+          <div className={styles.modalDeleteText}>
+            Êtes-vous sûr de vouloir supprimer cette catégorie ?
+          </div>
+          {deleteModalError ? <div className={styles.modalDeleteError}>{deleteModalError}</div> : null}
         </AdminModal>
       )}
 
