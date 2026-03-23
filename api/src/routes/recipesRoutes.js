@@ -4,6 +4,7 @@ import {
   deleteRecipe,
   getAllPublishedRecipes,
   getRecipe,
+  submitRecipe,
   updateRecipe,
 } from '../controllers/recipesController.js';
 import { authMiddleware } from '../middlewares/authMiddleware.js';
@@ -13,6 +14,7 @@ import {
   deleteRecipeSchema,
   getRecipeSchema,
   listRecipesSchema,
+  submitRecipeSchema,
   updateRecipeSchema,
 } from '../validators/recipesValidator.js';
 
@@ -22,6 +24,7 @@ router.get('/', validate(listRecipesSchema), getAllPublishedRecipes);
 router.get('/:id', validate(getRecipeSchema), getRecipe);
 router.post('/', authMiddleware, validate(createRecipeSchema), createRecipe);
 router.patch('/:id', authMiddleware, validate(updateRecipeSchema), updateRecipe);
+router.patch('/:id/submit', authMiddleware, validate(submitRecipeSchema), submitRecipe);
 router.delete('/:id', authMiddleware, validate(deleteRecipeSchema), deleteRecipe);
 
 export default router;

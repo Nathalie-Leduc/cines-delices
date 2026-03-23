@@ -1,4 +1,5 @@
 import { prisma } from '../lib/prisma.js';
+import { asyncHandler } from '../lib/responseHelper.js';
 import { generateUniqueSlug } from '../utils/slug.js';
 
 /**
@@ -318,6 +319,67 @@ export const updateRecipe = async (req, res) => {
   } catch (error) {
     console.error('[updateRecipe]', error);
     return res.status(500).json({ message: 'Erreur serveur lors de la mise à jour de la recette.' });
+  }
+};
+
+/**
+ * Soumet une recette en attente de validation admin
+ * PATCH /api/recipes/:id/submit
+ */
+export const submitRecipe = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: 'Utilisateur non authentifie' });
+    }
+
+    const recipe = await prisma.recipe.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+      },
+    });
+
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recette introuvable' });
+    }
+
+    if (recipe.userId !== userId) {
+      return res.status(403).json({ message: "Vous n'etes pas autorise a soumettre cette recette" });
+    }
+
+    if (recipe.status === 'PENDING') {
+      return res.status(400).json({ message: 'Cette recette est deja en attente de validation.' });
+    }
+
+    if (recipe.status !== 'DRAFT') {
+      return res.status(400).json({ message: 'Seules les recettes en brouillon peuvent etre soumises.' });
+    }
+
+    const updatedRecipe = await prisma.recipe.update({
+      where: { id },
+      data: {
+        status: 'PENDING',
+      },
+      include: {
+        category: true,
+        media: true,
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+    });
+
+    return res.json({ message: 'Recette soumise pour validation.', recipe: updatedRecipe });
+  } catch (error) {
+    console.error('[submitRecipe]', error);
+    return res.status(500).json({ message: 'Erreur serveur lors de la soumission de la recette.' });
   }
 };
 

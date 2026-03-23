@@ -20,6 +20,9 @@
 # ──────────────────────────────────────────────────────────
 @token_member = COLLER_LE_TOKEN_MEMBRE_ICI
 @token_admin  = COLLER_LE_TOKEN_ADMIN_ICI
+@draft_recipe_id_member = COLLER_ID_RECETTE_DRAFT_DU_MEMBRE_ICI
+@pending_recipe_id_member = COLLER_ID_RECETTE_PENDING_DU_MEMBRE_ICI
+@draft_recipe_id_other_user = COLLER_ID_RECETTE_DRAFT_D_UN_AUTRE_UTILISATEUR_ICI
 
 # ══════════════════════════════════════════════════════════
 # 1. HEALTH CHECK
@@ -339,6 +342,38 @@ Authorization: Bearer {{token_member}}
 {
   "email": "pas-un-email"
 }
+
+
+# ══════════════════════════════════════════════════════════
+# 6.1 PATCH /recipes/:id/submit — soumettre une recette
+# ══════════════════════════════════════════════════════════
+
+### ✅ Submit recette DRAFT de l'auteur — attendu : 200 + status PENDING
+PATCH {{baseUrl}}/recipes/{{draft_recipe_id_member}}/submit
+Authorization: Bearer {{token_member}}
+
+###
+
+### ❌ Submit sans token — attendu : 401
+PATCH {{baseUrl}}/recipes/{{draft_recipe_id_member}}/submit
+
+###
+
+### ❌ Submit recette d'un autre utilisateur — attendu : 403
+PATCH {{baseUrl}}/recipes/{{draft_recipe_id_other_user}}/submit
+Authorization: Bearer {{token_member}}
+
+###
+
+### ❌ Submit recette deja PENDING — attendu : 400
+PATCH {{baseUrl}}/recipes/{{pending_recipe_id_member}}/submit
+Authorization: Bearer {{token_member}}
+
+###
+
+### ❌ Submit recette introuvable — attendu : 404
+PATCH {{baseUrl}}/recipes/00000000-0000-0000-0000-000000000000/submit
+Authorization: Bearer {{token_member}}
 
 
 # ══════════════════════════════════════════════════════════

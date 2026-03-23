@@ -165,6 +165,15 @@ export const updateRecipeSchema = z.object({
   }),
 });
 
+// PATCH /api/recipes/:id/submit
+export const submitRecipeSchema = z.object({
+  params: z.object({
+    id: z
+      .string({ required_error: 'L\'ID de la recette est obligatoire' })
+      .uuid('ID de recette invalide'),
+  }),
+});
+
 // GET /api/recipes/:id
 export const getRecipeSchema = z.object({
   params: z.object({
