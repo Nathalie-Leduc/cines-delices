@@ -29,16 +29,11 @@ async function request(path, options = {}) {
 }
 
 export function getPublishedRecipes() {
-  return request('/recipes?published=true');
+  return request('/api/recipes'); // ← enlever ?published=true (inutile, le back filtre déjà)
 }
 
 export async function getRecipesCatalog() {
-  const publishedRecipes = await getPublishedRecipes();
-
-  if (Array.isArray(publishedRecipes) && publishedRecipes.length > 0) {
-    return publishedRecipes;
-  }
-
+  
   return request('/api/recipes');
 }
 
