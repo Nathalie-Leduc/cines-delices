@@ -29,7 +29,7 @@ async function request(path, options = {}) {
 }
 
 export function getPublishedRecipes() {
-  return request('/api/recipes?published=true');
+  return request('/recipes?published=true');
 }
 
 export async function getRecipesCatalog() {
