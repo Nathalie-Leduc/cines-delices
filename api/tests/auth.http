@@ -17,6 +17,7 @@
 
 # ──────────────────────────────────────────────────────────
 # Coller ici les tokens après les avoir récupérés via login
+# ⚠️ Renseigner aussi les IDs ci-dessous avant les tests submit
 # ──────────────────────────────────────────────────────────
 @token_member = COLLER_LE_TOKEN_MEMBRE_ICI
 @token_admin  = COLLER_LE_TOKEN_ADMIN_ICI

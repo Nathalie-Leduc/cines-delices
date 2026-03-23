@@ -31,6 +31,10 @@ enum MediaType {
   SERIES
 }
 
+enum NotificationType {
+  RECIPE_SUBMITTED
+}
+
 // ===================================
 // USER - le membre ou l'admin du site
 // ===================================
@@ -43,7 +47,8 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
-  recipes Recipe[]
+  recipes        Recipe[]
+  notifications  Notification[]
 
   @@index([email])
   @@map("users")
@@ -150,6 +155,7 @@ model Recipe {
   category    Category           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   media       Media              @relation(fields: [mediaId],    references: [id], onDelete: Restrict)
   ingredients RecipeIngredient[]
+  notifications Notification[]
 
   @@index([slug])
   @@index([status])
@@ -191,4 +197,23 @@ model Ingredient {
 
   @@index([nom])
   @@map("ingredients")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  message   String
+  isRead    Boolean          @default(false) @map("is_read")
+
+  userId    String           @map("user_id")
+  recipeId  String?          @map("recipe_id")
+
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recipe    Recipe?          @relation(fields: [recipeId], references: [id], onDelete: SetNull)
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("notifications")
 }

@@ -39,8 +39,10 @@ async function request(path, options = {}) {
   return payload;
 }
 
-export function getPublishedRecipes() {
-  return request('/api/recipes?published=true');
+export function getPublishedRecipes(category = '') {
+  const params = new URLSearchParams({ limit: '100' });
+  if (category) params.set('category', category);
+  return request(`/api/recipes?${params.toString()}`);
 }
 
 export async function getRecipesCatalog(params = {}) {

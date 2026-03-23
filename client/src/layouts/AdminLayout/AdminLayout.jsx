@@ -59,17 +59,17 @@ function getRoleLabel(payload) {
 }
 
 function getDisplayName(payload) {
-  const savedDisplayName = localStorage.getItem('displayName');
-  if (savedDisplayName?.trim()) {
-    return savedDisplayName.trim();
-  }
-
   if (typeof payload?.prenom === 'string' && payload.prenom.trim()) {
     return toTitleCase(payload.prenom);
   }
 
   if (typeof payload?.pseudo === 'string' && payload.pseudo.trim()) {
     return toTitleCase(payload.pseudo);
+  }
+
+  const savedDisplayName = localStorage.getItem('displayName');
+  if (savedDisplayName?.trim()) {
+    return savedDisplayName.trim();
   }
 
   if (typeof payload?.name === 'string' && payload.name.trim()) {

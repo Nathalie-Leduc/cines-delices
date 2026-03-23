@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext.jsx';
 import {
   getAdminCategories,
   getAdminIngredients,
+  getAdminNotifications,
   getAdminRecipes,
   getAdminUsers,
   getPendingRecipes,
@@ -19,17 +20,37 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     categories: 0,
     pendingRecipes: 0,
     pendingIngredients: 0,
+    unreadNotifications: 0,
   });
+  const [recentNotifications, setRecentNotifications] = useState([]);
+
+  function formatNotificationDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
 
   async function loadCounts() {
     try {
-      const [recipes, users, categories, pendingRecipes, pendingIngredients] = await Promise.all([
+      const [recipes, users, categories, pendingRecipes, pendingIngredients, notificationsPayload] = await Promise.all([
         getAdminRecipes(),
         getAdminUsers(),
         getAdminCategories(),
         getPendingRecipes(),
         getAdminIngredients(),
+        getAdminNotifications(),
       ]);
+
+      const notifications = Array.isArray(notificationsPayload?.notifications)
+        ? notificationsPayload.notifications
+        : [];
+
+      setRecentNotifications(notifications.slice(0, 3));
 
       setCounts({
         recipes: Array.isArray(recipes) ? recipes.length : 0,
@@ -37,14 +58,17 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
         categories: Array.isArray(categories) ? categories.length : 0,
         pendingRecipes: Array.isArray(pendingRecipes) ? pendingRecipes.length : 0,
         pendingIngredients: Array.isArray(pendingIngredients) ? pendingIngredients.length : 0,
+        unreadNotifications: Number(notificationsPayload?.unreadCount || 0),
       });
     } catch {
+      setRecentNotifications([]);
       setCounts({
         recipes: 0,
         users: 0,
         categories: 0,
         pendingRecipes: 0,
         pendingIngredients: 0,
+        unreadNotifications: 0,
       });
     }
   }
@@ -56,6 +80,27 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     const interval = setInterval(loadCounts, 5000);
 
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    function handleNotificationConsumed(event) {
+      const recipeId = event?.detail?.recipeId;
+      if (!recipeId) {
+        return;
+      }
+
+      setRecentNotifications((previous) => previous.filter((item) => item.recipeId !== recipeId));
+      setCounts((previous) => ({
+        ...previous,
+        unreadNotifications: Math.max(0, previous.unreadNotifications - 1),
+      }));
+    }
+
+    window.addEventListener('admin-notification-consumed', handleNotificationConsumed);
+
+    return () => {
+      window.removeEventListener('admin-notification-consumed', handleNotificationConsumed);
+    };
   }, []);
 
   const items = [
@@ -97,6 +142,17 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     navigate('/');
   }
 
+  function handleOpenNotification(notification) {
+    if (!notification?.recipeId) {
+      return;
+    }
+
+    onNavigate?.();
+    navigate('/admin/validation-recettes', {
+      state: { openRecipeId: notification.recipeId },
+    });
+  }
+
   return (
     <aside className={`${styles.adminSidebar} ${mobile ? styles.adminSidebarMobile : ''} ${className}`.trim()}>
       <nav className={styles.nav}>
@@ -121,6 +177,32 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
           ))}
         </ul>
       </nav>
+
+      <section className={styles.notificationsBox} aria-label="Notifications admin">
+        <div className={styles.notificationsHeader}>
+          <strong>Alertes</strong>
+          <span>{counts.unreadNotifications} non lue{counts.unreadNotifications > 1 ? 's' : ''}</span>
+        </div>
+
+        {recentNotifications.length === 0 ? (
+          <p className={styles.notificationsEmpty}>Aucune alerte récente.</p>
+        ) : (
+          <ul className={styles.notificationsList}>
+            {recentNotifications.map((notification) => (
+              <li key={notification.id} className={styles.notificationItem}>
+                <button
+                  type="button"
+                  className={styles.notificationButton}
+                  onClick={() => handleOpenNotification(notification)}
+                >
+                  <p>{notification.message}</p>
+                  <small>{formatNotificationDate(notification.createdAt)}</small>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
         <span className={styles.logoutIcon}>

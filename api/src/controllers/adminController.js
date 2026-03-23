@@ -95,9 +95,86 @@ function formatIngredient(ingredient) {
   };
 }
 
+function formatNotification(notification) {
+  return {
+    id: notification.id,
+    type: notification.type,
+    message: notification.message,
+    isRead: notification.isRead,
+    recipeId: notification.recipeId,
+    createdAt: notification.createdAt,
+  };
+}
+
 function sendError(res, error, fallbackMessage) {
   console.error(fallbackMessage, error);
   return res.status(500).json({ message: fallbackMessage });
+}
+
+function normalizeMediaKind(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 's' || normalized === 'tv' || normalized === 'series' || normalized === 'serie' || normalized === 'série') {
+    return { prismaType: 'SERIES', tmdbType: 'tv' };
+  }
+
+  return { prismaType: 'MOVIE', tmdbType: 'movie' };
+}
+
+async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
+  if (mediaId !== undefined && mediaId !== null && mediaId !== '') {
+    return mediaId;
+  }
+
+  if (tmdbId === undefined || tmdbId === null || tmdbId === '') {
+    return undefined;
+  }
+
+  const normalizedTmdbId = parseInt(tmdbId, 10);
+  if (!Number.isInteger(normalizedTmdbId) || normalizedTmdbId <= 0) {
+    throw new Error('Média invalide. Sélectionne un film depuis TMDB.');
+  }
+
+  const existingMedia = await prisma.media.findUnique({ where: { tmdbId: normalizedTmdbId } });
+  if (existingMedia) {
+    return existingMedia.id;
+  }
+
+  const { prismaType, tmdbType } = normalizeMediaKind(mediaType);
+  const response = await fetch(
+    `${process.env.TMDB_BASE_URL}/${tmdbType}/${normalizedTmdbId}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR`
+  );
+
+  if (!response.ok) {
+    throw new Error('Impossible de récupérer ce média depuis TMDB.');
+  }
+
+  const tmdbMedia = await response.json();
+  const title = String(mediaTitle || tmdbMedia?.title || tmdbMedia?.name || '').trim();
+
+  if (!title) {
+    throw new Error('Titre du média manquant.');
+  }
+
+  const releaseYear = Number.parseInt(String(tmdbMedia?.release_date || tmdbMedia?.first_air_date || '').slice(0, 4), 10);
+  const mediaSlug = await generateUniqueSlug(
+    `${title}-${Number.isInteger(releaseYear) ? releaseYear : new Date().getFullYear()}`,
+    (slug) => prisma.media.findUnique({ where: { slug } }),
+  );
+
+  const createdMedia = await prisma.media.create({
+    data: {
+      tmdbId: normalizedTmdbId,
+      titre: title,
+      slug: mediaSlug,
+      type: prismaType,
+      posterUrl: tmdbMedia?.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbMedia.poster_path}` : null,
+      synopsis: tmdbMedia?.overview || null,
+      annee: Number.isInteger(releaseYear) ? releaseYear : null,
+    },
+  });
+
+  return createdMedia.id;
 }
 
 export async function getAdminRecipes(req, res) {
@@ -161,21 +238,34 @@ export async function getPendingRecipes(req, res) {
 
 export async function approveRecipe(req, res) {
   try {
-    const updatedRecipe = await prisma.recipe.update({
-      where: { id: req.params.id },
-      data: {
-        status: 'PUBLISHED',
-        rejectionReason: null,
-      },
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
+    const updatedRecipe = await prisma.$transaction(async (tx) => {
+      const recipe = await tx.recipe.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'PUBLISHED',
+          rejectionReason: null,
+        },
+        include: {
+          category: true,
+          media: true,
+          ingredients: {
+            include: {
+              ingredient: true,
+            },
           },
         },
-      },
+      });
+
+      await tx.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          recipeId: req.params.id,
+          isRead: false,
+        },
+        data: { isRead: true },
+      });
+
+      return recipe;
     });
 
     return res.json(formatRecipe(updatedRecipe));
@@ -192,21 +282,34 @@ export async function rejectRecipe(req, res) {
       return res.status(400).json({ message: 'Motif trop court (min 10 caractères).' });
     }
 
-    const updatedRecipe = await prisma.recipe.update({
-      where: { id: req.params.id },
-      data: {
-        status: 'DRAFT',
-        rejectionReason: rejectionReason || 'Recette refusée par la modération.',
-      },
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
+    const updatedRecipe = await prisma.$transaction(async (tx) => {
+      const recipe = await tx.recipe.update({
+        where: { id: req.params.id },
+        data: {
+          status: 'DRAFT',
+          rejectionReason: rejectionReason || 'Recette refusée par la modération.',
+        },
+        include: {
+          category: true,
+          media: true,
+          ingredients: {
+            include: {
+              ingredient: true,
+            },
           },
         },
-      },
+      });
+
+      await tx.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          recipeId: req.params.id,
+          isRead: false,
+        },
+        data: { isRead: true },
+      });
+
+      return recipe;
     });
 
     return res.json(formatRecipe(updatedRecipe));
@@ -240,7 +343,8 @@ export async function updateAdminRecipe(req, res) {
       categoryName,
       mediaId,
       tmdbId,
-      tmdbMedia,
+      mediaTitle,
+      mediaType,
       ingredients,
     } = req.body;
 
@@ -257,50 +361,18 @@ export async function updateAdminRecipe(req, res) {
     if (tempsPreparation !== undefined) data.tempsPreparation = tempsPreparation ? parseInt(tempsPreparation, 10) : null;
     if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson ? parseInt(tempsCuisson, 10) : null;
 
-    // Résolution du média : UUID direct, ou création automatique depuis TMDB
-    if (tmdbMedia?.id || (tmdbId !== undefined && tmdbId !== null)) {
-      const incomingTmdbId = parseInt(tmdbMedia?.id ?? tmdbId, 10);
-      if (Number.isNaN(incomingTmdbId)) {
-        return res.status(400).json({ message: 'tmdbId invalide.' });
-      }
-
-      let media = await prisma.media.findUnique({
-        where: { tmdbId: incomingTmdbId },
+    // Résolution du média : par UUID direct ou création depuis TMDB si besoin
+    if (tmdbId !== undefined || mediaId !== undefined) {
+      const resolvedMediaId = await resolveAdminMediaId({
+        tmdbId,
+        mediaId,
+        mediaTitle,
+        mediaType,
       });
 
-      if (!media) {
-        const mediaTitle = String(tmdbMedia?.title || '').trim();
-        if (!mediaTitle) {
-          return res.status(400).json({ message: 'Sélectionnez un film/série depuis les suggestions TMDB.' });
-        }
-
-        const rawType = String(tmdbMedia?.type || '').toLowerCase();
-        const mediaType = rawType === 'tv' || rawType === 'series' || rawType === 'serie' || rawType === 'série'
-          ? 'SERIES'
-          : 'MOVIE';
-        const parsedYear = parseInt(String(tmdbMedia?.year || ''), 10);
-        const annee = Number.isNaN(parsedYear) ? null : parsedYear;
-        const slug = await generateUniqueSlug(
-          `${mediaTitle}${annee ? ` ${annee}` : ''}`,
-          (candidate) => prisma.media.findUnique({ where: { slug: candidate } }),
-        );
-
-        media = await prisma.media.create({
-          data: {
-            tmdbId: incomingTmdbId,
-            titre: mediaTitle,
-            slug,
-            type: mediaType,
-            posterUrl: tmdbMedia?.poster || null,
-            synopsis: tmdbMedia?.overview || null,
-            annee,
-          },
-        });
+      if (resolvedMediaId !== undefined) {
+        data.mediaId = resolvedMediaId;
       }
-
-      data.mediaId = media.id;
-    } else if (mediaId !== undefined && mediaId !== null) {
-      data.mediaId = mediaId;
     }
     
     // Si categoryId est fourni, l'utiliser; sinon, retrouver par nom
@@ -390,6 +462,17 @@ export async function updateAdminRecipe(req, res) {
 
     return res.json(formatRecipe(updated));
   } catch (error) {
+    if (error instanceof Error && error.message) {
+      if (
+        error.message.includes('TMDB')
+        || error.message.includes('Média invalide')
+        || error.message.includes('Titre du média manquant')
+        || error.message.includes('Impossible de récupérer ce média')
+      ) {
+        return res.status(400).json({ message: error.message });
+      }
+    }
+
     if (error.code === 'P2025') {
       return res.status(404).json({ message: 'Recette introuvable.' });
     }
@@ -545,12 +628,35 @@ export async function updateCategory(req, res) {
 
 export async function deleteCategory(req, res) {
   try {
+    const category = await prisma.category.findUnique({
+      where: { id: req.params.id },
+      include: {
+        _count: {
+          select: { recipes: true },
+        },
+      },
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Catégorie introuvable.' });
+    }
+
+    if ((category._count?.recipes || 0) > 0) {
+      return res.status(409).json({
+        message: 'Impossible de supprimer une catégorie déjà utilisée par des recettes.',
+      });
+    }
+
     await prisma.category.delete({
       where: { id: req.params.id },
     });
 
     return res.status(204).send();
   } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Catégorie introuvable.' });
+    }
+
     return sendError(res, error, 'Erreur lors de la suppression de la catégorie.');
   }
 }
@@ -583,6 +689,33 @@ export async function getAdminIngredients(req, res) {
     return res.json(ingredients.map(formatIngredient));
   } catch (error) {
     return sendError(res, error, 'Erreur lors de la récupération des ingrédients admin.');
+  }
+}
+
+export async function getAdminNotifications(req, res) {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: {
+        userId: req.user.id,
+        isRead: false,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    const unreadCount = await prisma.notification.count({
+      where: {
+        userId: req.user.id,
+        isRead: false,
+      },
+    });
+
+    return res.json({
+      unreadCount,
+      notifications: notifications.map(formatNotification),
+    });
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des notifications admin.');
   }
 }
 

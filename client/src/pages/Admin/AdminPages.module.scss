@@ -1565,6 +1565,22 @@
   margin: 0;
 }
 
+.adminModalText {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  color: #4A3428;
+}
+
+.adminModalErrorText {
+  margin: 0.7rem 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: #8E1F2F;
+}
+
 .adminModalButtons {
   display: flex;
   gap: 1rem;

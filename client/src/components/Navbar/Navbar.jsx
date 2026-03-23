@@ -31,6 +31,11 @@ function getUserName(payload) {
     return null;
   }
 
+  if (typeof payload.pseudo === "string" && payload.pseudo.trim()) {
+    const pseudo = payload.pseudo.trim();
+    return pseudo.charAt(0).toUpperCase() + pseudo.slice(1).toLowerCase();
+  }
+
   if (typeof payload.name === "string" && payload.name.trim()) {
     return payload.name.trim();
   }
@@ -44,6 +49,16 @@ function getUserName(payload) {
   }
 
   return "Membre";
+}
+
+function getAccountPath(payload) {
+  const role = String(payload?.role || "").trim().toUpperCase();
+
+  if (role === "ADMIN") {
+    return "/admin";
+  }
+
+  return "/membre/profil";
 }
 
 export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
@@ -125,6 +140,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const nowInSeconds = Math.floor(Date.now() / 1000);
   const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
   const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
+  const accountPath = getAccountPath(payload);
 
   
 
@@ -319,12 +335,12 @@ useEffect(() => {
 
             {isLoggedIn ? (
               <div className={styles.userBlock}>
-                <NavLink to="/membre" className={styles.userTextLink}>
+                <NavLink to={accountPath} className={styles.userTextLink}>
                   <span className={styles.userGreeting}>Bonjour,</span>
                   <span className={styles.userName}>{userName}</span>
                 </NavLink>
                 <NavLink
-                  to="/membre"
+                  to={accountPath}
                   className={styles.userIcon}
                   aria-label="Mon compte"
                 >
@@ -378,7 +394,7 @@ useEffect(() => {
           {isLoggedIn ? (
             <div className={styles.mobileUser}>
               <NavLink
-                to="/membre/profil"
+                to={accountPath}
                 onClick={closeMenu}
                 className={styles.mobileAvatar}
                 aria-label="Mon profil"
@@ -392,7 +408,7 @@ useEffect(() => {
               <div className={styles.mobileUserText}>
                 <span>Bonjour,</span>
                 <NavLink
-                  to="/membre/profil"
+                  to={accountPath}
                   onClick={closeMenu}
                   className={styles.mobileUserLink}
                 >
@@ -433,7 +449,7 @@ useEffect(() => {
             {isLoggedIn && (
               <li>
                 <NavLink
-                  to="/membre"
+                  to={accountPath}
                   onClick={closeMenu}
                   className={({ isActive }) =>
                     isActive ? styles.mobileActiveLink : styles.mobileLink

@@ -110,7 +110,9 @@ export default function RecipesPage() {
     let isMounted = true;
 
     const fetchRecipes = async () => {
+      setIsLoading(true);
       try {
+<<<<<<< HEAD
         setIsLoading(true);
 
         const payload = await getRecipesCatalog({
@@ -121,6 +123,15 @@ export default function RecipesPage() {
         });
         const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
         const paginationPayload = payload?.pagination || {};
+=======
+        const apiCategory = activeFilter !== "Tous" ? activeFilter : '';
+        const payload = await getRecipesCatalog(apiCategory);
+        const rawRecipes = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.recipes)
+            ? payload.recipes
+            : [];
+>>>>>>> 3ccf584 (dashboard admin)
 
         if (!isMounted) return;
 
@@ -159,11 +170,21 @@ export default function RecipesPage() {
     return () => {
       isMounted = false;
     };
+<<<<<<< HEAD
   }, [activeFilter, currentLimit, currentPage, currentQuery]);
 
   useEffect(() => {
     if (!searchInput || searchInput.trim().length < 2) {
       setSearchResults([]);
+=======
+  }, [activeFilter]);
+
+  const filteredRecipes = recipes;
+
+  const handleFilterChange = (filter) => {
+    if (filter.value === "Tous") {
+      setSearchParams({});
+>>>>>>> 3ccf584 (dashboard admin)
       return;
     }
 

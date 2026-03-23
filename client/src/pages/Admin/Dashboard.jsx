@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import RecipeCard from '../../components/RecipeCard';
 import { approveAdminRecipe, getPendingRecipes, rejectAdminRecipe } from '../../services/adminService.js';
@@ -13,6 +14,8 @@ function getDurationMinutes(duration) {
 }
 
 function AdminDashboard() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [pendingRecipes, setPendingRecipes] = useState([]);
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [selectedRecipe, setSelectedRecipe] = useState(null);
@@ -33,6 +36,19 @@ function AdminDashboard() {
 
     loadPendingRecipes();
   }, []);
+
+  useEffect(() => {
+    const targetRecipeId = location.state?.openRecipeId;
+    if (!targetRecipeId || pendingRecipes.length === 0) {
+      return;
+    }
+
+    const recipe = pendingRecipes.find((item) => item.id === targetRecipeId);
+    if (recipe) {
+      setSelectedRecipe(recipe);
+      navigate('/admin/validation-recettes', { replace: true, state: {} });
+    }
+  }, [location.state, pendingRecipes, navigate]);
 
   const counters = useMemo(() => {
     return pendingRecipes.reduce((accumulator, recipe) => {
@@ -65,6 +81,9 @@ function AdminDashboard() {
 
     try {
       await approveAdminRecipe(selectedRecipe.id);
+      window.dispatchEvent(new CustomEvent('admin-notification-consumed', {
+        detail: { recipeId: selectedRecipe.id },
+      }));
       setPendingRecipes((previous) => previous.filter((recipe) => recipe.id !== selectedRecipe.id));
       setSelectedRecipe(null);
       setShowValidateModal(false);
@@ -80,6 +99,9 @@ function AdminDashboard() {
 
     try {
       await rejectAdminRecipe(selectedRecipe.id, rejectReason);
+      window.dispatchEvent(new CustomEvent('admin-notification-consumed', {
+        detail: { recipeId: selectedRecipe.id },
+      }));
       setPendingRecipes((previous) => previous.filter((recipe) => recipe.id !== selectedRecipe.id));
       setSelectedRecipe(null);
       setShowRefuseModal(false);
