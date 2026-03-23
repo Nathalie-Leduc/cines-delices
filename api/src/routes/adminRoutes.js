@@ -13,19 +13,28 @@ import {
 	getAdminUsers,
 	getPendingRecipes,
 	rejectRecipe,
+	updateAdminRecipe,
 	updateCategory,
 	updateIngredient,
+	updateUserRole,
 } from "../controllers/adminController.js";
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { adminMiddleware } from "../middlewares/adminMiddleware.js";
 
 const router = express.Router();
 
+// Toutes les routes admin nécessitent d'être authentifié ET admin
+router.use(authMiddleware, adminMiddleware);
+
 router.get('/recipes', getAdminRecipes);
 router.get('/recipes/pending', getPendingRecipes);
+router.patch('/recipes/:id', updateAdminRecipe);
 router.patch('/recipes/:id/approve', approveRecipe);
 router.patch('/recipes/:id/reject', rejectRecipe);
 router.delete('/recipes/:id', deleteRecipe);
 
 router.get('/users', getAdminUsers);
+router.patch('/users/:id/role', updateUserRole);
 router.delete('/users/:id', deleteUser);
 
 router.get('/categories', getAdminCategories);

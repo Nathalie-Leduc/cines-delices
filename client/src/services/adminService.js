@@ -52,6 +52,13 @@ export function deleteAdminRecipe(id) {
   return request(`/recipes/${id}`, { method: 'DELETE' });
 }
 
+export function updateAdminRecipe(id, payload) {
+  return request(`/recipes/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
 export function approveAdminRecipe(id) {
   return request(`/recipes/${id}/approve`, { method: 'PATCH' });
 }
@@ -70,6 +77,13 @@ export function getAdminUsers(search = '') {
 
 export function deleteAdminUser(id) {
   return request(`/users/${id}`, { method: 'DELETE' });
+}
+
+export function updateAdminUserRole(id, role) {
+  return request(`/users/${id}/role`, {
+    method: 'PATCH',
+    body: JSON.stringify({ role }),
+  });
 }
 
 export function getAdminCategories() {

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import {
   getAdminCategories,
   getAdminIngredients,
@@ -11,6 +12,7 @@ import styles from './AdminSidebar.module.scss';
 
 export default function AdminSidebar({ className = '', onNavigate, mobile = false }) {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [counts, setCounts] = useState({
     recipes: 0,
     users: 0,
@@ -19,50 +21,41 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     pendingIngredients: 0,
   });
 
-  useEffect(() => {
-    let isMounted = true;
+  async function loadCounts() {
+    try {
+      const [recipes, users, categories, pendingRecipes, pendingIngredients] = await Promise.all([
+        getAdminRecipes(),
+        getAdminUsers(),
+        getAdminCategories(),
+        getPendingRecipes(),
+        getAdminIngredients(),
+      ]);
 
-    async function loadCounts() {
-      try {
-        const [recipes, users, categories, pendingRecipes, pendingIngredients] = await Promise.all([
-          getAdminRecipes(),
-          getAdminUsers(),
-          getAdminCategories(),
-          getPendingRecipes(),
-          getAdminIngredients(),
-        ]);
-
-        if (!isMounted) {
-          return;
-        }
-
-        setCounts({
-          recipes: Array.isArray(recipes) ? recipes.length : 0,
-          users: Array.isArray(users) ? users.length : 0,
-          categories: Array.isArray(categories) ? categories.length : 0,
-          pendingRecipes: Array.isArray(pendingRecipes) ? pendingRecipes.length : 0,
-          pendingIngredients: Array.isArray(pendingIngredients) ? pendingIngredients.length : 0,
-        });
-      } catch {
-        if (!isMounted) {
-          return;
-        }
-
-        setCounts({
-          recipes: 0,
-          users: 0,
-          categories: 0,
-          pendingRecipes: 0,
-          pendingIngredients: 0,
-        });
-      }
+      setCounts({
+        recipes: Array.isArray(recipes) ? recipes.length : 0,
+        users: Array.isArray(users) ? users.length : 0,
+        categories: Array.isArray(categories) ? categories.length : 0,
+        pendingRecipes: Array.isArray(pendingRecipes) ? pendingRecipes.length : 0,
+        pendingIngredients: Array.isArray(pendingIngredients) ? pendingIngredients.length : 0,
+      });
+    } catch {
+      setCounts({
+        recipes: 0,
+        users: 0,
+        categories: 0,
+        pendingRecipes: 0,
+        pendingIngredients: 0,
+      });
     }
+  }
 
+  useEffect(() => {
     loadCounts();
 
-    return () => {
-      isMounted = false;
-    };
+    // Rafraîchir les comptes toutes les 5 secondes
+    const interval = setInterval(loadCounts, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const items = [
@@ -99,8 +92,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
   ];
 
   function handleLogout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('displayName');
+    logout();
     onNavigate?.();
     navigate('/');
   }

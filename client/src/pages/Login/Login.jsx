@@ -24,7 +24,11 @@ export default function Login() {
       const payload = await loginUser({ email, password });
       login({ token: payload?.token, user: payload?.user ?? null });
 
-      const redirectPath = location.state?.from?.pathname || '/membre';
+      // Déterminer la redirection selon le rôle
+      let redirectPath = location.state?.from?.pathname || '/membre';
+      if (payload?.user?.role === 'ADMIN') {
+        redirectPath = '/admin';
+      }
       navigate(redirectPath, { replace: true });
     } catch (requestError) {
       setError(requestError.message || 'Connexion impossible');

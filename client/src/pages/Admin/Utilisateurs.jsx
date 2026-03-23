@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
-import { deleteAdminUser, getAdminUsers } from '../../services/adminService.js';
+import { deleteAdminUser, getAdminUsers, updateAdminUserRole } from '../../services/adminService.js';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './AdminPages.module.scss';
 
 function AdminUtilisateurs() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -28,7 +31,7 @@ function AdminUtilisateurs() {
       return users;
     }
     return users.filter((user) => {
-      return `${user.nom} ${user.prenom} ${user.email}`.toLowerCase().includes(normalizedQuery);
+      return `${user.nom} ${user.displayName || user.prenom || ''} ${user.email}`.toLowerCase().includes(normalizedQuery);
     });
   }, [query]);
 
@@ -41,6 +44,22 @@ function AdminUtilisateurs() {
       setShowDeleteModal(false);
     } catch (deleteError) {
       setError(deleteError.message || 'Suppression impossible.');
+    }
+  }
+
+  async function handleToggleRole() {
+    if (!selectedUser) return;
+    const newRole = selectedUser.role === 'ADMIN' ? 'MEMBER' : 'ADMIN';
+    setIsUpdatingRole(true);
+    setError('');
+    try {
+      const updated = await updateAdminUserRole(selectedUser.id, newRole);
+      setUsers((previous) => previous.map((u) => (u.id === updated.id ? updated : u)));
+      setSelectedUser(updated);
+    } catch (roleError) {
+      setError(roleError.message || 'Modification du rôle impossible.');
+    } finally {
+      setIsUpdatingRole(false);
     }
   }
 
@@ -91,16 +110,16 @@ function AdminUtilisateurs() {
         <>
           <div className={styles.detailBox}>
             <div className={styles.field}>
-              <label>Nom</label>
-              <p>{selectedUser.nom}</p>
-            </div>
-            <div className={styles.field}>
-              <label>Prénom</label>
-              <p>{selectedUser.prenom}</p>
+              <label>Pseudo</label>
+              <p>{selectedUser.displayName || selectedUser.prenom}</p>
             </div>
             <div className={styles.field}>
               <label>E-mail</label>
               <p>{selectedUser.email}</p>
+            </div>
+            <div className={styles.field}>
+              <label>Rôle</label>
+              <p>{selectedUser.role === 'ADMIN' ? 'Administrateur' : 'Membre'}</p>
             </div>
 
             <div className={styles.recipesBlock}>
@@ -123,6 +142,20 @@ function AdminUtilisateurs() {
           </div>
 
           <div className={styles.actionButtons}>
+            {currentUser?.id !== selectedUser.id && (
+              <button
+                type="button"
+                className={`${styles.btnMuted} ${styles.fullWidthBtn}`.trim()}
+                onClick={handleToggleRole}
+                disabled={isUpdatingRole}
+              >
+                {isUpdatingRole
+                  ? 'Modification…'
+                  : selectedUser.role === 'ADMIN'
+                  ? 'Rétrograder en Membre'
+                  : 'Promouvoir en Admin'}
+              </button>
+            )}
             <button type="button" className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowDeleteModal(true)}>
               Supprimer cet utilisateur
             </button>

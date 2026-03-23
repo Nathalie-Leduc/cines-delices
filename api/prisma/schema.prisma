@@ -57,6 +57,7 @@ model Category {
   id          String  @id @default(uuid())
   nom         String  @unique
   description String?
+  color       String?
 
   // Relations
   recipes Recipe[]
@@ -180,8 +181,9 @@ model RecipeIngredient {
 // INGEDIENTS
 // ==========
 model Ingredient {
-  id      String             @id @default(uuid())
-  nom     String             @unique // normalisé côté applicatif (trim+ lowercase)
+  id       String             @id @default(uuid())
+  nom      String             @unique // normalisé côté applicatif (trim+ lowercase)
+  approved Boolean            @default(false)
 
   // Relations
   recipes RecipeIngredient[]

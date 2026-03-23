@@ -30,7 +30,7 @@ export default function AdminRoute({ children }) {
   }
 
   const role = user?.role ?? getRoleFromToken(token);
-  if (role !== 'admin') {
+  if (String(role).toUpperCase() !== 'ADMIN') {
     return <Navigate to="/" replace />;
   }
 

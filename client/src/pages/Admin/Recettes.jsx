@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import RecipeCard from '../../components/RecipeCard';
-import { deleteAdminRecipe, getAdminRecipes } from '../../services/adminService.js';
+import { deleteAdminRecipe, getAdminCategories, getAdminRecipes, updateAdminRecipe } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
@@ -74,16 +74,24 @@ function AdminRecettes() {
   const [editIngredientSearchError, setEditIngredientSearchError] = useState({});
   const [creatingIngredient, setCreatingIngredient] = useState({});
   const [editImageError, setEditImageError] = useState('');
+  const [categories, setCategories] = useState([]);
   const filmSearchTimeoutRef = useRef(null);
   const ingredientSearchTimeouts = useRef({});
 
   useEffect(() => {
     setIsLoading(true);
-    getAdminRecipes()
-      .then((data) => {
+    Promise.all([
+      getAdminRecipes().then((data) => {
         const list = Array.isArray(data) ? data : data?.data ?? [];
         setRecipes(list);
-      })
+      }),
+      getAdminCategories()
+        .then((data) => {
+          const catList = Array.isArray(data) ? data : data?.data ?? [];
+          setCategories(catList);
+        })
+        .catch(() => setCategories([])),
+    ])
       .catch((err) => setError(err.message || 'Impossible de charger les recettes.'))
       .finally(() => setIsLoading(false));
   }, []);
@@ -131,21 +139,25 @@ function AdminRecettes() {
       id: recipe.id,
       title: recipe.title || '',
       category: recipe.category || 'Entrée',
+      categoryId: recipe.categoryId || null,
       movieId: recipe.movieId || null,
+      selectedTmdbId: null,
       movie: recipe.movie || '',
       media: recipe.media || 'F',
-      nbPersonnes: recipe.nbPersonnes || '',
+      nbPersonnes: recipe.nbPersonnes ?? recipe.people ?? '',
       ingredients: Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0
         ? recipe.ingredients.map(item => ({
             ingredientId: item?.ingredientId || null,
-            nom: typeof item === 'string' ? item : (item?.nom || ''),
-            quantite: typeof item === 'string' ? '' : (item?.quantite || ''),
-            unite: typeof item === 'string' ? '' : (item?.unite || ''),
+            nom: typeof item === 'string' ? item : (item?.nom ?? item?.name ?? ''),
+            quantite: typeof item === 'string' ? '' : (item?.quantite ?? item?.quantity ?? ''),
+            unite: typeof item === 'string' ? '' : (item?.unite ?? item?.unit ?? ''),
           }))
         : [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
-      tempsPreparation: recipe.tempsPreparation || '',
-      tempsCuisson: recipe.tempsCuisson || '',
-      etapes: Array.isArray(recipe.etapes) && recipe.etapes.length > 0 ? recipe.etapes : [''],
+      tempsPreparation: recipe.tempsPreparation ?? recipe.preparationTime ?? '',
+      tempsCuisson: recipe.tempsCuisson ?? recipe.cookingTime ?? '',
+      etapes: Array.isArray(recipe.etapes) && recipe.etapes.length > 0 
+        ? recipe.etapes 
+        : (recipe.instructions?.split('\n') || [''] ),
       image: recipe.image || '',
     });
     setFilmResults([]);
@@ -163,6 +175,16 @@ function AdminRecettes() {
       ...prev,
       [field]: value,
       ...(field === 'movie' ? { movieId: null } : {}),
+    }));
+    if (error) setError('');
+  }
+
+  function handleCategoryChange(categoryId) {
+    const category = categories.find(cat => cat.id === categoryId);
+    setEditDraft(prev => ({
+      ...prev,
+      categoryId: categoryId,
+      category: category?.name || category?.nom || '',
     }));
     if (error) setError('');
   }
@@ -210,7 +232,8 @@ function AdminRecettes() {
     const normalizedType = String(film?.type || '').toLowerCase();
     setEditDraft(prev => ({
       ...prev,
-      movieId: film.id || null,
+      selectedTmdbId: film.id || null,
+      movieId: null,
       movie: film.title,
       media: normalizedType === 'movie'
         ? 'F'
@@ -352,32 +375,41 @@ function AdminRecettes() {
   }
 
   function handleSaveConfirmed() {
-    const computedTime = [editDraft.tempsPreparation, editDraft.tempsCuisson]
-      .filter(Boolean)
-      .join(' + ')
-      .trim();
-    setRecipes(prev => prev.map(recipe =>
-      recipe.id === editDraft.id
-        ? {
-            ...recipe,
-            title: editDraft.title,
-            category: editDraft.category,
-            movieId: editDraft.movieId,
-            movie: editDraft.movie,
-            media: editDraft.media,
-            nbPersonnes: editDraft.nbPersonnes,
-            ingredients: editDraft.ingredients,
-            tempsPreparation: editDraft.tempsPreparation,
-            tempsCuisson: editDraft.tempsCuisson,
-            duration: computedTime || recipe.duration,
-            etapes: editDraft.etapes,
-            image: editDraft.image || recipe.image,
-          }
-        : recipe,
-    ));
-    setShowEditModal(false);
     setShowEditConfirmModal(false);
     setError('');
+
+    // Appel API pour sauvegarder les modifications
+    updateAdminRecipe(editDraft.id, {
+      titre: editDraft.title,
+      instructions: editDraft.etapes.filter(Boolean).join('\n'),
+      nombrePersonnes: editDraft.nbPersonnes,
+      tempsPreparation: editDraft.tempsPreparation,
+      tempsCuisson: editDraft.tempsCuisson,
+      categoryId: editDraft.categoryId,
+      categoryName: editDraft.category,
+      ...(editDraft.selectedTmdbId
+        ? { tmdbId: editDraft.selectedTmdbId }
+        : editDraft.movieId ? { mediaId: editDraft.movieId } : {}),
+    })
+      .then((updatedRecipe) => {
+        // Mettre à jour la recette dans la liste avec tous les champs
+        setRecipes(prev => prev.map(recipe =>
+          recipe.id === updatedRecipe.id
+            ? {
+                ...updatedRecipe,
+                // Ajouter les alias pour la compatibilité
+                nbPersonnes: updatedRecipe.people,
+                tempsPreparation: updatedRecipe.preparationTime,
+                tempsCuisson: updatedRecipe.cookingTime,
+                etapes: updatedRecipe.instructions?.split('\n') || [],
+              }
+            : recipe,
+        ));
+        setShowEditModal(false);
+      })
+      .catch((saveError) => {
+        setError(saveError.message || 'Sauvegarde impossible.');
+      });
   }
 
   return (
@@ -520,13 +552,15 @@ function AdminRecettes() {
                 Catégorie
                 <select
                   className={styles.adminEditInput}
-                  value={editDraft.category}
-                  onChange={e => handleDraftChange('category', e.target.value)}
+                  value={editDraft.categoryId || ''}
+                  onChange={e => handleCategoryChange(e.target.value)}
                 >
-                  <option value="Entrée">Entrée</option>
-                  <option value="Plat">Plat</option>
-                  <option value="Dessert">Dessert</option>
-                  <option value="Boisson">Boisson</option>
+                  <option value="">Sélectionner une catégorie</option>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name || cat.nom}
+                    </option>
+                  ))}
                 </select>
               </label>
 
