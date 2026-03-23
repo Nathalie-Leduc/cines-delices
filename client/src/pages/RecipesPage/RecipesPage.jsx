@@ -68,9 +68,11 @@ export default function RecipesPage() {
         const payload = await getRecipesCatalog();
         const rawRecipes = Array.isArray(payload)
           ? payload
-          : Array.isArray(payload?.data)
-            ? payload.data
-            : [];
+          : Array.isArray(payload?.recipes)              // ← ajouter ça
+            ? payload.recipes
+            : Array.isArray(payload?.data)
+              ? payload.data
+              : [];
 
         if (!isMounted) return;
 
