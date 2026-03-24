@@ -24,6 +24,11 @@ export function getMyRecipes() {
   return request('/api/users/me/recipes');
 }
 
+// Supprime une recette de l'utilisateur connecté (persisté en base)
+export function deleteMyRecipe(recipeId) {
+  return request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+}
+
 // Récupère les notifications de l'utilisateur connecté
 export function getMyNotifications() {
   return request('/api/users/me/notifications');

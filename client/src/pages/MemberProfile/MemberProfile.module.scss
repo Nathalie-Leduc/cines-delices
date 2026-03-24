@@ -610,6 +610,14 @@
   }
 }
 
+.modalHint {
+  margin: -0.6rem 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(31, 29, 30, 0.72);
+}
+
 .modalButtons {
   display: flex;
   gap: 1rem;

@@ -3,6 +3,69 @@
   flex-direction: column;
 }
 
+.latestSection {
+  padding: 3.5rem 1.5rem 1.25rem;
+}
+
+.latestHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.sectionEyebrow {
+  margin: 0;
+  color: rgba(251, 220, 166, 0.78);
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  margin: 0.35rem 0 0;
+  color: #fbdca6;
+  font-family: "Playfair Display", serif;
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.05;
+}
+
+.sectionText {
+  margin: 1rem 0 0;
+  max-width: 46rem;
+  color: #f6f1e8;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.secondaryLink {
+  color: #f6f1e8;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.secondaryLink:hover {
+  color: #fbdca6;
+}
+
+.latestGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.75rem;
+}
+
+.latestStatus,
+.latestError {
+  margin: 1.5rem 0 0;
+  color: #f6f1e8;
+  font-size: 1rem;
+}
+
+.latestError {
+  color: #f0b6b6;
+}
+
 .hero {
   position: relative;
   width: 100%;
@@ -73,6 +136,20 @@
 }
 
 @media (max-width: 767px) {
+  .latestSection {
+    padding: 2.25rem 1rem 0.75rem;
+  }
+
+  .latestHeader {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .latestGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
   .hero {
     min-height: 330px;
   }
@@ -102,6 +179,11 @@
 }
 
 @media (min-width: 768px) {
+  .latestSection {
+    padding-right: 2rem;
+    padding-left: 2rem;
+  }
+
   .heroContent {
     max-width: 760px;
     padding-left: 4rem;
@@ -113,6 +195,11 @@
 }
 
 @media (min-width: 1200px) {
+  .latestSection {
+    padding-right: 15%;
+    padding-left: 15%;
+  }
+
   .hero {
     min-height: 430px;
   }

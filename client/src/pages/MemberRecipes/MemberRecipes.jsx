@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
-import { getMyRecipes } from '../../services/recipesService';
+import { deleteMyRecipe, getMyRecipes } from '../../services/recipesService';
+import RecipeCard from '../../components/RecipeCard';
 
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
@@ -80,6 +81,24 @@ function normalizeRecipe(rawRecipe) {
   };
 }
 
+function mapMemberRecipeToCard(recipe) {
+  const mediaType = String(recipe?.type || '').toUpperCase() === 'F' ? 'film' : 'serie';
+  const durationValue = String(recipe?.temps || '').match(/\d+/);
+  const duration = durationValue ? Number(durationValue[0]) : 0;
+
+  return {
+    id: recipe?.id,
+    slug: recipe?.slug,
+    title: recipe?.titre || 'Recette sans titre',
+    category: recipe?.categorie || 'Autre',
+    mediaTitle: recipe?.film || 'Sans média',
+    mediaType,
+    duration,
+    image: recipe?.image || '/img/hero-home.png',
+    fallbackImage: recipe?.image || '/img/hero-home.png',
+  };
+}
+
 export default function MesRecettes() {
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
@@ -90,6 +109,7 @@ export default function MesRecettes() {
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [newRecipeName, setNewRecipeName] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
   const [filmResults, setFilmResults] = useState([]);
@@ -258,11 +278,24 @@ export default function MesRecettes() {
     setShowDeleteModal(true);
   }
 
-  // Suppression locale de la recette sélectionnée (UI-only pour l'instant).
-  function handleDeleteConfirm() {
-    setRecipes(prev => prev.filter(recette => recette.id !== recetteToDelete?.id));
-    setShowDeleteModal(false);
-    setRecetteToDelete(null);
+  // Suppression persistée côté API, puis synchronisation locale.
+  async function handleDeleteConfirm() {
+    if (!recetteToDelete?.id) {
+      return;
+    }
+
+    try {
+      setIsDeletingRecipe(true);
+      await deleteMyRecipe(recetteToDelete.id);
+      setRecipes(prev => prev.filter(recette => recette.id !== recetteToDelete.id));
+      setShowDeleteModal(false);
+      setRecetteToDelete(null);
+      setError('');
+    } catch (err) {
+      setError(err?.message || 'Impossible de supprimer la recette pour le moment.');
+    } finally {
+      setIsDeletingRecipe(false);
+    }
   }
 
   // Pré-remplit le formulaire d'édition avec les données de la carte sélectionnée.
@@ -609,6 +642,7 @@ export default function MesRecettes() {
               <button
                 className={styles.cancelBtn}
                 aria-label="Annuler la suppression de la recette"
+                disabled={isDeletingRecipe}
                 onClick={() => setShowDeleteModal(false)}
               >
                 Annuler
@@ -616,9 +650,10 @@ export default function MesRecettes() {
               <button
                 className={styles.confirmBtn}
                 aria-label="Confirmer la suppression de la recette"
+                disabled={isDeletingRecipe}
                 onClick={handleDeleteConfirm}
               >
-                Valider
+                {isDeletingRecipe ? 'Suppression...' : 'Valider'}
               </button>
             </div>
           </div>
@@ -1019,42 +1054,25 @@ export default function MesRecettes() {
               <h2 className={styles.sectionTitle}>{categorie}s</h2>
               <div className={styles.grid}>
                 {recettes.map(recette => (
-                  <div key={recette.id} className={styles.card}>
-                    <div className={styles.cardImage}>
-                      <img src={recette.image} alt="Illustration de la recette" />
-                      <div className={styles.cardActions}>
-                        <button
-                          className={styles.actionBtn}
-                          aria-label={`Modifier la recette ${recette.titre}`}
-                          onClick={() => handleEditClick(recette)}
-                        >
-                          <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-                        </button>
-                        <button
-                          className={styles.actionBtn}
-                          aria-label={`Supprimer la recette ${recette.titre}`}
-                          onClick={() => handleDeleteClick(recette)}
-                        >
-                          <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
-                        </button>
-                      </div>
-                      <span className={`${styles.cardTag} ${styles[String(recette.categorie || 'autre').toLowerCase()]}`}>
-                        {recette.categorie || 'Autre'}
-                      </span>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <h3 className={styles.cardTitle}>{recette.titre}</h3>
-                      <p className={styles.cardFilm}>
-                        <img src="/icon/Menu.svg" alt="" aria-hidden="true" />
-                        <span>{recette.film}</span>
-                      </p>
-                      <div className={styles.cardFooter}>
-                        <span className={styles.cardTemps}>
-                          <img src="/icon/Search.svg" alt="" aria-hidden="true" />
-                          <span>{recette.temps}</span>
-                        </span>
-                        <span className={styles.cardType}>{recette.type}</span>
-                      </div>
+                  <div key={recette.id} className={styles.cardShell}>
+                    <RecipeCard recipe={mapMemberRecipeToCard(recette)} />
+                    <div className={styles.cardActionsFloating}>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        aria-label={`Modifier la recette ${recette.titre}`}
+                        onClick={() => handleEditClick(recette)}
+                      >
+                        <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        aria-label={`Supprimer la recette ${recette.titre}`}
+                        onClick={() => handleDeleteClick(recette)}
+                      >
+                        <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                      </button>
                     </div>
                   </div>
                 ))}

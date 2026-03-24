@@ -1,28 +1,28 @@
 import { request } from './api.js';
 
 export function loginUser({ email, password }) {
-  return request('/login', {
+  return request('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
-  },true);  // true = utilise AUTH_API_URL
+    body: { email, password },
+  });
 }
 
 // Logout
 export function logoutUser() {
-  return request('/logout', {
+  return request('/api/auth/logout', {
     method: 'POST',
-  }, true);
+  });
 }
 
 // Register (si besoin)
-export function registerUser({ email, password, name }) {
-  return request('/register', {
+export function registerUser({ email, password, pseudo }) {
+  return request('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password, name }),
-  }, true);
+    body: { email, password, pseudo },
+  });
 }
 
 // Exemple pour récupérer le profil de l'utilisateur connecté
 export function getUserProfile() {
-  return request('/me', {}, true);
+  return request('/api/auth/me');
 }

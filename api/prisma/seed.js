@@ -3,7 +3,7 @@ import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-import { generateSlug, generateUniqueSlug } from '../src/utils/slug.js';
+import { generateUniqueSlug } from '../src/utils/slug.js';
 
 
 // adapter obligaoire avec Prisma V7
@@ -76,15 +76,15 @@ async function main() {
 
   const userAdmin = await prisma.user.upsert({
     where: { email: 'admin@cinesdelices.fr' }, update: {},
-    create: { email: 'admin@cinesdelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
+    create: { email: 'admin@cinesdelices.fr', nom: 'Delices', pseudo: 'Admin', passwordHash: adminHash, role: 'ADMIN' },
   });
   const userMarie = await prisma.user.upsert({
     where: { email: 'marie@cinesdelices.fr' }, update: {},
-    create: { email: 'marie@cinesdelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
+    create: { email: 'marie@cinesdelices.fr', nom: 'Dubois', pseudo: 'Marie', passwordHash: memberHash },
   });
   const userRemy = await prisma.user.upsert({
     where: { email: 'remy@cinesdelices.fr' }, update: {},
-    create: { email: 'remy@cinesdelices.fr',  pseudo: 'ReMyChef', passwordHash: memberHash },
+    create: { email: 'remy@cinesdelices.fr', nom: 'Martin', pseudo: 'ReMyChef', passwordHash: memberHash },
   });
   console.log('✅ Users :', [userAdmin, userMarie, userRemy].map(u => u.email).join(', '));
 

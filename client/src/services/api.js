@@ -7,7 +7,7 @@
 export async function request(endpoint, options = {}) {
   try {
     // 🔹 Récupérer le token depuis le localStorage
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
  
     // 🔹 Détecter si le body est un FormData (upload de fichiers)
     //    → pas de JSON.stringify, pas de Content-Type manuel (boundary auto)
@@ -44,7 +44,7 @@ export async function request(endpoint, options = {}) {
     //    Le front peut réagir différemment selon le code (401, 422, 500…)
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const error = new Error(errorData.message || 'Erreur API inconnue');
+      const error = new Error(errorData.message || errorData.error || 'Erreur API inconnue');
       error.status = response.status; // ex : 401, 403, 422, 500
       error.data   = errorData;       // payload complet pour les erreurs de validation
       throw error;
@@ -99,12 +99,20 @@ export const getMe = () =>
  
 /**
  * Met à jour les informations du profil connecté.
- * @param {{ name?: string, email?: string, password?: string }} data
+ * @param {{ nom?: string, pseudo?: string, email?: string }} data
  * @returns {Promise<object>} Profil mis à jour
  */
 export const updateMe = (data) =>
-  request('/api/auth/me', { method: 'PATCH', body: data });
- 
+  request('/api/auth/me', { method: 'PUT', body: data });
+
+/**
+ * Met à jour le mot de passe du profil connecté.
+ * @param {{ currentPassword: string, newPassword: string, confirmPassword: string }} data
+ * @returns {Promise<object>} Confirmation de mise à jour
+ */
+export const updateMyPassword = (data) =>
+  request('/api/auth/me/password', { method: 'PUT', body: data });
+
 /**
  * Supprime définitivement le compte de l'utilisateur connecté.
  * @returns {Promise<null>}

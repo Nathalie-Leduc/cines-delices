@@ -92,6 +92,7 @@ export const getMe = async (req, res) => {
       select: {
         id:        true,
         email:     true,
+        nom:       true,
         pseudo:    true,
         role:      true,
         createdAt: true,
@@ -113,9 +114,10 @@ export const getMe = async (req, res) => {
 // Zod valide au - un champ présent et email normalisé
 export const updateMe = async (req, res) => {
   try {
-    const { pseudo, email } = req.body;
+    const { nom, pseudo, email } = req.body;
 
     const data = {};
+    if (nom !== undefined) data.nom = nom;
     if (pseudo) data.pseudo = pseudo;
     if (email) data.email = email;
 
@@ -125,6 +127,7 @@ export const updateMe = async (req, res) => {
       select: {
         id:        true,
         email:     true,
+        nom:       true,
         pseudo:    true,
         role:      true,
         createdAt: true,
@@ -138,6 +141,40 @@ export const updateMe = async (req, res) => {
       return res.status(409).json({ error: 'Email ou pseudo déjà utilisé' });
     }
     console.error('[updateMe]', error);
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
+  }
+};
+
+// PUT /api/auth/me/password
+export const updateMyPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, passwordHash: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    const isCurrentPasswordValid = await argon2.verify(user.passwordHash, currentPassword);
+
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ error: 'Le mot de passe actuel est incorrect' });
+    }
+
+    const passwordHash = await argon2.hash(newPassword);
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { passwordHash },
+    });
+
+    res.json({ message: 'Mot de passe mis à jour' });
+  } catch (error) {
+    console.error('[updateMyPassword]', error);
     res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
 };
