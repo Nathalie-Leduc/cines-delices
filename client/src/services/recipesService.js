@@ -43,9 +43,15 @@ export function getPublishedRecipes() {
   return request('/api/recipes'); // ← enlever ?published=true (inutile, le back filtre déjà)
 }
 
-export async function getRecipesCatalog() {
-  
-  return request('/api/recipes');
+ // Render : correction pour accepter et transmettre les paramètres
+export async function getRecipesCatalog(params = {}) {
+  const query = new URLSearchParams();
+  if (params.page)     query.set('page', params.page);
+  if (params.limit)    query.set('limit', params.limit);
+  if (params.category) query.set('category', params.category);
+  if (params.q)        query.set('q', params.q);
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return request(`/api/recipes${suffix}`);
 }
 
 export function getMyRecipes() {
