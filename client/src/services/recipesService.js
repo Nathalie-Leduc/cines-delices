@@ -41,3 +41,9 @@ export function deleteMyRecipe(recipeId) {
 export function getMyNotifications() {
   return request('/api/users/me/notifications');
 }
+
+// Tâche F-04
+// Récupère une recette par son slug
+export function getRecipeBySlug(slug) {
+  return request(`/api/recipes/${slug}`);
+}

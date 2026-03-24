@@ -125,33 +125,23 @@ export default function RecipesPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchRecipes = async () => {
-      try {
-        setIsLoading(recipes.length === 0);
-        setIsPaginating(recipes.length > 0);
-        let payload;
-
-        for (let attempt = 0; attempt < 2; attempt += 1) {
-          try {
-            payload = await getRecipesCatalog({
-              page: currentPage,
-              limit: currentLimit,
-              category: activeFilter === "Tous" ? "" : activeFilter,
-              q: currentQuery,
-            });
-            break;
-          } catch (attemptError) {
-            if (attempt === 1) {
-              throw attemptError;
-            }
-
-            await wait(400);
-          }
-        }
-
-        const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
+  let isMounted = true;
+  
+  const fetchRecipes = async () => {
+    try {
+      const payload = await getRecipesCatalog({
+        page: currentPage,
+        limit: currentLimit,
+        category: activeFilter !== 'Tous' ? activeFilter : undefined,
+        q: currentQuery || undefined,
+      });
+        const rawRecipes = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.recipes)              // ← ajouter ça
+            ? payload.recipes
+            : Array.isArray(payload?.data)
+              ? payload.data
+              : [];
 
         if (!isMounted) return;
 
