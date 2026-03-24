@@ -12,6 +12,8 @@ const FILTERS = [
   { label: "Boisson", value: "Boisson", key: "boisson" },
 ];
 
+const LIMIT_OPTIONS = [6, 9, 12, 15];
+
 const CATEGORY_PARAM_TO_FILTER = {
   entree: "Entrée",
   entrees: "Entrée",
@@ -95,23 +97,29 @@ export default function RecipesPage() {
     hasPreviousPage: false,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isPaginating, setIsPaginating] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+  const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth <= 767);
+  const [currentPage, setCurrentPage] = useState(Math.max(1, Number(searchParams.get("page") || 1)));
+  const [currentLimit, setCurrentLimit] = useState(Math.max(1, Number(searchParams.get("limit") || 15)));
   const searchRef = useRef(null);
 
   const categoryParam = searchParams.get("category")?.toLowerCase() || "";
   const activeFilter = CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
-  const currentPage = Math.max(1, Number(searchParams.get("page") || 1));
-  const currentLimit = Math.max(1, Number(searchParams.get("limit") || 15));
   const currentQuery = searchParams.get("q")?.trim() || "";
-  const hasActiveFilters = activeFilter !== "Tous" || Boolean(currentQuery);
+
+  useEffect(() => {
+    setSearchInput(searchParams.get("q") || "");
+  }, [searchParams]);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchRecipes = async () => {
-      setIsLoading(true);
       try {
+        setIsLoading(recipes.length === 0);
+        setIsPaginating(recipes.length > 0);
         const payload = await getRecipesCatalog({
           page: currentPage,
           limit: currentLimit,
@@ -149,6 +157,7 @@ export default function RecipesPage() {
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          setIsPaginating(false);
         }
       }
     };
@@ -158,7 +167,7 @@ export default function RecipesPage() {
     return () => {
       isMounted = false;
     };
-  }, [activeFilter, currentLimit, currentPage, currentQuery]);
+  }, [activeFilter, currentLimit, currentPage, currentQuery, recipes.length]);
 
   useEffect(() => {
     if (!searchInput || searchInput.trim().length < 2) {
@@ -201,6 +210,20 @@ export default function RecipesPage() {
   }, [searchInput]);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateViewport = (event) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    setIsMobileViewport(mediaQuery.matches);
+    mediaQuery.addEventListener("change", updateViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateViewport);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setSearchResults([]);
@@ -220,8 +243,9 @@ export default function RecipesPage() {
       nextParams.set("category", filter.key);
     }
 
-    nextParams.set("page", "1");
-    setSearchParams(nextParams);
+    nextParams.delete("page");
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true });
+    setCurrentPage(1);
   };
 
   const handleSearchSubmit = (event) => {
@@ -235,30 +259,29 @@ export default function RecipesPage() {
       nextParams.delete("q");
     }
 
-    nextParams.set("page", "1");
-    setSearchParams(nextParams);
+    nextParams.delete("page");
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true });
     setSearchResults([]);
+    setCurrentPage(1);
   };
 
   const handleLimitChange = (event) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("limit", event.target.value);
-    nextParams.set("page", "1");
-    setSearchParams(nextParams);
+    setCurrentLimit(Number(event.target.value));
+    setCurrentPage(1);
   };
 
-  const resetFilters = () => {
-    setSearchInput("");
-    setSearchParams({ limit: String(currentLimit), page: "1" });
+  const handleMobileLimitChange = (limit) => {
+    setCurrentLimit(limit);
+    setCurrentPage(1);
   };
 
   const clearSearch = () => {
     const nextParams = new URLSearchParams(searchParams);
     nextParams.delete("q");
-    nextParams.set("page", "1");
     setSearchInput("");
     setSearchResults([]);
-    setSearchParams(nextParams);
+    setSearchParams(nextParams, { replace: true, preventScrollReset: true });
+    setCurrentPage(1);
   };
 
   const handleSuggestionClick = () => {
@@ -266,10 +289,14 @@ export default function RecipesPage() {
     setSearchInput("");
   };
 
+  const openMobileSearchModal = () => {
+    window.dispatchEvent(new CustomEvent("open-mobile-search", {
+      detail: { search: searchInput },
+    }));
+  };
+
   const goToPage = (page) => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("page", String(page));
-    setSearchParams(nextParams);
+    setCurrentPage(page);
   };
 
   return (
@@ -328,13 +355,26 @@ export default function RecipesPage() {
           <div className={styles.toolbar}>
             <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
               <div ref={searchRef} className={styles.searchField}>
+                {isMobileViewport && (
+                  <button
+                    type="button"
+                    className={styles.mobileSearchLauncher}
+                    onClick={openMobileSearchModal}
+                    aria-label="Ouvrir la recherche"
+                  >
+                    <img src="/icon/Search.svg" alt="" aria-hidden="true" className={styles.mobileSearchIcon} />
+                  </button>
+                )}
                 <input
                   type="search"
                   value={searchInput}
                   onChange={(event) => setSearchInput(event.target.value)}
                   className={styles.searchInput}
-                  placeholder="Rechercher une recette, un film, une catégorie"
+                  placeholder="Rechercher une recette, un film, une serie"
                   aria-label="Rechercher dans le catalogue"
+                  readOnly={isMobileViewport}
+                  onFocus={isMobileViewport ? openMobileSearchModal : undefined}
+                  onClick={isMobileViewport ? openMobileSearchModal : undefined}
                 />
                 {searchInput && (
                   <button
@@ -371,24 +411,47 @@ export default function RecipesPage() {
                   </ul>
                 )}
               </div>
-              <button type="submit" className={styles.searchButton}>Rechercher</button>
+              {!isMobileViewport && (
+                <button type="submit" className={styles.searchButton}>Rechercher</button>
+              )}
             </form>
 
-            <label className={styles.limitControl}>
-              <span>Par page</span>
-              <select value={currentLimit} onChange={handleLimitChange} className={styles.limitSelect}>
-                <option value="6">6</option>
-                <option value="9">9</option>
-                <option value="12">12</option>
-                <option value="15">15</option>
-              </select>
-            </label>
+            {isMobileViewport ? (
+              <div className={styles.mobileLimitControl} aria-label="Nombre de recettes par page">
+                <div className={styles.mobileLimitPills}>
+                  {LIMIT_OPTIONS.map((limit) => {
+                    const isActive = currentLimit === limit;
+
+                    return (
+                      <button
+                        key={limit}
+                        type="button"
+                        className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ""}`}
+                        onClick={() => handleMobileLimitChange(limit)}
+                        aria-pressed={isActive}
+                      >
+                        {limit}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <label className={styles.limitControl}>
+                <span>Par page</span>
+                <select value={currentLimit} onChange={handleLimitChange} className={styles.limitSelect}>
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>{limit}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
 
           <div className={styles.summaryRow}>
             <p className={styles.summaryText}>
-              {pagination.totalItems} recette{pagination.totalItems > 1 ? "s" : ""} trouve
-              {pagination.totalItems > 1 ? "es" : "e"}
+              {pagination.totalItems} recette{pagination.totalItems > 1 ? "s" : ""} trouvée
+              {pagination.totalItems > 1 ? "s" : ""}
               {activeFilter !== "Tous" ? ` en ${activeFilter}` : ""}
               {currentQuery ? ` pour "${currentQuery}"` : ""}.
             </p>
@@ -396,15 +459,11 @@ export default function RecipesPage() {
               <p className={styles.summaryText}>
                 Page {pagination.page} sur {Math.max(1, pagination.totalPages || 1)}
               </p>
-              {hasActiveFilters && (
-                <button type="button" className={styles.resetButton} onClick={resetFilters}>
-                  Réinitialiser les filtres
-                </button>
-              )}
             </div>
           </div>
 
           {isLoading && <p>Chargement des recettes...</p>}
+          {isPaginating && !isLoading && <p className={styles.loadingInline}>Mise à jour des recettes...</p>}
           {error && !isLoading && <p>{error}</p>}
 
           {!isLoading && !error && (
@@ -425,7 +484,7 @@ export default function RecipesPage() {
                 type="button"
                 className={styles.paginationButton}
                 onClick={() => goToPage(pagination.page - 1)}
-                disabled={!pagination.hasPreviousPage}
+                disabled={!pagination.hasPreviousPage || isPaginating}
               >
                 Précédent
               </button>
@@ -438,7 +497,7 @@ export default function RecipesPage() {
                 type="button"
                 className={styles.paginationButton}
                 onClick={() => goToPage(pagination.page + 1)}
-                disabled={!pagination.hasNextPage}
+                disabled={!pagination.hasNextPage || isPaginating}
               >
                 Suivant
               </button>

@@ -64,6 +64,7 @@ function getAccountPath(payload) {
 export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [profileFirstName, setProfileFirstName] = useState(localStorage.getItem("displayName") || "");
   // Valeur de l'input de recherche
   const [search, setSearch] = useState('');
@@ -72,11 +73,19 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
  
   // Crée une référence vers le div qui contient le formulaire de recherche
   // null = pas encore attaché au DOM
-  const searchRef = useRef(null);
+  const desktopSearchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
    // Met simplement à jour le state search
   const handleSearch = (e) => {
     setSearch(e.target.value);
+  };
+
+  const clearSearch = () => {
+    setSearch("");
+    setResults([]);
+    mobileSearchInputRef.current?.focus();
   };
 
   const handleSearchSubmit = (event) => {
@@ -86,16 +95,19 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     if (!normalized) {
       navigate("/recipes");
       setResults([]);
+      setIsMobileSearchOpen(false);
       return;
     }
 
     navigate(`/recipes?q=${encodeURIComponent(normalized)}`);
     setResults([]);
+    setIsMobileSearchOpen(false);
   };
 
   const handleResultClick = () => {
     setSearch("");
     setResults([]);
+    setIsMobileSearchOpen(false);
   };
 
   // FETCH API AVEC DEBOUNCE
@@ -147,9 +159,10 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   // Ferme la liste des résultats quand l'utilisateur clique en dehors
 useEffect(() => {
   const handleClickOutside = (e) => {
-    // searchRef.current = le div du formulaire
-    // contains(e.target) = vérifie si le clic est à l'intérieur du div
-    if (searchRef.current && !searchRef.current.contains(e.target)) {
+    const clickedDesktopSearch = desktopSearchRef.current?.contains(e.target);
+    const clickedMobileSearch = mobileSearchRef.current?.contains(e.target);
+
+    if (!clickedDesktopSearch && !clickedMobileSearch) {
       // Le clic est en dehors → on vide les résultats
       setResults([]);
     }
@@ -162,6 +175,44 @@ useEffect(() => {
   // Évite les fuites mémoire
   return () => document.removeEventListener("mousedown", handleClickOutside);
 }, []); // [] = s'exécute une seule fois au montage du composant
+
+  useEffect(() => {
+    if (!isMobileSearchOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    mobileSearchInputRef.current?.focus();
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileSearchOpen]);
+
+  useEffect(() => {
+    const handleOpenMobileSearch = (event) => {
+      const nextSearch = typeof event?.detail?.search === "string" ? event.detail.search : "";
+      setIsMenuOpen(false);
+      setSearch(nextSearch);
+      setIsMobileSearchOpen(true);
+    };
+
+    window.addEventListener("open-mobile-search", handleOpenMobileSearch);
+
+    return () => {
+      window.removeEventListener("open-mobile-search", handleOpenMobileSearch);
+    };
+  }, []);
 
   useEffect(() => {
     const refreshDisplayName = () => {
@@ -216,6 +267,16 @@ useEffect(() => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const openMobileSearch = () => {
+    setIsMenuOpen(false);
+    setIsMobileSearchOpen(true);
+  };
+
+  const closeMobileSearch = () => {
+    setIsMobileSearchOpen(false);
+    setResults([]);
   };
 
   const handleMobileAction = () => {
@@ -284,7 +345,7 @@ useEffect(() => {
 
           <div className={styles.rightZone}>
             {/* Wrapper relatif pour positionner la liste sous l'input */}
-            <div ref={searchRef} className={styles.searchWrapper}>
+            <div ref={desktopSearchRef} className={styles.searchWrapper}>
               {/* Formulaire de recherche */}
               <form className={styles.searchForm} role="search" onSubmit={handleSearchSubmit}>
                 <input
@@ -368,6 +429,8 @@ useEffect(() => {
             type="button"
             className={styles.mobileSearch}
             aria-label="Rechercher"
+            aria-expanded={isMobileSearchOpen}
+            onClick={openMobileSearch}
           >
             <img
               src="/icon/Search.svg"
@@ -480,6 +543,94 @@ useEffect(() => {
           </aside>
         </>
       )}
+
+      <div
+        className={`${styles.mobileSearchOverlay} ${isMobileSearchOpen ? styles.mobileSearchOverlayVisible : ""}`}
+        aria-hidden={!isMobileSearchOpen}
+      >
+        <button
+          type="button"
+          className={styles.mobileSearchBackdrop}
+          aria-label="Fermer la recherche"
+          onClick={closeMobileSearch}
+        />
+
+        <section
+          className={`${styles.mobileSearchModal} ${isMobileSearchOpen ? styles.mobileSearchModalOpen : ""}`}
+          aria-label="Recherche mobile"
+        >
+          <div className={styles.mobileSearchHeader}>
+            <div className={styles.mobileSearchTitleRow}>
+              <p className={styles.mobileSearchEyebrow}>Recherche rapide</p>
+              <span className={styles.mobileSearchTitleLine} />
+            </div>
+            <button
+              type="button"
+              className={styles.closeButton}
+              aria-label="Fermer la recherche"
+              onClick={closeMobileSearch}
+            >
+              <img src="/icon/close_menu.svg" alt="Fermer" />
+            </button>
+          </div>
+
+          <div ref={mobileSearchRef} className={styles.mobileSearchContent}>
+            <form className={styles.mobileSearchForm} role="search" onSubmit={handleSearchSubmit}>
+              <div className={styles.mobileSearchField}>
+                <img
+                  src="/icon/Search.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.searchIcon}
+                />
+                <input
+                  ref={mobileSearchInputRef}
+                  type="search"
+                  value={search}
+                  onChange={handleSearch}
+                  placeholder="Rechercher une recette, un film, une serie"
+                  className={styles.mobileSearchInput}
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className={styles.clearSearchButton}
+                    onClick={clearSearch}
+                    aria-label="Effacer la recherche"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {results.length > 0 && (
+                <ul className={styles.mobileSearchResults}>
+                  {results.map((recipe) => (
+                    <li key={recipe.id} className={styles.searchResultItem}>
+                      <NavLink
+                        to={`/recipes/${recipe.slug || recipe.id}`}
+                        onClick={handleResultClick}
+                      >
+                        <img
+                          src={recipe.image}
+                          alt={recipe.title}
+                          className={styles.searchResultThumb}
+                        />
+                        <span className={styles.searchResultCopy}>
+                          <span>{recipe.title}</span>
+                          {recipe.mediaTitle && (
+                            <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                          )}
+                        </span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </form>
+          </div>
+        </section>
+      </div>
     </>
   );
 }

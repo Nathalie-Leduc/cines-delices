@@ -191,6 +191,16 @@
   flex: 1 1 auto;
 }
 
+.mobileSearchLauncher {
+  display: none;
+}
+
+.mobileSearchIcon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 .searchInput {
   appearance: none;
   -webkit-appearance: none;
@@ -320,6 +330,10 @@
   color: #f6f1e8;
 }
 
+.mobileLimitControl {
+  display: none;
+}
+
 .limitSelect {
   min-height: 46px;
   padding: 0.75rem 0.9rem;
@@ -343,23 +357,18 @@
   font-size: 0.95rem;
 }
 
+.loadingInline {
+  margin: 0 0 1rem;
+  color: #fbdca6;
+  font-size: 0.95rem;
+}
+
 .summaryMeta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
   gap: 0.85rem;
-}
-
-.resetButton {
-  min-height: 40px;
-  padding: 0.65rem 1rem;
-  border: 1px solid rgba(246, 241, 232, 0.18);
-  border-radius: 999px;
-  background: transparent;
-  color: #fbdca6;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .grid {
@@ -458,15 +467,79 @@
     width: 100%;
   }
 
-  .searchButton,
   .searchInput,
   .limitSelect {
     width: 100%;
   }
 
+  .mobileSearchLauncher {
+    position: absolute;
+    top: 50%;
+    left: 1rem;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #f6f1e8;
+    transform: translateY(-50%);
+    cursor: pointer;
+  }
+
+  .searchInput {
+    padding-left: 3.25rem;
+    padding-right: 3rem;
+    cursor: pointer;
+  }
+
+  .searchButton {
+    display: none;
+  }
+
+  .searchResults {
+    display: none;
+  }
+
   .limitControl {
+    display: none;
+  }
+
+  .mobileLimitControl {
+    display: flex;
+    justify-content: center;
     width: 100%;
-    justify-content: space-between;
+  }
+
+  .mobileLimitPills {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .mobileLimitPill {
+    min-width: 2.7rem;
+    min-height: 2.35rem;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid rgba(246, 241, 232, 0.25);
+    border-radius: 999px;
+    background: rgba(24, 22, 23, 0.9);
+    color: rgba(246, 241, 232, 0.88);
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .mobileLimitPillActive {
+    background: rgba(246, 241, 232, 0.12);
+    border-color: rgba(246, 241, 232, 0.95);
+    color: #f6f1e8;
   }
 
   .summaryRow {
