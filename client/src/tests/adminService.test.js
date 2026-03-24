@@ -37,25 +37,25 @@ describe('adminService', () => {
     );
   });
 
-  it('appelle PATCH /recipes/:id/approve', async () => {
+  it('appelle PATCH /recipes/:id/publish', async () => {
     await approveAdminRecipe('recipe-123');
 
     expect(fetch).toHaveBeenCalledWith(
-      `${ADMIN_API_URL}/recipes/recipe-123/approve`,
+      `${ADMIN_API_URL}/recipes/recipe-123/publish`,
       expect.objectContaining({
         method: 'PATCH',
       }),
     );
   });
 
-  it('appelle PATCH /recipes/:id/reject avec reason', async () => {
+  it('appelle PATCH /recipes/:id/reject avec rejectionReason', async () => {
     await rejectAdminRecipe('recipe-456', 'Motif test');
 
     expect(fetch).toHaveBeenCalledWith(
       `${ADMIN_API_URL}/recipes/recipe-456/reject`,
       expect.objectContaining({
         method: 'PATCH',
-        body: JSON.stringify({ reason: 'Motif test' }),
+        body: JSON.stringify({ rejectionReason: 'Motif test' }),
       }),
     );
   });

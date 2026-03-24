@@ -31,11 +31,11 @@ export const updateAdminRecipe = (id, payload) =>
 
 // Approuve une recette (change son status à validée)
 export const approveAdminRecipe = (id) =>
-  request(`${ADMIN_API_BASE}/recipes/${id}/approve`, { method: 'PATCH' });
+  request(`${ADMIN_API_BASE}/recipes/${id}/publish`, { method: 'PATCH' });
 
 // Rejette une recette avec un motif
 export const rejectAdminRecipe = (id, reason) =>
-  request(`${ADMIN_API_BASE}/recipes/${id}/reject`, { method: 'PATCH', body: { reason } });
+  request(`${ADMIN_API_BASE}/recipes/${id}/reject`, { method: 'PATCH', body: { rejectionReason: reason } });
 
 // ---------------------------
 // UTILISATEURS

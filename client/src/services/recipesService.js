@@ -24,6 +24,14 @@ export function getMyRecipes() {
   return request('/api/users/me/recipes');
 }
 
+// Met à jour une recette de l'utilisateur connecté
+export function updateMyRecipe(recipeId, data) {
+  return request(`/api/recipes/${recipeId}`, {
+    method: 'PATCH',
+    body: data,
+  });
+}
+
 // Supprime une recette de l'utilisateur connecté (persisté en base)
 export function deleteMyRecipe(recipeId) {
   return request(`/api/recipes/${recipeId}`, { method: 'DELETE' });

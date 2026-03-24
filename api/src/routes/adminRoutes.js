@@ -1,7 +1,6 @@
 import express from "express";
 import {
 	approveIngredient,
-	approveRecipe,
 	createCategory,
 	deleteCategory,
 	deleteIngredient,
@@ -13,6 +12,7 @@ import {
 	getAdminRecipes,
 	getAdminUsers,
 	getPendingRecipes,
+	publishRecipe,
 	rejectRecipe,
 	updateAdminRecipe,
 	updateCategory,
@@ -21,6 +21,8 @@ import {
 } from "../controllers/adminController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+import { validate } from '../middlewares/validateMiddleware.js';
+import { publishRecipeSchema, rejectRecipeSchema } from '../validators/adminValidator.js';
 
 const router = express.Router();
 
@@ -30,8 +32,8 @@ router.use(authMiddleware, adminMiddleware);
 router.get('/recipes', getAdminRecipes);
 router.get('/recipes/pending', getPendingRecipes);
 router.patch('/recipes/:id', updateAdminRecipe);
-router.patch('/recipes/:id/approve', approveRecipe);
-router.patch('/recipes/:id/reject', rejectRecipe);
+router.patch('/recipes/:id/publish', validate(publishRecipeSchema), publishRecipe);
+router.patch('/recipes/:id/reject', validate(rejectRecipeSchema), rejectRecipe);
 router.delete('/recipes/:id', deleteRecipe);
 
 router.get('/users', getAdminUsers);

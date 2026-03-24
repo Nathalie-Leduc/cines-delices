@@ -232,11 +232,30 @@ export async function getAdminRecipes(req, res) {
 }
 
 export async function getPendingRecipes(req, res) {
-  req.query.status = 'PENDING';
-  return getAdminRecipes(req, res);
+  try {
+    const recipes = await prisma.recipe.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        category: true,
+        media: true,
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return res.json(recipes.map(formatRecipe));
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des recettes en attente.');
+  }
 }
 
-export async function approveRecipe(req, res) {
+export async function publishRecipe(req, res) {
   try {
     const recipeBeforeApproval = await prisma.recipe.findUnique({
       where: { id: req.params.id },
@@ -311,10 +330,10 @@ export async function approveRecipe(req, res) {
 
 export async function rejectRecipe(req, res) {
   try {
-    const rejectionReason = String(req.body.reason || '').trim();
+    const rejectionReason = String(req.body.rejectionReason || '').trim();
 
-    if (rejectionReason && rejectionReason.length < 10) {
-      return res.status(400).json({ message: 'Motif trop court (min 10 caractères).' });
+    if (rejectionReason.length < 10) {
+      return res.status(400).json({ message: 'Le motif de refus est obligatoire (min 10 caractères).' });
     }
 
     const updatedRecipe = await prisma.$transaction(async (tx) => {
@@ -322,7 +341,7 @@ export async function rejectRecipe(req, res) {
         where: { id: req.params.id },
         data: {
           status: 'DRAFT',
-          rejectionReason: rejectionReason || 'Recette refusée par la modération.',
+          rejectionReason,
         },
         include: {
           category: true,
@@ -358,9 +377,16 @@ export async function rejectRecipe(req, res) {
 
     return res.json(formatRecipe(updatedRecipe));
   } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Recette introuvable.' });
+    }
+
     return sendError(res, error, 'Erreur lors du refus de la recette.');
   }
 }
+
+// Alias de compatibilité temporaire
+export const approveRecipe = publishRecipe;
 
 export async function deleteRecipe(req, res) {
   try {
