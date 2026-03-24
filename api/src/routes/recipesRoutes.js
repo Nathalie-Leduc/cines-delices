@@ -3,6 +3,7 @@ import {
   createRecipe,
   deleteRecipe,
   getAllPublishedRecipes,
+  getMyRecipes,
   getRecipe,
   submitRecipe,
   updateRecipe,
@@ -21,6 +22,7 @@ import {
 const router = express.Router();
 
 router.get('/', validate(listRecipesSchema), getAllPublishedRecipes);
+router.get('/mine', authMiddleware, getMyRecipes);
 router.get('/:id', validate(getRecipeSchema), getRecipe);
 router.post('/', authMiddleware, validate(createRecipeSchema), createRecipe);
 router.patch('/:id', authMiddleware, validate(updateRecipeSchema), updateRecipe);

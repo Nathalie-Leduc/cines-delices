@@ -31,6 +31,16 @@ function canManageRecipe(user, recipe) {
   return user.role === 'ADMIN' || user.id === recipe.userId;
 }
 
+const recipeRelationsInclude = {
+  category: true,
+  media: true,
+  ingredients: {
+    include: {
+      ingredient: true,
+    },
+  },
+};
+
 /**
  * Crée une nouvelle recette
  * POST /api/recipes
@@ -171,15 +181,7 @@ export const createRecipe = async (req, res) => {
         tempsCuisson,
         status: 'PENDING', // Les recettes doivent être approuvées par un admin
       },
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-      },
+      include: recipeRelationsInclude,
     });
 
     // Ajouter les ingrédients si fournis
@@ -244,18 +246,12 @@ export const getRecipe = async (req, res) => {
 
     const recipe = await findRecipeByIdOrSlug(id, {
       include: {
-        category: true,
-        media: true,
+        ...recipeRelationsInclude,
         user: {
           select: {
             id: true,
             pseudo: true,
             email: true,
-          },
-        },
-        ingredients: {
-          include: {
-            ingredient: true,
           },
         },
       },
@@ -271,6 +267,26 @@ export const getRecipe = async (req, res) => {
     return res.status(500).json({ message: 'Erreur serveur lors de la récupération de la recette.' });
   }
 };
+
+/**
+ * Récupère toutes les recettes de l'utilisateur connecté
+ * GET /api/recipes/mine
+ */
+export const getMyRecipes = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: 'Utilisateur non authentifié' });
+  }
+
+  const recipes = await prisma.recipe.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    include: recipeRelationsInclude,
+  });
+
+  return res.json(recipes);
+});
 
 /**
  * Met à jour une recette
@@ -324,15 +340,7 @@ export const updateRecipe = async (req, res) => {
     const updated = await prisma.recipe.update({
       where: { id: recipe.id },
       data,
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-      },
+      include: recipeRelationsInclude,
     });
 
     // Mettre à jour les ingrédients si fournis
@@ -415,15 +423,7 @@ export const submitRecipe = asyncHandler(async (req, res) => {
       data: {
         status: 'PENDING',
       },
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-      },
+      include: recipeRelationsInclude,
     });
 
     if (adminUsers.length > 0) {
@@ -544,17 +544,11 @@ export const getAllPublishedRecipes = asyncHandler(async (req, res) => {
       skip,
       take: limit,
       include: {
-        category: true,
-        media: true,
+        ...recipeRelationsInclude,
         user: {
           select: {
             id: true,
             pseudo: true,
-          },
-        },
-        ingredients: {
-          include: {
-            ingredient: true,
           },
         },
       },
