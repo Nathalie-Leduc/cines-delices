@@ -82,6 +82,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const nowInSeconds = Math.floor(Date.now() / 1000);
   const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
   const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
+  const accountPath = getAccountPath(payload);
 
    // Met simplement à jour le state search
   const handleSearch = (e) => {

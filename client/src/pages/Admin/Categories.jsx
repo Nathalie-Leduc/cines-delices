@@ -252,11 +252,6 @@ function AdminCategories() {
             Êtes-vous sûr de vouloir supprimer cette catégorie ?
           </div>
           {deleteModalError ? <div className={styles.modalDeleteError}>{deleteModalError}</div> : null}
-          <>
-            <p className={styles.adminModalText}>Êtes-vous sûr de vouloir supprimer cette catégorie ?</p>
-            {error ? <p className={styles.adminModalErrorText}>{error}</p> : null}
-          </>
->>>>>>> 6ff463c (correction affichage dashboard admin)
         </AdminModal>
       )}
 
