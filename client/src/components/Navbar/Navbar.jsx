@@ -129,8 +129,19 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     // Définir un timeout pour attendre 400ms après la dernière frappe
     const timeout = setTimeout(async () => {
       try {
-          const data = await request(`/recipes?search=${encodeURIComponent(search)}`);
-          setResults(Array.isArray(data) ? data : []);
+          const payload = await getRecipesCatalog({
+            q: search.trim(),
+            limit: 5,
+          });
+          const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
+          const mappedResults = rawRecipes.map((recipe) => ({
+            id: recipe.id,
+            slug: recipe.slug,
+            title: recipe.titre || "Recette sans titre",
+            mediaTitle: recipe.media?.titre || "",
+            image: recipe.imageURL || recipe.imageUrl || recipe.media?.posterUrl || "/img/hero-home.png",
+          }));
+          setResults(mappedResults);
       } catch (err) {
         console.error("Erreur fetch recettes :", err);
         setResults([]);
@@ -213,7 +224,7 @@ useEffect(() => {
       }
 
       try {
-        const user = await request("/auth/me"); // ✅ request centralisé
+        const user = await request("/api/auth/me"); // ✅ request centralisé
         const rawName =
           (user?.prenom && user.prenom.trim()) ||
           (user?.pseudo && user.pseudo.trim()) ||

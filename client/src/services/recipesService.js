@@ -20,7 +20,7 @@ function normalizeCategoryLabel(value) {
 export function getPublishedRecipes(category = '') {
   const params = new URLSearchParams({ limit: '100' });
   if (category) params.set('category', category);
-  return request(`/recipes?${params.toString()}`);
+  return request(`/api/recipes?${params.toString()}`);
 }
 
 // Récupère le catalogue de recettes avec pagination / filtre / recherche
@@ -33,7 +33,7 @@ export async function getRecipesCatalog(params = {}) {
   if (params.q) query.set('q', params.q);
 
   const suffix = query.toString() ? `?${query.toString()}` : '';
-  const payload = await request(`/recipes${suffix}`);
+  const payload = await request(`/api/recipes${suffix}`);
 
   if (Array.isArray(payload)) {
     const page = Number(params.page || 1);
@@ -82,10 +82,10 @@ export async function getRecipesCatalog(params = {}) {
 
 // Récupère les recettes de l'utilisateur connecté
 export function getMyRecipes() {
-  return request('/users/me/recipes');
+  return request('/api/users/me/recipes');
 }
 
 // Récupère les notifications de l'utilisateur connecté
 export function getMyNotifications() {
-  return request('/users/me/notifications');
+  return request('/api/users/me/notifications');
 }
