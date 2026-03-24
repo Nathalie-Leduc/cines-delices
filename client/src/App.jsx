@@ -48,20 +48,15 @@ function App() {
         <Route path="creer-recette" element={<CreateRecipe />} />
       </Route>
 
-      <Route
-        path="/admin/*"
-        element={
-          <AdminRoute>
-            <AdminLayout />
-          </AdminRoute>
-        }
-      >
-        <Route index element={<Recettes />} />
-        <Route path="recettes" element={<Recettes />} />
-        <Route path="categories" element={<Categories />} />
-        <Route path="utilisateurs" element={<Utilisateurs />} />
-        <Route path="validation-recettes" element={<Dashboard />} />
-        <Route path="validation-ingredients" element={<IngredientsValidation />} />
+      <Route path="/admin" element={<AdminRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route index element={<Recettes />} />
+          <Route path="recettes" element={<Recettes />} />
+          <Route path="categories" element={<Categories />} />
+          <Route path="utilisateurs" element={<Utilisateurs />} />
+          <Route path="validation-recettes" element={<Dashboard />} />
+          <Route path="validation-ingredients" element={<IngredientsValidation />} />
+        </Route>
       </Route>
     </Routes>
   );

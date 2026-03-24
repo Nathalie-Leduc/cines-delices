@@ -6,32 +6,36 @@ const DISPLAY_NAME_KEY = 'displayName';
 
 const AuthContext = createContext(null);
 
-function isJwtValid(rawToken) {
+function decodeJwtPayload(rawToken) {
   if (!rawToken || typeof rawToken !== 'string') {
-    return false;
+    return null;
   }
 
   const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
   const parts = token.split('.');
 
   if (parts.length !== 3) {
-    return false;
+    return null;
   }
 
   try {
     const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-    const payload = JSON.parse(atob(padded));
-
-    if (!payload?.exp || typeof payload.exp !== 'number') {
-      return false;
-    }
-
-    const nowInSeconds = Math.floor(Date.now() / 1000);
-    return payload.exp > nowInSeconds;
+    return JSON.parse(atob(padded));
   } catch {
+    return null;
+  }
+}
+
+function isJwtValid(rawToken) {
+  const payload = decodeJwtPayload(rawToken);
+
+  if (!payload?.exp || typeof payload.exp !== 'number') {
     return false;
   }
+
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  return payload.exp > nowInSeconds;
 }
 
 function getInitialAuthState() {
@@ -113,8 +117,13 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(() => {
+    const tokenPayload = decodeJwtPayload(authState.token);
+    const role = authState.user?.role ?? tokenPayload?.role ?? null;
+
     return {
       ...authState,
+      role,
+      isAdmin: String(role).toUpperCase() === 'ADMIN',
       login,
       logout,
     };
