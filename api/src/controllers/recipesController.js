@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../lib/responseHelper.js';
 import { generateUniqueSlug } from '../utils/slug.js';
+import asyncHandler from 'express-async-handler';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 

@@ -1,5 +1,6 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import {request} from './api.js';
 
+// 🔹 Normalise les noms de catégories pour cohérence
 function normalizeCategoryLabel(value) {
   const normalized = String(value || '').trim().toLowerCase();
 
@@ -11,40 +12,18 @@ function normalizeCategoryLabel(value) {
   return String(value || '').trim();
 }
 
-function getAuthHeaders() {
-  const token = localStorage.getItem('token');
+// ---------------------------
+// EXPORTS : recettes
+// ---------------------------
 
-  return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
-}
-
-async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    headers: {
-      ...getAuthHeaders(),
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
-
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const message = payload?.message || payload?.error || `HTTP ${response.status}`;
-    throw new Error(message);
-  }
-
-  return payload;
-}
-
+// Récupère les recettes publiées (option catégorie)
 export function getPublishedRecipes(category = '') {
   const params = new URLSearchParams({ limit: '100' });
   if (category) params.set('category', category);
-  return request(`/api/recipes?${params.toString()}`);
+  return request(`/recipes?${params.toString()}`);
 }
 
+// Récupère le catalogue de recettes avec pagination / filtre / recherche
 export async function getRecipesCatalog(params = {}) {
   const query = new URLSearchParams();
 
@@ -54,7 +33,7 @@ export async function getRecipesCatalog(params = {}) {
   if (params.q) query.set('q', params.q);
 
   const suffix = query.toString() ? `?${query.toString()}` : '';
-  const payload = await request(`/api/recipes${suffix}`);
+  const payload = await request(`/recipes${suffix}`);
 
   if (Array.isArray(payload)) {
     const page = Number(params.page || 1);
@@ -65,23 +44,15 @@ export async function getRecipesCatalog(params = {}) {
     const filteredPayload = payload.filter((recipe) => {
       const recipeCategory = normalizeCategoryLabel(recipe?.category?.nom || recipe?.category);
       const matchesCategory = !normalizedCategory || recipeCategory === normalizedCategory;
+      if (!matchesCategory) return false;
 
-      if (!matchesCategory) {
-        return false;
-      }
-
-      if (!normalizedQuery) {
-        return true;
-      }
+      if (!normalizedQuery) return true;
 
       const haystack = [
         recipe?.titre,
         recipe?.category?.nom,
         recipe?.media?.titre,
-      ]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
+      ].filter(Boolean).join(' ').toLowerCase();
 
       return haystack.includes(normalizedQuery);
     });
@@ -109,6 +80,11 @@ export async function getRecipesCatalog(params = {}) {
   return payload;
 }
 
-export function getMyRecipes() {
-  return request('/api/users/me/recipes');
+// Récupère les recettes de l'utilisateur connecté
+export function getMyRecipes(token) {
+  return request('/users/me/recipes', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }

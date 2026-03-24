@@ -1,135 +1,111 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || `${API_BASE_URL}/api/admin`;
+// adminService.js
+import { request } from './api.js'; // On importe notre fonction request centralisée qui gère fetch, headers, token, etc.
 
-async function request(path, options = {}) {
-  const token = localStorage.getItem('token'); // récupération du token
+// Récupération de l'URL de l'API admin depuis les variables d'environnement
+const ADMIN_API_URL = import.meta.env.VITE_ADMIN_API_URL || `${import.meta.env.VITE_API_URL}/api/admin`;
 
-  const response = await fetch(`${ADMIN_API_URL}${path}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers || {}),
-       ...(token ? { 'Authorization': `Bearer ${token}` } : {}), // ajout du token si présent
-    },
-    ...options,
-  });
+// ---------------------------
+// RECETTES
+// ---------------------------
 
-  if (!response.ok) {
-    let message = `HTTP ${response.status}`;
-
-    try {
-      const payload = await response.json();
-      message = payload?.message || message;
-    } catch {
-      message = response.statusText || message;
-    }
-
-    throw new Error(message);
-  }
-
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
-}
-
-export function getAdminRecipes(params = {}) {
+// Récupérer toutes les recettes avec possibilité de filtrer (search, catégorie, status)
+export const getAdminRecipes = (params = {}) => {
   const query = new URLSearchParams();
-
   if (params.search) query.set('search', params.search);
   if (params.category && params.category !== 'Tous') query.set('category', params.category);
   if (params.status) query.set('status', params.status);
 
-  const suffix = query.toString() ? `?${query.toString()}` : '';
-  return request(`/recipes${suffix}`);
-}
+  // GET avec token pour auth
+  return request(
+    `/recipes${query.toString() ? `?${query}` : ''}`,
+    {},
+    true,
+    ADMIN_API_URL
+  );
+};
 
-export function getPendingRecipes() {
-  return request('/recipes/pending');
-}
+// Récupère uniquement les recettes en attente de validation
+export const getPendingRecipes = () =>
+  request('/recipes/pending', {}, true, ADMIN_API_URL);
 
-export function deleteAdminRecipe(id) {
-  return request(`/recipes/${id}`, { method: 'DELETE' });
-}
+// Supprime une recette par son ID
+export const deleteAdminRecipe = (id) =>
+  request(`/recipes/${id}`, { method: 'DELETE' }, true, ADMIN_API_URL);
 
-export function updateAdminRecipe(id, payload) {
-  return request(`/recipes/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  });
-}
+// Met à jour une recette avec un payload (objet contenant champs à modifier)
+export const updateAdminRecipe = (id, payload) =>
+  request(`/recipes/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }, true, ADMIN_API_URL);
 
-export function approveAdminRecipe(id) {
-  return request(`/recipes/${id}/approve`, { method: 'PATCH' });
-}
+// Approuve une recette (change son status à validée)
+export const approveAdminRecipe = (id) =>
+  request(`/recipes/${id}/approve`, { method: 'PATCH' }, true, ADMIN_API_URL);
 
-export function rejectAdminRecipe(id, reason) {
-  return request(`/recipes/${id}/reject`, {
-    method: 'PATCH',
-    body: JSON.stringify({ reason }),
-  });
-}
+// Rejette une recette avec un motif
+export const rejectAdminRecipe = (id, reason) =>
+  request(`/recipes/${id}/reject`, { method: 'PATCH', body: JSON.stringify({ reason }) }, true, ADMIN_API_URL);
 
-export function getAdminUsers(search = '') {
-  const suffix = search ? `?search=${encodeURIComponent(search)}` : '';
-  return request(`/users${suffix}`);
-}
+// ---------------------------
+// UTILISATEURS
+// ---------------------------
 
-export function getAdminNotifications() {
-  return request('/notifications');
-}
+// Récupérer les utilisateurs avec option recherche
+export const getAdminUsers = (search = '') =>
+  request(`/users${search ? `?search=${encodeURIComponent(search)}` : ''}`, {}, true, ADMIN_API_URL);
 
-export function deleteAdminUser(id) {
-  return request(`/users/${id}`, { method: 'DELETE' });
-}
+// Supprimer un utilisateur
+export const deleteAdminUser = (id) =>
+  request(`/users/${id}`, { method: 'DELETE' }, true, ADMIN_API_URL);
 
-export function updateAdminUserRole(id, role) {
-  return request(`/users/${id}/role`, {
-    method: 'PATCH',
-    body: JSON.stringify({ role }),
-  });
-}
+// Changer le rôle d'un utilisateur
+export const updateAdminUserRole = (id, role) =>
+  request(`/users/${id}/role`, { method: 'PATCH', body: JSON.stringify({ role }) }, true, ADMIN_API_URL);
 
-export function getAdminCategories() {
-  return request('/categories');
-}
+// Récupère les notifications admin
+export const getAdminNotifications = () =>
+  request('/notifications', {}, true, ADMIN_API_URL);
 
-export function createAdminCategory(payload) {
-  return request('/categories', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-}
+// ---------------------------
+// CATEGORIES
+// ---------------------------
 
-export function updateAdminCategory(id, payload) {
-  return request(`/categories/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  });
-}
+// Récupérer toutes les catégories
+export const getAdminCategories = () => request('/categories', {}, true, ADMIN_API_URL);
 
-export function deleteAdminCategory(id) {
-  return request(`/categories/${id}`, { method: 'DELETE' });
-}
+// Créer une nouvelle catégorie
+export const createAdminCategory = (payload) =>
+  request('/categories', { method: 'POST', body: JSON.stringify(payload) }, true, ADMIN_API_URL);
 
-export function getAdminIngredients(search = '') {
-  const suffix = search ? `?search=${encodeURIComponent(search)}` : '';
-  return request(`/ingredients${suffix}`);
-}
+// Mettre à jour une catégorie
+export const updateAdminCategory = (id, payload) =>
+  request(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }, true, ADMIN_API_URL);
 
-export function updateAdminIngredient(id, payload) {
-  return request(`/ingredients/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  });
-}
+// Supprimer une catégorie
+export const deleteAdminCategory = (id) =>
+  request(`/categories/${id}`, { method: 'DELETE' }, true, ADMIN_API_URL);
 
-export function approveAdminIngredient(id) {
-  return request(`/ingredients/${id}/approve`, {
-    method: 'PATCH',
-  });
-}
+// ---------------------------
+// INGREDIENTS
+// ---------------------------
 
-export function deleteAdminIngredient(id) {
-  return request(`/ingredients/${id}`, { method: 'DELETE' });
-}
+// Récupérer les ingrédients avec option recherche
+export const getAdminIngredients = (search = '') =>
+  request(`/ingredients${search ? `?search=${encodeURIComponent(search)}` : ''}`, {}, true, ADMIN_API_URL);
+
+// Mettre à jour un ingrédient
+export const updateAdminIngredient = (id, payload) =>
+  request(`/ingredients/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }, true, ADMIN_API_URL);
+
+// Approuver un ingrédient
+export const approveAdminIngredient = (id) => {
+   // On renvoie la promesse pour pouvoir faire un await ou .then() côté appel
+  return request(`/ingredients/${id}/approve`, { method: 'PATCH' }, true, ADMIN_API_URL);
+};
+
+// Supprimer un ingrédient par son ID
+export const deleteAdminIngredient = (id) =>
+  request(`/ingredients/${id}`, { method: 'DELETE' }, true, ADMIN_API_URL);
+
+
+
+
+
