@@ -1,17 +1,5 @@
 import {request} from './api.js';
 
-// 🔹 Normalise les noms de catégories pour cohérence
-function normalizeCategoryLabel(value) {
-  const normalized = String(value || '').trim().toLowerCase();
-
-  if (normalized === 'entree' || normalized === 'entrée') return 'Entrée';
-  if (normalized === 'plat') return 'Plat';
-  if (normalized === 'dessert') return 'Dessert';
-  if (normalized === 'boisson') return 'Boisson';
-
-  return String(value || '').trim();
-}
-
 // ---------------------------
 // EXPORTS : recettes
 // ---------------------------

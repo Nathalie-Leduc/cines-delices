@@ -36,6 +36,11 @@ function normalizeCategoryLabel(value) {
   return value || "Autre";
 }
 
+function parsePositiveInt(value, fallback) {
+  const parsed = Number.parseInt(String(value || ""), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function mapApiRecipeToCard(recipe) {
   const prep = Number(recipe?.tempsPreparation);
   const cook = Number(recipe?.tempsCuisson);
@@ -84,6 +89,12 @@ function mixRecipesByCategory(recipes) {
   return mixed;
 }
 
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
 export default function RecipesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [recipes, setRecipes] = useState([]);
@@ -101,43 +112,52 @@ export default function RecipesPage() {
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth <= 767);
-  const [currentPage, setCurrentPage] = useState(Math.max(1, Number(searchParams.get("page") || 1)));
-  const [currentLimit, setCurrentLimit] = useState(Math.max(1, Number(searchParams.get("limit") || 15)));
   const searchRef = useRef(null);
 
   const categoryParam = searchParams.get("category")?.toLowerCase() || "";
   const activeFilter = CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
   const currentQuery = searchParams.get("q")?.trim() || "";
+  const currentPage = parsePositiveInt(searchParams.get("page"), 1);
+  const currentLimit = parsePositiveInt(searchParams.get("limit"), 15);
 
   useEffect(() => {
     setSearchInput(searchParams.get("q") || "");
   }, [searchParams]);
 
-  // Render : modifications nécessaires :
   useEffect(() => {
-  let isMounted = true;
-  const fetchRecipes = async () => {
-    try {
-      const payload = await getRecipesCatalog({
-        page: currentPage,
-        limit: currentLimit,
-        category: activeFilter !== 'Tous' ? activeFilter : undefined,
-        q: currentQuery || undefined,
-      });
-        const rawRecipes = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.recipes)              // ← ajouter ça
-            ? payload.recipes
-            : Array.isArray(payload?.data)
-              ? payload.data
-              : [];
+    let isMounted = true;
+
+    const fetchRecipes = async () => {
+      try {
+        setIsLoading(recipes.length === 0);
+        setIsPaginating(recipes.length > 0);
+        let payload;
+
+        for (let attempt = 0; attempt < 2; attempt += 1) {
+          try {
+            payload = await getRecipesCatalog({
+              page: currentPage,
+              limit: currentLimit,
+              category: activeFilter === "Tous" ? "" : activeFilter,
+              q: currentQuery,
+            });
+            break;
+          } catch (attemptError) {
+            if (attempt === 1) {
+              throw attemptError;
+            }
+
+            await wait(400);
+          }
+        }
+
+        const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
 
         if (!isMounted) return;
 
         const mappedRecipes = rawRecipes.map(mapApiRecipeToCard);
         setRecipes(activeFilter === "Tous" ? mixRecipesByCategory(mappedRecipes) : mappedRecipes);
         setPagination({
-          // Render : paginationPayload remplacé par payload?.pagination?
           page: Number(payload?.pagination?.page || currentPage), 
           limit: Number(payload?.pagination?.limit || currentLimit),
           totalItems: Number(payload?.pagination?.totalItems || 0),
@@ -238,54 +258,64 @@ export default function RecipesPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleFilterChange = (filter) => {
+  const updateCatalogParams = (mutateParams) => {
     const nextParams = new URLSearchParams(searchParams);
-
-    if (filter.value === "Tous") {
-      nextParams.delete("category");
-    } else {
-      nextParams.set("category", filter.key);
-    }
-
-    nextParams.delete("page");
+    mutateParams(nextParams);
     setSearchParams(nextParams, { replace: true, preventScrollReset: true });
-    setCurrentPage(1);
+  };
+
+  const handleFilterChange = (filter) => {
+    updateCatalogParams((nextParams) => {
+      if (filter.value === "Tous") {
+        nextParams.delete("category");
+      } else {
+        nextParams.set("category", filter.key);
+      }
+
+      nextParams.set("page", "1");
+      nextParams.set("limit", String(currentLimit));
+    });
   };
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    const nextParams = new URLSearchParams(searchParams);
     const normalized = searchInput.trim();
+    updateCatalogParams((nextParams) => {
+      if (normalized) {
+        nextParams.set("q", normalized);
+      } else {
+        nextParams.delete("q");
+      }
 
-    if (normalized) {
-      nextParams.set("q", normalized);
-    } else {
-      nextParams.delete("q");
-    }
-
-    nextParams.delete("page");
-    setSearchParams(nextParams, { replace: true, preventScrollReset: true });
+      nextParams.set("page", "1");
+      nextParams.set("limit", String(currentLimit));
+    });
     setSearchResults([]);
-    setCurrentPage(1);
   };
 
   const handleLimitChange = (event) => {
-    setCurrentLimit(Number(event.target.value));
-    setCurrentPage(1);
+    const nextLimit = Number(event.target.value);
+    updateCatalogParams((nextParams) => {
+      nextParams.set("limit", String(nextLimit));
+      nextParams.set("page", "1");
+    });
   };
 
   const handleMobileLimitChange = (limit) => {
-    setCurrentLimit(limit);
-    setCurrentPage(1);
+    updateCatalogParams((nextParams) => {
+      nextParams.set("limit", String(limit));
+      nextParams.set("page", "1");
+    });
   };
 
   const clearSearch = () => {
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.delete("q");
     setSearchInput("");
     setSearchResults([]);
-    setSearchParams(nextParams, { replace: true, preventScrollReset: true });
-    setCurrentPage(1);
+    updateCatalogParams((nextParams) => {
+      nextParams.delete("q");
+      nextParams.set("page", "1");
+      nextParams.set("limit", String(currentLimit));
+    });
   };
 
   const handleSuggestionClick = () => {
@@ -300,7 +330,10 @@ export default function RecipesPage() {
   };
 
   const goToPage = (page) => {
-    setCurrentPage(page);
+    updateCatalogParams((nextParams) => {
+      nextParams.set("page", String(page));
+      nextParams.set("limit", String(currentLimit));
+    });
   };
 
   return (
