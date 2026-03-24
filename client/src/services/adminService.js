@@ -75,6 +75,10 @@ export function getAdminUsers(search = '') {
   return request(`/users${suffix}`);
 }
 
+export function getAdminNotifications() {
+  return request('/notifications');
+}
+
 export function deleteAdminUser(id) {
   return request(`/users/${id}`, { method: 'DELETE' });
 }

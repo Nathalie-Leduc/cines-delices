@@ -5,6 +5,7 @@ import usersRoutes from "./usersRoutes.js";
 import adminRoutes from "./adminRoutes.js";
 import authRoutes from "./authRoutes.js";
 import recipesRoutes from "./recipesRoutes.js";
+import ingredientsRoutes from "./ingredientsRoutes.js";
 
 const router = express.Router()
 
@@ -14,5 +15,6 @@ router.use('/users', usersRoutes);
 router.use('/admin', adminRoutes);
 router.use('/auth', authRoutes);
 router.use('/recipes', recipesRoutes);
+router.use('/ingredients', ingredientsRoutes);
 
 export default router;

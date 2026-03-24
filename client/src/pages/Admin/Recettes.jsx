@@ -402,8 +402,12 @@ function AdminRecettes() {
       categoryId: editDraft.categoryId,
       categoryName: editDraft.category,
       ingredients: editDraft.ingredients,
-      ...(editDraft.selectedTmdbMedia
-        ? { tmdbMedia: editDraft.selectedTmdbMedia }
+      ...(editDraft.selectedTmdbId
+        ? {
+            tmdbId: editDraft.selectedTmdbId,
+            mediaTitle: editDraft.movie,
+            mediaType: editDraft.media,
+          }
         : editDraft.movieId ? { mediaId: editDraft.movieId } : {}),
     })
       .then((updatedRecipe) => {

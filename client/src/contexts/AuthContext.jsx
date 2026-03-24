@@ -2,6 +2,7 @@ import { createContext, useContext, useMemo, useState } from 'react';
 
 const AUTH_TOKEN_KEY = 'token';
 const AUTH_USER_KEY = 'auth_user';
+const DISPLAY_NAME_KEY = 'displayName';
 
 const AuthContext = createContext(null);
 
@@ -40,6 +41,7 @@ function getInitialAuthState() {
   if (!isJwtValid(token)) {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(DISPLAY_NAME_KEY);
     return { token: null, user: null, isAuthenticated: false };
   }
 
@@ -53,6 +55,23 @@ function getInitialAuthState() {
   }
 
   return { token, user, isAuthenticated: true };
+}
+
+function normalizeDisplayName(user) {
+  const rawValue = typeof user?.prenom === 'string' && user.prenom.trim()
+    ? user.prenom
+    : typeof user?.pseudo === 'string' && user.pseudo.trim()
+      ? user.pseudo
+      : typeof user?.name === 'string' && user.name.trim()
+        ? user.name
+        : '';
+
+  const trimmed = String(rawValue || '').trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
 export function AuthProvider({ children }) {
@@ -73,12 +92,23 @@ export function AuthProvider({ children }) {
       localStorage.removeItem(AUTH_USER_KEY);
     }
 
+    const displayName = normalizeDisplayName(user);
+    if (displayName) {
+      localStorage.setItem(DISPLAY_NAME_KEY, displayName);
+    } else {
+      localStorage.removeItem(DISPLAY_NAME_KEY);
+    }
+
+    window.dispatchEvent(new Event('user-display-name-updated'));
+
     setAuthState({ token: normalizedToken, user, isAuthenticated: true });
   };
 
   const logout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
+    localStorage.removeItem(DISPLAY_NAME_KEY);
+    window.dispatchEvent(new Event('user-display-name-updated'));
     setAuthState({ token: null, user: null, isAuthenticated: false });
   };
 

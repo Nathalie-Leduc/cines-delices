@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
+import { getRecipesCatalog } from "../../services/recipesService";
 
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || "http://localhost:3000/api/auth/me";
 
@@ -30,6 +31,11 @@ function getUserName(payload) {
     return null;
   }
 
+  if (typeof payload.pseudo === "string" && payload.pseudo.trim()) {
+    const pseudo = payload.pseudo.trim();
+    return pseudo.charAt(0).toUpperCase() + pseudo.slice(1).toLowerCase();
+  }
+
   if (typeof payload.name === "string" && payload.name.trim()) {
     return payload.name.trim();
   }
@@ -45,9 +51,20 @@ function getUserName(payload) {
   return "Membre";
 }
 
+function getAccountPath(payload) {
+  const role = String(payload?.role || "").trim().toUpperCase();
+
+  if (role === "ADMIN") {
+    return "/admin";
+  }
+
+  return "/membre/profil";
+}
+
 export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [profileFirstName, setProfileFirstName] = useState(localStorage.getItem("displayName") || "");
   // Valeur de l'input de recherche
   const [search, setSearch] = useState('');
@@ -56,18 +73,48 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
  
   // Crée une référence vers le div qui contient le formulaire de recherche
   // null = pas encore attaché au DOM
-  const searchRef = useRef(null);
+  const desktopSearchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
    // Met simplement à jour le state search
   const handleSearch = (e) => {
     setSearch(e.target.value);
   };
 
+  const clearSearch = () => {
+    setSearch("");
+    setResults([]);
+    mobileSearchInputRef.current?.focus();
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+    const normalized = search.trim();
+
+    if (!normalized) {
+      navigate("/recipes");
+      setResults([]);
+      setIsMobileSearchOpen(false);
+      return;
+    }
+
+    navigate(`/recipes?q=${encodeURIComponent(normalized)}`);
+    setResults([]);
+    setIsMobileSearchOpen(false);
+  };
+
+  const handleResultClick = () => {
+    setSearch("");
+    setResults([]);
+    setIsMobileSearchOpen(false);
+  };
+
   // FETCH API AVEC DEBOUNCE
   // ---------------------------
   useEffect(() => {
-    // Si input vide ou moins de 3 caractères, on vide les résultats et on ne fetch pas
-    if (!search || search.length < 4) {
+    // Si input vide ou moins de 2 caractères, on vide les résultats et on ne fetch pas
+    if (!search || search.trim().length < 2) {
       setResults([]);
       return;
     }
@@ -75,17 +122,21 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     // Définir un timeout pour attendre 400ms après la dernière frappe
     const timeout = setTimeout(async () => {
       try {
-          // Appel à ton API Node.js / Express qui interroge PostgreSQL
-          const response = await fetch(`http://localhost:3000/api/recipes?search=${encodeURIComponent(search)}`);
-          if (!response.ok) {
-          console.error("Erreur fetch API:", response.status);
-          setResults([]);
-          return;
-          }
-          // On suppose que l'API renvoie un tableau de recettes : [{id, title}, ...]
-          const data = await response.json();
-          console.log("résultats api:", data);
-          setResults(data);
+          const payload = await getRecipesCatalog({
+            q: search,
+            limit: 5,
+          });
+
+          const recipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
+          const mappedResults = recipes.map((recipe) => ({
+            id: recipe.id,
+            slug: recipe.slug,
+            title: recipe.titre || "Recette sans titre",
+            mediaTitle: recipe.media?.titre || "",
+            image: recipe.media?.posterUrl || recipe.imageURL || "/img/placeholder.jpg",
+          }));
+
+          setResults(mappedResults);
 
       } catch (err) {
         console.error("Erreur fetch recettes :", err);
@@ -101,15 +152,17 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const nowInSeconds = Math.floor(Date.now() / 1000);
   const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
   const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
+  const accountPath = getAccountPath(payload);
 
   
 
   // Ferme la liste des résultats quand l'utilisateur clique en dehors
 useEffect(() => {
   const handleClickOutside = (e) => {
-    // searchRef.current = le div du formulaire
-    // contains(e.target) = vérifie si le clic est à l'intérieur du div
-    if (searchRef.current && !searchRef.current.contains(e.target)) {
+    const clickedDesktopSearch = desktopSearchRef.current?.contains(e.target);
+    const clickedMobileSearch = mobileSearchRef.current?.contains(e.target);
+
+    if (!clickedDesktopSearch && !clickedMobileSearch) {
       // Le clic est en dehors → on vide les résultats
       setResults([]);
     }
@@ -122,6 +175,44 @@ useEffect(() => {
   // Évite les fuites mémoire
   return () => document.removeEventListener("mousedown", handleClickOutside);
 }, []); // [] = s'exécute une seule fois au montage du composant
+
+  useEffect(() => {
+    if (!isMobileSearchOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    mobileSearchInputRef.current?.focus();
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileSearchOpen]);
+
+  useEffect(() => {
+    const handleOpenMobileSearch = (event) => {
+      const nextSearch = typeof event?.detail?.search === "string" ? event.detail.search : "";
+      setIsMenuOpen(false);
+      setSearch(nextSearch);
+      setIsMobileSearchOpen(true);
+    };
+
+    window.addEventListener("open-mobile-search", handleOpenMobileSearch);
+
+    return () => {
+      window.removeEventListener("open-mobile-search", handleOpenMobileSearch);
+    };
+  }, []);
 
   useEffect(() => {
     const refreshDisplayName = () => {
@@ -176,6 +267,16 @@ useEffect(() => {
 
   const closeMenu = () => {
     setIsMenuOpen(false);
+  };
+
+  const openMobileSearch = () => {
+    setIsMenuOpen(false);
+    setIsMobileSearchOpen(true);
+  };
+
+  const closeMobileSearch = () => {
+    setIsMobileSearchOpen(false);
+    setResults([]);
   };
 
   const handleMobileAction = () => {
@@ -244,12 +345,9 @@ useEffect(() => {
 
           <div className={styles.rightZone}>
             {/* Wrapper relatif pour positionner la liste sous l'input */}
-            <div ref={searchRef} className={styles.searchWrapper}>
-             {/* Formulaire de recherche */}
-              <form className={styles.searchForm} role="search" onSubmit={(e) => {e.preventDefault()
-              console.log("Rechercher recette:", search);
-              }}
-              >
+            <div ref={desktopSearchRef} className={styles.searchWrapper}>
+              {/* Formulaire de recherche */}
+              <form className={styles.searchForm} role="search" onSubmit={handleSearchSubmit}>
                 <input
                   type="search"
                   value={search}  // Valeur contrôlée par le state
@@ -273,15 +371,21 @@ useEffect(() => {
                 <ul className={styles.searchResults}>
                 {results.map((recipe) => (
                   <li key={recipe.id} className={styles.searchResultItem}>
-                    {/* Lien vers la page du média : films ou séries selon le type */}
                     <NavLink 
-                      to={`/recipes/${recipe.id}`}
-                      onClick={() => { 
-                        setSearch(""); // vider input
-                        setResults([]); // vider résultats
-                     }} 
+                      to={`/recipes/${recipe.slug || recipe.id}`}
+                      onClick={handleResultClick}
                     >
-                    {recipe.title}
+                    <img
+                      src={recipe.image}
+                      alt={recipe.title}
+                      className={styles.searchResultThumb}
+                    />
+                    <span className={styles.searchResultCopy}>
+                      <span>{recipe.title}</span>
+                      {recipe.mediaTitle && (
+                        <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                      )}
+                    </span>
                     </NavLink>
                   </li>
                 ))}
@@ -292,12 +396,12 @@ useEffect(() => {
 
             {isLoggedIn ? (
               <div className={styles.userBlock}>
-                <NavLink to="/membre" className={styles.userTextLink}>
+                <NavLink to={accountPath} className={styles.userTextLink}>
                   <span className={styles.userGreeting}>Bonjour,</span>
                   <span className={styles.userName}>{userName}</span>
                 </NavLink>
                 <NavLink
-                  to="/membre"
+                  to={accountPath}
                   className={styles.userIcon}
                   aria-label="Mon compte"
                 >
@@ -325,6 +429,8 @@ useEffect(() => {
             type="button"
             className={styles.mobileSearch}
             aria-label="Rechercher"
+            aria-expanded={isMobileSearchOpen}
+            onClick={openMobileSearch}
           >
             <img
               src="/icon/Search.svg"
@@ -351,7 +457,7 @@ useEffect(() => {
           {isLoggedIn ? (
             <div className={styles.mobileUser}>
               <NavLink
-                to="/membre/profil"
+                to={accountPath}
                 onClick={closeMenu}
                 className={styles.mobileAvatar}
                 aria-label="Mon profil"
@@ -365,7 +471,7 @@ useEffect(() => {
               <div className={styles.mobileUserText}>
                 <span>Bonjour,</span>
                 <NavLink
-                  to="/membre/profil"
+                  to={accountPath}
                   onClick={closeMenu}
                   className={styles.mobileUserLink}
                 >
@@ -406,7 +512,7 @@ useEffect(() => {
             {isLoggedIn && (
               <li>
                 <NavLink
-                  to="/membre"
+                  to={accountPath}
                   onClick={closeMenu}
                   className={({ isActive }) =>
                     isActive ? styles.mobileActiveLink : styles.mobileLink
@@ -437,6 +543,94 @@ useEffect(() => {
           </aside>
         </>
       )}
+
+      <div
+        className={`${styles.mobileSearchOverlay} ${isMobileSearchOpen ? styles.mobileSearchOverlayVisible : ""}`}
+        aria-hidden={!isMobileSearchOpen}
+      >
+        <button
+          type="button"
+          className={styles.mobileSearchBackdrop}
+          aria-label="Fermer la recherche"
+          onClick={closeMobileSearch}
+        />
+
+        <section
+          className={`${styles.mobileSearchModal} ${isMobileSearchOpen ? styles.mobileSearchModalOpen : ""}`}
+          aria-label="Recherche mobile"
+        >
+          <div className={styles.mobileSearchHeader}>
+            <div className={styles.mobileSearchTitleRow}>
+              <p className={styles.mobileSearchEyebrow}>Recherche rapide</p>
+              <span className={styles.mobileSearchTitleLine} />
+            </div>
+            <button
+              type="button"
+              className={styles.closeButton}
+              aria-label="Fermer la recherche"
+              onClick={closeMobileSearch}
+            >
+              <img src="/icon/close_menu.svg" alt="Fermer" />
+            </button>
+          </div>
+
+          <div ref={mobileSearchRef} className={styles.mobileSearchContent}>
+            <form className={styles.mobileSearchForm} role="search" onSubmit={handleSearchSubmit}>
+              <div className={styles.mobileSearchField}>
+                <img
+                  src="/icon/Search.svg"
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.searchIcon}
+                />
+                <input
+                  ref={mobileSearchInputRef}
+                  type="search"
+                  value={search}
+                  onChange={handleSearch}
+                  placeholder="Rechercher une recette, un film, une serie"
+                  className={styles.mobileSearchInput}
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className={styles.clearSearchButton}
+                    onClick={clearSearch}
+                    aria-label="Effacer la recherche"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {results.length > 0 && (
+                <ul className={styles.mobileSearchResults}>
+                  {results.map((recipe) => (
+                    <li key={recipe.id} className={styles.searchResultItem}>
+                      <NavLink
+                        to={`/recipes/${recipe.slug || recipe.id}`}
+                        onClick={handleResultClick}
+                      >
+                        <img
+                          src={recipe.image}
+                          alt={recipe.title}
+                          className={styles.searchResultThumb}
+                        />
+                        <span className={styles.searchResultCopy}>
+                          <span>{recipe.title}</span>
+                          {recipe.mediaTitle && (
+                            <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                          )}
+                        </span>
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </form>
+          </div>
+        </section>
+      </div>
     </>
   );
 }

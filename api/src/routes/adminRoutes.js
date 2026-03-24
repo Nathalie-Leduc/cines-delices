@@ -9,6 +9,7 @@ import {
 	deleteUser,
 	getAdminCategories,
 	getAdminIngredients,
+	getAdminNotifications,
 	getAdminRecipes,
 	getAdminUsers,
 	getPendingRecipes,
@@ -34,6 +35,7 @@ router.patch('/recipes/:id/reject', rejectRecipe);
 router.delete('/recipes/:id', deleteRecipe);
 
 router.get('/users', getAdminUsers);
+router.get('/notifications', getAdminNotifications);
 router.patch('/users/:id/role', updateUserRole);
 router.delete('/users/:id', deleteUser);
 

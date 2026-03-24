@@ -1,5 +1,16 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+function normalizeCategoryLabel(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+
+  if (normalized === 'entree' || normalized === 'entrée') return 'Entrée';
+  if (normalized === 'plat') return 'Plat';
+  if (normalized === 'dessert') return 'Dessert';
+  if (normalized === 'boisson') return 'Boisson';
+
+  return String(value || '').trim();
+}
+
 function getAuthHeaders() {
   const token = localStorage.getItem('token');
 

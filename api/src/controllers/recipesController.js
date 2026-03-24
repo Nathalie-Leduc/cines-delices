@@ -179,6 +179,22 @@ export const createRecipe = async (req, res) => {
       }
     }
 
+    // Notifier tous les admins de la nouvelle recette en attente
+    const adminUsers = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+    if (adminUsers.length > 0) {
+      await prisma.notification.createMany({
+        data: adminUsers.map((admin) => ({
+          type: 'RECIPE_SUBMITTED',
+          message: `Nouvelle recette soumise: ${titre}`,
+          userId: admin.id,
+          recipeId: recipe.id,
+        })),
+      });
+    }
+
     return res.status(201).json({
       message: 'Recette créée avec succès. Elle sera vérifiée par un administrateur.',
       recipe,
@@ -326,41 +342,47 @@ export const updateRecipe = async (req, res) => {
  * Soumet une recette en attente de validation admin
  * PATCH /api/recipes/:id/submit
  */
-export const submitRecipe = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const userId = req.user?.id;
+export const submitRecipe = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user?.id;
 
-    if (!userId) {
-      return res.status(401).json({ message: 'Utilisateur non authentifie' });
-    }
+  if (!userId) {
+    return res.status(401).json({ message: 'Utilisateur non authentifié' });
+  }
 
-    const recipe = await prisma.recipe.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        userId: true,
-        status: true,
-      },
-    });
+  const recipe = await prisma.recipe.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      titre: true,
+      userId: true,
+      status: true,
+    },
+  });
 
-    if (!recipe) {
-      return res.status(404).json({ message: 'Recette introuvable' });
-    }
+  if (!recipe) {
+    return res.status(404).json({ message: 'Recette introuvable' });
+  }
 
-    if (recipe.userId !== userId) {
-      return res.status(403).json({ message: "Vous n'etes pas autorise a soumettre cette recette" });
-    }
+  if (recipe.userId !== userId) {
+    return res.status(403).json({ message: "Vous n'êtes pas autorisé à soumettre cette recette" });
+  }
 
-    if (recipe.status === 'PENDING') {
-      return res.status(400).json({ message: 'Cette recette est deja en attente de validation.' });
-    }
+  if (recipe.status === 'PENDING') {
+    return res.status(400).json({ message: 'Cette recette est deja en attente de validation.' });
+  }
 
-    if (recipe.status !== 'DRAFT') {
-      return res.status(400).json({ message: 'Seules les recettes en brouillon peuvent etre soumises.' });
-    }
+  if (recipe.status !== 'DRAFT') {
+    return res.status(400).json({ message: 'Seules les recettes en brouillon peuvent etre soumises.' });
+  }
 
-    const updatedRecipe = await prisma.recipe.update({
+  const adminUsers = await prisma.user.findMany({
+    where: { role: 'ADMIN' },
+    select: { id: true },
+  });
+
+  const updatedRecipe = await prisma.$transaction(async (tx) => {
+    const pendingRecipe = await tx.recipe.update({
       where: { id },
       data: {
         status: 'PENDING',
@@ -376,12 +398,22 @@ export const submitRecipe = async (req, res) => {
       },
     });
 
-    return res.json({ message: 'Recette soumise pour validation.', recipe: updatedRecipe });
-  } catch (error) {
-    console.error('[submitRecipe]', error);
-    return res.status(500).json({ message: 'Erreur serveur lors de la soumission de la recette.' });
-  }
-};
+    if (adminUsers.length > 0) {
+      await tx.notification.createMany({
+        data: adminUsers.map((admin) => ({
+          type: 'RECIPE_SUBMITTED',
+          message: `Nouvelle recette soumise: ${recipe.titre}`,
+          userId: admin.id,
+          recipeId: recipe.id,
+        })),
+      });
+    }
+
+    return pendingRecipe;
+  });
+
+  return res.json({ message: 'Recette soumise pour validation.', recipe: updatedRecipe });
+});
 
 /**
  * Supprime une recette
