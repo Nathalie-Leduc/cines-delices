@@ -132,12 +132,13 @@ export default function RecipesPage() {
         const mappedRecipes = rawRecipes.map(mapApiRecipeToCard);
         setRecipes(activeFilter === "Tous" ? mixRecipesByCategory(mappedRecipes) : mappedRecipes);
         setPagination({
-          page: Number(paginationPayload.page || currentPage),
-          limit: Number(paginationPayload.limit || currentLimit),
-          totalItems: Number(paginationPayload.totalItems || 0),
-          totalPages: Number(paginationPayload.totalPages || 0),
-          hasNextPage: Boolean(paginationPayload.hasNextPage),
-          hasPreviousPage: Boolean(paginationPayload.hasPreviousPage),
+          // Render : paginationPayload remplacé par payload?.pagination?
+          page: Number(payload?.pagination?.page || currentPage), 
+          limit: Number(payload?.pagination?.limit || currentLimit),
+          totalItems: Number(payload?.pagination?.totalItems || 0),
+          totalPages: Number(payload?.pagination?.totalPages || 0),
+          hasNextPage: Boolean(payload?.pagination?.hasNextPage),
+          hasPreviousPage: Boolean(payload?.pagination?.hasPreviousPage),
         });
         setError("");
       } catch (fetchError) {
