@@ -15,10 +15,10 @@ export function logoutUser() {
 }
 
 // Register (si besoin)
-export function registerUser({ email, password, pseudo }) {
+export function registerUser({ email, password, nom, prenom, pseudo }) {
   return request('/api/auth/register', {
     method: 'POST',
-    body: { email, password, pseudo },
+    body: { email, password, nom, prenom, pseudo },
   });
 }
 

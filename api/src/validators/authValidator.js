@@ -55,11 +55,24 @@ export const registerSchema = z.object({
       .toLowerCase()      // normalise automatiquement en minuscules
       .trim(),
 
+    nom: z
+      .string({ required_error: 'Le nom est obligatoire' })
+      .min(2, 'Le nom doit contenir au moins 2 caractères')
+      .max(60, 'Le nom ne peut pas dépasser 60 caractères')
+      .trim(),
+
+    prenom: z
+      .string({ required_error: 'Le prénom est obligatoire' })
+      .min(2, 'Le prénom doit contenir au moins 2 caractères')
+      .max(60, 'Le prénom ne peut pas dépasser 60 caractères')
+      .trim(),
+
     pseudo: z
-      .string({ required_error: 'Le pseudo est obligatoire' })
+      .string()
       .min(2,  'Le pseudo doit contenir au moins 2 caractères')
       .max(30, 'Le pseudo ne peut pas dépasser 30 caractères')
-      .trim(),
+      .trim()
+      .optional(),
 
     password: passwordSchema,
   }),

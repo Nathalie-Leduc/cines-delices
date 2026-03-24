@@ -17,16 +17,56 @@ function safeUser(user) {
   return rest;
 }
 
+function normalizePseudoBase(value) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-._]+|[-._]+$/g, '');
+
+  return normalized;
+}
+
+async function generateUniquePseudo({ prenom, nom }) {
+  const rawBase = `${prenom}.${nom}`;
+  const base = normalizePseudoBase(rawBase) || normalizePseudoBase(prenom) || 'membre';
+  const maxLength = 30;
+
+  let candidate = base.slice(0, maxLength);
+  if (candidate.length < 2) {
+    candidate = `membre${Date.now().toString().slice(-4)}`;
+  }
+
+  let suffix = 1;
+  while (await prisma.user.findUnique({ where: { pseudo: candidate } })) {
+    const suffixText = String(suffix);
+    const trimmedBase = base.slice(0, Math.max(2, maxLength - suffixText.length - 1));
+    candidate = `${trimmedBase}-${suffixText}`;
+    suffix += 1;
+  }
+
+  return candidate;
+}
+
 // POST / api/auth/register
 // ZOD va validé et normalisé email, pseudo et password
 export const register = async (req, res) => {
   try {
-    const { email, pseudo, password } = req.body;
+    const { email, password, nom, prenom, pseudo: optionalPseudo } = req.body;
 
-       // Vérification de  l'unicité email + pseudo en une seule requête
-    const existing  = await prisma.user.findFirst({
-      where: { OR: [{ email }, { pseudo }]},
+    const normalizedNom = String(nom || '').trim();
+    const normalizedPrenom = String(prenom || '').trim();
+    const providedPseudo = optionalPseudo ? String(optionalPseudo).trim() : null;
+    const pseudo = providedPseudo || await generateUniquePseudo({ prenom: normalizedPrenom, nom: normalizedNom });
+
+       // Vérification de l'unicité email + pseudo en une seule requête
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ email }, { pseudo }] },
     });
+
     if (existing) {
       const field = existing.email === email ? 'email' : 'pseudo';
       return res.status(409).json({ error: `Ce ${field} est déjà utilisé` });
@@ -37,7 +77,12 @@ export const register = async (req, res) => {
 
     // 4. Création de l'utilisateur
     const user = await prisma.user.create({
-      data: { email, pseudo, passwordHash },
+      data: {
+        email,
+        nom: normalizedNom,
+        pseudo,
+        passwordHash,
+      },
     });
 
     // Génération du JWT et renvoi sans le hash
