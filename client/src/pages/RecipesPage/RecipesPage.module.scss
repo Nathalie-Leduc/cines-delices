@@ -287,7 +287,24 @@
   text-decoration: none;
 }
 
+.searchResultButton {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  padding: 0.8rem 0.95rem;
+  border: 0;
+  background: transparent;
+  color: #f6f1e8;
+  text-align: left;
+  cursor: pointer;
+}
+
 .searchResultItem a:hover {
+  background: rgba(201, 164, 92, 0.12);
+}
+
+.searchResultButton:hover {
   background: rgba(201, 164, 92, 0.12);
 }
 
