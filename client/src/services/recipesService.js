@@ -81,10 +81,11 @@ export async function getRecipesCatalog(params = {}) {
 }
 
 // Récupère les recettes de l'utilisateur connecté
-export function getMyRecipes(token) {
-  return request('/users/me/recipes', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export function getMyRecipes() {
+  return request('/users/me/recipes');
+}
+
+// Récupère les notifications de l'utilisateur connecté
+export function getMyNotifications() {
+  return request('/users/me/notifications');
 }

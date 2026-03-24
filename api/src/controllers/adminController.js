@@ -238,6 +238,32 @@ export async function getPendingRecipes(req, res) {
 
 export async function approveRecipe(req, res) {
   try {
+    const recipeBeforeApproval = await prisma.recipe.findUnique({
+      where: { id: req.params.id },
+      include: {
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+    });
+
+    if (!recipeBeforeApproval) {
+      return res.status(404).json({ message: 'Recette introuvable.' });
+    }
+
+    const pendingIngredients = recipeBeforeApproval.ingredients
+      .filter((item) => !item.ingredient?.approved)
+      .map((item) => item.ingredient?.nom)
+      .filter(Boolean);
+
+    if (pendingIngredients.length > 0) {
+      return res.status(409).json({
+        message: `Impossible de valider la recette tant que ces ingrédients ne sont pas approuvés : ${pendingIngredients.join(', ')}`,
+      });
+    }
+
     const updatedRecipe = await prisma.$transaction(async (tx) => {
       const recipe = await tx.recipe.update({
         where: { id: req.params.id },
@@ -253,6 +279,15 @@ export async function approveRecipe(req, res) {
               ingredient: true,
             },
           },
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: recipe.userId,
+          recipeId: recipe.id,
+          type: 'RECIPE_SUBMITTED',
+          message: `Votre recette "${recipe.titre}" a ete validee et publiee.`,
         },
       });
 
@@ -297,6 +332,15 @@ export async function rejectRecipe(req, res) {
               ingredient: true,
             },
           },
+        },
+      });
+
+      await tx.notification.create({
+        data: {
+          userId: recipe.userId,
+          recipeId: recipe.id,
+          type: 'RECIPE_SUBMITTED',
+          message: `Votre recette "${recipe.titre}" a ete refusee. Motif : ${recipe.rejectionReason}`,
         },
       });
 
@@ -755,6 +799,15 @@ export async function approveIngredient(req, res) {
       },
     });
 
+    await prisma.notification.updateMany({
+      where: {
+        userId: req.user.id,
+        isRead: false,
+        message: `Nouvel ingrédient soumis: ${ingredient.nom}`,
+      },
+      data: { isRead: true },
+    });
+
     return res.json(formatIngredient(ingredient));
   } catch (error) {
     if (error.code === 'P2025') {
@@ -766,9 +819,26 @@ export async function approveIngredient(req, res) {
 
 export async function deleteIngredient(req, res) {
   try {
+    const ingredient = await prisma.ingredient.findUnique({
+      where: { id: req.params.id },
+      select: { nom: true },
+    });
+
+    if (!ingredient) {
+      return res.status(404).json({ message: 'Ingrédient introuvable.' });
+    }
+
     await prisma.$transaction([
       prisma.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } }),
       prisma.ingredient.delete({ where: { id: req.params.id } }),
+      prisma.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          isRead: false,
+          message: `Nouvel ingrédient soumis: ${ingredient.nom}`,
+        },
+        data: { isRead: true },
+      }),
     ]);
 
     return res.status(204).send();

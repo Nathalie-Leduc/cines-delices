@@ -185,6 +185,8 @@ export const createRecipe = async (req, res) => {
     });
 
     // Ajouter les ingrédients si fournis
+    const newlyCreatedIngredientNames = new Set();
+
     if (ingredients && ingredients.length > 0) {
       for (const ing of ingredients) {
         // Chercher ou créer l'ingrédient
@@ -192,11 +194,16 @@ export const createRecipe = async (req, res) => {
         const quantity = ing.quantity ?? ing.quantite ?? null;
         const unit = ing.unit ?? ing.unite ?? null;
 
-        const ingredient = await prisma.ingredient.upsert({
+        let ingredient = await prisma.ingredient.findUnique({
           where: { nom: ingredientName },
-          update: {},
-          create: { nom: ingredientName },
         });
+
+        if (!ingredient) {
+          ingredient = await prisma.ingredient.create({
+            data: { nom: ingredientName },
+          });
+          newlyCreatedIngredientNames.add(ingredient.nom);
+        }
 
         // Ajouter à la recette
         await prisma.recipeIngredient.create({
@@ -216,13 +223,25 @@ export const createRecipe = async (req, res) => {
       select: { id: true },
     });
     if (adminUsers.length > 0) {
-      await prisma.notification.createMany({
-        data: adminUsers.map((admin) => ({
+      const ingredientNotifications = Array.from(newlyCreatedIngredientNames).flatMap((ingredientName) =>
+        adminUsers.map((admin) => ({
           type: 'RECIPE_SUBMITTED',
-          message: `Nouvelle recette soumise: ${titre}`,
+          message: `Nouvel ingrédient soumis: ${ingredientName}`,
           userId: admin.id,
           recipeId: recipe.id,
-        })),
+        }))
+      );
+
+      await prisma.notification.createMany({
+        data: [
+          ...adminUsers.map((admin) => ({
+            type: 'RECIPE_SUBMITTED',
+            message: `Nouvelle recette soumise: ${titre}`,
+            userId: admin.id,
+            recipeId: recipe.id,
+          })),
+          ...ingredientNotifications,
+        ],
       });
     }
 
@@ -344,17 +363,26 @@ export const updateRecipe = async (req, res) => {
     });
 
     // Mettre à jour les ingrédients si fournis
+    const newlyCreatedIngredientNames = new Set();
+
     if (ingredients && ingredients.length > 0) {
       // Supprimer les anciens ingrédients
       await prisma.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
 
       // Ajouter les nouveaux
       for (const ing of ingredients) {
-        const ingredient = await prisma.ingredient.upsert({
-          where: { nom: ing.nom.toLowerCase().trim() },
-          update: {},
-          create: { nom: ing.nom.toLowerCase().trim() },
+        const ingredientName = String(ing.nom || '').toLowerCase().trim();
+
+        let ingredient = await prisma.ingredient.findUnique({
+          where: { nom: ingredientName },
         });
+
+        if (!ingredient) {
+          ingredient = await prisma.ingredient.create({
+            data: { nom: ingredientName },
+          });
+          newlyCreatedIngredientNames.add(ingredient.nom);
+        }
 
         await prisma.recipeIngredient.create({
           data: {
@@ -363,6 +391,26 @@ export const updateRecipe = async (req, res) => {
             quantity: ing.quantity,
             unit: ing.unit,
           },
+        });
+      }
+    }
+
+    if (newlyCreatedIngredientNames.size > 0) {
+      const adminUsers = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true },
+      });
+
+      if (adminUsers.length > 0) {
+        await prisma.notification.createMany({
+          data: Array.from(newlyCreatedIngredientNames).flatMap((ingredientName) =>
+            adminUsers.map((admin) => ({
+              type: 'RECIPE_SUBMITTED',
+              message: `Nouvel ingrédient soumis: ${ingredientName}`,
+              userId: admin.id,
+              recipeId: id,
+            }))
+          ),
         });
       }
     }

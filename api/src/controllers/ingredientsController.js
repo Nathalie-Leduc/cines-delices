@@ -39,11 +39,34 @@ export async function createIngredient(req, res) {
       return res.status(400).json({ message: 'Le nom de l\'ingrédient est requis.' });
     }
 
-    const ingredient = await prisma.ingredient.upsert({
-      where: { nom: name },
-      update: {},
-      create: { nom: name },
+    const existingIngredient = await prisma.ingredient.findUnique({ where: { nom: name } });
+
+    if (existingIngredient) {
+      return res.status(200).json({
+        id: existingIngredient.id,
+        name: existingIngredient.nom,
+      });
+    }
+
+    const ingredient = await prisma.ingredient.create({
+      data: { nom: name },
     });
+
+    const adminUsers = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { id: true },
+    });
+
+    if (adminUsers.length > 0) {
+      await prisma.notification.createMany({
+        data: adminUsers.map((admin) => ({
+          type: 'RECIPE_SUBMITTED',
+          message: `Nouvel ingrédient soumis: ${ingredient.nom}`,
+          userId: admin.id,
+          recipeId: null,
+        })),
+      });
+    }
 
     return res.status(201).json({
       id: ingredient.id,

@@ -90,6 +90,25 @@
   border-radius: 12px;
   padding: 0.6rem 0.7rem;
   background: rgba(246, 241, 232, 0.04);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notificationsBoxUnread {
+  border-color: rgba(134, 239, 172, 0.7);
+  background: rgba(246, 241, 232, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(134, 239, 172, 0.18), 0 8px 18px rgba(0, 0, 0, 0.18);
+
+  .notificationsHeader strong {
+    color: #e8dcc8;
+  }
+
+  .notificationsEmpty {
+    color: rgba(246, 241, 232, 0.6);
+  }
+
+  .notificationItem {
+    background: rgba(246, 241, 232, 0.08);
+  }
 }
 
 .notificationsHeader {
@@ -106,9 +125,28 @@
   }
 
   span {
-    color: rgba(246, 241, 232, 0.68);
     font-size: 0.68rem;
   }
+}
+
+.notificationsCount {
+  color: rgba(246, 241, 232, 0.68);
+}
+
+.notificationsCountUnread {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #e8dcc8;
+  font-weight: 600;
+}
+
+.notificationsUnreadDot {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: #86efac;
+  box-shadow: 0 0 0 0.12rem rgba(134, 239, 172, 0.34);
 }
 
 .notificationsEmpty {
@@ -124,6 +162,32 @@
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
+}
+
+.notificationsListScrollable {
+  max-height: 7.4rem;
+  overflow-y: scroll;
+  padding-right: 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 241, 232, 0.35) rgba(246, 241, 232, 0.08);
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(246, 241, 232, 0.08);
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(246, 241, 232, 0.35);
+    border-radius: 999px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(246, 241, 232, 0.52);
+  }
 }
 
 .notificationItem {

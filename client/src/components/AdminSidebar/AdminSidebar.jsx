@@ -50,7 +50,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
         ? notificationsPayload.notifications
         : [];
 
-      setRecentNotifications(notifications.slice(0, 3));
+      setRecentNotifications(notifications);
 
       setCounts({
         recipes: Array.isArray(recipes) ? recipes.length : 0,
@@ -143,15 +143,27 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
   }
 
   function handleOpenNotification(notification) {
-    if (!notification?.recipeId) {
+    const message = String(notification?.message || '').toLowerCase();
+    const isIngredientNotification = message.includes('nouvel ingrédient soumis');
+
+    if (!notification?.recipeId && !isIngredientNotification) {
       return;
     }
 
     onNavigate?.();
+
+    if (isIngredientNotification) {
+      navigate('/admin/validation-ingredients');
+      return;
+    }
+
     navigate('/admin/validation-recettes', {
       state: { openRecipeId: notification.recipeId },
     });
   }
+
+  const hasUnreadNotifications = counts.unreadNotifications > 0;
+  const hasScrollableNotifications = recentNotifications.length > 2;
 
   return (
     <aside className={`${styles.adminSidebar} ${mobile ? styles.adminSidebarMobile : ''} ${className}`.trim()}>
@@ -178,16 +190,22 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
         </ul>
       </nav>
 
-      <section className={styles.notificationsBox} aria-label="Notifications admin">
+      <section
+        className={`${styles.notificationsBox} ${hasUnreadNotifications ? styles.notificationsBoxUnread : ''}`.trim()}
+        aria-label="Notifications admin"
+      >
         <div className={styles.notificationsHeader}>
-          <strong>Alertes</strong>
-          <span>{counts.unreadNotifications} non lue{counts.unreadNotifications > 1 ? 's' : ''}</span>
+          <strong>Notification(s)</strong>
+          <span className={hasUnreadNotifications ? styles.notificationsCountUnread : styles.notificationsCount}>
+            {hasUnreadNotifications ? <span className={styles.notificationsUnreadDot} aria-hidden="true" /> : null}
+            {counts.unreadNotifications} non lue{counts.unreadNotifications > 1 ? 's' : ''}
+          </span>
         </div>
 
         {recentNotifications.length === 0 ? (
           <p className={styles.notificationsEmpty}>Aucune alerte récente.</p>
         ) : (
-          <ul className={styles.notificationsList}>
+          <ul className={`${styles.notificationsList} ${hasScrollableNotifications ? styles.notificationsListScrollable : ''}`.trim()}>
             {recentNotifications.map((notification) => (
               <li key={notification.id} className={styles.notificationItem}>
                 <button

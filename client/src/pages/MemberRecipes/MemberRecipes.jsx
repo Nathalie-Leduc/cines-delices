@@ -194,6 +194,13 @@ export default function MesRecettes() {
       active: true,
     },
     {
+      icon: '/icon/Message_fill.svg',
+      label: 'Notifications',
+      sub: 'Voir mes alertes',
+      path: '/membre',
+      active: false,
+    },
+    {
       icon: '/icon/User.svg',
       label: 'Mes informations',
       sub: userEmail,
