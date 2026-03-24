@@ -93,3 +93,83 @@ export async function getMyRecipes(req, res) {
 		return res.status(500).json({ message: 'Erreur serveur lors de la récupération des recettes utilisateur.' });
 	}
 }
+
+/**
+ * Récupère les notifications de l'utilisateur connecté.
+ *
+ * @param {Object} req - Objet requête Express
+ * @param {Object} res - Objet réponse Express
+ */
+export async function getMyNotifications(req, res) {
+	try {
+		const userId = req.user?.id;
+
+		if (!userId) {
+			return res.status(401).json({ message: 'Utilisateur non authentifié.' });
+		}
+
+		const [notifications, unreadCount] = await Promise.all([
+			prisma.notification.findMany({
+				where: { userId },
+				orderBy: { createdAt: 'desc' },
+				take: 20,
+				select: {
+					id: true,
+					type: true,
+					message: true,
+					isRead: true,
+					recipeId: true,
+					createdAt: true,
+				},
+			}),
+			prisma.notification.count({
+				where: {
+					userId,
+					isRead: false,
+				},
+			}),
+		]);
+
+		return res.json({ notifications, unreadCount });
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ message: 'Erreur serveur lors de la récupération des notifications.' });
+	}
+}
+
+/**
+ * Supprime une notification de l'utilisateur connecté.
+ *
+ * @param {Object} req - Objet requête Express
+ * @param {Object} res - Objet réponse Express
+ */
+export async function deleteMyNotification(req, res) {
+	try {
+		const userId = req.user?.id;
+		const notificationId = String(req.params.id || '').trim();
+
+		if (!userId) {
+			return res.status(401).json({ message: 'Utilisateur non authentifié.' });
+		}
+
+		if (!notificationId) {
+			return res.status(400).json({ message: 'Notification invalide.' });
+		}
+
+		const deleted = await prisma.notification.deleteMany({
+			where: {
+				id: notificationId,
+				userId,
+			},
+		});
+
+		if (deleted.count === 0) {
+			return res.status(404).json({ message: 'Notification introuvable.' });
+		}
+
+		return res.status(204).send();
+	} catch (error) {
+		console.error(error);
+		return res.status(500).json({ message: 'Erreur serveur lors de la suppression de la notification.' });
+	}
+}

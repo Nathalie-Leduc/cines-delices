@@ -4,6 +4,7 @@ import styles from './MembreInterface.module.scss';
 
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
 const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
+const USER_NOTIFICATIONS_API = import.meta.env.VITE_NOTIFICATIONS_API || 'http://localhost:3000/api/users/me/notifications';
 
 // Décode le payload d'un JWT stocké dans le localStorage sans bibliothèque externe
 function parseJwtPayload(token) {
@@ -26,6 +27,59 @@ export default function Membre() {
 
   // Prénom/pseudo affiché dans le message de bienvenue
   const [userName, setUserName] = useState(localStorage.getItem('displayName') || '');
+  const [recentNotifications, setRecentNotifications] = useState([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  function formatNotificationDate(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  function getNotificationVariantClass(message) {
+    const normalizedMessage = String(message || '').toLowerCase();
+
+    if (normalizedMessage.includes('a ete validee') || normalizedMessage.includes('a été validée')) {
+      return styles.notificationApproved;
+    }
+
+    if (normalizedMessage.includes('a ete refusee') || normalizedMessage.includes('a été refusée')) {
+      return styles.notificationRejected;
+    }
+
+    return '';
+  }
+
+  async function handleDeleteNotification(notificationId, isRead) {
+    const token = localStorage.getItem('token');
+    if (!token || !notificationId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${USER_NOTIFICATIONS_API}/${notificationId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok && response.status !== 204) {
+        throw new Error('Suppression impossible');
+      }
+
+      setRecentNotifications((previous) => previous.filter((notification) => notification.id !== notificationId));
+
+      if (!isRead) {
+        setUnreadNotifications((previous) => Math.max(0, previous - 1));
+      }
+    } catch (error) {
+      console.error('Erreur suppression notification:', error);
+    }
+  }
 
   // Au montage : lit l'e-mail depuis le JWT et récupère le nombre de recettes via l'API
   useEffect(() => {
@@ -88,8 +142,28 @@ export default function Membre() {
       }
     };
 
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch(USER_NOTIFICATIONS_API, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) throw new Error('Erreur lors de la récupération des notifications');
+
+        const payload = await response.json();
+        const notifications = Array.isArray(payload?.notifications) ? payload.notifications : [];
+        setRecentNotifications(notifications.slice(0, 3));
+        setUnreadNotifications(Number(payload?.unreadCount || 0));
+      } catch (error) {
+        console.error('Erreur fetchNotifications:', error);
+        setRecentNotifications([]);
+        setUnreadNotifications(0);
+      }
+    };
+
     fetchProfile();
     fetchRecipes();
+    fetchNotifications();
   }, []);
 
   // Éléments du menu de navigation du compte membre
@@ -100,6 +174,12 @@ export default function Membre() {
       // Affiche le nombre réel de recettes récupéré depuis l'API
       sub: `${recipeCount} recette${recipeCount > 1 ? 's' : ''}`,
       path: '/membre/mes-recettes',
+    },
+    {
+      icon: '/icon/Message_fill.svg',
+      label: 'Notifications',
+      sub: `${unreadNotifications} non lue${unreadNotifications > 1 ? 's' : ''}`,
+      path: '/membre',
     },
     {
       icon: '/icon/User.svg',
@@ -129,6 +209,37 @@ export default function Membre() {
         Bonjour <strong>{userName}</strong>,<br />
         Bienvenue chez Ciné Délices !
       </p>
+
+      <section className={styles.notificationsCard} aria-label="Notifications membre">
+        <div className={styles.notificationsHeader}>
+          <strong>Notifications</strong>
+          <span>{unreadNotifications} non lue{unreadNotifications > 1 ? 's' : ''}</span>
+        </div>
+
+        {recentNotifications.length === 0 ? (
+          <p className={styles.notificationsEmpty}>Aucune notification recente.</p>
+        ) : (
+          <ul className={styles.notificationsList}>
+            {recentNotifications.map((notification) => (
+              <li
+                key={notification.id}
+                className={`${styles.notificationItem} ${getNotificationVariantClass(notification.message)}`.trim()}
+              >
+                <button
+                  type="button"
+                  className={styles.notificationClose}
+                  aria-label="Supprimer cette notification"
+                  onClick={() => handleDeleteNotification(notification.id, notification.isRead)}
+                >
+                  ×
+                </button>
+                <p>{notification.message}</p>
+                <small>{formatNotificationDate(notification.createdAt)}</small>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <nav className={styles.menu}>
         {/* Génère dynamiquement chaque entrée du menu */}

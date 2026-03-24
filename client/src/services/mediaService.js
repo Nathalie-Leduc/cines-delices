@@ -1,24 +1,21 @@
+import {request} from './api.js';
+
 export const fetchMedia = async (type, search = '') => {
   try {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-    const url = search
-      ? `${apiUrl}/api/tmdb/medias/search?searchTerm=${encodeURIComponent(search)}`
-      : `${apiUrl}/api/tmdb/medias/${type}`;
-
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error('Erreur lors de la récupération des médias');
-    }
-
-    const data = await response.json();
-    return Array.isArray(data) ? data : data.results ?? [];
-  } catch (error) {
-    if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
-      console.error('fetchMedia failed:', error);
+    if (search) {
+       // Recherche de médias via l'API backend
+       return await request(`/api/tmdb/medias/search?searchTerm=${encodeURIComponent(search)}`);
+      }else {
+       // Récupération de tous les médias, filtrés par type si fourni
+       return await request(type ? `/api/tmdb/medias/${type}` : '/api/tmdb/medias');
+      }
+    } catch (error) {
+      // Affichage console uniquement en dev
+      if (import.meta.env.DEV && import.meta.env.MODE !== 'test'){
+        console.error('fetchMedia failed:', error)
+      }
     }
 
     return [];
-  }
-};
+  };
+

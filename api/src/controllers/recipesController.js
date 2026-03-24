@@ -2,6 +2,44 @@ import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../lib/responseHelper.js';
 import { generateUniqueSlug } from '../utils/slug.js';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function buildRecipeLookupWhere(identifier) {
+  const normalizedIdentifier = String(identifier || '').trim();
+  const orConditions = [{ slug: normalizedIdentifier }];
+
+  if (UUID_REGEX.test(normalizedIdentifier)) {
+    orConditions.unshift({ id: normalizedIdentifier });
+  }
+
+  return { OR: orConditions };
+}
+
+async function findRecipeByIdOrSlug(identifier, options = {}) {
+  return prisma.recipe.findFirst({
+    where: buildRecipeLookupWhere(identifier),
+    ...options,
+  });
+}
+
+function canManageRecipe(user, recipe) {
+  if (!user || !recipe) {
+    return false;
+  }
+
+  return user.role === 'ADMIN' || user.id === recipe.userId;
+}
+
+const recipeRelationsInclude = {
+  category: true,
+  media: true,
+  ingredients: {
+    include: {
+      ingredient: true,
+    },
+  },
+};
+
 /**
  * Crée une nouvelle recette
  * POST /api/recipes
@@ -142,18 +180,12 @@ export const createRecipe = async (req, res) => {
         tempsCuisson,
         status: 'PENDING', // Les recettes doivent être approuvées par un admin
       },
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-      },
+      include: recipeRelationsInclude,
     });
 
     // Ajouter les ingrédients si fournis
+    const newlyCreatedIngredientNames = new Set();
+
     if (ingredients && ingredients.length > 0) {
       for (const ing of ingredients) {
         // Chercher ou créer l'ingrédient
@@ -161,11 +193,16 @@ export const createRecipe = async (req, res) => {
         const quantity = ing.quantity ?? ing.quantite ?? null;
         const unit = ing.unit ?? ing.unite ?? null;
 
-        const ingredient = await prisma.ingredient.upsert({
+        let ingredient = await prisma.ingredient.findUnique({
           where: { nom: ingredientName },
-          update: {},
-          create: { nom: ingredientName },
         });
+
+        if (!ingredient) {
+          ingredient = await prisma.ingredient.create({
+            data: { nom: ingredientName },
+          });
+          newlyCreatedIngredientNames.add(ingredient.nom);
+        }
 
         // Ajouter à la recette
         await prisma.recipeIngredient.create({
@@ -185,13 +222,25 @@ export const createRecipe = async (req, res) => {
       select: { id: true },
     });
     if (adminUsers.length > 0) {
-      await prisma.notification.createMany({
-        data: adminUsers.map((admin) => ({
+      const ingredientNotifications = Array.from(newlyCreatedIngredientNames).flatMap((ingredientName) =>
+        adminUsers.map((admin) => ({
           type: 'RECIPE_SUBMITTED',
-          message: `Nouvelle recette soumise: ${titre}`,
+          message: `Nouvel ingrédient soumis: ${ingredientName}`,
           userId: admin.id,
           recipeId: recipe.id,
-        })),
+        }))
+      );
+
+      await prisma.notification.createMany({
+        data: [
+          ...adminUsers.map((admin) => ({
+            type: 'RECIPE_SUBMITTED',
+            message: `Nouvelle recette soumise: ${titre}`,
+            userId: admin.id,
+            recipeId: recipe.id,
+          })),
+          ...ingredientNotifications,
+        ],
       });
     }
 
@@ -206,28 +255,21 @@ export const createRecipe = async (req, res) => {
 };
 
 /**
- * Récupère une recette par ID
+ * Récupère une recette par ID ou slug
  * GET /api/recipes/:id
  */
 export const getRecipe = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const recipe = await prisma.recipe.findUnique({
-      where: { id },
+    const recipe = await findRecipeByIdOrSlug(id, {
       include: {
-        category: true,
-        media: true,
+        ...recipeRelationsInclude,
         user: {
           select: {
             id: true,
             pseudo: true,
             email: true,
-          },
-        },
-        ingredients: {
-          include: {
-            ingredient: true,
           },
         },
       },
@@ -245,6 +287,26 @@ export const getRecipe = async (req, res) => {
 };
 
 /**
+ * Récupère toutes les recettes de l'utilisateur connecté
+ * GET /api/recipes/mine
+ */
+export const getMyRecipes = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: 'Utilisateur non authentifié' });
+  }
+
+  const recipes = await prisma.recipe.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    include: recipeRelationsInclude,
+  });
+
+  return res.json(recipes);
+});
+
+/**
  * Met à jour une recette
  * PATCH /api/recipes/:id
  */
@@ -252,19 +314,19 @@ export const updateRecipe = async (req, res) => {
   try {
     const { id } = req.params;
     const { titre, instructions, categoryId, mediaId, nombrePersonnes, tempsPreparation, tempsCuisson, ingredients } = req.body;
-    const userId = req.user?.id;
+    const user = req.user;
+    const userId = user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'Utilisateur non authentifié' });
     }
 
-    // Vérifier que la recette existe et appartient à l'utilisateur
-    const recipe = await prisma.recipe.findUnique({ where: { id } });
+    const recipe = await findRecipeByIdOrSlug(id);
     if (!recipe) {
       return res.status(404).json({ message: 'Recette introuvable' });
     }
 
-    if (recipe.userId !== userId) {
+    if (!canManageRecipe(user, recipe)) {
       return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à modifier cette recette' });
     }
 
@@ -294,39 +356,60 @@ export const updateRecipe = async (req, res) => {
     if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson;
 
     const updated = await prisma.recipe.update({
-      where: { id },
+      where: { id: recipe.id },
       data,
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-      },
+      include: recipeRelationsInclude,
     });
 
     // Mettre à jour les ingrédients si fournis
+    const newlyCreatedIngredientNames = new Set();
+
     if (ingredients && ingredients.length > 0) {
       // Supprimer les anciens ingrédients
-      await prisma.recipeIngredient.deleteMany({ where: { recipeId: id } });
+      await prisma.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
 
       // Ajouter les nouveaux
       for (const ing of ingredients) {
-        const ingredient = await prisma.ingredient.upsert({
-          where: { nom: ing.nom.toLowerCase().trim() },
-          update: {},
-          create: { nom: ing.nom.toLowerCase().trim() },
+        const ingredientName = String(ing.nom || '').toLowerCase().trim();
+
+        let ingredient = await prisma.ingredient.findUnique({
+          where: { nom: ingredientName },
         });
+
+        if (!ingredient) {
+          ingredient = await prisma.ingredient.create({
+            data: { nom: ingredientName },
+          });
+          newlyCreatedIngredientNames.add(ingredient.nom);
+        }
 
         await prisma.recipeIngredient.create({
           data: {
-            recipeId: id,
+            recipeId: recipe.id,
             ingredientId: ingredient.id,
             quantity: ing.quantity,
             unit: ing.unit,
           },
+        });
+      }
+    }
+
+    if (newlyCreatedIngredientNames.size > 0) {
+      const adminUsers = await prisma.user.findMany({
+        where: { role: 'ADMIN' },
+        select: { id: true },
+      });
+
+      if (adminUsers.length > 0) {
+        await prisma.notification.createMany({
+          data: Array.from(newlyCreatedIngredientNames).flatMap((ingredientName) =>
+            adminUsers.map((admin) => ({
+              type: 'RECIPE_SUBMITTED',
+              message: `Nouvel ingrédient soumis: ${ingredientName}`,
+              userId: admin.id,
+              recipeId: id,
+            }))
+          ),
         });
       }
     }
@@ -387,15 +470,7 @@ export const submitRecipe = asyncHandler(async (req, res) => {
       data: {
         status: 'PENDING',
       },
-      include: {
-        category: true,
-        media: true,
-        ingredients: {
-          include: {
-            ingredient: true,
-          },
-        },
-      },
+      include: recipeRelationsInclude,
     });
 
     if (adminUsers.length > 0) {
@@ -422,24 +497,24 @@ export const submitRecipe = asyncHandler(async (req, res) => {
 export const deleteRecipe = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
+    const user = req.user;
+    const userId = user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'Utilisateur non authentifié' });
     }
 
-    // Vérifier que la recette existe et appartient à l'utilisateur
-    const recipe = await prisma.recipe.findUnique({ where: { id } });
+    const recipe = await findRecipeByIdOrSlug(id);
     if (!recipe) {
       return res.status(404).json({ message: 'Recette introuvable' });
     }
 
-    if (recipe.userId !== userId) {
+    if (!canManageRecipe(user, recipe)) {
       return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à supprimer cette recette' });
     }
 
     // Supprimer la recette (Prisma supprimera les ingrédients à cause de onDelete: Cascade)
-    await prisma.recipe.delete({ where: { id } });
+    await prisma.recipe.delete({ where: { id: recipe.id } });
 
     return res.json({ message: 'Recette supprimée' });
   } catch (error) {
@@ -516,17 +591,11 @@ export const getAllPublishedRecipes = asyncHandler(async (req, res) => {
       skip,
       take: limit,
       include: {
-        category: true,
-        media: true,
+        ...recipeRelationsInclude,
         user: {
           select: {
             id: true,
             pseudo: true,
-          },
-        },
-        ingredients: {
-          include: {
-            ingredient: true,
           },
         },
       },

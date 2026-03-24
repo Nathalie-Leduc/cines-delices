@@ -80,6 +80,7 @@ function AdminDashboard() {
     }
 
     try {
+      setError('');
       await approveAdminRecipe(selectedRecipe.id);
       window.dispatchEvent(new CustomEvent('admin-notification-consumed', {
         detail: { recipeId: selectedRecipe.id },
@@ -98,6 +99,7 @@ function AdminDashboard() {
     }
 
     try {
+      setError('');
       await rejectAdminRecipe(selectedRecipe.id, rejectReason);
       window.dispatchEvent(new CustomEvent('admin-notification-consumed', {
         detail: { recipeId: selectedRecipe.id },
@@ -255,6 +257,10 @@ function AdminDashboard() {
               Valider
             </button>
           </div>
+
+          {error ? (
+            <p style={{ marginTop: '0.7rem', color: '#f0a7a7' }}>{error}</p>
+          ) : null}
         </>
       )}
 

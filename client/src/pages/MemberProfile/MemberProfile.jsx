@@ -160,6 +160,12 @@ export default function Profil() {
       path: '/membre/mes-recettes',
     },
     {
+      icon: '/icon/Message_fill.svg',
+      label: 'Notifications',
+      sub: 'Voir mes alertes',
+      path: '/membre',
+    },
+    {
       icon: '/icon/User.svg',
       label: 'Mes informations',
       sub: userData.email,

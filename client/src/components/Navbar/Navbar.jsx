@@ -1,15 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
+import {request} from '../../services/api.js';
 import { getRecipesCatalog } from "../../services/recipesService";
 
-const PROFILE_API = import.meta.env.VITE_PROFILE_API || "http://localhost:3000/api/auth/me";
-
+// Parse le payload JWT pour récupérer infos utilisateur
 function parseJwtPayload(rawToken) {
   if (!rawToken || typeof rawToken !== "string") {
     return null;
   }
-
   const token = rawToken.startsWith("Bearer ") ? rawToken.slice(7) : rawToken;
   const parts = token.split(".");
 
@@ -26,6 +25,7 @@ function parseJwtPayload(rawToken) {
   }
 }
 
+// Détermine le nom à afficher pour l'utilisateur
 function getUserName(payload) {
   if (!payload) {
     return null;
@@ -77,6 +77,13 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const mobileSearchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
 
+  const token = localStorage.getItem("token");
+  const payload = parseJwtPayload(token);
+  const nowInSeconds = Math.floor(Date.now() / 1000);
+  const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
+  const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
+  const accountPath = getAccountPath(payload);
+
    // Met simplement à jour le state search
   const handleSearch = (e) => {
     setSearch(e.target.value);
@@ -123,21 +130,18 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     const timeout = setTimeout(async () => {
       try {
           const payload = await getRecipesCatalog({
-            q: search,
+            q: search.trim(),
             limit: 5,
           });
-
-          const recipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
-          const mappedResults = recipes.map((recipe) => ({
+          const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
+          const mappedResults = rawRecipes.map((recipe) => ({
             id: recipe.id,
             slug: recipe.slug,
             title: recipe.titre || "Recette sans titre",
             mediaTitle: recipe.media?.titre || "",
-            image: recipe.media?.posterUrl || recipe.imageURL || "/img/placeholder.jpg",
+            image: recipe.imageURL || recipe.imageUrl || recipe.media?.posterUrl || "/img/hero-home.png",
           }));
-
           setResults(mappedResults);
-
       } catch (err) {
         console.error("Erreur fetch recettes :", err);
         setResults([]);
@@ -147,16 +151,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     return () => clearTimeout(timeout);
   }, [search]); // dépendance : se déclenche à chaque changement de search
 
-  const token = localStorage.getItem("token");
-  const payload = parseJwtPayload(token);
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
-  const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
-  const accountPath = getAccountPath(payload);
-
-  
-
-  // Ferme la liste des résultats quand l'utilisateur clique en dehors
+ // Ferme la liste des résultats quand l'utilisateur clique en dehors
 useEffect(() => {
   const handleClickOutside = (e) => {
     const clickedDesktopSearch = desktopSearchRef.current?.contains(e.target);
@@ -176,6 +171,7 @@ useEffect(() => {
   return () => document.removeEventListener("mousedown", handleClickOutside);
 }, []); // [] = s'exécute une seule fois au montage du composant
 
+// 🔹 Récupérer prénom / pseudo utilisateur via API
   useEffect(() => {
     if (!isMobileSearchOpen) {
       return undefined;
@@ -228,28 +224,13 @@ useEffect(() => {
       }
 
       try {
-        const response = await fetch(PROFILE_API, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const payload = await response.json();
-        const user = payload?.data ?? payload;
-
-        const rawName = typeof user?.prenom === "string" && user.prenom.trim()
-          ? user.prenom
-          : typeof user?.pseudo === "string" && user.pseudo.trim()
-            ? user.pseudo
-            : "";
-
+        const user = await request("/api/auth/me"); // ✅ request centralisé
+        const rawName =
+          (user?.prenom && user.prenom.trim()) ||
+          (user?.pseudo && user.pseudo.trim()) ||
+          "";
         if (rawName) {
-          const trimmed = rawName.trim();
-          const normalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+          const normalized = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
           localStorage.setItem("displayName", normalized);
           setProfileFirstName(normalized);
         }

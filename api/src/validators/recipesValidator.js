@@ -20,6 +20,11 @@ const optionalTrimmedString = z.preprocess((value) => {
   return normalized === '' ? undefined : normalized;
 }, z.string().optional());
 
+const recipeIdentifierSchema = z
+  .string({ required_error: 'L\'identifiant de la recette est obligatoire' })
+  .trim()
+  .min(1, 'Identifiant de recette invalide');
+
 // Schéma pour un ingrédient dans une recette
 const ingredientSchema = z.object({
   nom: z
@@ -112,9 +117,7 @@ export const createRecipeSchema = z.object({
 // PATCH /api/recipes/:id - Mettre à jour une recette
 export const updateRecipeSchema = z.object({
   params: z.object({
-    id: z
-      .string({ required_error: 'L\'ID de la recette est obligatoire' })
-      .uuid('ID de recette invalide'),
+    id: recipeIdentifierSchema,
   }),
   body: z.object({
     titre: z
@@ -177,9 +180,7 @@ export const submitRecipeSchema = z.object({
 // GET /api/recipes/:id
 export const getRecipeSchema = z.object({
   params: z.object({
-    id: z
-      .string({ required_error: 'L\'ID de la recette est obligatoire' })
-      .uuid('ID de recette invalide'),
+    id: recipeIdentifierSchema,
   }),
 });
 
@@ -196,8 +197,6 @@ export const listRecipesSchema = z.object({
 // DELETE /api/recipes/:id
 export const deleteRecipeSchema = z.object({
   params: z.object({
-    id: z
-      .string({ required_error: 'L\'ID de la recette est obligatoire' })
-      .uuid('ID de recette invalide'),
+    id: recipeIdentifierSchema,
   }),
 });
