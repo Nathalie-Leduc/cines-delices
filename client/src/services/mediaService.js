@@ -18,7 +18,7 @@ function buildPagination(totalItems, page, limit) {
   };
 }
 
-function paginateMovies(items, params = {}) {
+function paginateItems(items, params = {}, responseKey) {
   const query = String(params.q || '').trim().toLowerCase();
   const page = parsePositiveInt(params.page, 1);
   const limit = parsePositiveInt(params.limit, 15);
@@ -26,12 +26,47 @@ function paginateMovies(items, params = {}) {
     ? items.filter((item) => String(item?.title || '').toLowerCase().includes(query))
     : items;
   const startIndex = (page - 1) * limit;
-  const movies = filteredItems.slice(startIndex, startIndex + limit);
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + limit);
 
   return {
-    movies,
+    [responseKey]: paginatedItems,
     pagination: buildPagination(filteredItems.length, page, limit),
   };
+}
+
+function buildCatalogPayload(payload, params, responseKey) {
+  if (Array.isArray(payload)) {
+    return paginateItems(payload, params, responseKey);
+  }
+
+  const items = Array.isArray(payload?.[responseKey]) ? payload[responseKey] : [];
+  const paginationPayload = payload?.pagination || {};
+  const page = parsePositiveInt(paginationPayload.page, parsePositiveInt(params.page, 1));
+  const limit = parsePositiveInt(paginationPayload.limit, parsePositiveInt(params.limit, 15));
+  const totalItems = parsePositiveInt(paginationPayload.totalItems, items.length);
+
+  return {
+    [responseKey]: items,
+    pagination: {
+      page,
+      limit,
+      totalItems,
+      totalPages: parsePositiveInt(paginationPayload.totalPages, totalItems > 0 ? Math.ceil(totalItems / limit) : 0),
+      hasNextPage: Boolean(paginationPayload.hasNextPage),
+      hasPreviousPage: Boolean(paginationPayload.hasPreviousPage),
+    },
+  };
+}
+
+function buildMediaCatalogRequest(pathname, params = {}) {
+  const query = new URLSearchParams();
+
+  if (params.page) query.set('page', String(params.page));
+  if (params.limit) query.set('limit', String(params.limit));
+  if (params.q) query.set('q', params.q);
+
+  const suffix = query.toString() ? `?${query.toString()}` : '';
+  return request(`${pathname}${suffix}`);
 }
 
 export async function fetchMedia(type, search = '') {
@@ -51,34 +86,11 @@ export async function fetchMedia(type, search = '') {
 }
 
 export async function getMoviesCatalog(params = {}) {
-  const query = new URLSearchParams();
+  const payload = await buildMediaCatalogRequest('/api/media/movies', params);
+  return buildCatalogPayload(payload, params, 'movies');
+}
 
-  if (params.page) query.set('page', String(params.page));
-  if (params.limit) query.set('limit', String(params.limit));
-  if (params.q) query.set('q', params.q);
-
-  const suffix = query.toString() ? `?${query.toString()}` : '';
-  const payload = await request(`/api/media/movies${suffix}`);
-
-  if (Array.isArray(payload)) {
-    return paginateMovies(payload, params);
-  }
-
-  const movies = Array.isArray(payload?.movies) ? payload.movies : [];
-  const paginationPayload = payload?.pagination || {};
-  const page = parsePositiveInt(paginationPayload.page, parsePositiveInt(params.page, 1));
-  const limit = parsePositiveInt(paginationPayload.limit, parsePositiveInt(params.limit, 15));
-  const totalItems = parsePositiveInt(paginationPayload.totalItems, movies.length);
-
-  return {
-    movies,
-    pagination: {
-      page,
-      limit,
-      totalItems,
-      totalPages: parsePositiveInt(paginationPayload.totalPages, totalItems > 0 ? Math.ceil(totalItems / limit) : 0),
-      hasNextPage: Boolean(paginationPayload.hasNextPage),
-      hasPreviousPage: Boolean(paginationPayload.hasPreviousPage),
-    },
-  };
+export async function getSeriesCatalog(params = {}) {
+  const payload = await buildMediaCatalogRequest('/api/media/series', params);
+  return buildCatalogPayload(payload, params, 'series');
 }
