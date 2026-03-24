@@ -113,12 +113,17 @@ export default function RecipesPage() {
     setSearchInput(searchParams.get("q") || "");
   }, [searchParams]);
 
+  // Render : modifications nécessaires :
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchRecipes = async () => {
-      try {
-        const payload = await getRecipesCatalog();
+  let isMounted = true;
+  const fetchRecipes = async () => {
+    try {
+      const payload = await getRecipesCatalog({
+        page: currentPage,
+        limit: currentLimit,
+        category: activeFilter !== 'Tous' ? activeFilter : undefined,
+        q: currentQuery || undefined,
+      });
         const rawRecipes = Array.isArray(payload)
           ? payload
           : Array.isArray(payload?.recipes)              // ← ajouter ça
