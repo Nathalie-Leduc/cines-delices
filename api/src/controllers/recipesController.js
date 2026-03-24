@@ -2,6 +2,34 @@ import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../lib/responseHelper.js';
 import { generateUniqueSlug } from '../utils/slug.js';
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function buildRecipeLookupWhere(identifier) {
+  const normalizedIdentifier = String(identifier || '').trim();
+  const orConditions = [{ slug: normalizedIdentifier }];
+
+  if (UUID_REGEX.test(normalizedIdentifier)) {
+    orConditions.unshift({ id: normalizedIdentifier });
+  }
+
+  return { OR: orConditions };
+}
+
+async function findRecipeByIdOrSlug(identifier, options = {}) {
+  return prisma.recipe.findFirst({
+    where: buildRecipeLookupWhere(identifier),
+    ...options,
+  });
+}
+
+function canManageRecipe(user, recipe) {
+  if (!user || !recipe) {
+    return false;
+  }
+
+  return user.role === 'ADMIN' || user.id === recipe.userId;
+}
+
 /**
  * Crée une nouvelle recette
  * POST /api/recipes
@@ -206,15 +234,14 @@ export const createRecipe = async (req, res) => {
 };
 
 /**
- * Récupère une recette par ID
+ * Récupère une recette par ID ou slug
  * GET /api/recipes/:id
  */
 export const getRecipe = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const recipe = await prisma.recipe.findUnique({
-      where: { id },
+    const recipe = await findRecipeByIdOrSlug(id, {
       include: {
         category: true,
         media: true,
@@ -252,19 +279,19 @@ export const updateRecipe = async (req, res) => {
   try {
     const { id } = req.params;
     const { titre, instructions, categoryId, mediaId, nombrePersonnes, tempsPreparation, tempsCuisson, ingredients } = req.body;
-    const userId = req.user?.id;
+    const user = req.user;
+    const userId = user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'Utilisateur non authentifié' });
     }
 
-    // Vérifier que la recette existe et appartient à l'utilisateur
-    const recipe = await prisma.recipe.findUnique({ where: { id } });
+    const recipe = await findRecipeByIdOrSlug(id);
     if (!recipe) {
       return res.status(404).json({ message: 'Recette introuvable' });
     }
 
-    if (recipe.userId !== userId) {
+    if (!canManageRecipe(user, recipe)) {
       return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à modifier cette recette' });
     }
 
@@ -294,7 +321,7 @@ export const updateRecipe = async (req, res) => {
     if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson;
 
     const updated = await prisma.recipe.update({
-      where: { id },
+      where: { id: recipe.id },
       data,
       include: {
         category: true,
@@ -310,7 +337,7 @@ export const updateRecipe = async (req, res) => {
     // Mettre à jour les ingrédients si fournis
     if (ingredients && ingredients.length > 0) {
       // Supprimer les anciens ingrédients
-      await prisma.recipeIngredient.deleteMany({ where: { recipeId: id } });
+      await prisma.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
 
       // Ajouter les nouveaux
       for (const ing of ingredients) {
@@ -322,7 +349,7 @@ export const updateRecipe = async (req, res) => {
 
         await prisma.recipeIngredient.create({
           data: {
-            recipeId: id,
+            recipeId: recipe.id,
             ingredientId: ingredient.id,
             quantity: ing.quantity,
             unit: ing.unit,
@@ -422,24 +449,24 @@ export const submitRecipe = asyncHandler(async (req, res) => {
 export const deleteRecipe = async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user?.id;
+    const user = req.user;
+    const userId = user?.id;
 
     if (!userId) {
       return res.status(401).json({ message: 'Utilisateur non authentifié' });
     }
 
-    // Vérifier que la recette existe et appartient à l'utilisateur
-    const recipe = await prisma.recipe.findUnique({ where: { id } });
+    const recipe = await findRecipeByIdOrSlug(id);
     if (!recipe) {
       return res.status(404).json({ message: 'Recette introuvable' });
     }
 
-    if (recipe.userId !== userId) {
+    if (!canManageRecipe(user, recipe)) {
       return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à supprimer cette recette' });
     }
 
     // Supprimer la recette (Prisma supprimera les ingrédients à cause de onDelete: Cascade)
-    await prisma.recipe.delete({ where: { id } });
+    await prisma.recipe.delete({ where: { id: recipe.id } });
 
     return res.json({ message: 'Recette supprimée' });
   } catch (error) {
