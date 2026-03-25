@@ -19,7 +19,7 @@ const prisma = new PrismaClient({ adapter });
 
 
 async function main() {
-  console.log('🌱 Démarrage du seed Ciné Délices v2...\n');
+  console.log('🌱 Démarrage du seed Ciné Délices v3...\n');
   
   //utilisation de "upsert" => crée si absent, ne touche pas si déjà présent
 
@@ -33,29 +33,41 @@ async function main() {
   console.log('✅ Catégories :', [catEntree, catPlat, catDessert, catBoisson].map(c => c.nom).join(', '));
 
   // ── 2. Genres TMDB ───────────────────────────────────────
-  const [genreDrame, genreComedy, genreAnimation, genreAction, genreThriller, genreFantasy] = await Promise.all([
+  const [genreDrame, genreComedy, genreAnimation, genreAction, genreThriller, genreFantasy, genreCrime, genreRomance] = await Promise.all([
     prisma.genre.upsert({ where: { tmdbGenreId: 18 }, update: {}, create: { nom: 'Drame',     tmdbGenreId: 18 } }),
     prisma.genre.upsert({ where: { tmdbGenreId: 35 }, update: {}, create: { nom: 'Comédie',   tmdbGenreId: 35 } }),
     prisma.genre.upsert({ where: { tmdbGenreId: 16 }, update: {}, create: { nom: 'Animation', tmdbGenreId: 16 } }),
     prisma.genre.upsert({ where: { tmdbGenreId: 28 }, update: {}, create: { nom: 'Action',    tmdbGenreId: 28 } }),
     prisma.genre.upsert({ where: { tmdbGenreId: 53 }, update: {}, create: { nom: 'Thriller',  tmdbGenreId: 53 } }),
     prisma.genre.upsert({ where: { tmdbGenreId: 14 }, update: {}, create: { nom: 'Fantasy',   tmdbGenreId: 14 } }),
+    prisma.genre.upsert({ where: { tmdbGenreId: 80 }, update: {}, create: { nom: 'Crime',     tmdbGenreId: 80 } }),
+    prisma.genre.upsert({ where: { tmdbGenreId: 10749 }, update: {}, create: { nom: 'Romance', tmdbGenreId: 10749 } }),
   ]);
-  console.log('✅ Genres :', [genreDrame, genreComedy, genreAnimation, genreAction, genreThriller, genreFantasy].map(g => g.nom).join(', '));
+  console.log('✅ Genres :', [genreDrame, genreComedy, genreAnimation, genreAction, genreThriller, genreFantasy, genreCrime, genreRomance].map(g => g.nom).join(', '));
 
   // ── 3. Médias ─────────────────────────────────────────────
-  // 10 médias variés pour couvrir les 40 recettes
+  // 16 médias variés (films + séries)
+  // Poster URLs : format https://image.tmdb.org/t/p/w500/<poster_path>
   const mediaDefs = [
-    { tmdbId: 2062,   titre: 'Ratatouille',       annee: 2007, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/npHNjldbeTHdKKw28bJKs7lzqzj.jpg', synopsis: 'Un rat doué pour la cuisine dans un restaurant parisien.',              genres: [genreAnimation.id, genreComedy.id]   },
-    { tmdbId: 8467,   titre: 'Chocolat',           annee: 2000, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/7sbyD6e7Y4aNNuRxz2a0aUxBvGk.jpg', synopsis: 'Une femme ouvre une chocolaterie dans un village bourguignon.',        genres: [genreDrame.id]                       },
-    { tmdbId: 1396,   titre: 'Breaking Bad',       annee: 2008, type: 'SERIES', poster: 'https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg', synopsis: 'Un prof de chimie reconverti dans la fabrication de drogue.',          genres: [genreDrame.id, genreThriller.id]     },
-    { tmdbId: 24094,  titre: 'Julie & Julia',      annee: 2009, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/tUpvsj7yMHqR8byXBVnNXxHBWjA.jpg', synopsis: 'Une blogueuse cuisine toutes les recettes de Julia Child en un an.',  genres: [genreDrame.id, genreComedy.id]       },
-    { tmdbId: 14290,  titre: 'Le Festin de Babette',annee: 1987, type: 'MOVIE', poster: 'https://image.tmdb.org/t/p/w500/zPHpT8PQOQ1kFHcXBN7nKpIeVay.jpg', synopsis: 'Une réfugiée française prépare un festin gastronomique au Danemark.', genres: [genreDrame.id]                       },
-    { tmdbId: 37735,  titre: 'Soul Kitchen',       annee: 2009, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/3jGaYNkTRO3pxPHiOjvQM0L5iKX.jpg', synopsis: 'Un restaurateur hambourgeois lutte pour garder son établissement.',   genres: [genreComedy.id]                      },
-    { tmdbId: 44217,  titre: 'The Bear',            annee: 2022, type: 'SERIES', poster: 'https://image.tmdb.org/t/p/w500/sHFlbKS3WLqMnp9t2ghADIJFnuQ.jpg', synopsis: 'Un chef étoilé reprend le sandwich shop familial à Chicago.',        genres: [genreDrame.id]                       },
-    { tmdbId: 680,    titre: 'Pulp Fiction',        annee: 1994, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', synopsis: 'Histoires entrelacées de criminels à Los Angeles.',                  genres: [genreDrame.id, genreThriller.id]     },
-    { tmdbId: 120,    titre: 'Le Seigneur des Anneaux', annee: 2001, type: 'MOVIE', poster: 'https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg', synopsis: 'Un hobbit part en quête pour détruire l\'Anneau Unique.',         genres: [genreAction.id, genreFantasy.id]     },
-    { tmdbId: 475557, titre: 'Joker',               annee: 2019, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', synopsis: 'La descente aux enfers d\'Arthur Fleck, futur Joker.',              genres: [genreDrame.id, genreThriller.id]     },
+    // ── 10 médias existants (poster paths vérifiés) ──
+    { tmdbId: 2062,   titre: 'Ratatouille',              annee: 2007, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/t3vaWRPSf6WjDSamIkKDs1iQWna.jpg', synopsis: 'Un rat doué pour la cuisine dans un restaurant parisien.',              genres: [genreAnimation.id, genreComedy.id]   },
+    { tmdbId: 8467,   titre: 'Chocolat',                  annee: 2000, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/scT1k2KfJKSsOOjA3P5IzdKnnyF.jpg', synopsis: 'Une femme ouvre une chocolaterie dans un village bourguignon.',        genres: [genreDrame.id, genreRomance.id]      },
+    { tmdbId: 1396,   titre: 'Breaking Bad',              annee: 2008, type: 'SERIES', poster: 'https://image.tmdb.org/t/p/w500/ztkUQFLlC19CCMYHW9o1zWhJRNq.jpg', synopsis: 'Un prof de chimie reconverti dans la fabrication de drogue.',          genres: [genreDrame.id, genreThriller.id]     },
+    { tmdbId: 24094,  titre: 'Julie & Julia',             annee: 2009, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/kHnBSJi3mWRMnUWb50cVhvSfRbN.jpg', synopsis: 'Une blogueuse cuisine toutes les recettes de Julia Child en un an.',  genres: [genreDrame.id, genreComedy.id]       },
+    { tmdbId: 14290,  titre: 'Le Festin de Babette',      annee: 1987, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/eAUXAYm65SwkyJGfUL95Opyxkpj.jpg', synopsis: 'Une réfugiée française prépare un festin gastronomique au Danemark.', genres: [genreDrame.id]                       },
+    { tmdbId: 37735,  titre: 'Soul Kitchen',              annee: 2009, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/lFRnGj4juSKYJRPkOyEekNfL8sH.jpg', synopsis: 'Un restaurateur hambourgeois lutte pour garder son établissement.',   genres: [genreComedy.id]                      },
+    { tmdbId: 228068, titre: 'The Bear',                  annee: 2022, type: 'SERIES', poster: 'https://image.tmdb.org/t/p/w500/sHFlbKS3WLqMnp9t2ghADIJFnuQ.jpg', synopsis: 'Un chef étoilé reprend le sandwich shop familial à Chicago.',        genres: [genreDrame.id]                       },
+    { tmdbId: 680,    titre: 'Pulp Fiction',               annee: 1994, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg', synopsis: 'Histoires entrelacées de criminels à Los Angeles.',                  genres: [genreDrame.id, genreThriller.id, genreCrime.id] },
+    { tmdbId: 120,    titre: 'Le Seigneur des Anneaux',    annee: 2001, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg', synopsis: 'Un hobbit part en quête pour détruire l\'Anneau Unique.',            genres: [genreAction.id, genreFantasy.id]     },
+    { tmdbId: 475557, titre: 'Joker',                      annee: 2019, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/udDclJoHjfjb8Ekgsd4FDteOkCU.jpg', synopsis: 'La descente aux enfers d\'Arthur Fleck, futur Joker.',              genres: [genreDrame.id, genreThriller.id, genreCrime.id] },
+
+    // ── 6 nouveaux médias ──
+    { tmdbId: 120467, titre: 'The Grand Budapest Hotel',   annee: 2014, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/eWDyPq7GX9OGzKpBcDMFSBRGLBq.jpg', synopsis: 'Un concierge légendaire et son protégé dans un hôtel européen entre les deux guerres.', genres: [genreComedy.id, genreDrame.id] },
+    { tmdbId: 38167,  titre: 'Eat Pray Love',             annee: 2010, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/s1Hog9iPqMYPsAnJJJIxTTFcuRT.jpg', synopsis: 'Après un divorce douloureux, une femme part à la découverte du monde et d\'elle-même.', genres: [genreDrame.id, genreRomance.id] },
+    { tmdbId: 238,    titre: 'Le Parrain',                 annee: 1972, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg', synopsis: 'L\'épopée de la famille Corleone, entre pouvoir et trahison.',         genres: [genreDrame.id, genreCrime.id]        },
+    { tmdbId: 671,    titre: 'Harry Potter à l\'école des sorciers', annee: 2001, type: 'MOVIE', poster: 'https://image.tmdb.org/t/p/w500/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg', synopsis: 'Un orphelin découvre qu\'il est un sorcier et entre à Poudlard.', genres: [genreFantasy.id, genreAction.id] },
+    { tmdbId: 1668,   titre: 'Friends',                    annee: 1994, type: 'SERIES', poster: 'https://image.tmdb.org/t/p/w500/f496cm9enuEsZkSPzCwnTESEK5s.jpg', synopsis: 'Six amis inséparables vivent leurs aventures à New York.',             genres: [genreComedy.id, genreRomance.id]     },
+    { tmdbId: 129,    titre: 'Le Voyage de Chihiro',       annee: 2001, type: 'MOVIE',  poster: 'https://image.tmdb.org/t/p/w500/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg', synopsis: 'Une fillette se retrouve piégée dans un monde de esprits et de dieux.',genres: [genreAnimation.id, genreFantasy.id]  },
   ];
 
   const medias = {};
@@ -127,7 +139,11 @@ async function main() {
     'amandes', 'noix', 'noisettes', 'raisins secs', 'chapelure', 'semoule',
     'rhum', 'whisky', 'vin blanc', 'champagne',
     'sirop de grenadine', 'jus de citron', 'eau gazeuse', 'thé', 'café',
-    'lentilles', 'pois chiches','mangue',
+    'lentilles', 'pois chiches', 'mangue',
+    // Nouveaux ingrédients pour les nouvelles recettes
+    'ricotta', 'parmesan', 'pancetta', 'mascarpone', 'pesto',
+    'citronnelle', 'lait de coco', 'tofu', 'nouilles de riz',
+    'bière', 'menthe',
   ];
 
   const allIngredients = await Promise.all(
@@ -160,7 +176,7 @@ async function main() {
   };
 
   // ════════════════════════════════════════════════════════
-  // ENTRÉES — 10 recettes
+  // ENTRÉES — 12 recettes
   // ════════════════════════════════════════════════════════
   console.log('\n📋 Entrées...');
 
@@ -201,7 +217,7 @@ async function main() {
     imageURL: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=600',
     instructions: '1. Faire revenir champignons et oignon dans le beurre (10 min).\n2. Ajouter bouillon de légumes et cuire 20 min.\n3. Mixer finement jusqu\'à texture soyeuse.\n4. Incorporer la crème fraîche, assaisonner et servir.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 30,
-    status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[44217].id,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[228068].id,
     ingredients: { create: [
       { ingredientId: ing('champignon').id,          quantity: '500', unit: 'g'    },
       { ingredientId: ing('oignon').id,              quantity: '1',   unit: 'pièce'},
@@ -292,7 +308,7 @@ async function main() {
     imageURL: 'https://images.unsplash.com/photo-1534482421-64566f976cfa?w=600',
     instructions: '1. Pocher le saumon 10 min dans de l\'eau frémissante salée.\n2. Effeuiller et mélanger avec crème fraîche, citron et câpres.\n3. Assaisonner généreusement et réfrigérer 1h.\n4. Servir sur des toasts grillés avec de la ciboulette.',
     nombrePersonnes: 4, tempsPreparation: 15, tempsCuisson: 10,
-    status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[44217].id,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[228068].id,
     ingredients: { create: [
       { ingredientId: ing('saumon').id,         quantity: '300', unit: 'g'    },
       { ingredientId: ing('crème fraîche').id,  quantity: '10',  unit: 'cl'   },
@@ -317,10 +333,44 @@ async function main() {
     ]},
   });
 
-  console.log('✅ 10 entrées créées\n');
+  // ── Nouvelles entrées pour les nouveaux médias ──
+
+  await createRecipe({
+    titre: 'Antipasti du Grand Budapest Hotel',
+    imageURL: 'https://images.unsplash.com/photo-1541014741259-de529411b96a?w=600',
+    instructions: '1. Disposer joliment sur un plateau : tranches de jambon, olives noires, tomates cerises.\n2. Ajouter des billes de mozzarella et des feuilles de basilic.\n3. Arroser d\'huile d\'olive et de vinaigre balsamique.\n4. Servir avec des gressins.',
+    nombrePersonnes: 6, tempsPreparation: 15, tempsCuisson: 0,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catEntree.id, mediaId: medias[120467].id,
+    ingredients: { create: [
+      { ingredientId: ing('jambon').id,              quantity: '200', unit: 'g'      },
+      { ingredientId: ing('olives noires').id,       quantity: '100', unit: 'g'      },
+      { ingredientId: ing('mozzarella').id,          quantity: '200', unit: 'g'      },
+      { ingredientId: ing('tomate').id,              quantity: '4',   unit: 'pièces' },
+      { ingredientId: ing('vinaigre balsamique').id, quantity: '2',   unit: 'c.à.s'  },
+      { ingredientId: ing('huile d\'olive').id,      quantity: '3',   unit: 'c.à.s'  },
+    ]},
+  });
+
+  await createRecipe({
+    titre: 'Soupe miso du Voyage de Chihiro',
+    imageURL: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600',
+    instructions: '1. Porter le bouillon de légumes à ébullition douce.\n2. Couper le tofu en dés et émincer les champignons.\n3. Ajouter la sauce soja et le gingembre râpé.\n4. Verser dans des bols et garnir de ciboulette ciselée.',
+    nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 10,
+    status: 'PUBLISHED', userId: userRemy.id, categoryId: catEntree.id, mediaId: medias[129].id,
+    ingredients: { create: [
+      { ingredientId: ing('bouillon de légumes').id, quantity: '1',   unit: 'litre' },
+      { ingredientId: ing('tofu').id,                quantity: '200', unit: 'g'     },
+      { ingredientId: ing('champignon').id,          quantity: '100', unit: 'g'     },
+      { ingredientId: ing('sauce soja').id,          quantity: '3',   unit: 'c.à.s' },
+      { ingredientId: ing('gingembre').id,           quantity: '2',   unit: 'cm'    },
+      { ingredientId: ing('ciboulette').id,          quantity: '1',   unit: 'botte' },
+    ]},
+  });
+
+  console.log('✅ 12 entrées créées\n');
 
   // ════════════════════════════════════════════════════════
-  // PLATS — 10 recettes
+  // PLATS — 12 recettes
   // ════════════════════════════════════════════════════════
   console.log('🍽️  Plats...');
 
@@ -396,7 +446,7 @@ async function main() {
     imageURL: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600',
     instructions: '1. Faire revenir l\'oignon haché dans le beurre à feu doux.\n2. Ajouter le riz à risotto et nacrer 2 min.\n3. Verser le vin blanc et laisser absorber.\n4. Incorporer le bouillon chaud louche par louche en remuant constamment (18-20 min).\n5. Hors du feu, mantecare avec beurre froid et fromage râpé. Poivrer.',
     nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 25,
-    status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[44217].id,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[228068].id,
     ingredients: { create: [
       { ingredientId: ing('riz').id,                 quantity: '320', unit: 'g'     },
       { ingredientId: ing('oignon').id,              quantity: '1',   unit: 'pièce' },
@@ -487,10 +537,44 @@ async function main() {
     ]},
   });
 
-  console.log('✅ 10 plats créés\n');
+  // ── Nouveaux plats ──
+
+  await createRecipe({
+    titre: 'Pâtes à la Corleone',
+    imageURL: 'https://images.unsplash.com/photo-1621996346565-e3dbc353d2e4?w=600',
+    instructions: '1. Faire revenir la pancetta coupée en dés dans l\'huile d\'olive.\n2. Ajouter l\'ail et le concentré de tomates, cuire 2 min.\n3. Verser le vin rouge, laisser réduire de moitié.\n4. Cuire les pâtes al dente, les ajouter à la sauce.\n5. Servir avec du parmesan fraîchement râpé et du basilic.',
+    nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 20,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catPlat.id, mediaId: medias[238].id,
+    ingredients: { create: [
+      { ingredientId: ing('pâtes').id,                quantity: '400', unit: 'g'     },
+      { ingredientId: ing('pancetta').id,             quantity: '150', unit: 'g'     },
+      { ingredientId: ing('concentré de tomates').id, quantity: '3',   unit: 'c.à.s' },
+      { ingredientId: ing('vin rouge').id,            quantity: '10',  unit: 'cl'    },
+      { ingredientId: ing('parmesan').id,             quantity: '80',  unit: 'g'     },
+      { ingredientId: ing('basilic').id,              quantity: '1',   unit: 'poignée'},
+    ]},
+  });
+
+  await createRecipe({
+    titre: 'Pad thaï d\'Eat Pray Love',
+    imageURL: 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=600',
+    instructions: '1. Faire tremper les nouilles de riz 15 min dans l\'eau tiède.\n2. Faire sauter les crevettes dans l\'huile avec l\'ail et le gingembre.\n3. Ajouter les nouilles égouttées, la sauce soja et le jus de citron.\n4. Mélanger vigoureusement, ajouter les œufs brouillés.\n5. Servir avec des cacahuètes concassées et de la ciboulette.',
+    nombrePersonnes: 4, tempsPreparation: 20, tempsCuisson: 10,
+    status: 'PUBLISHED', userId: userRemy.id, categoryId: catPlat.id, mediaId: medias[38167].id,
+    ingredients: { create: [
+      { ingredientId: ing('nouilles de riz').id, quantity: '300', unit: 'g'     },
+      { ingredientId: ing('crevettes').id,       quantity: '300', unit: 'g'     },
+      { ingredientId: ing('sauce soja').id,      quantity: '4',   unit: 'c.à.s' },
+      { ingredientId: ing('citron').id,          quantity: '2',   unit: 'pièces'},
+      { ingredientId: ing('œuf').id,             quantity: '2',   unit: 'pièces'},
+      { ingredientId: ing('gingembre').id,       quantity: '3',   unit: 'cm'    },
+    ]},
+  });
+
+  console.log('✅ 12 plats créés\n');
 
   // ════════════════════════════════════════════════════════
-  // DESSERTS — 10 recettes
+  // DESSERTS — 12 recettes
   // ════════════════════════════════════════════════════════
   console.log('🍰 Desserts...');
 
@@ -574,9 +658,9 @@ async function main() {
     imageURL: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600',
     instructions: '1. Séparer les œufs. Fouetter jaunes et sucre jusqu\'au ruban.\n2. Incorporer le mascarpone en 3 fois, puis les blancs montés en neige.\n3. Tremper rapidement les biscuits dans le café froid.\n4. Alterner couches de crème et biscuits (2 fois).\n5. Réfrigérer 6h minimum. Saupoudrer de cacao avant de servir.',
     nombrePersonnes: 8, tempsPreparation: 30, tempsCuisson: 0,
-    status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[44217].id,
+    status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[228068].id,
     ingredients: { create: [
-      { ingredientId: ing('crème fraîche').id,     quantity: '500', unit: 'g'     },
+      { ingredientId: ing('mascarpone').id,        quantity: '500', unit: 'g'     },
       { ingredientId: ing('œuf').id,               quantity: '4',   unit: 'pièces'},
       { ingredientId: ing('sucre').id,             quantity: '100', unit: 'g'     },
       { ingredientId: ing('café').id,              quantity: '30',  unit: 'cl'    },
@@ -591,7 +675,6 @@ async function main() {
     nombrePersonnes: 8, tempsPreparation: 25, tempsCuisson: 10,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catDessert.id, mediaId: medias[680].id,
     ingredients: { create: [
-      { ingredientId: ing('pomme').id,             quantity: '3',   unit: 'bananes'},
       { ingredientId: ing('crème fraîche').id,     quantity: '30',  unit: 'cl'     },
       { ingredientId: ing('beurre').id,            quantity: '100', unit: 'g'      },
       { ingredientId: ing('sucre').id,             quantity: '150', unit: 'g'      },
@@ -646,10 +729,44 @@ async function main() {
     ]},
   });
 
-  console.log('✅ 10 desserts créés\n');
+  // ── Nouveaux desserts ──
+
+  await createRecipe({
+    titre: 'Cheesecake de Friends',
+    imageURL: 'https://images.unsplash.com/photo-1524351199432-d330df18e151?w=600',
+    instructions: '1. Écraser les biscuits, mélanger avec le beurre fondu, tasser au fond du moule.\n2. Fouetter la ricotta avec le mascarpone, le sucre et les œufs.\n3. Ajouter l\'extrait de vanille et le jus de citron.\n4. Verser sur la base biscuitée.\n5. Cuire 50 min à 160°C. Laisser refroidir lentement dans le four éteint.',
+    nombrePersonnes: 8, tempsPreparation: 25, tempsCuisson: 50,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catDessert.id, mediaId: medias[1668].id,
+    ingredients: { create: [
+      { ingredientId: ing('ricotta').id,           quantity: '400', unit: 'g'     },
+      { ingredientId: ing('mascarpone').id,        quantity: '200', unit: 'g'     },
+      { ingredientId: ing('sucre').id,             quantity: '150', unit: 'g'     },
+      { ingredientId: ing('œuf').id,               quantity: '3',   unit: 'pièces'},
+      { ingredientId: ing('extrait de vanille').id,quantity: '1',   unit: 'c.à.c' },
+      { ingredientId: ing('beurre').id,            quantity: '80',  unit: 'g'     },
+    ]},
+  });
+
+  await createRecipe({
+    titre: 'Choux à la crème de Poudlard',
+    imageURL: 'https://images.unsplash.com/photo-1509365390695-33aee754301f?w=600',
+    instructions: '1. Préparer la pâte à choux : porter eau, beurre et sel à ébullition.\n2. Incorporer la farine d\'un coup, dessécher 2 min en remuant.\n3. Ajouter les œufs un par un hors du feu.\n4. Dresser en boules et cuire 25 min à 180°C sans ouvrir le four.\n5. Garnir de crème pâtissière et saupoudrer de sucre glace.',
+    nombrePersonnes: 8, tempsPreparation: 30, tempsCuisson: 25,
+    status: 'PUBLISHED', userId: userRemy.id, categoryId: catDessert.id, mediaId: medias[671].id,
+    ingredients: { create: [
+      { ingredientId: ing('farine').id,            quantity: '150', unit: 'g'     },
+      { ingredientId: ing('beurre').id,            quantity: '100', unit: 'g'     },
+      { ingredientId: ing('œuf').id,               quantity: '4',   unit: 'pièces'},
+      { ingredientId: ing('lait entier').id,       quantity: '50',  unit: 'cl'    },
+      { ingredientId: ing('sucre').id,             quantity: '100', unit: 'g'     },
+      { ingredientId: ing('extrait de vanille').id,quantity: '1',   unit: 'c.à.c' },
+    ]},
+  });
+
+  console.log('✅ 12 desserts créés\n');
 
   // ════════════════════════════════════════════════════════
-  // BOISSONS — 10 recettes
+  // BOISSONS — 12 recettes
   // ════════════════════════════════════════════════════════
   console.log('🥤 Boissons...');
 
@@ -673,7 +790,7 @@ async function main() {
     imageURL: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=600',
     instructions: '1. Moudre 20g de café à mouture moyenne-fine.\n2. Chauffer l\'eau à exactement 93°C (retirer du feu 30 sec après ébullition).\n3. Rincer le filtre, verser le café, faire un "bloom" : verser 40ml d\'eau, attendre 30s.\n4. Verser le reste de l\'eau en cercles réguliers sur 3-4 min.\n5. Le café doit couler lentement — déguster noir.',
     nombrePersonnes: 2, tempsPreparation: 5, tempsCuisson: 5,
-    status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[44217].id,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[228068].id,
     ingredients: { create: [
       { ingredientId: ing('café').id, quantity: '20', unit: 'g pour 300ml d\'eau' },
     ]},
@@ -717,6 +834,7 @@ async function main() {
       { ingredientId: ing('citron').id,      quantity: '1',  unit: 'pièce'},
       { ingredientId: ing('sucre').id,       quantity: '2',  unit: 'c.à.c'},
       { ingredientId: ing('eau gazeuse').id, quantity: '10', unit: 'cl'   },
+      { ingredientId: ing('menthe').id,      quantity: '10', unit: 'feuilles'},
     ]},
   });
 
@@ -785,9 +903,41 @@ async function main() {
     ]},
   });
 
-  console.log('✅ 10 boissons créées\n')
+  // ── Nouvelles boissons ──
+
+  await createRecipe({
+    titre: 'Bièraubeurre de Poudlard',
+    imageURL: 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?w=600',
+    instructions: '1. Chauffer la bière doucement sans la faire bouillir.\n2. Dans une casserole, faire fondre le beurre avec le sucre et la cannelle.\n3. Verser le mélange beurre-sucre dans la bière chaude en fouettant.\n4. Ajouter l\'extrait de vanille et remuer.\n5. Servir dans des chopes avec une mousse de crème fraîche fouettée.',
+    nombrePersonnes: 4, tempsPreparation: 10, tempsCuisson: 5,
+    status: 'PUBLISHED', userId: userRemy.id, categoryId: catBoisson.id, mediaId: medias[671].id,
+    ingredients: { create: [
+      { ingredientId: ing('bière').id,              quantity: '1',   unit: 'litre' },
+      { ingredientId: ing('beurre').id,             quantity: '30',  unit: 'g'     },
+      { ingredientId: ing('sucre').id,              quantity: '50',  unit: 'g'     },
+      { ingredientId: ing('cannelle').id,           quantity: '1',   unit: 'c.à.c' },
+      { ingredientId: ing('extrait de vanille').id, quantity: '1',   unit: 'c.à.c' },
+      { ingredientId: ing('crème fraîche').id,      quantity: '10',  unit: 'cl'    },
+    ]},
+  });
+
+  await createRecipe({
+    titre: 'Café du Central Perk',
+    imageURL: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600',
+    instructions: '1. Préparer un café filtre bien corsé avec du café fraîchement moulu.\n2. Faire chauffer le lait sans le faire bouillir.\n3. Verser le café dans une grande tasse.\n4. Ajouter le lait chaud moussé et le sucre.\n5. Saupoudrer de cannelle et servir avec un cookie.',
+    nombrePersonnes: 1, tempsPreparation: 5, tempsCuisson: 5,
+    status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[1668].id,
+    ingredients: { create: [
+      { ingredientId: ing('café').id,       quantity: '15', unit: 'g'    },
+      { ingredientId: ing('lait entier').id,quantity: '15', unit: 'cl'   },
+      { ingredientId: ing('sucre').id,      quantity: '2',  unit: 'c.à.c'},
+      { ingredientId: ing('cannelle').id,   quantity: '1',  unit: 'pincée'},
+    ]},
+  });
+
+  console.log('✅ 12 boissons créées\n')
   
-// RECETTES PENDING / DRAFT
+  // RECETTES PENDING / DRAFT
   console.log('✅ recette PENDING')
 
   await createRecipe({
@@ -797,29 +947,29 @@ async function main() {
     nombrePersonnes: 4,
     tempsPreparation: 15,
     tempsCuisson: 0,
-    status: 'PENDING',   // <-- statut PENDING
+    status: 'PENDING',
     userId: userMarie.id,
     categoryId: catEntree.id,
-    mediaId: medias[2062].id, //  media associé
+    mediaId: medias[2062].id,
     ingredients: { create: [
       { ingredientId: ing('mangue').id, quantity: '1', unit: 'pièce' },
       { ingredientId: ing('lait entier').id, quantity: '20', unit: 'cl' },
       { ingredientId: ing('citron').id, quantity: '1', unit: 'pièce' },
     ]},
-});
+  });
 
 
-console.log('✅ recette DRAFT');
+  console.log('✅ recette DRAFT');
 
-await createRecipe({
+  await createRecipe({
     titre: 'Dessert chocolaté',
     imageURL: 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=600',
     instructions: '1. Mélanger chocolat fondu et lait.\n2. Ajouter sucre et œufs.\n3. Verser dans moules et réfrigérer.',
     nombrePersonnes: 2,
     tempsPreparation: 10,
     tempsCuisson: 0,
-    status: 'DRAFT',      // <-- statut DRAFT
-    rejectionReason: 'La recette est incomplète, il manque la cuisson exacte.', // <-- raison
+    status: 'DRAFT',
+    rejectionReason: 'La recette est incomplète, il manque la cuisson exacte.',
     userId: userRemy.id,
     categoryId: catDessert.id,
     mediaId: medias[8467].id,
@@ -828,10 +978,7 @@ await createRecipe({
       { ingredientId: ing('lait entier').id, quantity: '50', unit: 'cl' },
       { ingredientId: ing('œuf').id, quantity: '2', unit: 'pièces' },
     ]},
-});
-
-
-
+  });
 
   // ── Résumé final ─────────────────────────────────────────
   const [nEntree, nPlat, nDessert, nBoisson] = await Promise.all([
@@ -841,13 +988,15 @@ await createRecipe({
     prisma.recipe.count({ where: { categoryId: catBoisson.id } }),
   ]);
 
-  console.log('🎬 Seed v2 terminé !\n');
+  console.log('🎬 Seed v3 terminé !\n');
   console.log('────────────────────────────────────────────────');
   console.log(`  Entrées  : ${nEntree}  recettes`);
   console.log(`  Plats    : ${nPlat}  recettes`);
   console.log(`  Desserts : ${nDessert} recettes`);
   console.log(`  Boissons : ${nBoisson} recettes`);
   console.log(`  TOTAL    : ${nEntree + nPlat + nDessert + nBoisson} recettes`);
+  console.log('────────────────────────────────────────────────');
+  console.log('  Médias   : 16 (10 films + 3 séries + 3 nouveaux films)');
   console.log('────────────────────────────────────────────────');
   console.log('  ADMIN   : admin@cinesdelices.fr  / Admin1234!');
   console.log('  MEMBRE  : marie@cinesdelices.fr  / Member1234!');
@@ -858,4 +1007,3 @@ await createRecipe({
 main()
   .catch(e => { console.error('❌ Erreur seed :', e); process.exit(1); })
   .finally(() => prisma.$disconnect());
-
