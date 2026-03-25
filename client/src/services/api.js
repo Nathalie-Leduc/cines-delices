@@ -7,7 +7,7 @@
 export async function request(endpoint, options = {}) {
   try {
     // 🔹 Récupérer le token depuis le localStorage
-    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+     const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
  
     // 🔹 Détecter si le body est un FormData (upload de fichiers)
     //    → pas de JSON.stringify, pas de Content-Type manuel (boundary auto)

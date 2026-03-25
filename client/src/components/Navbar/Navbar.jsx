@@ -1,48 +1,55 @@
 import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
-import {request} from '../../services/api.js';
 import { getRecipesCatalog } from "../../services/recipesService";
+import { useAuth } from "../../contexts/AuthContext.jsx"
 
-// Parse le payload JWT pour récupérer infos utilisateur
-function parseJwtPayload(rawToken) {
-  if (!rawToken || typeof rawToken !== "string") {
-    return null;
-  }
-  const token = rawToken.startsWith("Bearer ") ? rawToken.slice(7) : rawToken;
-  const parts = token.split(".");
+// ──────────────────────────────────────────────────────────────────────────
+// Tâche f-05 : Navbar branchée sur AuthContext
+//
+// 🎬 Analogie : Avant, la Navbar allait elle-même fouiller dans le casier
+//    (localStorage) pour vérifier le badge du visiteur, décoder le JWT,
+//    et même appeler l'API /auth/me pour récupérer le prénom.
+//
+//    Maintenant, elle demande simplement à la guérite (AuthContext) :
+//    « Ce visiteur est-il identifié ? Comment s'appelle-t-il ? Est-il admin ? »
+//    → useAuth() lui donne tout ça directement, sans bricolage.
+//
+// Ce qui a été SUPPRIMÉ (car AuthContext le gère déjà) :
+//   - parseJwtPayload() → le contexte décode le JWT
+//   - getUserName()     → le contexte + normalizeDisplayName dans AuthProvider
+//   - getAccountPath()  → remplacé par isAdmin du contexte
+//   - Le useEffect qui appelait request("/api/auth/me") pour le prénom
+//   - La lecture directe de localStorage.getItem("token")
+//   - import de {request} depuis api.js (plus nécessaire ici)
+// ──────────────────────────────────────────────────────────────────────────
 
-  if (parts.length !== 3) {
-    return null;
-  }
 
-  try {
-    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
-    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-    return JSON.parse(atob(padded));
-  } catch {
-    return null;
-  }
-}
-
+// ──────────────────────────────────────────────────────────────────────────
 // Détermine le nom à afficher pour l'utilisateur
-function getUserName(payload) {
-  if (!payload) {
-    return null;
+// On garde cette logique ici car elle concerne l'affichage dans la Navbar,
+// pas l'état d'authentification (qui est dans AuthContext)
+// ──────────────────────────────────────────────────────────────────────────
+function getDisplayName(user) {
+  if (!user) return "Membre";
+
+  // Priorité : prenom > pseudo > name > email > fallback
+  if (typeof user.prenom === "string" && user.prenom.trim()) {
+    const prenom = user.prenom.trim();
+    return prenom.charAt(0).toUpperCase() + prenom.slice(1).toLowerCase();
   }
 
-  if (typeof payload.pseudo === "string" && payload.pseudo.trim()) {
-    const pseudo = payload.pseudo.trim();
+  if (typeof user.pseudo === "string" && user.pseudo.trim()) {
+    const pseudo = user.pseudo.trim();
     return pseudo.charAt(0).toUpperCase() + pseudo.slice(1).toLowerCase();
   }
 
-  if (typeof payload.name === "string" && payload.name.trim()) {
-    return payload.name.trim();
+  if (typeof user.name === "string" && user.name.trim()) {
+    return user.name.trim();
   }
 
-  if (typeof payload.email === "string" && payload.email.includes("@")) {
-    const userFromEmail = payload.email.split("@")[0].trim();
-
+  if (typeof user.email === "string" && user.email.includes("@")) {
+    const userFromEmail = user.email.split("@")[0].trim();
     if (userFromEmail) {
       return userFromEmail.charAt(0).toUpperCase() + userFromEmail.slice(1);
     }
@@ -51,40 +58,38 @@ function getUserName(payload) {
   return "Membre";
 }
 
-function getAccountPath(payload) {
-  const role = String(payload?.role || "").trim().toUpperCase();
-
-  if (role === "ADMIN") {
-    return "/admin";
-  }
-
-  return "/membre/profil";
-}
-
 export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   const navigate = useNavigate();
+
+  // ──────────────────────────────────────────────────────────────────────
+  // 🔹 Tâche f-05 : on récupère tout depuis AuthContext
+  //    Avant : const token = localStorage.getItem("token");
+  //            const payload = parseJwtPayload(token);
+  //    Maintenant : une seule ligne, le contexte fait tout le travail
+  // ──────────────────────────────────────────────────────────────────────
+  const { user, isAuthenticated, isAdmin, logout } = useAuth();
+
+  // Le nom affiché dans la Navbar (ex: "Bonjour, Nathalie")
+  const userName = isAuthenticated ? getDisplayName(user) : "";
+
+  // Le lien "Mon compte" pointe vers /admin si admin, /membre/profil sinon
+  const accountPath = isAdmin ? "/admin" : "/membre/profil";
+
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [profileFirstName, setProfileFirstName] = useState(localStorage.getItem("displayName") || "");
+
   // Valeur de l'input de recherche
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   // Résultats de recherche à afficher sous l'input
   const [results, setResults] = useState([]);
- 
+
   // Crée une référence vers le div qui contient le formulaire de recherche
   // null = pas encore attaché au DOM
   const desktopSearchRef = useRef(null);
   const mobileSearchRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
 
-  const token = localStorage.getItem("token");
-  const payload = parseJwtPayload(token);
-  const nowInSeconds = Math.floor(Date.now() / 1000);
-  const isLoggedIn = Boolean(payload && typeof payload.exp === "number" && payload.exp > nowInSeconds);
-  const userName = isLoggedIn ? profileFirstName || getUserName(payload) : "";
-  const accountPath = getAccountPath(payload);
-
-   // Met simplement à jour le state search
+  // Met simplement à jour le state search
   const handleSearch = (e) => {
     setSearch(e.target.value);
   };
@@ -117,6 +122,17 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     setIsMobileSearchOpen(false);
   };
 
+  // ──────────────────────────────────────────────────────────────────────
+  // 🔹 Tâche f-05 : handleLogout utilise logout() du contexte
+  //    Avant : localStorage.removeItem("token") + navigate("/")
+  //    Maintenant : logout() vide le contexte ET le localStorage d'un coup
+  // ──────────────────────────────────────────────────────────────────────
+  const handleLogout = () => {
+    logout();       // vide AuthContext + localStorage (token, user, displayName)
+    closeMenu();
+    navigate("/");  // retour accueil
+  };
+
   // FETCH API AVEC DEBOUNCE
   // ---------------------------
   useEffect(() => {
@@ -129,49 +145,50 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     // Définir un timeout pour attendre 400ms après la dernière frappe
     const timeout = setTimeout(async () => {
       try {
-          const payload = await getRecipesCatalog({
-            q: search.trim(),
-            limit: 5,
-          });
-          const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
-          const mappedResults = rawRecipes.map((recipe) => ({
-            id: recipe.id,
-            slug: recipe.slug,
-            title: recipe.titre || "Recette sans titre",
-            mediaTitle: recipe.media?.titre || "",
-            image: recipe.imageURL || recipe.imageUrl || recipe.media?.posterUrl || "/img/hero-home.png",
-          }));
-          setResults(mappedResults);
+        const payload = await getRecipesCatalog({
+          q: search.trim(),
+          limit: 5,
+        });
+        const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
+        const mappedResults = rawRecipes.map((recipe) => ({
+          id: recipe.id,
+          slug: recipe.slug,
+          title: recipe.titre || "Recette sans titre",
+          mediaTitle: recipe.media?.titre || "",
+          image: recipe.imageURL || recipe.imageUrl || recipe.media?.posterUrl || "/img/hero-home.png",
+        }));
+        setResults(mappedResults);
       } catch (err) {
         console.error("Erreur fetch recettes :", err);
         setResults([]);
       }
     }, 400); // 400ms de debounce
-      // Nettoyage : si l'utilisateur tape encore avant la fin du timeout
+
+    // Nettoyage : si l'utilisateur tape encore avant la fin du timeout
     return () => clearTimeout(timeout);
   }, [search]); // dépendance : se déclenche à chaque changement de search
 
- // Ferme la liste des résultats quand l'utilisateur clique en dehors
-useEffect(() => {
-  const handleClickOutside = (e) => {
-    const clickedDesktopSearch = desktopSearchRef.current?.contains(e.target);
-    const clickedMobileSearch = mobileSearchRef.current?.contains(e.target);
+  // Ferme la liste des résultats quand l'utilisateur clique en dehors
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      const clickedDesktopSearch = desktopSearchRef.current?.contains(e.target);
+      const clickedMobileSearch = mobileSearchRef.current?.contains(e.target);
 
-    if (!clickedDesktopSearch && !clickedMobileSearch) {
-      // Le clic est en dehors → on vide les résultats
-      setResults([]);
-    }
-  };
+      if (!clickedDesktopSearch && !clickedMobileSearch) {
+        // Le clic est en dehors → on vide les résultats
+        setResults([]);
+      }
+    };
 
-  // On écoute tous les clics sur la page
-  document.addEventListener("mousedown", handleClickOutside);
+    // On écoute tous les clics sur la page
+    document.addEventListener("mousedown", handleClickOutside);
 
-  // Nettoyage : supprime l'écouteur quand le composant est démonté
-  // Évite les fuites mémoire
-  return () => document.removeEventListener("mousedown", handleClickOutside);
-}, []); // [] = s'exécute une seule fois au montage du composant
+    // Nettoyage : supprime l'écouteur quand le composant est démonté
+    // Évite les fuites mémoire
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []); // [] = s'exécute une seule fois au montage du composant
 
-// 🔹 Récupérer prénom / pseudo utilisateur via API
+  // Gestion de l'ouverture/fermeture du panneau de recherche mobile
   useEffect(() => {
     if (!isMobileSearchOpen) {
       return undefined;
@@ -195,6 +212,7 @@ useEffect(() => {
     };
   }, [isMobileSearchOpen]);
 
+  // Écoute l'événement custom "open-mobile-search" (ex: depuis la Home)
   useEffect(() => {
     const handleOpenMobileSearch = (event) => {
       const nextSearch = typeof event?.detail?.search === "string" ? event.detail.search : "";
@@ -210,41 +228,12 @@ useEffect(() => {
     };
   }, []);
 
-  useEffect(() => {
-    const refreshDisplayName = () => {
-      setProfileFirstName(localStorage.getItem("displayName") || "");
-    };
-
-    window.addEventListener("user-display-name-updated", refreshDisplayName);
-
-    const fetchProfileFirstName = async () => {
-      if (!token || !isLoggedIn) {
-        setProfileFirstName("");
-        return;
-      }
-
-      try {
-        const user = await request("/api/auth/me"); // ✅ request centralisé
-        const rawName =
-          (user?.prenom && user.prenom.trim()) ||
-          (user?.pseudo && user.pseudo.trim()) ||
-          "";
-        if (rawName) {
-          const normalized = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-          localStorage.setItem("displayName", normalized);
-          setProfileFirstName(normalized);
-        }
-      } catch {
-        // Fallback handled by getUserName(payload)
-      }
-    };
-
-    fetchProfileFirstName();
-
-    return () => {
-      window.removeEventListener("user-display-name-updated", refreshDisplayName);
-    };
-  }, [token, isLoggedIn]);
+  // ──────────────────────────────────────────────────────────────────────
+  // 🔹 Tâche f-05 : SUPPRIMÉ — le useEffect qui faisait fetch("/api/auth/me")
+  //    pour récupérer le prénom. AuthContext gère déjà l'objet user
+  //    avec toutes les infos (prenom, pseudo, email, role).
+  //    Plus besoin d'un appel API supplémentaire ici !
+  // ──────────────────────────────────────────────────────────────────────
 
   const closeMenu = () => {
     setIsMenuOpen(false);
@@ -260,11 +249,14 @@ useEffect(() => {
     setResults([]);
   };
 
+  // ──────────────────────────────────────────────────────────────────────
+  // 🔹 Tâche f-05 : handleMobileAction simplifié
+  //    Avant : localStorage.removeItem("token") manuellement
+  //    Maintenant : handleLogout() qui passe par le contexte
+  // ──────────────────────────────────────────────────────────────────────
   const handleMobileAction = () => {
-    if (isLoggedIn) {
-      localStorage.removeItem("token");
-      closeMenu();
-      navigate("/");
+    if (isAuthenticated) {
+      handleLogout();
       return;
     }
 
@@ -341,41 +333,46 @@ useEffect(() => {
                   className={styles.searchButton}
                   aria-label="Rechercher"
                 >
-                <img
-                  src="/icon/Search.svg"
-                  alt=""
-                  className={styles.searchIcon}
-                />
+                  <img
+                    src="/icon/Search.svg"
+                    alt=""
+                    className={styles.searchIcon}
+                  />
                 </button>
-              {/* Liste des résultats recettes — visible uniquement si résultats */}
-              {results.length > 0 && (
-                <ul className={styles.searchResults}>
-                {results.map((recipe) => (
-                  <li key={recipe.id} className={styles.searchResultItem}>
-                    <NavLink 
-                      to={`/recipes/${recipe.slug || recipe.id}`}
-                      onClick={handleResultClick}
-                    >
-                    <img
-                      src={recipe.image}
-                      alt={recipe.title}
-                      className={styles.searchResultThumb}
-                    />
-                    <span className={styles.searchResultCopy}>
-                      <span>{recipe.title}</span>
-                      {recipe.mediaTitle && (
-                        <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
-                      )}
-                    </span>
-                    </NavLink>
-                  </li>
-                ))}
-                </ul>
-              )}
+                {/* Liste des résultats recettes — visible uniquement si résultats */}
+                {results.length > 0 && (
+                  <ul className={styles.searchResults}>
+                    {results.map((recipe) => (
+                      <li key={recipe.id} className={styles.searchResultItem}>
+                        <NavLink
+                          to={`/recipes/${recipe.slug || recipe.id}`}
+                          onClick={handleResultClick}
+                        >
+                          <img
+                            src={recipe.image}
+                            alt={recipe.title}
+                            className={styles.searchResultThumb}
+                          />
+                          <span className={styles.searchResultCopy}>
+                            <span>{recipe.title}</span>
+                            {recipe.mediaTitle && (
+                              <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                            )}
+                          </span>
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </form>
             </div>
 
-            {isLoggedIn ? (
+            {/* ────────────────────────────────────────────────────────────
+                🔹 Tâche f-05 : le rendu conditionnel utilise isAuthenticated
+                   Avant : isLoggedIn (calculé manuellement depuis le JWT)
+                   Maintenant : isAuthenticated vient de useAuth()
+            ──────────────────────────────────────────────────────────── */}
+            {isAuthenticated ? (
               <div className={styles.userBlock}>
                 <NavLink to={accountPath} className={styles.userTextLink}>
                   <span className={styles.userGreeting}>Bonjour,</span>
@@ -434,93 +431,93 @@ useEffect(() => {
             className={`${styles.mobilePanel} ${isMenuOpen ? styles.mobilePanelOpen : ""}`}
             aria-hidden={!isMenuOpen}
           >
-        <div className={styles.mobilePanelHeader}>
-          {isLoggedIn ? (
-            <div className={styles.mobileUser}>
-              <NavLink
-                to={accountPath}
+            <div className={styles.mobilePanelHeader}>
+              {isAuthenticated ? (
+                <div className={styles.mobileUser}>
+                  <NavLink
+                    to={accountPath}
+                    onClick={closeMenu}
+                    className={styles.mobileAvatar}
+                    aria-label="Mon profil"
+                  >
+                    <img
+                      src="/icon/Profil.svg"
+                      alt="Profil"
+                      className={styles.profileIcon}
+                    />
+                  </NavLink>
+                  <div className={styles.mobileUserText}>
+                    <span>Bonjour,</span>
+                    <NavLink
+                      to={accountPath}
+                      onClick={closeMenu}
+                      className={styles.mobileUserLink}
+                    >
+                      <strong>{userName}</strong>
+                    </NavLink>
+                  </div>
+                </div>
+              ) : (
+                <div />
+              )}
+
+              <button
+                type="button"
+                className={styles.closeButton}
+                aria-label="Fermer le menu"
                 onClick={closeMenu}
-                className={styles.mobileAvatar}
-                aria-label="Mon profil"
               >
-                <img
-                  src="/icon/Profil.svg"
-                  alt="Profil"
-                  className={styles.profileIcon}
-                />
-              </NavLink>
-              <div className={styles.mobileUserText}>
-                <span>Bonjour,</span>
-                <NavLink
-                  to={accountPath}
-                  onClick={closeMenu}
-                  className={styles.mobileUserLink}
-                >
-                  <strong>{userName}</strong>
-                </NavLink>
-              </div>
+                <img src="/icon/close_menu.svg" alt="Fermer" />
+              </button>
             </div>
-          ) : (
-            <div />
-          )}
 
-          <button
-            type="button"
-            className={styles.closeButton}
-            aria-label="Fermer le menu"
-            onClick={closeMenu}
-          >
-             <img src="/icon/close_menu.svg" alt="Fermer" />
-          </button>
-        </div>
+            <nav className={styles.mobileNav} aria-label="Navigation mobile">
+              <ul className={styles.mobileLinks}>
+                {navItems.map((item) => (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      onClick={closeMenu}
+                      className={({ isActive }) =>
+                        isActive ? styles.mobileActiveLink : styles.mobileLink
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  </li>
+                ))}
 
-        <nav className={styles.mobileNav} aria-label="Navigation mobile">
-          <ul className={styles.mobileLinks}>
-            {navItems.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  onClick={closeMenu}
-                  className={({ isActive }) =>
-                    isActive ? styles.mobileActiveLink : styles.mobileLink
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
+                {isAuthenticated && (
+                  <li>
+                    <NavLink
+                      to={accountPath}
+                      onClick={closeMenu}
+                      className={({ isActive }) =>
+                        isActive ? styles.mobileActiveLink : styles.mobileLink
+                      }
+                    >
+                      Mon compte
+                    </NavLink>
+                  </li>
+                )}
+              </ul>
+            </nav>
 
-            {isLoggedIn && (
-              <li>
-                <NavLink
-                  to={accountPath}
-                  onClick={closeMenu}
-                  className={({ isActive }) =>
-                    isActive ? styles.mobileActiveLink : styles.mobileLink
-                  }
-                >
-                  Mon compte
-                </NavLink>
-              </li>
-            )}
-          </ul>
-        </nav>
+            <div className={styles.mobileBottom}>
+              <button
+                type="button"
+                className={styles.mobileActionButton}
+                onClick={handleMobileAction}
+              >
+                {isAuthenticated ? "Se déconnecter" : "Se connecter"}
+              </button>
 
-        <div className={styles.mobileBottom}>
-          <button
-            type="button"
-            className={styles.mobileActionButton}
-            onClick={handleMobileAction}
-          >
-            {isLoggedIn ? "Se déconnecter" : "Se connecter"}
-          </button>
-
-          <img
-            src="/img/logo-cine-delices.png"
-            alt="CinéDélices"
-            className={styles.mobileBottomLogo}
-          />
-        </div>
+              <img
+                src="/img/logo-cine-delices.png"
+                alt="CinéDélices"
+                className={styles.mobileBottomLogo}
+              />
+            </div>
           </aside>
         </>
       )}
