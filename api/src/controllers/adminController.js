@@ -652,6 +652,9 @@ export async function getAdminUsers(req, res) {
           }
         : undefined,
       include: {
+        _count: { // nombre total de recettes
+          select: { recipes: true },
+        },  
         recipes: {
           include: {
             category: true,
@@ -663,7 +666,20 @@ export async function getAdminUsers(req, res) {
       },
     });
 
-    return res.json(users.map(formatUser));
+     // Format pour le front
+    const formattedUsers = users.map(user => ({
+      id: user.id,
+      nom: user.pseudo.toUpperCase(),
+      displayName: user.pseudo,
+      prenom: user.pseudo,
+      email: user.email,
+      role: user.role,
+      totalRecipes: user._count.recipes, // <=== le total de recettes
+      recipeCounts: formatUser(user).recipeCounts, // détail par catégorie
+    }));
+
+
+    return res.json(formattedUsers);
   } catch (error) {
     return sendError(res, error, 'Erreur lors de la récupération des utilisateurs admin.');
   }

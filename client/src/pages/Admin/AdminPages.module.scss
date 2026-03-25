@@ -66,6 +66,47 @@
   }
 }
 
+.rowText {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  align-items:flex-start;
+  
+} 
+  
+.recipesBadge {
+  background-color: #c9a45c;
+  color:#211f20 ;
+  padding: 4px 10px;
+  padding-top: 0px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+.recipesBadgeCentered {
+  background-color: #c9a45c;
+  color:#211f20 ;
+  padding: 4px 10px;
+  padding-top: 0px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  margin: 0 auto;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  display: block;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .filterCountRow {
   display: flex;
   align-items: center;
@@ -561,14 +602,14 @@
   border-radius: 14px;
   padding: 0.95rem 1.1rem;
   background-color: rgba(31, 29, 30, 0.58);
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.8rem;
+  gap: 10px;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
-
+ 
   &:hover {
     border-color: rgba(201, 164, 92, 0.5);
     background-color: rgba(31, 29, 30, 0.72);
@@ -594,6 +635,11 @@
 .rowText {
   display: grid;
   gap: 0.2rem;
+  flex: 1; /* 🔥 pousse le reste vers la droite */
+  display: flex;
+  flex-direction: column;
+}
+
 
   strong {
     color: #c9a45c;
@@ -606,7 +652,7 @@
     color: rgba(246, 241, 232, 0.58);
     font-size: 0.82rem;
   }
-}
+
 
 .rowArrow {
   color: #e8dcc8;
