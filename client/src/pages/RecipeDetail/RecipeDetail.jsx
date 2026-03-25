@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RecipeCard from "../../components/RecipeCard";
+import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
 import { getRecipeBySlug, getRecipesCatalog } from "../../services/recipesService";
@@ -94,6 +95,7 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { slug } = useParams();
+  const isHeroVisible = useHeroReveal();
   const [recipes, setRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -276,19 +278,19 @@ export default function RecipeDetail() {
         <div className={styles.contentWrap}>
           <button
             type="button"
-            className={styles.backButton}
+            className={`${styles.backButton} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
             onClick={() => navigate(-1)}
           >
             <span className={styles.backArrow} aria-hidden="true">←</span>
             <span>Retour</span>
           </button>
           <div className={styles.heroContent}>
-            <h1 className={styles.title}>{title}</h1>
-            <p className={styles.heroBadge}>
+            <h1 className={`${styles.title} ${styles.heroReveal} ${styles.heroRevealDelay2} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>{title}</h1>
+            <p className={`${styles.heroBadge} ${styles.heroReveal} ${styles.heroRevealDelay3} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>
               Inspiré de <span>{mediaTitle}</span>
             </p>
           </div>
-          <span className={`${styles.categoryTag} ${styles[categoryKey] || ""}`}>{category}</span>
+          <span className={`${styles.categoryTag} ${styles.heroReveal} ${styles.heroRevealDelay4} ${isHeroVisible ? styles.heroRevealVisible : ""} ${styles[categoryKey] || ""}`.trim()}>{category}</span>
         </div>
       </section>
 

@@ -1,3 +1,5 @@
+@use "../../styles/visitor-mixins" as ui;
+
 .navbar {
   position: sticky;
   top: 0;
@@ -12,7 +14,7 @@
 }
 
 .container {
-  width: min(1440px, calc(100% - 2rem));
+  width: min(var(--layout-max-width), calc(100% - (var(--layout-gutter) * 2)));
   min-height: 72px;
   margin: 0 auto;
   display: grid;
@@ -54,7 +56,7 @@
 
 .link,
 .activeLink {
-  font-family: "Playfair Display", serif;
+  font-family: var(--font-display);
   font-size: 1rem;
   color: #ffffff;
   transition: color 0.2s ease;
@@ -76,20 +78,21 @@
   display: flex;
   align-items: center;
   min-width: 260px;
-  min-height: 48px;
-  border-radius: 0.5rem;
+  min-height: var(--control-height-md);
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  background-color: rgba(246, 241, 232, 0.14);
+  background-color: rgba(246, 241, 232, 0.1);
 }
 
 .searchInput {
   width: 100%;
   border: 0;
   outline: none;
-  min-height: 48px;
+  min-height: var(--control-height-md);
   padding: 0.85rem 1rem;
   background: transparent;
-  color: #f6f1e8;
+  color: var(--color-text-primary);
 }
 
 .searchInput::placeholder {
@@ -99,8 +102,8 @@
 .searchButton {
   border: 0;
   background: transparent;
-  color: #f6f1e8;
-  min-height: 48px;
+  color: var(--color-text-primary);
+  min-height: var(--control-height-md);
   padding: 0 1rem;
   cursor: pointer;
 }
@@ -155,27 +158,10 @@
 }
 
 .desktopLoginLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.65rem;
+  @include ui.primary-button;
   text-decoration: none;
-  font-family: "Playfair Display", serif;
   font-size: 0.95rem;
-  color: #f6f1e8;
-  background: #8e1f2f;
-  border: 0;
-  border-radius: 0.6rem;
   min-width: 170px;
-  min-height: 48px;
-  padding: 0.65rem 1.4rem;
-  line-height: 1;
-  transition: background-color 0.2s ease;
-}
-
-.desktopLoginLink:hover {
-  color: #f6f1e8;
-  background-color: #a02436;
 }
 
 .desktopLoginIcon {

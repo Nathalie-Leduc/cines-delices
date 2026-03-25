@@ -1,4 +1,39 @@
+@use './tokens' as tokens;
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --color-bg-base: #{tokens.$color-bg-base};
+  --color-bg-overlay: #{tokens.$color-bg-overlay};
+  --color-surface-strong: #{tokens.$color-surface-strong};
+  --color-surface-soft: #{tokens.$color-surface-soft};
+  --color-border-soft: #{tokens.$color-border-soft};
+  --color-border-strong: #{tokens.$color-border-strong};
+  --color-text-primary: #{tokens.$color-text-primary};
+  --color-text-secondary: #{tokens.$color-text-secondary};
+  --color-text-muted: #{tokens.$color-text-muted};
+  --color-title: #{tokens.$color-title};
+  --color-accent: #{tokens.$color-accent};
+  --color-primary: #{tokens.$color-primary};
+  --color-primary-hover: #{tokens.$color-primary-hover};
+  --color-success: #{tokens.$color-success};
+  --color-info: #{tokens.$color-info};
+  --color-danger-soft: #{tokens.$color-danger-soft};
+  --font-body: #{tokens.$font-body};
+  --font-display: #{tokens.$font-display};
+  --shadow-soft: #{tokens.$shadow-soft};
+  --shadow-lifted: #{tokens.$shadow-lifted};
+  --shadow-focus: #{tokens.$shadow-focus};
+  --radius-sm: #{tokens.$radius-sm};
+  --radius-md: #{tokens.$radius-md};
+  --radius-lg: #{tokens.$radius-lg};
+  --radius-xl: #{tokens.$radius-xl};
+  --layout-max-width: #{tokens.$layout-max-width};
+  --layout-content-width: #{tokens.$layout-content-width};
+  --layout-gutter: #{tokens.$layout-gutter-mobile};
+  --section-space: #{tokens.$section-space-mobile};
+  --control-height-md: 46px;
+  --hero-height-desktop: 520px;
+}
 
 *,
 *::before,
@@ -13,11 +48,11 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-body);
   background:
-    linear-gradient(rgba(31, 29, 30, 0.94), rgba(31, 29, 30, 0.94)),
+    linear-gradient(var(--color-bg-overlay), var(--color-bg-overlay)),
     url('/img/rocky-wall.png') center/cover fixed;
-  color: #f6f1e8;
+  color: var(--color-text-primary);
   line-height: 1.6;
   font-size: 16px;
   font-weight: 400;
@@ -30,7 +65,7 @@ body {
 h1,
 h2,
 h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-display);
 }
 
 img {
@@ -44,11 +79,32 @@ a {
   transition: all 0.2s ease;
 }
 
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
 main {
   min-height: calc(100vh - 120px);
   background:
-    linear-gradient(rgba(31, 29, 30, 0.94), rgba(31, 29, 30, 0.94)),
+    linear-gradient(var(--color-bg-overlay), var(--color-bg-overlay)),
     url('/img/rocky-wall.png') center/cover;
+}
+
+@keyframes visitor-hero-reveal {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 22px, 0);
+    filter: blur(10px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+    filter: blur(0);
+  }
 }
 
 ::-webkit-scrollbar {
@@ -67,4 +123,18 @@ main {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(201, 164, 92, 0.6);
+}
+
+@media (min-width: 768px) {
+  :root {
+    --layout-gutter: #{tokens.$layout-gutter-tablet};
+  }
+}
+
+@media (min-width: 1200px) {
+  :root {
+    --layout-gutter: #{tokens.$layout-gutter-desktop};
+    --section-space: #{tokens.$section-space-desktop};
+    --hero-height-desktop: 430px;
+  }
 }

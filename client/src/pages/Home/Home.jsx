@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import HomeCategories from "../../components/HomeCategories";
 import RecipeCard from "../../components/RecipeCard";
+import useHeroReveal from "../../hooks/useHeroReveal";
 import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "./Home.module.scss";
 
@@ -34,17 +35,43 @@ function mapApiRecipeToCard(recipe) {
   };
 }
 
+function getVisibleSlides() {
+  if (typeof window === "undefined") {
+    return 1;
+  }
+
+  if (window.innerWidth >= 1200) {
+    return 4;
+  }
+
+  if (window.innerWidth >= 768) {
+    return 3;
+  }
+
+  return 1;
+}
+
 function Home() {
   const [latestRecipes, setLatestRecipes] = useState([]);
   const [isLoadingLatestRecipes, setIsLoadingLatestRecipes] = useState(true);
   const [latestRecipesError, setLatestRecipesError] = useState("");
+  const [visibleSlides, setVisibleSlides] = useState(getVisibleSlides);
+  const [carouselState, setCarouselState] = useState({ index: 0, direction: 1 });
+  const [trackOffset, setTrackOffset] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const viewportRef = useRef(null);
+  const trackRef = useRef(null);
+  const slideRefs = useRef([]);
+  const isHeroVisible = useHeroReveal();
+
+  const maxCarouselIndex = Math.max(0, latestRecipes.length - visibleSlides);
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchLatestRecipes = async () => {
       try {
-        const payload = await getRecipesCatalog({ limit: 6 });
+        const payload = await getRecipesCatalog({ limit: 10 });
         const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
 
         if (!isMounted) {
@@ -74,6 +101,71 @@ function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      setVisibleSlides(getVisibleSlides());
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
+    setCarouselState((previous) => ({
+      index: Math.min(previous.index, maxCarouselIndex),
+      direction: maxCarouselIndex === 0 ? 1 : previous.direction,
+    }));
+  }, [maxCarouselIndex]);
+
+  useEffect(() => {
+    const activeSlide = slideRefs.current[carouselState.index];
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+
+    if (!activeSlide || !viewport || !track) {
+      setTrackOffset(0);
+      return;
+    }
+
+    const maxOffset = Math.max(0, track.scrollWidth - viewport.clientWidth);
+    const nextOffset = Math.min(activeSlide.offsetLeft, maxOffset);
+
+    setTrackOffset(nextOffset);
+  }, [carouselState.index, latestRecipes.length, visibleSlides]);
+
+  useEffect(() => {
+    if (maxCarouselIndex === 0 || isCarouselPaused) {
+      return undefined;
+    }
+
+    const interval = window.setInterval(() => {
+      setCarouselState((previous) => {
+        let nextIndex = previous.index + previous.direction;
+        let nextDirection = previous.direction;
+
+        if (nextIndex >= maxCarouselIndex) {
+          nextIndex = maxCarouselIndex;
+          nextDirection = -1;
+        } else if (nextIndex <= 0) {
+          nextIndex = 0;
+          nextDirection = 1;
+        }
+
+        return {
+          index: nextIndex,
+          direction: nextDirection,
+        };
+      });
+    }, 3200);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [isCarouselPaused, maxCarouselIndex]);
+
   return (
     <main className={styles.container}>
       <section className={styles.hero}>
@@ -85,20 +177,25 @@ function Home() {
 
         <div className={styles.heroOverlay} />
 
-        <div className={styles.heroContent}>
-          <h1 className={styles.title}>
-            Cuisine le cinéma,
-            <br />
-            Savoure les séries.
-          </h1>
+        <div className={styles.heroInner}>
+          <div className={styles.heroContent}>
+            <h1 className={`${styles.title} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>
+              Cuisine le cinéma,
+              <br />
+              Savoure les séries.
+            </h1>
 
-          <p className={styles.subtitle}>
-            Découvre les recettes inspirées des films et séries cultes.
-          </p>
+            <p className={`${styles.subtitle} ${styles.heroReveal} ${styles.heroRevealDelay2} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>
+              Découvre les recettes inspirées des films et séries cultes.
+            </p>
 
-          <Link className={styles.cta} to="/recipes">
-            Découvrez nos recettes
-          </Link>
+            <Link
+              className={`${styles.cta} ${styles.heroReveal} ${styles.heroRevealDelay3} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              to="/recipes"
+            >
+              Découvrez nos recettes
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -114,7 +211,7 @@ function Home() {
         </div>
 
         <p className={styles.sectionText}>
-          Les 6 dernières recettes validées, directement servies depuis l&apos;API.
+          Les 10 dernières recettes validées, directement servies depuis l&apos;API.
         </p>
 
         {isLoadingLatestRecipes ? (
@@ -124,10 +221,46 @@ function Home() {
         ) : latestRecipes.length === 0 ? (
           <p className={styles.latestStatus}>Aucune recette publiée pour le moment.</p>
         ) : (
-          <div className={styles.latestGrid}>
-            {latestRecipes.map((recipe) => (
-              <RecipeCard key={recipe.id} recipe={recipe} />
-            ))}
+          <div className={styles.latestCarousel}>
+            <div
+              ref={viewportRef}
+              className={styles.latestViewport}
+              onMouseEnter={() => setIsCarouselPaused(true)}
+              onMouseLeave={() => setIsCarouselPaused(false)}
+              onFocusCapture={() => setIsCarouselPaused(true)}
+              onBlurCapture={() => setIsCarouselPaused(false)}
+            >
+              <div
+                ref={trackRef}
+                className={styles.latestTrack}
+                style={{ transform: `translateX(-${trackOffset}px)` }}
+              >
+                {latestRecipes.map((recipe, index) => (
+                  <div
+                    key={recipe.id}
+                    className={styles.latestSlide}
+                    ref={(element) => {
+                      slideRefs.current[index] = element;
+                    }}
+                  >
+                    <RecipeCard recipe={recipe} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {maxCarouselIndex > 0 ? (
+              <div className={styles.carouselMeta} aria-hidden="true">
+                <div className={styles.carouselDots}>
+                  {Array.from({ length: maxCarouselIndex + 1 }).map((_, index) => (
+                    <span
+                      key={`dot-${index}`}
+                      className={`${styles.carouselDot} ${index === carouselState.index ? styles.carouselDotActive : ""}`.trim()}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         )}
       </section>
