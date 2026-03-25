@@ -57,23 +57,33 @@ export default function CreerRecette() {
     setForm(prev => ({ ...prev, [field]: value }));
   }
 
-  function isPngFile(file) {
-    return Boolean(file) && (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png'));
+  function isAllowedImageFile(file) {
+    if (!file) {
+      return false;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    return ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+      || lowerName.endsWith('.png')
+      || lowerName.endsWith('.jpg')
+      || lowerName.endsWith('.jpeg')
+      || lowerName.endsWith('.webp');
   }
 
-  function isPngUrl(url) {
+  function isAllowedImageUrl(url) {
     if (!url) {
       return false;
     }
 
     const normalizedUrl = url.trim().toLowerCase();
-    if (normalizedUrl.startsWith('data:image/png')) {
+    if (normalizedUrl.startsWith('data:image/png') || normalizedUrl.startsWith('data:image/jpeg') || normalizedUrl.startsWith('data:image/webp')) {
       return true;
     }
 
     try {
       const parsedUrl = new URL(url.trim());
-      return parsedUrl.pathname.toLowerCase().endsWith('.png');
+      const pathname = parsedUrl.pathname.toLowerCase();
+      return pathname.endsWith('.png') || pathname.endsWith('.jpg') || pathname.endsWith('.jpeg') || pathname.endsWith('.webp');
     } catch {
       return false;
     }
@@ -84,8 +94,8 @@ export default function CreerRecette() {
       return;
     }
 
-    if (!isPngFile(file)) {
-      setImageError('Veuillez utiliser une image au format .png uniquement.');
+    if (!isAllowedImageFile(file)) {
+      setImageError('Veuillez utiliser une image au format .png, .jpg, .jpeg ou .webp.');
       setForm(prev => ({ ...prev, image: null }));
       return;
     }
@@ -106,8 +116,8 @@ export default function CreerRecette() {
       return;
     }
 
-    if (!isPngUrl(form.imageUrl)) {
-      setImageError('Veuillez coller une URL valide qui pointe vers une image .png.');
+    if (!isAllowedImageUrl(form.imageUrl)) {
+      setImageError('Veuillez coller une URL valide qui pointe vers une image .png, .jpg, .jpeg ou .webp.');
       return;
     }
 
@@ -429,16 +439,52 @@ export default function CreerRecette() {
 
     try {
       const token = localStorage.getItem('token');
+      const hasImageFile = form.image instanceof File;
       const headers = {
-        'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       };
 
-      const response = await fetch(RECIPE_CREATE_API, {
+      const requestInit = {
         method: 'POST',
         headers,
-        body: JSON.stringify(payload),
-      });
+      };
+
+      if (hasImageFile) {
+        const formData = new FormData();
+
+        formData.append('titre', payload.titre);
+        formData.append('film', payload.film);
+        formData.append('filmId', String(payload.filmId));
+        formData.append('type', payload.type);
+        formData.append('categorie', payload.categorie);
+        formData.append('instructions', payload.instructions);
+
+        if (payload.tempsPreparation !== undefined) {
+          formData.append('tempsPreparation', String(payload.tempsPreparation));
+        }
+
+        if (payload.tempsCuisson !== undefined) {
+          formData.append('tempsCuisson', String(payload.tempsCuisson));
+        }
+
+        if (payload.nbPersonnes !== undefined) {
+          formData.append('nbPersonnes', String(payload.nbPersonnes));
+        }
+
+        formData.append('ingredients', JSON.stringify(payload.ingredients));
+        formData.append('etapes', JSON.stringify(payload.etapes));
+        formData.append('image', form.image);
+
+        requestInit.body = formData;
+      } else {
+        requestInit.headers = {
+          ...headers,
+          'Content-Type': 'application/json',
+        };
+        requestInit.body = JSON.stringify(payload);
+      }
+
+      const response = await fetch(RECIPE_CREATE_API, requestInit);
 
       let responsePayload = null;
       try {
@@ -629,12 +675,12 @@ export default function CreerRecette() {
             id="create-recipe-image"
             className={styles.hiddenFileInput}
             type="file"
-            aria-label="Choisir une image PNG"
-            accept=".png,image/png"
+            aria-label="Choisir une image PNG, JPG ou WEBP"
+            accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
             onChange={e => handleImageSelection(e.target.files?.[0])}
           />
           <span className={styles.inputPlaceholder}>
-            {form.image ? form.image.name : 'Glisser un .png ici ou choisir un fichier'}
+            {form.image ? form.image.name : 'Glisser un .png/.jpg/.webp ici ou choisir un fichier'}
           </span>
           <label htmlFor="create-recipe-image" className={styles.iconBtn}>
             +
@@ -644,8 +690,8 @@ export default function CreerRecette() {
           <input
             className={styles.input}
             type="url"
-            aria-label="URL de l'image PNG"
-            placeholder="Ou collez l'URL d'une image .png"
+            aria-label="URL de l'image PNG, JPG ou WEBP"
+            placeholder="Ou collez l'URL d'une image .png/.jpg/.webp"
             value={form.imageUrl}
             onChange={e => handleImageUrlChange(e.target.value)}
             onBlur={validateImageUrl}

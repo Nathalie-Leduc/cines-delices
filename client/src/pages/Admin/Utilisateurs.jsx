@@ -20,6 +20,18 @@ function AdminUtilisateurs() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Calcul du total des recettes pour l'utilisateur sélectionné
+  const usersWithTotals = useMemo(() => {
+    return users.map((user) => ({
+    ...user,
+    totalRecipes:
+      (user.recipeCounts?.entree || 0) +
+      (user.recipeCounts?.plat || 0) +
+      (user.recipeCounts?.dessert || 0) +
+      (user.recipeCounts?.boisson || 0),
+  }));
+}, [users]);
+
   useEffect(() => {
     setIsLoading(true);
     getAdminUsers()
@@ -108,23 +120,17 @@ function AdminUtilisateurs() {
           <Alert type="error" message={error} onClose={() => setError('')} />
 
           <div className={styles.list}>
-            {filteredUsers.map((user) => (
-              <button
-                key={user.id}
-                type="button"
-                className={styles.rowCard}
-                onClick={() => {
-                  setSelectedUser(user);
-                  setError('');
-                  setSuccessMessage('');
-                }}
-              >
+            {usersWithTotals.map((user) => (
+              <button key={user.id} type="button" className={styles.rowCard} onClick={() => setSelectedUser(user)}>
                 <span className={styles.userAvatar}>
                   <img src="/icon/User.svg" alt="" aria-hidden="true" />
                 </span>
                 <span className={styles.rowText}>
                   <strong>{user.nom}</strong>
                   <small>{user.email}</small>
+                </span>
+                <span className={styles.recipesBadgeCentered}>
+                  {user.totalRecipes} recettes
                 </span>
                 <span className={styles.rowArrow}>›</span>
               </button>

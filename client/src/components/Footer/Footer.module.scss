@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1.9rem 2rem 1.7rem;
+  padding: 1.9rem var(--layout-gutter) 1.7rem;
   background:
     linear-gradient(rgba(31, 29, 30, 0.94), rgba(31, 29, 30, 0.94)),
     url('/img/rocky-wall.png') center/cover;
@@ -11,7 +11,7 @@
 }
 
 .footerInner {
-  width: min(100%, 1040px);
+  width: min(100%, var(--layout-content-width));
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -21,6 +21,7 @@
 .footerNav {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 1.4rem;
 }
 
@@ -56,15 +57,18 @@
 
 @media (max-width: 768px) {
   .footer {
-    padding: 1.4rem 1.2rem;
+    padding: 1.4rem var(--layout-gutter);
   }
 
   .footerInner {
     flex-direction: column;
+    justify-content: center;
+    text-align: center;
     gap: 1rem;
   }
 
   .footerNav {
+    justify-content: center;
     gap: 1rem;
   }
 

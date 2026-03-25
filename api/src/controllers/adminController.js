@@ -81,6 +81,7 @@ function formatRecipe(recipe) {
     duration: `${duration || 0} min`,
     media: recipe.media?.type === 'SERIES' ? 'S' : 'F',
     image: recipe.imageURL || recipe.media?.posterUrl || '/img/entrees.png',
+    mediaPoster: recipe.media?.posterUrl || null,
     status: recipe.status,
     instructions: recipe.instructions,
     people: recipe.nombrePersonnes || 0,
@@ -498,6 +499,7 @@ export async function updateAdminRecipe(req, res) {
       tmdbId,
       mediaTitle,
       mediaType,
+      imageUrl,
       ingredients,
     } = req.body;
 
@@ -513,6 +515,7 @@ export async function updateAdminRecipe(req, res) {
     if (nombrePersonnes !== undefined) data.nombrePersonnes = nombrePersonnes ? parseInt(nombrePersonnes, 10) : null;
     if (tempsPreparation !== undefined) data.tempsPreparation = tempsPreparation ? parseInt(tempsPreparation, 10) : null;
     if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson ? parseInt(tempsCuisson, 10) : null;
+    if (imageUrl !== undefined) data.imageURL = String(imageUrl).trim() || null;
 
     // Résolution du média : par UUID direct ou création depuis TMDB si besoin
     if (tmdbId !== undefined || mediaId !== undefined) {
@@ -652,6 +655,9 @@ export async function getAdminUsers(req, res) {
           }
         : undefined,
       include: {
+        _count: { // nombre total de recettes
+          select: { recipes: true },
+        },  
         recipes: {
           include: {
             category: true,
@@ -663,7 +669,20 @@ export async function getAdminUsers(req, res) {
       },
     });
 
-    return res.json(users.map(formatUser));
+     // Format pour le front
+    const formattedUsers = users.map(user => ({
+      id: user.id,
+      nom: user.pseudo.toUpperCase(),
+      displayName: user.pseudo,
+      prenom: user.pseudo,
+      email: user.email,
+      role: user.role,
+      totalRecipes: user._count.recipes, // <=== le total de recettes
+      recipeCounts: formatUser(user).recipeCounts, // détail par catégorie
+    }));
+
+
+    return res.json(formattedUsers);
   } catch (error) {
     return sendError(res, error, 'Erreur lors de la récupération des utilisateurs admin.');
   }
@@ -868,6 +887,39 @@ export async function getAdminIngredients(req, res) {
 
 export async function getAdminNotifications(req, res) {
   try {
+    await prisma.notification.deleteMany({
+      where: {
+        userId: req.user.id,
+        isRead: false,
+        OR: [
+          {
+            message: {
+              startsWith: 'Nouvelle recette soumise:',
+            },
+            recipeId: null,
+          },
+          {
+            message: {
+              startsWith: 'Recette modifiée à valider de nouveau :',
+            },
+            recipeId: null,
+          },
+          {
+            recipeId: {
+              not: null,
+            },
+            recipe: {
+              is: {
+                status: {
+                  not: 'PENDING',
+                },
+              },
+            },
+          },
+        ],
+      },
+    });
+
     const notifications = await prisma.notification.findMany({
       where: {
         userId: req.user.id,

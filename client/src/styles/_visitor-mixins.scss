@@ -1,0 +1,268 @@
+@use './tokens' as tokens;
+
+@mixin section-container($max-width: var(--layout-max-width)) {
+  width: min(100%, #{$max-width});
+  margin: 0 auto;
+  padding-inline: var(--layout-gutter);
+}
+
+@mixin hero-shell {
+  position: relative;
+  width: 100%;
+  min-height: var(--hero-height-desktop);
+  overflow: hidden;
+}
+
+@mixin hero-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+@mixin hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(31, 29, 30, 0.58) 0%,
+    rgba(31, 29, 30, 0.22) 45%,
+    rgba(31, 29, 30, 0.1) 100%
+  );
+  z-index: 1;
+}
+
+@mixin hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 520px;
+  padding: 5rem 0 4rem;
+}
+
+@mixin hero-title {
+  margin: 0;
+  color: var(--color-title);
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 5vw, 5rem);
+  line-height: 1.05;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.42);
+}
+
+@mixin hero-subtitle {
+  margin: 1.25rem 0 0;
+  max-width: 420px;
+  color: var(--color-text-primary);
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+@mixin hero-reveal-base($distance: 22px) {
+  opacity: 0;
+  transform: translate3d(0, $distance, 0);
+  filter: blur(10px);
+  will-change: opacity, transform, filter;
+  transition:
+    opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@mixin hero-reveal-visible {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+@mixin hero-reveal-reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
+@mixin primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-height: var(--control-height-md);
+  padding: 0.85rem 1.35rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    background: var(--color-primary-hover);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+
+  &:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+@mixin secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(var(--control-height-md) - 2px);
+  padding: 0.75rem 1.1rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 999px;
+  background: var(--color-surface-strong);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-border-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+@mixin input-surface {
+  width: 100%;
+  min-height: var(--control-height-md);
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-strong);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:focus,
+  &:focus-visible {
+    border-color: rgba(251, 220, 166, 0.95);
+    box-shadow: var(--shadow-focus);
+  }
+}
+
+@mixin section-title {
+  margin: 0;
+  color: var(--color-title);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 500;
+  line-height: 1;
+}
+
+@mixin card-shell {
+  display: flex;
+  height: 100%;
+  aspect-ratio: 1 / 1;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-base) url('/img/rocky-wall.png') center / cover no-repeat;
+  border: 1px solid rgba(232, 220, 200, 0.08);
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lifted);
+  }
+}
+
+@mixin card-image-shell {
+  position: relative;
+  flex: 0 0 43%;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(232, 220, 200, 0.07);
+}
+
+@mixin card-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.28s ease;
+}
+
+@mixin card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0.82rem 0.9rem 0.88rem;
+}
+
+@mixin card-title($lines: 2) {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.16;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: $lines;
+  line-clamp: $lines;
+  min-height: calc(1.16em * #{$lines});
+}
+
+@mixin badge-pill {
+  position: absolute;
+  top: 0.82rem;
+  right: 0.82rem;
+  padding: 0.32rem 0.72rem;
+  border-radius: 999px;
+  border: 1.5px solid #e8dcc8;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.38);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}

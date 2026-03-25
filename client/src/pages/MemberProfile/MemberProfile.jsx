@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getMe, updateMe, updateMyPassword } from '../../services/api.js';
+import { deleteMe, getMe, updateMe, updateMyPassword } from '../../services/api.js';
 import { getMyRecipes as getMyRecipesApi } from '../../services/recipesService.js';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './MemberProfile.module.scss';
 
 const initialUser = {
@@ -45,6 +46,7 @@ function syncStoredUserProfile(nextUser) {
 
 export default function Profil() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   // Liens du panneau de navigation latéral (sidebar)
   // Données du profil affichées dans les champs
@@ -339,8 +341,25 @@ export default function Profil() {
     }
   }
 
-  function handleDelete() {
-    localStorage.removeItem('token');
+  function handleLogout() {
+    logout();
+    navigate('/');
+  }
+
+  async function handleDelete() {
+    try {
+      await deleteMe();
+    } catch (error) {
+      setProfileFeedback({
+        type: 'error',
+        message: error?.message || 'Impossible de supprimer le compte pour le moment.',
+      });
+      setShowModal(false);
+      return;
+    }
+
+    setShowModal(false);
+    logout();
     navigate('/');
   }
 
@@ -500,7 +519,7 @@ export default function Profil() {
             ))}
           </div>
 
-          <button type="button" className={styles.logoutBtn} onClick={handleDelete}>
+          <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
             <span className={styles.logoutIcon}>
               <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
             </span>

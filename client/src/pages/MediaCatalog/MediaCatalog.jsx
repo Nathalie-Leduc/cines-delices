@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import MediaCard from "../../components/MediaCard";
+import useHeroReveal from "../../hooks/useHeroReveal";
 import styles from "../RecipesPage/RecipesPage.module.scss";
 
 const DEFAULT_LIMIT = 15;
@@ -53,6 +54,7 @@ export default function MediaCatalog({
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const hasLoadedOnce = useRef(false);
   const searchRef = useRef(null);
+  const isHeroVisible = useHeroReveal();
 
   const currentQuery = searchParams.get("q")?.trim() || "";
   const currentPage = parsePositiveInt(searchParams.get("page"), 1);
@@ -243,16 +245,21 @@ export default function MediaCatalog({
 
         <div className={styles.heroOverlay} />
 
-        <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>{title}</h1>
+        <div className={styles.heroInner}>
+          <div className={styles.heroContent}>
+            <h1 className={`${styles.heroTitle} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>{title}</h1>
 
-          <p className={styles.heroSubtitle}>
-            {heroSubtitle}
-          </p>
+            <p className={`${styles.heroSubtitle} ${styles.heroReveal} ${styles.heroRevealDelay2} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>
+              {heroSubtitle}
+            </p>
 
-          <Link className={styles.cta} to="/contact">
-            Nous contacter
-          </Link>
+            <Link
+              className={`${styles.cta} ${styles.heroReveal} ${styles.heroRevealDelay3} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              to="/contact"
+            >
+              Nous contacter
+            </Link>
+          </div>
         </div>
       </section>
 

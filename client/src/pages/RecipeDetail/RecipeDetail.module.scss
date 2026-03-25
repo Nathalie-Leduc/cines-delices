@@ -1,3 +1,5 @@
+@use "../../styles/visitor-mixins" as ui;
+
 .page {
   min-height: 100vh;
   background:
@@ -8,14 +10,12 @@
 }
 
 .contentWrap {
-  width: min(100%, 1320px);
-  margin: 0 auto;
-  padding-inline: 1rem;
+  @include ui.section-container(var(--layout-content-width));
 }
 
 .hero {
   position: relative;
-  min-height: 520px;
+  min-height: var(--hero-height-desktop);
   overflow: hidden;
   border-bottom: 1px solid rgba(246, 241, 232, 0.2);
 }
@@ -46,27 +46,14 @@
 }
 
 .backButton {
+  @include ui.secondary-button;
   position: absolute;
   top: 1.6rem;
   left: 1rem;
-  display: inline-flex;
-  align-items: center;
   gap: 0.55rem;
-  padding: 0.6rem 0.95rem;
-  border: 1px solid rgba(246, 241, 232, 0.45);
-  border-radius: 999px;
   background: rgba(31, 29, 30, 0.38);
-  color: #f6f1e8;
-  font-family: "Inter", sans-serif;
   font-size: 0.92rem;
-  font-weight: 500;
-  line-height: 1;
-  cursor: pointer;
   backdrop-filter: blur(4px);
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease;
 }
 
 .backButton:hover {
@@ -84,14 +71,35 @@
   max-width: 420px;
 }
 
+.heroReveal {
+  @include ui.hero-reveal-base;
+}
+
+.heroRevealVisible {
+  @include ui.hero-reveal-visible;
+}
+
+.heroRevealDelay1 {
+  transition-delay: 0.08s;
+}
+
+.heroRevealDelay2 {
+  transition-delay: 0.18s;
+}
+
+.heroRevealDelay3 {
+  transition-delay: 0.3s;
+}
+
+.heroRevealDelay4 {
+  transition-delay: 0.38s;
+}
+
 .title {
-  margin: 0;
-  color: #fbdca6;
-  font-family: "Playfair Display", serif;
+  @include ui.hero-title;
   font-size: clamp(3rem, 5vw, 5rem);
   line-height: 0.96;
   letter-spacing: -0.04em;
-  text-shadow: 0 6px 22px rgba(0, 0, 0, 0.34);
 }
 
 .heroBadge {
@@ -145,6 +153,12 @@
 
 .categoryTag.boisson {
   background: rgba(58, 138, 154, 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroReveal {
+    @include ui.hero-reveal-reduced-motion;
+  }
 }
 
 .metaStrip {
@@ -210,12 +224,12 @@
 }
 
 .mainSection {
-  padding: 2rem 0 3.5rem;
+  padding: var(--section-space) 0 3.5rem;
 }
 
 .layout {
   display: grid;
-  gap: 2rem;
+  gap: 2.25rem;
 }
 
 .section {
@@ -247,13 +261,9 @@
 }
 
 .sectionTitle {
-  margin: 0;
+  @include ui.section-title;
   white-space: nowrap;
-  color: #f0d29a;
-  font-family: "Playfair Display", serif;
   font-size: clamp(2rem, 3vw, 2.45rem);
-  font-weight: 500;
-  line-height: 1;
 }
 
 .sectionLine {
@@ -623,6 +633,10 @@
 
   .similarGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .sectionHeading {
     gap: 0.75rem;
   }
 }

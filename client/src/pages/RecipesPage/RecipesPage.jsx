@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import styles from "./RecipesPage.module.scss";
 import RecipeCard from "../../components/RecipeCard";
+import useHeroReveal from "../../hooks/useHeroReveal";
 import { getRecipesCatalog } from "../../services/recipesService";
 
 const FILTERS = [
@@ -113,6 +114,7 @@ export default function RecipesPage() {
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth <= 767);
   const searchRef = useRef(null);
+  const isHeroVisible = useHeroReveal();
 
   const categoryParam = searchParams.get("category")?.toLowerCase() || "";
   const activeFilter = CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
@@ -337,20 +339,25 @@ export default function RecipesPage() {
 
         <div className={styles.heroOverlay} />
 
-        <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>
-            Cuisine le cinéma,
-            <br />
-            Savoure les séries.
-          </h1>
+        <div className={styles.heroInner}>
+          <div className={styles.heroContent}>
+            <h1 className={`${styles.heroTitle} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>
+              Cuisine le cinéma,
+              <br />
+              Savoure les séries.
+            </h1>
 
-          <p className={styles.heroSubtitle}>
-            Découvre le catalogue complet des recettes inspirées des films et séries cultes.
-          </p>
+            <p className={`${styles.heroSubtitle} ${styles.heroReveal} ${styles.heroRevealDelay2} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>
+              Découvre le catalogue complet des recettes inspirées des films et séries cultes.
+            </p>
 
-          <Link className={styles.cta} to="/contact">
-            Nous contacter
-          </Link>
+            <Link
+              className={`${styles.cta} ${styles.heroReveal} ${styles.heroRevealDelay3} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              to="/contact"
+            >
+              Nous contacter
+            </Link>
+          </div>
         </div>
       </section>
 

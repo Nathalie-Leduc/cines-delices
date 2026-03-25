@@ -141,14 +141,14 @@ export const createRecipe = async (req, res) => {
         update: {
           titre: normalizedTitle,
           type: mediaType,
-          posterUrl: imageUrl || undefined,
+          // Ne pas écraser le posterUrl TMDB avec l'image uploadée de la recette
         },
         create: {
           tmdbId,
           titre: normalizedTitle,
           slug: mediaSlug,
           type: mediaType,
-          posterUrl: imageUrl || null,
+          posterUrl: null,
         },
       });
 
@@ -171,6 +171,7 @@ export const createRecipe = async (req, res) => {
       data: {
         titre,
         slug: recipeSlug,
+        imageURL: imageUrl || null,
         instructions: normalizedInstructions,
         userId,
         categoryId,
@@ -429,14 +430,14 @@ export const updateRecipe = async (req, res) => {
         update: {
           titre: normalizedTitle,
           type: mediaType,
-          posterUrl: imageUrl || undefined,
+          // Ne pas écraser le posterUrl TMDB avec l'image uploadée de la recette
         },
         create: {
           tmdbId,
           titre: normalizedTitle,
           slug: mediaSlug,
           type: mediaType,
-          posterUrl: imageUrl || null,
+          posterUrl: null,
         },
       });
 
