@@ -71,6 +71,7 @@ function AdminRecettes() {
     tempsCuisson: '',
     etapes: [''],
     image: '',
+    imageFile: null,
   });
   const [filmResults, setFilmResults] = useState([]);
   const [filmSearchLoading, setFilmSearchLoading] = useState(false);
@@ -165,6 +166,7 @@ function AdminRecettes() {
         ? recipe.etapes 
         : (recipe.instructions?.split('\n') || [''] ),
       image: recipe.image || '',
+      imageFile: null,
     });
     setFilmResults([]);
     setFilmSearchError('');
@@ -181,6 +183,7 @@ function AdminRecettes() {
       ...prev,
       [field]: value,
       ...(field === 'movie' ? { movieId: null, selectedTmdbMedia: null } : {}),
+      ...(field === 'image' ? { imageFile: null } : {}),
     }));
     if (error) setError('');
   }
@@ -366,18 +369,27 @@ function AdminRecettes() {
     setEditDraft(prev => ({ ...prev, etapes: prev.etapes.filter((_, i) => i !== index) }));
   }
 
-  function isPngFile(file) {
-    return Boolean(file) && (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png'));
+  function isAllowedImageFile(file) {
+    if (!file) {
+      return false;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    return ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+      || lowerName.endsWith('.png')
+      || lowerName.endsWith('.jpg')
+      || lowerName.endsWith('.jpeg')
+      || lowerName.endsWith('.webp');
   }
 
   function handleImageChange(file) {
     if (!file) return;
-    if (!isPngFile(file)) {
-      setEditImageError('Veuillez utiliser une image .png.');
+    if (!isAllowedImageFile(file)) {
+      setEditImageError('Veuillez utiliser une image .png, .jpg, .jpeg ou .webp.');
       return;
     }
     setEditImageError('');
-    setEditDraft(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+    setEditDraft(prev => ({ ...prev, imageFile: file }));
   }
 
   function openEditConfirmModal() {
@@ -393,7 +405,7 @@ function AdminRecettes() {
     setError('');
 
     // Appel API pour sauvegarder les modifications
-    updateAdminRecipe(editDraft.id, {
+    const payload = {
       titre: editDraft.title,
       instructions: editDraft.etapes.filter(Boolean).join('\n'),
       nombrePersonnes: editDraft.nbPersonnes,
@@ -401,6 +413,7 @@ function AdminRecettes() {
       tempsCuisson: editDraft.tempsCuisson,
       categoryId: editDraft.categoryId,
       categoryName: editDraft.category,
+      imageUrl: String(editDraft.image || '').trim() || undefined,
       ingredients: editDraft.ingredients,
       ...(editDraft.selectedTmdbId
         ? {
@@ -409,7 +422,31 @@ function AdminRecettes() {
             mediaType: editDraft.media,
           }
         : editDraft.movieId ? { mediaId: editDraft.movieId } : {}),
-    })
+    };
+
+    let requestBody = payload;
+
+    if (editDraft.imageFile instanceof File) {
+      const formData = new FormData();
+      formData.append('titre', payload.titre);
+      formData.append('instructions', payload.instructions);
+      formData.append('categoryId', String(payload.categoryId || ''));
+      formData.append('categoryName', String(payload.categoryName || ''));
+      formData.append('ingredients', JSON.stringify(payload.ingredients || []));
+      formData.append('image', editDraft.imageFile);
+
+      if (payload.nombrePersonnes) formData.append('nombrePersonnes', String(payload.nombrePersonnes));
+      if (payload.tempsPreparation) formData.append('tempsPreparation', String(payload.tempsPreparation));
+      if (payload.tempsCuisson) formData.append('tempsCuisson', String(payload.tempsCuisson));
+      if (payload.tmdbId) formData.append('tmdbId', String(payload.tmdbId));
+      if (payload.mediaTitle) formData.append('mediaTitle', String(payload.mediaTitle));
+      if (payload.mediaType) formData.append('mediaType', String(payload.mediaType));
+      if (payload.mediaId) formData.append('mediaId', String(payload.mediaId));
+
+      requestBody = formData;
+    }
+
+    updateAdminRecipe(editDraft.id, requestBody)
       .then((updatedRecipe) => {
         // Mettre à jour la recette dans la liste avec tous les champs
         setRecipes(prev => prev.map(recipe =>
@@ -790,11 +827,11 @@ function AdminRecettes() {
               </div>
 
               <label className={styles.adminEditLabel}>
-                Image (.png)
+                Image (.png, .jpg, .jpeg, .webp)
                 <input
                   className={styles.adminEditInput}
                   type="file"
-                  accept=".png,image/png"
+                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
                   onChange={e => handleImageChange(e.target.files?.[0])}
                 />
               </label>

@@ -119,6 +119,9 @@ function mapMemberRecipeToCard(recipe) {
   const mediaType = String(recipe?.type || '').toUpperCase() === 'F' ? 'film' : 'serie';
   const durationValue = String(recipe?.temps || '').match(/\d+/);
   const duration = durationValue ? Number(durationValue[0]) : 0;
+  const primaryImage = recipe?.image || '/img/hero-home.png';
+  const mediaPoster = recipe?.media?.posterUrl || '';
+  const fallbackImage = mediaPoster && mediaPoster !== primaryImage ? mediaPoster : '/img/hero-home.png';
 
   return {
     id: recipe?.id,
@@ -128,8 +131,8 @@ function mapMemberRecipeToCard(recipe) {
     mediaTitle: recipe?.film || 'Sans média',
     mediaType,
     duration,
-    image: recipe?.image || '/img/hero-home.png',
-    fallbackImage: recipe?.image || '/img/hero-home.png',
+    image: primaryImage,
+    fallbackImage,
   };
 }
 
@@ -353,6 +356,7 @@ export default function MesRecettes() {
     filmId: null,
     film: '',
     image: '',
+    imageFile: null,
     tempsPreparation: '',
     tempsCuisson: '',
     nbPersonnes: '',
@@ -418,6 +422,7 @@ export default function MesRecettes() {
       filmId: recette.filmId || null,
       film: recette.film,
       image: recette.image,
+      imageFile: null,
       tempsPreparation: recette.tempsPreparation || recette.temps || '',
       tempsCuisson: recette.tempsCuisson || '',
       nbPersonnes: recette.nbPersonnes || '',
@@ -449,6 +454,7 @@ export default function MesRecettes() {
       ...prev,
       [field]: value,
       ...(field === 'film' ? { filmId: null } : {}),
+      ...(field === 'image' ? { imageFile: null } : {}),
     }));
   }
 
@@ -608,9 +614,18 @@ export default function MesRecettes() {
     }
   }
 
-  // Validation minimaliste: seules les images PNG sont acceptées dans l'éditeur.
-  function isPngFile(file) {
-    return Boolean(file) && (file.type === 'image/png' || file.name.toLowerCase().endsWith('.png'));
+  // Validation minimale: images PNG, JPG, JPEG et WEBP acceptees dans l'editeur.
+  function isAllowedImageFile(file) {
+    if (!file) {
+      return false;
+    }
+
+    const lowerName = file.name.toLowerCase();
+    return ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+      || lowerName.endsWith('.png')
+      || lowerName.endsWith('.jpg')
+      || lowerName.endsWith('.jpeg')
+      || lowerName.endsWith('.webp');
   }
 
   // Stocke un aperçu local de l'image sélectionnée pour feedback immédiat.
@@ -619,13 +634,13 @@ export default function MesRecettes() {
       return;
     }
 
-    if (!isPngFile(file)) {
-      setEditImageError('Veuillez utiliser une image .png.');
+    if (!isAllowedImageFile(file)) {
+      setEditImageError('Veuillez utiliser une image .png, .jpg, .jpeg ou .webp.');
       return;
     }
 
     setEditImageError('');
-    setEditForm(prev => ({ ...prev, image: URL.createObjectURL(file) }));
+    setEditForm(prev => ({ ...prev, imageFile: file }));
   }
 
   // Recherche de films/séries avec normalisation des clés de réponse.
@@ -742,7 +757,49 @@ export default function MesRecettes() {
 
     try {
       setIsSavingEdit(true);
-      const response = await updateMyRecipe(editForm.id, payload);
+      let requestBody = payload;
+
+      if (editForm.imageFile instanceof File) {
+        const formData = new FormData();
+        formData.append('titre', payload.titre);
+        formData.append('categorie', payload.categorie);
+        formData.append('instructions', payload.instructions);
+        formData.append('etapes', JSON.stringify(payload.etapes));
+        formData.append('ingredients', JSON.stringify(payload.ingredients));
+        formData.append('image', editForm.imageFile);
+
+        if (payload.nombrePersonnes !== undefined) {
+          formData.append('nombrePersonnes', String(payload.nombrePersonnes));
+        }
+
+        if (payload.tempsPreparation !== undefined) {
+          formData.append('tempsPreparation', String(payload.tempsPreparation));
+        }
+
+        if (payload.tempsCuisson !== undefined) {
+          formData.append('tempsCuisson', String(payload.tempsCuisson));
+        }
+
+        if (payload.mediaId) {
+          formData.append('mediaId', String(payload.mediaId));
+        }
+
+        if (payload.filmId) {
+          formData.append('filmId', String(payload.filmId));
+        }
+
+        if (payload.film) {
+          formData.append('film', payload.film);
+        }
+
+        if (payload.type) {
+          formData.append('type', payload.type);
+        }
+
+        requestBody = formData;
+      }
+
+      const response = await updateMyRecipe(editForm.id, requestBody);
       const updatedRecipe = normalizeRecipe(response?.recipe || response?.data || response);
 
       setRecipes(prev => prev.map(recette => (
@@ -1084,11 +1141,11 @@ export default function MesRecettes() {
               </div>
 
               <label className={styles.editLabel}>
-                Image (.png)
+                Image (.png, .jpg, .jpeg, .webp)
                 <input
                   className={styles.editInput}
                   type="file"
-                  accept=".png,image/png"
+                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
                   onChange={e => handleEditImageChange(e.target.files?.[0])}
                 />
               </label>

@@ -5,6 +5,55 @@ import RecipeCard from '../../components/RecipeCard';
 import { approveAdminRecipe, getPendingRecipes, rejectAdminRecipe } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+function normalizeImageUrl(value) {
+  const rawValue = String(value || '').trim();
+  if (!rawValue) {
+    return '';
+  }
+
+  if (rawValue.startsWith('/')) {
+    return `${API_BASE_URL}${rawValue}`;
+  }
+
+  try {
+    const parsed = new URL(rawValue);
+    const apiOrigin = new URL(API_BASE_URL).origin;
+    const isLocalhostSource = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+
+    if (isLocalhostSource && parsed.origin !== apiOrigin) {
+      return `${apiOrigin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    }
+
+    return rawValue;
+  } catch {
+    return rawValue;
+  }
+}
+
+function getRecipeImage(recipe) {
+  const image = recipe?.image || recipe?.imageURL || recipe?.imageUrl || '';
+  return normalizeImageUrl(image);
+}
+
+function getMediaPoster(recipe) {
+  const poster = recipe?.mediaPoster || recipe?.poster || recipe?.media?.posterUrl || '';
+  return normalizeImageUrl(poster);
+}
+
+function handleImageError(event) {
+  const target = event.currentTarget;
+  const fallbackSrc = target.dataset.fallbackSrc || '/img/hero-home.png';
+
+  if (target.src !== fallbackSrc) {
+    target.src = fallbackSrc;
+    return;
+  }
+
+  target.onerror = null;
+}
+
 function getDurationMinutes(duration) {
   if (typeof duration === 'number' && Number.isFinite(duration)) {
     return duration;
@@ -85,6 +134,15 @@ function AdminDashboard() {
     { label: 'Dessert', count: counters.Dessert || 0, countClass: styles.countDessert },
     { label: 'Boisson', count: counters.Boisson || 0, countClass: styles.countBoisson },
   ]), [pendingRecipes.length, counters]);
+
+  const selectedRecipeHeroImage = selectedRecipe ? getRecipeImage(selectedRecipe) : '';
+  const selectedRecipeMediaPoster = selectedRecipe ? getMediaPoster(selectedRecipe) : '';
+  const selectedRecipeHeroFallback = selectedRecipeMediaPoster && selectedRecipeMediaPoster !== selectedRecipeHeroImage
+    ? selectedRecipeMediaPoster
+    : '/img/hero-home.png';
+  const selectedRecipeMediaFallback = selectedRecipeHeroImage && selectedRecipeHeroImage !== selectedRecipeMediaPoster
+    ? selectedRecipeHeroImage
+    : '/img/parrain-poster.png';
 
   async function handleApprove() {
     if (!selectedRecipe) {
@@ -167,10 +225,13 @@ function AdminDashboard() {
           <div className={styles.recipesGridExact}>
             {filteredPendingRecipes.map((recipe) => {
               const slug = recipe.slug || String(recipe.id);
+              const primaryImage = getRecipeImage(recipe);
+              const fallbackImage = getMediaPoster(recipe) || '/img/hero-home.png';
               const recipeForCatalogCard = {
                 id: recipe.id,
                 slug,
-                image: recipe.image || '/img/placeholder.jpg',
+                image: primaryImage || fallbackImage || '/img/placeholder.jpg',
+                fallbackImage,
                 title: recipe.title,
                 category: recipe.category,
                 mediaTitle: recipe.movie || 'Film non renseigné',
@@ -208,7 +269,12 @@ function AdminDashboard() {
         <>
           <article className={styles.heroRecipe}>
             <div className={styles.heroImage}>
-              <img src={selectedRecipe.image} alt="Illustration de la recette en attente" />
+              <img
+                src={selectedRecipeHeroImage || selectedRecipeHeroFallback}
+                alt="Illustration de la recette en attente"
+                data-fallback-src={selectedRecipeHeroFallback}
+                onError={handleImageError}
+              />
               <div className={styles.heroText}>
                 <h3>{selectedRecipe.title}</h3>
                 <p>L’esprit du film {selectedRecipe.movie}</p>
@@ -253,7 +319,12 @@ function AdminDashboard() {
               <div>
                 <div className={styles.sideMedia}>
                   <div className={styles.sideMediaRow}>
-                    <img src={selectedRecipe.image} alt="Média associé" />
+                    <img
+                      src={selectedRecipeMediaPoster || selectedRecipeMediaFallback}
+                      alt="Média associé"
+                      data-fallback-src={selectedRecipeMediaFallback}
+                      onError={handleImageError}
+                    />
                     <p>{selectedRecipe.movie}<br />Synopsis<br />Recette en attente de validation.</p>
                   </div>
                 </div>

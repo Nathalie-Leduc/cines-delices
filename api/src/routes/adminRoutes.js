@@ -21,6 +21,7 @@ import {
 } from "../controllers/adminController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
+import { handleRecipeImageUpload, parseRecipeMultipartFields } from '../middlewares/recipeImageUploadMiddleware.js';
 import { validate } from '../middlewares/validateMiddleware.js';
 import { publishRecipeSchema, rejectRecipeSchema } from '../validators/adminValidator.js';
 
@@ -31,7 +32,7 @@ router.use(authMiddleware, adminMiddleware);
 
 router.get('/recipes', getAdminRecipes);
 router.get('/recipes/pending', getPendingRecipes);
-router.patch('/recipes/:id', updateAdminRecipe);
+router.patch('/recipes/:id', handleRecipeImageUpload, parseRecipeMultipartFields, updateAdminRecipe);
 router.patch('/recipes/:id/publish', validate(publishRecipeSchema), publishRecipe);
 router.patch('/recipes/:id/reject', validate(rejectRecipeSchema), rejectRecipe);
 router.delete('/recipes/:id', deleteRecipe);
