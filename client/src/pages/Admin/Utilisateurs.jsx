@@ -33,7 +33,7 @@ function AdminUtilisateurs() {
     return users.filter((user) => {
       return `${user.nom} ${user.displayName || user.prenom || ''} ${user.email}`.toLowerCase().includes(normalizedQuery);
     });
-  }, [query]);
+  }, [query, users]);
 
   async function handleDeleteUser() {
     if (!selectedUser) return;

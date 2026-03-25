@@ -4,6 +4,7 @@ import styles from './MembreInterface.module.scss';
 
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
 const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
+const ADMIN_PENDING_RECIPES_API = import.meta.env.VITE_ADMIN_RECIPES_API || 'http://localhost:3000/api/admin/recipes/pending';
 const USER_NOTIFICATIONS_API = import.meta.env.VITE_NOTIFICATIONS_API || 'http://localhost:3000/api/users/me/notifications';
 
 // Décode le payload d'un JWT stocké dans le localStorage sans bibliothèque externe
@@ -21,6 +22,9 @@ export default function Membre() {
 
   // Nombre de recettes de l'utilisateur, mis à jour après l'appel API
   const [recipeCount, setRecipeCount] = useState(0);
+
+  // Rôle de l'utilisateur (ADMIN ou MEMBER)
+  const [userRole, setUserRole] = useState('');
 
   // E-mail de l'utilisateur connecté, extrait du JWT
   const [userEmail, setUserEmail] = useState('');
@@ -81,15 +85,25 @@ export default function Membre() {
     }
   }
 
-  // Au montage : lit l'e-mail depuis le JWT et récupère le nombre de recettes via l'API
+  // Au montage : lit l'e-mail et le rôle depuis le JWT et récupère le nombre de recettes via l'API
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      console.warn('❌ Pas de token trouvé');
+      return;
+    }
 
-    // Extrait l'e-mail directement depuis le payload du token
+    // Extrait l'e-mail et le rôle directement depuis le payload du token
     const payload = parseJwtPayload(token);
+    console.log('✅ JWT Payload:', { email: payload?.email, role: payload?.role });
+    
     if (payload?.email) {
       setUserEmail(payload.email);
+    }
+    // Extraire et stocker le rôle depuis le JWT
+    if (payload?.role) {
+      setUserRole(payload.role);
+      console.log('✅ Rôle détecté:', payload.role);
     }
 
     if (!userName) {
@@ -126,19 +140,28 @@ export default function Membre() {
       }
     };
 
-    // Appel API pour récupérer les recettes et en compter le total
+    // Appel API pour récupérer les recettes : adapté selon le rôle
     const fetchRecipes = async () => {
       try {
-        const response = await fetch(USER_RECIPES_API, {
+        // Pour les admins : récupérer les recettes en attente (modération)
+        // Pour les membres : récupérer leurs recettes personnelles
+        // ATTENTION: 'payload' est le JWT payload défini dans le useEffect scope
+        const isAdmin = payload?.role === 'ADMIN';
+        const recipesUrl = isAdmin ? ADMIN_PENDING_RECIPES_API : USER_RECIPES_API;
+
+        const response = await fetch(recipesUrl, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!response.ok) throw new Error('Erreur lors de la récupération des recettes');
 
-        const payload = await response.json();
-        const recipes = Array.isArray(payload?.data) ? payload.data : [];
+        const apiResponse = await response.json();
+        // Les deux endpoints retournent directement un tableau
+        const recipes = Array.isArray(apiResponse) ? apiResponse : [];
+        console.log('✅ Recettes chargées:', recipes.length, 'recette(s)');
         setRecipeCount(recipes.length);
       } catch (error) {
-        console.error('Erreur fetchRecipes:', error);
+        console.error('❌ Erreur fetchRecipes:', error);
+        setRecipeCount(0);
       }
     };
 
@@ -166,14 +189,16 @@ export default function Membre() {
     fetchNotifications();
   }, []);
 
-  // Éléments du menu de navigation du compte membre
+  // Éléments du menu de navigation du compte membre (adapté selon le rôle)
   const menuItems = [
     {
       icon: '/icon/Recipes.svg',
-      label: 'Mes recettes',
+      // Pour admin : "Recettes en attente", pour membre : "Mes recettes"
+      label: userRole === 'ADMIN' ? 'Recettes en attente' : 'Mes recettes',
       // Affiche le nombre réel de recettes récupéré depuis l'API
       sub: `${recipeCount} recette${recipeCount > 1 ? 's' : ''}`,
-      path: '/membre/mes-recettes',
+      // Pour admin : rediriger vers le tableau admin, pour membre : vers ses recettes
+      path: userRole === 'ADMIN' ? '/admin' : '/membre/mes-recettes',
     },
     {
       icon: '/icon/Message_fill.svg',

@@ -101,7 +101,14 @@ function AdminDashboard() {
       setSelectedRecipe(null);
       setShowValidateModal(false);
     } catch (approveError) {
-      setError(approveError.message || 'Validation impossible.');
+      const message = approveError.message || 'Validation impossible.';
+      setError(message);
+
+      // Si la recette est bloquée par des ingrédients non approuvés,
+      // on ferme la modale pour n'afficher que le message d'erreur.
+      if (/ingr[ée]dient[s]?/i.test(message) && /approuv/i.test(message)) {
+        setShowValidateModal(false);
+      }
     }
   }
 
