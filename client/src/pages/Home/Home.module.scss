@@ -196,8 +196,13 @@
 
 @media (min-width: 1200px) {
   .latestSection {
-    padding-right: 15%;
-    padding-left: 15%;
+    padding-right: 4%;
+    padding-left: 4%;
+  }
+
+  .latestGrid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.85rem;
   }
 
   .hero {
