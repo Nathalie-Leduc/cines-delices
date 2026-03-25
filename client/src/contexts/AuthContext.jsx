@@ -1,4 +1,8 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+// 🔧 MODIF : ajout de useCallback dans les imports
+//    Avant  : import { createContext, useContext, useMemo, useState } from 'react';
+//    Après  : on ajoute useCallback pour stabiliser login/logout
+
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 const AUTH_TOKEN_KEY = 'token';
 const AUTH_USER_KEY = 'auth_user';
@@ -78,10 +82,22 @@ function normalizeDisplayName(user) {
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
 }
 
+// ──────────────────────────────────────────────────────────────────────
+  //  MODIF : login enveloppé dans useCallback
+  //
+  //  Pourquoi ? Avant, login était une simple fonction recréée à chaque
+  //  render du composant. Le useMemo qui construit `value` ne listait
+  //  que [authState] en dépendance, donc il pouvait capturer une
+  //  "vieille copie" de login/logout (closure périmée).
+  //  useCallback garantit que la référence reste stable
+  //  [] = pas de dépendances car on utilise setAuthState (stable par
+  //  défaut dans React) et les fonctions utilitaires sont définies
+  //  en dehors du composant.
+
 export function AuthProvider({ children }) {
   const [authState, setAuthState] = useState(getInitialAuthState);
 
-  const login = ({ token, user = null }) => {
+  const login = useCallback(({ token, user = null }) => {
     const normalizedToken = token?.startsWith('Bearer ') ? token.slice(7) : token;
 
     if (!normalizedToken || !isJwtValid(normalizedToken)) {
@@ -104,17 +120,23 @@ export function AuthProvider({ children }) {
     }
 
     window.dispatchEvent(new Event('user-display-name-updated'));
-
     setAuthState({ token: normalizedToken, user, isAuthenticated: true });
-  };
+  }, []);
 
-  const logout = () => {
+  // ──────────────────────────────────────────────────────────────────────
+  //  MODIF : logout enveloppé dans useCallback
+  //
+  //  Même raison que login : on stabilise la référence pour que le
+  //  useMemo ci-dessous ne capture jamais une version périmée.
+  // ──────────────────────────────────────────────────────────────────────
+
+  const logout = useCallback(() => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
     localStorage.removeItem(DISPLAY_NAME_KEY);
     window.dispatchEvent(new Event('user-display-name-updated'));
     setAuthState({ token: null, user: null, isAuthenticated: false });
-  };
+   }, []);
 
   const value = useMemo(() => {
     const tokenPayload = decodeJwtPayload(authState.token);
@@ -127,8 +149,14 @@ export function AuthProvider({ children }) {
       login,
       logout,
     };
-  }, [authState]);
+  }, [authState, login, logout]);
 
+// 🔧 MODIF : ajout de login et logout dans les dépendances du useMemo
+  //    Avant  : [authState]
+  //    Après  : [authState, login, logout]
+  //    Grâce au useCallback, ces références sont stables donc le useMemo
+  //    ne se recalcule pas inutilement, mais il a toujours la bonne version.
+  
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

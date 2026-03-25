@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MembreInterface.module.scss';
 
+// ──────────────────────────────────────────────────────────────────────────
+//  MODIF : import du hook useAuth pour accéder au contexte d'authentification
+//  Avant  : pas d'import, le composant gérait la déconnexion tout seul
+//           en supprimant manuellement le token dans le localStorage.
+//  Après  : on passe par le contexte qui centralise tout (comme la Navbar).
+// ──────────────────────────────────────────────────────────────────────────
+import { useAuth } from '../../contexts/AuthContext.jsx';
+
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
 const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
 const ADMIN_PENDING_RECIPES_API = import.meta.env.VITE_ADMIN_RECIPES_API || 'http://localhost:3000/api/admin/recipes/pending';
@@ -19,6 +27,13 @@ function parseJwtPayload(token) {
 
 export default function Membre() {
   const navigate = useNavigate();
+
+   // ──────────────────────────────────────────────────────────────────────
+  // 🔧 MODIF : on récupère logout depuis le contexte AuthContext
+  //    Avant  : pas de useAuth(), le logout se faisait manuellement
+  //    Après  : logout() vide le state React ET le localStorage d'un coup
+  // ──────────────────────────────────────────────────────────────────────
+   const { logout } = useAuth();
 
   // Nombre de recettes de l'utilisateur, mis à jour après l'appel API
   const [recipeCount, setRecipeCount] = useState(0);
@@ -221,9 +236,22 @@ export default function Membre() {
     },
   ];
 
+
+  // ──────────────────────────────────────────────────────────────────────
+  // 🔧 MODIF : handleLogout passe par le contexte AuthContext
+  //
+  //    Avant  : localStorage.removeItem('token') → supprimait le token
+  //             mais l'AuthContext ne savait pas que l'utilisateur s'était
+  //             déconnecté → la Navbar affichait toujours "Bonjour Marie"
+  //
+  //    Après  : logout() du contexte fait TOUT d'un coup :
+  //             - supprime token, auth_user et displayName du localStorage
+  //             - remet isAuthenticated à false dans le state React
+  //             - la Navbar se re-rend automatiquement avec "Se connecter"
   // Supprime le token JWT et redirige vers l'accueil
+  // ──────────────────────────────────────────────────────────────────────
   function handleLogout() {
-    localStorage.removeItem('token');
+    logout();
     navigate('/');
   }
 
@@ -232,7 +260,7 @@ export default function Membre() {
       <h1 className={styles.title}>Mon compte</h1>
       <p className={styles.welcome}>
         Bonjour <strong>{userName}</strong>,<br />
-        Bienvenue chez Ciné Délices !
+        Bienvenue chez Cinés Délices !
       </p>
 
       <section className={styles.notificationsCard} aria-label="Notifications membre">
