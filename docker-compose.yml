@@ -7,14 +7,14 @@ services:
       - api_node_modules:/app/node_modules
     env_file:
       - ./api/.env
-    environment:
-      DATABASE_URL: postgresql://cinesdelices:cinesdelices@db:5432/cinesdelices
     ports:
       - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npm install && npx prisma generate && npx prisma migrate deploy && npm run dev"
+    # prisma db push synchronise le schéma sans créer de fichiers de migration (idéal en dev)
+    # remplacer par "npx prisma migrate deploy" quand vous utilisez les migrations
+    command: sh -c "npm install && npx prisma generate && npx prisma db push && npm run dev"
 
   client:
     image: node:24-alpine
@@ -33,7 +33,7 @@ services:
       POSTGRES_PASSWORD: cinesdelices
       POSTGRES_DB: cinesdelices
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
