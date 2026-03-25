@@ -75,6 +75,10 @@ export const registerSchema = z.object({
       .optional(),
 
     password: passwordSchema,
+
+    acceptedPolicies: z
+      .boolean({ required_error: 'Vous devez accepter la politique de confidentialité et la politique de cookies' })
+      .refine(value => value === true, 'Vous devez accepter la politique de confidentialité et la politique de cookies'),
   }),
 });
 
