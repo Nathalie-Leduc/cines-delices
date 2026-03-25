@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
 *,
 *::before,
 *::after {
@@ -6,8 +8,63 @@
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
-  font-family: system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-  color: #1a1a1a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background:
+    linear-gradient(rgba(31, 29, 30, 0.94), rgba(31, 29, 30, 0.94)),
+    url('/img/rocky-wall.png') center/cover fixed;
+  color: #f6f1e8;
+  line-height: 1.6;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Playfair Display', serif;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+main {
+  min-height: calc(100vh - 120px);
+  background:
+    linear-gradient(rgba(31, 29, 30, 0.94), rgba(31, 29, 30, 0.94)),
+    url('/img/rocky-wall.png') center/cover;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(246, 241, 232, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(201, 164, 92, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 164, 92, 0.6);
 }
