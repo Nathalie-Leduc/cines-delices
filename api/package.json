@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "node prisma/seed.js",
+   
+    
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset --force && node prisma/seed.js",
