@@ -1,8 +1,24 @@
+// ──────────────────────────────────────────────────────────────────────────
+//  MODIFICATIONS F-07 :
+//   1. Import useAuth + logout via contexte (même fix que MemberInterface)
+//   2. Ajout fonction handleSubmitRecipe pour soumettre un brouillon
+//   3. Bouton "Soumettre" visible uniquement si status === 'DRAFT'
+//   4. Bouton "Modifier" désactivé si status === 'PENDING'
+// ──────────────────────────────────────────────────────────────────────────
+
+
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
 import { deleteMyRecipe, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
+// ──────────────────────────────────────────────────────────────────────────
+//  MODIF 1 : import du hook useAuth
+//  Avant  : pas d'import, le logout se faisait manuellement via localStorage
+//  Après  : on passe par le contexte AuthContext (même pattern que Navbar
+//             et MemberInterface) pour que la déconnexion soit cohérente partout.
+// ──────────────────────────────────────────────────────────────────────────
+import { useAuth } from '../../contexts/AuthContext.jsx' 
 
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
@@ -154,6 +170,12 @@ function getRecipeModerationBadge(recipe) {
 
 export default function MesRecettes() {
   const navigate = useNavigate();
+  // ──────────────────────────────────────────────────────────────────────
+  //  MODIF 1 (suite) : on récupère logout depuis le contexte
+  //  Avant  : pas de useAuth()
+  //  Après  : logout() vide le state React ET le localStorage d'un coup
+  // ──────────────────────────────────────────────────────────────────────
+  const { logout } = useAuth ();
   const [recipes, setRecipes] = useState([]);
   const [userDisplayName, setUserDisplayName] = useState(localStorage.getItem('displayName') || '');
   const [userEmail, setUserEmail] = useState('');
@@ -746,10 +768,42 @@ export default function MesRecettes() {
   }
 
   // Déconnexion utilisateur locale.
+  // ──────────────────────────────────────────────────────────────────────
+  //  MODIF 1 (fin) : handleLogout passe par le contexte AuthContext
+  //
+  //   Avant  : localStorage.removeItem('token') → ne vidait pas le state
+  //             React → la Navbar affichait toujours "Bonjour Marie"
+  //
+  //   Après  : logout() du contexte fait tout d'un coup :
+  //             - supprime token, auth_user, displayName du localStorage
+  //             - remet isAuthenticated à false dans le state React
+  //             - la Navbar se re-rend automatiquement avec "Se connecter"
+  // ──────────────────────────────────────────────────────────────────────
   function handleLogout() {
-    localStorage.removeItem('token');
+    logout()
     navigate('/');
   }
+
+ // ──────────────────────────────────────────────────────────────────────
+  //  MODIF 2 : nouvelle fonction handleSubmitRecipe
+  //
+  //   Permet de soumettre un brouillon (DRAFT) pour validation admin.
+  //   Envoie un PATCH à l'API avec le status 'PENDING', puis met à jour
+  //   la recette localement pour un feedback immédiat sans recharger.
+  //   Le ticket passe de "en préparation"
+  //    (DRAFT) à "en attente de validation" (PENDING).
+  // ──────────────────────────────────────────────────────────────────────
+  async function handleSubmitRecipe(recipeId) {
+  try {
+    await updateMyRecipe(recipeId, { status: 'PENDING' });
+    setRecipes(prev => prev.map(r =>
+      r.id === recipeId ? { ...r, status: 'PENDING' } : r
+    ));
+  } catch (err) {
+    setError(err?.message || 'Impossible de soumettre la recette.');
+  }
+}
+
 
   return (
     <div className={styles.mesRecettes}>
@@ -1226,11 +1280,41 @@ export default function MesRecettes() {
                       );
                     })()}
                     <div className={styles.cardActionsFloating}>
-                      <button
+                      {/* ──────────────────────────────────────────────────
+                           MODIF 3 : bouton "Soumettre" visible si DRAFT
+                          
+                          Affiche un bouton pour soumettre la recette à
+                          l'admin quand elle est en brouillon. Le clic
+                          appelle handleSubmitRecipe qui envoie un PATCH
+                          et met à jour le badge localement.
+                      ────────────────────────────────────────────────── */}
+                      {String(recette.status || '').toUpperCase() === 'DRAFT' && (
+                        <button
+                          type="button"
+                          className={styles.actionBtn}
+                          aria-label={`Soumettre la recette ${recette.titre} pour validation`}
+                          onClick={() => handleSubmitRecipe(recette.id)}
+                        >
+                          Soumettre
+                        </button>
+                      )}
+
+                      {/* ──────────────────────────────────────────────────
+                           MODIF 4 : bouton "Modifier" désactivé si PENDING
+                          
+                          Avant  : toujours cliquable
+                          Après  : disabled quand status === 'PENDING'
+                          
+                          On ne peut pas modifier une recette qui est en
+                          cours de validation par l'admin.
+                      ────────────────────────────────────────────────── */}
+
+                       <button
                         type="button"
                         className={styles.actionBtn}
                         aria-label={`Modifier la recette ${recette.titre}`}
                         onClick={() => handleEditClick(recette)}
+                        disabled={String(recette.status || '').toUpperCase() === 'PENDING'}
                       >
                         <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
                       </button>
