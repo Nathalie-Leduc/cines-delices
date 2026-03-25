@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   approveAdminRecipe,
   getAdminRecipes,
+  getAdminUsers,
   getPendingRecipes,
   rejectAdminRecipe,
+  updateAdminUserRole,
 } from '../services/adminService';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -66,6 +68,27 @@ describe('adminService', () => {
     expect(fetch).toHaveBeenCalledWith(
       `${ADMIN_API_URL}/recipes?search=bear&category=Entr%C3%A9e&status=PENDING`,
       expect.any(Object),
+    );
+  });
+
+  it('appelle GET /users avec query params', async () => {
+    await getAdminUsers('marie');
+
+    expect(fetch).toHaveBeenCalledWith(
+      `${ADMIN_API_URL}/users?search=marie`,
+      expect.any(Object),
+    );
+  });
+
+  it('appelle PATCH /users/:id/role avec le bon payload', async () => {
+    await updateAdminUserRole('user-123', 'ADMIN');
+
+    expect(fetch).toHaveBeenCalledWith(
+      `${ADMIN_API_URL}/users/user-123/role`,
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ role: 'ADMIN' }),
+      }),
     );
   });
 });

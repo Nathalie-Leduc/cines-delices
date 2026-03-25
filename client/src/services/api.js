@@ -276,6 +276,18 @@ export const getAdminUsers = () =>
  */
 export const deleteUser = (id) =>
   request(`/api/admin/users/${id}`, { method: 'DELETE' });
+
+/**
+ * Met à jour le rôle d'un utilisateur admin.
+ * @param {string|number} id - ID de l'utilisateur
+ * @param {{ role: 'ADMIN' | 'MEMBER' } | 'ADMIN' | 'MEMBER'} payload
+ * @returns {Promise<object>} Utilisateur mis à jour
+ */
+export const updateAdminUserRole = (id, payload) =>
+  request(`/api/admin/users/${id}/role`, {
+    method: 'PATCH',
+    body: typeof payload === 'string' ? { role: payload } : payload,
+  });
  
 // ── Catégories ───────────────────────────────────────────────────────────────
  
