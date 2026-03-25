@@ -313,7 +313,23 @@ export const getMyRecipes = asyncHandler(async (req, res) => {
 export const updateRecipe = async (req, res) => {
   try {
     const { id } = req.params;
-    const { titre, instructions, categoryId, mediaId, nombrePersonnes, tempsPreparation, tempsCuisson, ingredients } = req.body;
+    const {
+      titre,
+      instructions,
+      etapes,
+      categoryId: rawCategoryId,
+      categorie,
+      mediaId: rawMediaId,
+      filmId,
+      film,
+      type,
+      imageUrl,
+      nombrePersonnes,
+      nbPersonnes,
+      tempsPreparation,
+      tempsCuisson,
+      ingredients,
+    } = req.body;
     const user = req.user;
     const userId = user?.id;
 
@@ -330,75 +346,189 @@ export const updateRecipe = async (req, res) => {
       return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à modifier cette recette' });
     }
 
-    // Valider les références si fournies
-    if (categoryId) {
-      const category = await prisma.category.findUnique({ where: { id: categoryId } });
-      if (!category) {
+    const isAdminEditing = user.role === 'ADMIN';
+    const shouldResubmitForModeration = !isAdminEditing && (
+      recipe.status === 'PUBLISHED'
+      || recipe.status === 'PENDING'
+      || Boolean(recipe.rejectionReason)
+    );
+    const shouldNotifyAdminsAboutResubmission = shouldResubmitForModeration && recipe.status !== 'PENDING';
+
+    const mergedSteps = Array.isArray(etapes)
+      ? etapes.map((step) => String(step || '').trim()).filter(Boolean)
+      : [];
+    const normalizedInstructions = instructions !== undefined
+      ? String(instructions || '').trim()
+      : mergedSteps.join('\n');
+    const normalizedNombrePersonnes = nombrePersonnes ?? nbPersonnes;
+
+    let categoryId = rawCategoryId;
+
+    if (categoryId || categorie !== undefined) {
+      let category = null;
+
+      if (categoryId) {
+        category = await prisma.category.findUnique({ where: { id: categoryId } });
+      } else {
+        const normalizedCategoryName = String(categorie || '').trim();
+
+        category = await prisma.category.findFirst({
+          where: {
+            nom: {
+              equals: normalizedCategoryName,
+              mode: 'insensitive',
+            },
+          },
+        });
+
+        if (!category && normalizedCategoryName) {
+          category = await prisma.category.create({
+            data: { nom: normalizedCategoryName },
+          });
+        }
+
+        categoryId = category?.id;
+      }
+
+      if (!categoryId || !category) {
         return res.status(404).json({ message: 'Catégorie introuvable' });
       }
     }
+
+    let mediaId = rawMediaId;
 
     if (mediaId) {
       const media = await prisma.media.findUnique({ where: { id: mediaId } });
       if (!media) {
         return res.status(404).json({ message: 'Média introuvable' });
       }
+    } else if (filmId !== undefined) {
+      const tmdbId = Number(filmId);
+
+      if (!Number.isInteger(tmdbId) || tmdbId <= 0) {
+        return res.status(400).json({ message: 'Média invalide. Sélectionne un film/série depuis la recherche.' });
+      }
+
+      const normalizedTitle = String(film || '').trim();
+      if (!normalizedTitle) {
+        return res.status(400).json({ message: 'Titre du média manquant.' });
+      }
+
+      const normalizedType = String(type || '').toLowerCase();
+      const mediaType = (normalizedType === 's' || normalizedType === 'tv' || normalizedType === 'series')
+        ? 'SERIES'
+        : 'MOVIE';
+
+      const mediaSlug = await generateUniqueSlug(
+        `${normalizedTitle}-${new Date().getFullYear()}`,
+        (slug) => prisma.media.findUnique({ where: { slug } }),
+      );
+
+      const media = await prisma.media.upsert({
+        where: { tmdbId },
+        update: {
+          titre: normalizedTitle,
+          type: mediaType,
+          posterUrl: imageUrl || undefined,
+        },
+        create: {
+          tmdbId,
+          titre: normalizedTitle,
+          slug: mediaSlug,
+          type: mediaType,
+          posterUrl: imageUrl || null,
+        },
+      });
+
+      mediaId = media.id;
     }
 
     // Mettre à jour la recette
     const data = {};
     if (titre !== undefined) data.titre = titre;
-    if (instructions !== undefined) data.instructions = instructions;
+    if (instructions !== undefined || Array.isArray(etapes)) data.instructions = normalizedInstructions;
     if (categoryId !== undefined) data.categoryId = categoryId;
     if (mediaId !== undefined) data.mediaId = mediaId;
-    if (nombrePersonnes !== undefined) data.nombrePersonnes = nombrePersonnes;
+    if (normalizedNombrePersonnes !== undefined) data.nombrePersonnes = normalizedNombrePersonnes;
     if (tempsPreparation !== undefined) data.tempsPreparation = tempsPreparation;
     if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson;
-
-    const updated = await prisma.recipe.update({
-      where: { id: recipe.id },
-      data,
-      include: recipeRelationsInclude,
-    });
+    if (imageUrl !== undefined) data.imageURL = imageUrl || null;
+    if (shouldResubmitForModeration) {
+      data.status = 'PENDING';
+      data.rejectionReason = null;
+    }
 
     // Mettre à jour les ingrédients si fournis
     const newlyCreatedIngredientNames = new Set();
+    let adminUsers = [];
 
-    if (ingredients && ingredients.length > 0) {
-      // Supprimer les anciens ingrédients
-      await prisma.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
-
-      // Ajouter les nouveaux
-      for (const ing of ingredients) {
-        const ingredientName = String(ing.nom || '').toLowerCase().trim();
-
-        let ingredient = await prisma.ingredient.findUnique({
-          where: { nom: ingredientName },
-        });
-
-        if (!ingredient) {
-          ingredient = await prisma.ingredient.create({
-            data: { nom: ingredientName },
-          });
-          newlyCreatedIngredientNames.add(ingredient.nom);
-        }
-
-        await prisma.recipeIngredient.create({
-          data: {
-            recipeId: recipe.id,
-            ingredientId: ingredient.id,
-            quantity: ing.quantity,
-            unit: ing.unit,
-          },
-        });
-      }
-    }
-
-    if (newlyCreatedIngredientNames.size > 0) {
-      const adminUsers = await prisma.user.findMany({
+    if (shouldResubmitForModeration) {
+      adminUsers = await prisma.user.findMany({
         where: { role: 'ADMIN' },
         select: { id: true },
       });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.recipe.update({
+        where: { id: recipe.id },
+        data,
+      });
+
+      if (ingredients !== undefined) {
+        await tx.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
+
+        for (const ing of ingredients) {
+          const ingredientName = String(ing.nom || '').toLowerCase().trim();
+
+          if (!ingredientName) {
+            continue;
+          }
+
+          const quantity = ing.quantity ?? ing.quantite ?? null;
+          const unit = ing.unit ?? ing.unite ?? null;
+
+          let ingredient = await tx.ingredient.findUnique({
+            where: { nom: ingredientName },
+          });
+
+          if (!ingredient) {
+            ingredient = await tx.ingredient.create({
+              data: { nom: ingredientName },
+            });
+            newlyCreatedIngredientNames.add(ingredient.nom);
+          }
+
+          await tx.recipeIngredient.create({
+            data: {
+              recipeId: recipe.id,
+              ingredientId: ingredient.id,
+              quantity: quantity !== null && quantity !== undefined ? String(quantity) : null,
+              unit,
+            },
+          });
+        }
+      }
+
+      if (shouldNotifyAdminsAboutResubmission && adminUsers.length > 0) {
+        await tx.notification.createMany({
+          data: adminUsers.map((admin) => ({
+            type: 'RECIPE_SUBMITTED',
+            message: `Recette modifiée à valider de nouveau : ${titre ?? recipe.titre}`,
+            userId: admin.id,
+            recipeId: recipe.id,
+          })),
+        });
+      }
+    });
+
+    if (newlyCreatedIngredientNames.size > 0) {
+      if (adminUsers.length === 0) {
+        adminUsers = await prisma.user.findMany({
+          where: { role: 'ADMIN' },
+          select: { id: true },
+        });
+      }
 
       if (adminUsers.length > 0) {
         await prisma.notification.createMany({
@@ -414,7 +544,17 @@ export const updateRecipe = async (req, res) => {
       }
     }
 
-    return res.json({ message: 'Recette mise à jour', recipe: updated });
+    const updated = await prisma.recipe.findUnique({
+      where: { id: recipe.id },
+      include: recipeRelationsInclude,
+    });
+
+    return res.json({
+      message: shouldResubmitForModeration
+        ? 'Recette mise à jour et renvoyée en validation.'
+        : 'Recette mise à jour',
+      recipe: updated,
+    });
   } catch (error) {
     console.error('[updateRecipe]', error);
     return res.status(500).json({ message: 'Erreur serveur lors de la mise à jour de la recette.' });

@@ -3,11 +3,17 @@ import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg'
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-import { generateSlug, generateUniqueSlug } from '../src/utils/slug.js';
+import { generateUniqueSlug } from '../src/utils/slug.js';
 
 
 // adapter obligaoire avec Prisma V7
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL})
+const connectionString = process.env.DATABASE_URL;
+const isLocalDatabase = /@(localhost|127\.0\.0\.1|db):\d+/i.test(connectionString || '');
+
+const pool = new pg.Pool({
+  connectionString,
+  ...(isLocalDatabase ? {} : { ssl: { rejectUnauthorized: false } }),
+});
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
@@ -73,16 +79,34 @@ async function main() {
   const memberHash = await argon2.hash('Member1234!');
 
   const userAdmin = await prisma.user.upsert({
-    where: { email: 'admin@cinesdelices.fr' }, update: {},
-    create: { email: 'admin@cinesdelices.fr', pseudo: 'Admin',    passwordHash: adminHash,  role: 'ADMIN' },
+    where: { email: 'admin@cinesdelices.fr' },
+    update: {
+      nom: 'Delices',
+      pseudo: 'Admin',
+      passwordHash: adminHash,
+      role: 'ADMIN',
+    },
+    create: { email: 'admin@cinesdelices.fr', nom: 'Delices', pseudo: 'Admin', passwordHash: adminHash, role: 'ADMIN' },
   });
   const userMarie = await prisma.user.upsert({
-    where: { email: 'marie@cinesdelices.fr' }, update: {},
-    create: { email: 'marie@cinesdelices.fr', pseudo: 'Marie',    passwordHash: memberHash },
+    where: { email: 'marie@cinesdelices.fr' },
+    update: {
+      nom: 'Dubois',
+      pseudo: 'Marie',
+      passwordHash: memberHash,
+      role: 'MEMBER',
+    },
+    create: { email: 'marie@cinesdelices.fr', nom: 'Dubois', pseudo: 'Marie', passwordHash: memberHash, role: 'MEMBER' },
   });
   const userRemy = await prisma.user.upsert({
-    where: { email: 'remy@cinesdelices.fr' }, update: {},
-    create: { email: 'remy@cinesdelices.fr',  pseudo: 'ReMyChef', passwordHash: memberHash },
+    where: { email: 'remy@cinesdelices.fr' },
+    update: {
+      nom: 'Martin',
+      pseudo: 'ReMyChef',
+      passwordHash: memberHash,
+      role: 'MEMBER',
+    },
+    create: { email: 'remy@cinesdelices.fr', nom: 'Martin', pseudo: 'ReMyChef', passwordHash: memberHash, role: 'MEMBER' },
   });
   console.log('✅ Users :', [userAdmin, userMarie, userRemy].map(u => u.email).join(', '));
 

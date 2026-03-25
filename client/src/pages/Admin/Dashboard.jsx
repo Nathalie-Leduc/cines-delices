@@ -13,6 +13,18 @@ function getDurationMinutes(duration) {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
+function getSubmittedByLabel(item) {
+  if (item?.submittedByLabel) {
+    return item.submittedByLabel;
+  }
+
+  const firstName = String(item?.submittedBy?.firstName || '').trim();
+  const lastName = String(item?.submittedBy?.lastName || '').trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
+  return fullName || 'Membre inconnu';
+}
+
 function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -162,6 +174,7 @@ function AdminDashboard() {
               return (
                 <div key={recipe.id} className={styles.adminRecipeCardWrap}>
                   <RecipeCard recipe={recipeForCatalogCard} />
+                  <span className={styles.submittedByCardTag}>Soumis par {getSubmittedByLabel(recipe)}</span>
                   <button
                     type="button"
                     className={styles.cardNavOverlay}
@@ -200,6 +213,10 @@ function AdminDashboard() {
               <span>{selectedRecipe.cookingTime} min</span>
               <span>{selectedRecipe.duration}</span>
               <span>{selectedRecipe.people} personnes</span>
+            </div>
+
+            <div className={styles.heroSubmittedByWrap}>
+              <span className={styles.submittedByHeroTag}>Soumise par {getSubmittedByLabel(selectedRecipe)}</span>
             </div>
 
             <div className={styles.heroBody}>

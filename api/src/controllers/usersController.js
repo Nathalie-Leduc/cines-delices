@@ -24,6 +24,7 @@ export async function getMe(req, res) {
 			where: { id: userId },
 			select: {
 				id: true,
+				nom: true,
 				pseudo: true,
 				email: true,
 			},
@@ -36,6 +37,7 @@ export async function getMe(req, res) {
 		// Compat front: expose `prenom` using `pseudo` until dedicated first-name field exists.
 		return res.json({
 			id: user.id,
+			nom: user.nom,
 			email: user.email,
 			pseudo: user.pseudo,
 			prenom: user.pseudo,

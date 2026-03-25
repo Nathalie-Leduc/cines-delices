@@ -8,6 +8,18 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
+function getSubmittedByLabel(item) {
+  if (item?.submittedByLabel) {
+    return item.submittedByLabel;
+  }
+
+  const firstName = String(item?.submittedBy?.firstName || '').trim();
+  const lastName = String(item?.submittedBy?.lastName || '').trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
+  return fullName || 'Membre inconnu';
+}
+
 export default function IngredientsValidation() {
   const [ingredients, setIngredients] = useState([]);
   const [query, setQuery] = useState('');
@@ -116,7 +128,10 @@ export default function IngredientsValidation() {
       <div className={styles.list}>
         {filteredIngredients.map((ingredient, index) => (
           <div key={`${ingredient.id}-${index}`} className={styles.categoryRow}>
-            <strong style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.35rem', fontWeight: 700 }}>{ingredient.name}</strong>
+            <div className={styles.ingredientIdentity}>
+              <strong style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.35rem', fontWeight: 700 }}>{ingredient.name}</strong>
+              <span className={styles.submittedByRowTag}>Soumis par {getSubmittedByLabel(ingredient)}</span>
+            </div>
 
             <span className={styles.inlineTools}>
               <button

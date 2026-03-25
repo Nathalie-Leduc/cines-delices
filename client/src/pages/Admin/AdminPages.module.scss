@@ -296,6 +296,23 @@
   position: relative;
 }
 
+.submittedByCardTag {
+  position: absolute;
+  top: 1.95rem;
+  left: 0.5rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(246, 241, 232, 0.65);
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem;
+  background: rgba(31, 29, 30, 0.86);
+  color: #f6f1e8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.57rem;
+  line-height: 1;
+}
+
 .cardNavOverlay {
   position: absolute;
   inset: 0;
@@ -803,6 +820,26 @@
   }
 }
 
+.ingredientIdentity {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+}
+
+.submittedByRowTag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(246, 241, 232, 0.42);
+  border-radius: 999px;
+  padding: 0.17rem 0.52rem;
+  background: rgba(31, 29, 30, 0.42);
+  color: rgba(246, 241, 232, 0.9);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
 .roundIconBtn {
   width: 31px;
   height: 31px;
@@ -1166,6 +1203,23 @@
   padding: 0.46rem 0.8rem;
   font-size: 0.75rem;
   color: rgba(246, 241, 232, 0.88);
+}
+
+.heroSubmittedByWrap {
+  padding: 0.56rem 0.9rem 0;
+}
+
+.submittedByHeroTag {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(246, 241, 232, 0.58);
+  border-radius: 999px;
+  padding: 0.24rem 0.62rem;
+  background: rgba(31, 29, 30, 0.58);
+  color: rgba(246, 241, 232, 0.95);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
 .heroBody {

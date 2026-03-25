@@ -134,9 +134,16 @@ export const updateRecipeSchema = z.object({
       .trim()
       .optional(),
 
+    etapes: z.array(z.string().trim().min(1)).optional(),
+
     categoryId: z
       .string()
       .uuid('ID de catégorie invalide')
+      .optional(),
+
+    categorie: z
+      .string()
+      .min(1, 'La catégorie est obligatoire')
       .optional(),
 
     mediaId: z
@@ -144,11 +151,19 @@ export const updateRecipeSchema = z.object({
       .uuid('ID de média invalide')
       .optional(),
 
+    filmId: optionalIntFromInput,
+
+    film: z.string().trim().optional(),
+
+    type: z.enum(['F', 'S', 'movie', 'tv', 'series']).optional(),
+
     nombrePersonnes: z
       .number()
       .int('Le nombre de personnes doit être un entier')
       .positive('Le nombre de personnes doit être positif')
       .optional(),
+
+    nbPersonnes: optionalIntFromInput,
 
     tempsPreparation: z
       .number()
@@ -165,6 +180,8 @@ export const updateRecipeSchema = z.object({
     ingredients: z
       .array(ingredientSchema)
       .optional(),
+
+    imageUrl: z.string().url().optional().or(z.literal('')),
   }),
 });
 

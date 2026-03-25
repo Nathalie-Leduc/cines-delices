@@ -20,10 +20,55 @@ function getCategoryColor(categoryColor, categoryName) {
   return DEFAULT_CATEGORY_COLORS[key] || '#C9A45C';
 }
 
+function normalizeNamePart(value) {
+  return String(value || '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function toDisplayWords(value) {
+  return String(value || '')
+    .trim()
+    .replace(/[._-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function formatSubmitter(user) {
+  const rawPseudo = String(user?.pseudo || '').trim();
+  const rawLastName = String(user?.nom || '').trim();
+  const pseudoParts = rawPseudo.split(/[._-]+/).filter(Boolean);
+  const normalizedLastName = normalizeNamePart(rawLastName);
+
+  const filteredPseudoParts = normalizedLastName
+    && pseudoParts.length > 1
+    && normalizeNamePart(pseudoParts[pseudoParts.length - 1]) === normalizedLastName
+    ? pseudoParts.slice(0, -1)
+    : pseudoParts;
+
+  const firstName = toDisplayWords(filteredPseudoParts.join(' ') || rawPseudo);
+  const lastName = toDisplayWords(rawLastName);
+  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim() || 'Membre inconnu';
+
+  return {
+    firstName,
+    lastName,
+    fullName,
+  };
+}
+
 function formatRecipe(recipe) {
   const duration = [recipe.tempsPreparation, recipe.tempsCuisson]
     .filter((value) => Number.isFinite(value) && value > 0)
     .reduce((sum, value) => sum + value, 0);
+
+  const submittedBy = formatSubmitter(recipe.user);
 
   return {
     id: recipe.id,
@@ -42,6 +87,8 @@ function formatRecipe(recipe) {
     preparationTime: recipe.tempsPreparation || 0,
     cookingTime: recipe.tempsCuisson || 0,
     rejectionReason: recipe.rejectionReason || '',
+    submittedBy,
+    submittedByLabel: submittedBy.fullName,
     ingredients: recipe.ingredients.map((item) => ({
       id: item.ingredient.id,
       name: item.ingredient.nom,
@@ -88,10 +135,22 @@ function formatCategory(category) {
 }
 
 function formatIngredient(ingredient) {
+  const linkedRecipes = Array.isArray(ingredient.recipes)
+    ? ingredient.recipes
+        .map((relation) => relation.recipe)
+        .filter(Boolean)
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    : [];
+
+  const firstLinkedRecipe = linkedRecipes[0] || null;
+  const submittedBy = formatSubmitter(firstLinkedRecipe?.user);
+
   return {
     id: ingredient.id,
     name: ingredient.nom,
     recipesCount: ingredient._count?.recipes || 0,
+    submittedBy,
+    submittedByLabel: submittedBy.fullName,
   };
 }
 
@@ -212,6 +271,12 @@ export async function getAdminRecipes(req, res) {
     const recipes = await prisma.recipe.findMany({
       where,
       include: {
+        user: {
+          select: {
+            nom: true,
+            pseudo: true,
+          },
+        },
         category: true,
         media: true,
         ingredients: {
@@ -232,11 +297,36 @@ export async function getAdminRecipes(req, res) {
 }
 
 export async function getPendingRecipes(req, res) {
-  req.query.status = 'PENDING';
-  return getAdminRecipes(req, res);
+  try {
+    const recipes = await prisma.recipe.findMany({
+      where: { status: 'PENDING' },
+      include: {
+        user: {
+          select: {
+            nom: true,
+            pseudo: true,
+          },
+        },
+        category: true,
+        media: true,
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return res.json(recipes.map(formatRecipe));
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des recettes en attente.');
+  }
 }
 
-export async function approveRecipe(req, res) {
+export async function publishRecipe(req, res) {
   try {
     const recipeBeforeApproval = await prisma.recipe.findUnique({
       where: { id: req.params.id },
@@ -272,6 +362,12 @@ export async function approveRecipe(req, res) {
           rejectionReason: null,
         },
         include: {
+          user: {
+            select: {
+              nom: true,
+              pseudo: true,
+            },
+          },
           category: true,
           media: true,
           ingredients: {
@@ -311,10 +407,10 @@ export async function approveRecipe(req, res) {
 
 export async function rejectRecipe(req, res) {
   try {
-    const rejectionReason = String(req.body.reason || '').trim();
+    const rejectionReason = String(req.body.rejectionReason || '').trim();
 
-    if (rejectionReason && rejectionReason.length < 10) {
-      return res.status(400).json({ message: 'Motif trop court (min 10 caractères).' });
+    if (rejectionReason.length < 10) {
+      return res.status(400).json({ message: 'Le motif de refus est obligatoire (min 10 caractères).' });
     }
 
     const updatedRecipe = await prisma.$transaction(async (tx) => {
@@ -322,9 +418,15 @@ export async function rejectRecipe(req, res) {
         where: { id: req.params.id },
         data: {
           status: 'DRAFT',
-          rejectionReason: rejectionReason || 'Recette refusée par la modération.',
+          rejectionReason,
         },
         include: {
+          user: {
+            select: {
+              nom: true,
+              pseudo: true,
+            },
+          },
           category: true,
           media: true,
           ingredients: {
@@ -358,9 +460,16 @@ export async function rejectRecipe(req, res) {
 
     return res.json(formatRecipe(updatedRecipe));
   } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Recette introuvable.' });
+    }
+
     return sendError(res, error, 'Erreur lors du refus de la recette.');
   }
 }
+
+// Alias de compatibilité temporaire
+export const approveRecipe = publishRecipe;
 
 export async function deleteRecipe(req, res) {
   try {
@@ -494,6 +603,12 @@ export async function updateAdminRecipe(req, res) {
       where: { id },
       data,
       include: {
+        user: {
+          select: {
+            nom: true,
+            pseudo: true,
+          },
+        },
         category: true,
         media: true,
         ingredients: {
@@ -724,6 +839,21 @@ export async function getAdminIngredients(req, res) {
         _count: {
           select: { recipes: true },
         },
+        recipes: {
+          include: {
+            recipe: {
+              select: {
+                createdAt: true,
+                user: {
+                  select: {
+                    nom: true,
+                    pseudo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
       orderBy: {
         nom: 'asc',
@@ -778,6 +908,21 @@ export async function updateIngredient(req, res) {
         _count: {
           select: { recipes: true },
         },
+        recipes: {
+          include: {
+            recipe: {
+              select: {
+                createdAt: true,
+                user: {
+                  select: {
+                    nom: true,
+                    pseudo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
@@ -795,6 +940,21 @@ export async function approveIngredient(req, res) {
       include: {
         _count: {
           select: { recipes: true },
+        },
+        recipes: {
+          include: {
+            recipe: {
+              select: {
+                createdAt: true,
+                user: {
+                  select: {
+                    nom: true,
+                    pseudo: true,
+                  },
+                },
+              },
+            },
+          },
         },
       },
     });

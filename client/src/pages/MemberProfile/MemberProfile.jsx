@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getMe, updateMe, updateMyPassword } from '../../services/api.js';
+import { getMyRecipes as getMyRecipesApi } from '../../services/recipesService.js';
 import styles from './MemberProfile.module.scss';
-
-const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
-const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
 
 const initialUser = {
   nom: '',
@@ -18,6 +17,31 @@ const initialUser = {
   },
   dateInscription: '',
 };
+
+function normalizeDisplayName(name) {
+  const trimmed = String(name || '').trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+
+function syncStoredUserProfile(nextUser) {
+  const rawStoredUser = localStorage.getItem('auth_user');
+
+  if (!rawStoredUser) {
+    return;
+  }
+
+  try {
+    const storedUser = JSON.parse(rawStoredUser);
+    localStorage.setItem('auth_user', JSON.stringify({ ...storedUser, ...nextUser }));
+  } catch {
+    localStorage.removeItem('auth_user');
+  }
+}
 
 export default function Profil() {
   const navigate = useNavigate();
@@ -37,13 +61,12 @@ export default function Profil() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   function syncDisplayName(name) {
-    const trimmed = String(name || '').trim();
+    const normalizedName = normalizeDisplayName(name);
 
-    if (!trimmed) {
+    if (!normalizedName) {
       return;
     }
 
-    const normalizedName = trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
     localStorage.setItem('displayName', normalizedName);
     window.dispatchEvent(new Event('user-display-name-updated'));
   }
@@ -54,60 +77,40 @@ export default function Profil() {
       return;
     }
 
-    const response = await fetch(PROFILE_API, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Erreur lors de la récupération du profil');
-    }
-
-    const payload = await response.json();
-    const user = payload?.data ?? payload;
-    const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
-      ? user.prenom
-      : (typeof user?.pseudo === 'string' && user.pseudo.trim())
-        ? user.pseudo
-        : '';
-
-    const normalizedName = rawName
-      ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
-      : '';
+    const user = await getMe();
+    const nextFirstName = normalizeDisplayName(user?.pseudo || user?.prenom || '');
 
     setUserData((prev) => ({
       ...prev,
       nom: user?.nom || '',
-      prenom: normalizedName,
+      prenom: nextFirstName,
       email: user?.email || prev.email,
       dateInscription: user?.createdAt || prev.dateInscription,
     }));
 
-    if (normalizedName) {
-      syncDisplayName(normalizedName);
+    syncStoredUserProfile({
+      nom: user?.nom || '',
+      pseudo: user?.pseudo || '',
+      email: user?.email || '',
+    });
+
+    if (nextFirstName) {
+      syncDisplayName(nextFirstName);
     }
   }
 
   async function fetchRecipes() {
-    // Récupère le JWT stocké après connexion
     const token = localStorage.getItem('token');
     if (!token) {
       return;
     }
 
-    const response = await fetch(USER_RECIPES_API, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch recipes');
-    }
-
-    const payload = await response.json();
-    const recipes = Array.isArray(payload?.data) ? payload.data : [];
+    const payload = await getMyRecipesApi();
+    const recipes = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
 
     const counts = {
       entrees: 0,
@@ -180,10 +183,25 @@ export default function Profil() {
     },
   ];
 
-  // Ouvre la modale de modification en pré-remplissant les infos du champ cliqué
   function openEditModal(fieldName, label, type = 'text') {
     setProfileFeedback({ type: '', message: '' });
+
+    if (fieldName === 'motDePasse') {
+      setEditModalData({
+        mode: 'password',
+        label,
+        fields: {
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: '',
+        },
+      });
+      setShowEditModal(true);
+      return;
+    }
+
     setEditModalData({
+      mode: 'profile',
       fieldName,
       label,
       type,
@@ -192,12 +210,31 @@ export default function Profil() {
     setShowEditModal(true);
   }
 
-  // Met à jour la valeur saisie dans l'input de la modale de modification
-  function handleEditModalChange(value) {
-    setEditModalData(prev => ({ ...prev, value }));
+  function handleEditModalChange(value, key = 'value') {
+    setEditModalData((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      if (prev.mode === 'password') {
+        return {
+          ...prev,
+          fields: {
+            ...prev.fields,
+            [key]: value,
+          },
+        };
+      }
+
+      return { ...prev, value };
+    });
   }
 
-  // Applique la modification dans userData et ferme la modale
+  function closeEditModal() {
+    setShowEditModal(false);
+    setEditModalData(null);
+  }
+
   async function handleEditModalConfirm() {
     if (!editModalData) {
       return;
@@ -209,88 +246,104 @@ export default function Profil() {
       return;
     }
 
-    const trimmedValue = String(editModalData.value || '').trim();
-
-    if (!trimmedValue) {
-      setProfileFeedback({ type: 'error', message: 'La valeur ne peut pas être vide.' });
-      return;
-    }
-
-    let body = null;
-
-    if (editModalData.fieldName === 'prenom') {
-      body = { pseudo: trimmedValue };
-    } else if (editModalData.fieldName === 'email') {
-      body = { email: trimmedValue };
-    } else {
-      setProfileFeedback({
-        type: 'error',
-        message: 'Seuls le prénom affiché et l\'e-mail sont modifiables pour le moment.',
-      });
-      return;
-    }
-
     setIsSavingProfile(true);
 
     try {
-      const response = await fetch(PROFILE_API, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
+      if (editModalData.mode === 'password') {
+        const currentPassword = String(editModalData.fields.currentPassword || '').trim();
+        const newPassword = String(editModalData.fields.newPassword || '').trim();
+        const confirmPassword = String(editModalData.fields.confirmPassword || '').trim();
 
-      const payload = await response.json();
+        if (!currentPassword || !newPassword || !confirmPassword) {
+          setProfileFeedback({
+            type: 'error',
+            message: 'Tous les champs du mot de passe sont obligatoires.',
+          });
+          return;
+        }
 
-      if (!response.ok) {
-        const errorMessage = payload?.message
-          || payload?.error
-          || 'Impossible de mettre à jour le profil.';
-        setProfileFeedback({ type: 'error', message: errorMessage });
+        const payload = await updateMyPassword({
+          currentPassword,
+          newPassword,
+          confirmPassword,
+        });
+
+        setProfileFeedback({
+          type: 'success',
+          message: payload?.message || 'Mot de passe mis à jour.',
+        });
+        closeEditModal();
         return;
       }
 
-      const updatedUser = payload?.data ?? payload;
-      const nextPseudo = String(updatedUser?.pseudo || userData.prenom || '').trim();
-      const nextDisplayName = nextPseudo
-        ? nextPseudo.charAt(0).toUpperCase() + nextPseudo.slice(1).toLowerCase()
-        : '';
+      const trimmedValue = String(editModalData.value || '').trim();
+
+      if (!trimmedValue) {
+        setProfileFeedback({ type: 'error', message: 'La valeur ne peut pas être vide.' });
+        return;
+      }
+
+      let body = null;
+
+      if (editModalData.fieldName === 'nom') {
+        body = { nom: trimmedValue };
+      } else if (editModalData.fieldName === 'prenom') {
+        body = { pseudo: trimmedValue };
+      } else if (editModalData.fieldName === 'email') {
+        body = { email: trimmedValue };
+      }
+
+      if (!body) {
+        setProfileFeedback({
+          type: 'error',
+          message: 'Champ de profil non pris en charge.',
+        });
+        return;
+      }
+
+      const payload = await updateMe(body);
+      const updatedUser = payload?.user ?? payload?.data ?? payload;
+      const nextFirstName = normalizeDisplayName(updatedUser?.pseudo || userData.prenom);
+      const nextLastName = String(updatedUser?.nom || '').trim();
+      const nextEmail = updatedUser?.email || userData.email;
 
       setUserData((prev) => ({
         ...prev,
-        prenom: nextDisplayName || prev.prenom,
-        email: updatedUser?.email || prev.email,
+        nom: nextLastName,
+        prenom: nextFirstName || prev.prenom,
+        email: nextEmail,
       }));
 
-      if (nextDisplayName) {
-        syncDisplayName(nextDisplayName);
+      syncStoredUserProfile({
+        nom: nextLastName,
+        pseudo: updatedUser?.pseudo || '',
+        email: nextEmail,
+      });
+
+      if (nextFirstName) {
+        syncDisplayName(nextFirstName);
       }
 
       setProfileFeedback({
         type: 'success',
         message: payload?.message || 'Profil mis à jour.',
       });
-      setShowEditModal(false);
-      setEditModalData(null);
-    } catch {
+      closeEditModal();
+    } catch (error) {
       setProfileFeedback({
         type: 'error',
-        message: 'Impossible de joindre le serveur pour mettre à jour le profil.',
+        message: error?.message || 'Impossible de joindre le serveur pour mettre à jour le profil.',
       });
     } finally {
       setIsSavingProfile(false);
     }
   }
 
-  // Supprime le token JWT et redirige vers l'accueil (déconnexion / suppression)
   function handleDelete() {
     localStorage.removeItem('token');
     navigate('/');
   }
 
-  // Valide les données du profil local et synchronise le nom affiché globalement.
   function handleValidateProfile() {
     syncDisplayName(userData.prenom);
     setProfileFeedback({
@@ -299,10 +352,10 @@ export default function Profil() {
     });
   }
 
- return (
-    <div className={styles.profil}>
+  const isPasswordModal = editModalData?.mode === 'password';
 
-      {/* ===== MODALE Suppression ===== */}
+  return (
+    <div className={styles.profil}>
       {showModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
@@ -329,50 +382,95 @@ export default function Profil() {
         </div>
       )}
 
-{/* ===== MODALE MODIFICATION ===== */}
-{showEditModal && (
-  <div className={styles.overlay}>
-    <div className={styles.modal}>
-      <p className={styles.modalText}>
-        Modifier {editModalData?.label?.toLowerCase()}
-      </p>
+      {showEditModal && (
+        <div className={styles.overlay}>
+          <div className={styles.modal}>
+            <p className={styles.modalText}>
+              Modifier {editModalData?.label?.toLowerCase()}
+            </p>
 
-      <div className={styles.modalField}>
-        <label className={styles.label}>
-          {editModalData?.label}
-        </label>
-        <input
-          className={styles.modalInput}
-          type={editModalData?.type || 'text'}
-          value={editModalData?.value || ''}
-          onChange={e => handleEditModalChange(e.target.value)}
-          autoFocus
-        />
-      </div>
+            {isPasswordModal ? (
+              <>
+                <div className={styles.modalField}>
+                  <label className={styles.label} htmlFor="currentPassword">
+                    Mot de passe actuel
+                  </label>
+                  <input
+                    id="currentPassword"
+                    className={styles.modalInput}
+                    type="password"
+                    value={editModalData?.fields?.currentPassword || ''}
+                    onChange={(event) => handleEditModalChange(event.target.value, 'currentPassword')}
+                    autoFocus
+                  />
+                </div>
 
-      <div className={styles.modalButtons}>
-        <button
-          className={styles.cancelBtn}
-          aria-label="Annuler la modification du profil"
-          onClick={() => {
-            setShowEditModal(false);
-            setEditModalData(null);
-          }}
-        >
-          Annuler
-        </button>
-        <button
-          className={styles.confirmBtn}
-          aria-label="Confirmer la modification du profil"
-          onClick={handleEditModalConfirm}
-          disabled={isSavingProfile}
-        >
-          {isSavingProfile ? 'Enregistrement...' : 'Valider'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+                <div className={styles.modalField}>
+                  <label className={styles.label} htmlFor="newPassword">
+                    Nouveau mot de passe
+                  </label>
+                  <input
+                    id="newPassword"
+                    className={styles.modalInput}
+                    type="password"
+                    value={editModalData?.fields?.newPassword || ''}
+                    onChange={(event) => handleEditModalChange(event.target.value, 'newPassword')}
+                  />
+                </div>
+
+                <div className={styles.modalField}>
+                  <label className={styles.label} htmlFor="confirmPassword">
+                    Confirmer le mot de passe
+                  </label>
+                  <input
+                    id="confirmPassword"
+                    className={styles.modalInput}
+                    type="password"
+                    value={editModalData?.fields?.confirmPassword || ''}
+                    onChange={(event) => handleEditModalChange(event.target.value, 'confirmPassword')}
+                  />
+                </div>
+
+                <p className={styles.modalHint}>
+                  8 caractères minimum, avec 1 majuscule, 1 chiffre et 1 caractère spécial.
+                </p>
+              </>
+            ) : (
+              <div className={styles.modalField}>
+                <label className={styles.label} htmlFor="profileField">
+                  {editModalData?.label}
+                </label>
+                <input
+                  id="profileField"
+                  className={styles.modalInput}
+                  type={editModalData?.type || 'text'}
+                  value={editModalData?.value || ''}
+                  onChange={(event) => handleEditModalChange(event.target.value)}
+                  autoFocus
+                />
+              </div>
+            )}
+
+            <div className={styles.modalButtons}>
+              <button
+                className={styles.cancelBtn}
+                aria-label="Annuler la modification du profil"
+                onClick={closeEditModal}
+              >
+                Annuler
+              </button>
+              <button
+                className={styles.confirmBtn}
+                aria-label="Confirmer la modification du profil"
+                onClick={handleEditModalConfirm}
+                disabled={isSavingProfile}
+              >
+                {isSavingProfile ? 'Enregistrement...' : 'Valider'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className={styles.pageHeader}>
         <h1 className={styles.pageTitle}>Mon compte</h1>
       </div>
@@ -448,7 +546,7 @@ export default function Profil() {
             <button
               type="button"
               className={styles.editBtn}
-              aria-label="Modifier le prenom"
+              aria-label="Modifier le prénom"
               onClick={() => openEditModal('prenom', 'Prénom')}
             >
               <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
@@ -490,7 +588,7 @@ export default function Profil() {
             <button
               type="button"
               className={styles.editBtn}
-              aria-label="Modification du mot de passe indisponible"
+              aria-label="Modifier le mot de passe"
               onClick={() => openEditModal('motDePasse', 'Mot de passe', 'password')}
             >
               <img src="/icon/Edit.svg" alt="" aria-hidden="true" />

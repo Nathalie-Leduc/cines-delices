@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RecipeCard from "../../components/RecipeCard";
-import { getRecipesCatalog } from "../../services/recipesService";
+// 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
+// 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
+import { getRecipeBySlug, getRecipesCatalog } from "../../services/recipesService";
 import styles from "./RecipeDetail.module.scss";
 
 const DEFAULT_STEPS = [
   "Prépare tous les ingrédients et organise ton plan de travail avant de commencer.",
-  "Lance les cuissons principales en surveillant les textures et l’assaisonnement.",
+  "Lance les cuissons principales en surveillant les textures et l'assaisonnement.",
   "Assemble la recette progressivement pour garder équilibre et gourmandise.",
   "Dresse soigneusement puis sers immédiatement pour profiter de toutes les saveurs.",
 ];
@@ -96,34 +98,81 @@ export default function RecipeDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Tâche f-04 : on ne charge plus tout le catalogue d'un coup.
+  //
+  // Analogie restaurant :
+  //   1️⃣  On commande le plat principal (getRecipeBySlug) → la recette demandée
+  //   2️⃣  On jette un œil à la carte (getRecipesCatalog) → pour suggérer
+  //       des recettes similaires de la même catégorie
+  //   Si la carte est indisponible, pas grave : on a quand même notre plat.
+  // ──────────────────────────────────────────────────────────────────────────
   useEffect(() => {
     let isMounted = true;
 
-    const fetchRecipes = async () => {
-      try {
-        const payload = await getRecipesCatalog({ limit: 50 });
-        const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
+    // Si on a déjà la recette depuis la navigation (state), pas besoin de fetch
+    if (state?.recipe) {
+      setIsLoading(false);
+      return;
+    }
 
+    const fetchRecipe = async () => {
+      try {
+        // 1️⃣ Charger la recette demandée (le plat principal)
+        //    request() dans api.js lance déjà une erreur si !response.ok
+        //    → donc si on arrive ici sans erreur, c'est que tout va bien
+        const data = await getRecipeBySlug(slug);
         if (!isMounted) return;
-        setRecipes(rawRecipes);
-        setError("");
-      } catch (fetchError) {
-        if (!isMounted) return;
-        setRecipes([]);
-        setError(fetchError?.message || "Impossible de charger la recette.");
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
+
+        if (!data) {
+          navigate('/404', { replace: true });
+          return;
         }
+
+        // On met d'abord la recette principale dans le state
+        setRecipes([data]);
+
+        // 2️⃣ Charger le catalogue pour les recettes similaires (l'étalage du marché)
+        //    On enveloppe dans un try/catch séparé car si ça échoue,
+        //    on veut quand même afficher la recette principale
+        try {
+          const catalog = await getRecipesCatalog();
+          if (!isMounted) return;
+
+          // catalog peut être un tableau OU un objet { recipes: [...] }
+          // selon la réponse du back → on gère les deux cas
+          const allRecipes = Array.isArray(catalog) ? catalog : (catalog.recipes || []);
+
+          // On fusionne : la recette détaillée + le reste du catalogue (sans doublon)
+          setRecipes([data, ...allRecipes.filter((r) => r.slug !== slug)]);
+        } catch {
+          // Pas grave si les similaires échouent — on a la recette principale
+          console.warn('Impossible de charger les recettes similaires');
+        }
+
+        setError('');
+      } catch (err) {
+        if (!isMounted) return;
+
+        // Si c'est un 404, on redirige vers la page Not Found
+        // err.status est enrichi par request() dans api.js
+        if (err.status === 404) {
+          navigate('/404', { replace: true });
+          return;
+        }
+
+        setError(err?.message || 'Impossible de charger la recette.');
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
     };
 
-    fetchRecipes();
+    fetchRecipe();
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    // Cleanup : si le composant est démonté avant la fin du fetch,
+    // on ne met pas à jour le state (évite les erreurs React)
+    return () => { isMounted = false; };
+  }, [slug, state]);
 
   const recipe = useMemo(() => {
     const apiRecipe = recipes.find((item) => item.slug === slug);
@@ -203,7 +252,7 @@ export default function RecipeDetail() {
   const mediaTypeLabel = mediaType?.toLowerCase().startsWith("f") ? "F" : "S";
   const recipeIngredients = ingredients?.length
     ? ingredients
-    : ["400g de spaghetti", "3 tomates", "2 gousses d’ail", "Huile d’olive", "Basilic frais"];
+    : ["400g de spaghetti", "3 tomates", "2 gousses d'ail", "Huile d'olive", "Basilic frais"];
   const recipeSteps = steps?.length ? steps : DEFAULT_STEPS;
   const recipePrepTime = prepTime ?? Math.max(10, Math.round((duration ?? 30) / 3));
   const recipeCookTime = cookTime ?? Math.max(15, Math.round((duration ?? 30) / 1.5));
@@ -212,7 +261,7 @@ export default function RecipeDetail() {
   const recipeDirector = director ?? "Studio original";
   const recipeYear = year ?? 2010;
   const recipeGenre = genre ?? "Cuisine fiction";
-  const recipeDescription = description ?? `Une recette inspirée de l’univers de ${mediaTitle}, pensée pour retrouver à table l’ambiance du ${mediaType}.`;
+  const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;
 
   return (
     <main className={styles.page}>

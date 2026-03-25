@@ -17,16 +17,56 @@ function safeUser(user) {
   return rest;
 }
 
+function normalizePseudoBase(value) {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9._-]/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^[-._]+|[-._]+$/g, '');
+
+  return normalized;
+}
+
+async function generateUniquePseudo({ prenom, nom }) {
+  const rawBase = `${prenom}.${nom}`;
+  const base = normalizePseudoBase(rawBase) || normalizePseudoBase(prenom) || 'membre';
+  const maxLength = 30;
+
+  let candidate = base.slice(0, maxLength);
+  if (candidate.length < 2) {
+    candidate = `membre${Date.now().toString().slice(-4)}`;
+  }
+
+  let suffix = 1;
+  while (await prisma.user.findUnique({ where: { pseudo: candidate } })) {
+    const suffixText = String(suffix);
+    const trimmedBase = base.slice(0, Math.max(2, maxLength - suffixText.length - 1));
+    candidate = `${trimmedBase}-${suffixText}`;
+    suffix += 1;
+  }
+
+  return candidate;
+}
+
 // POST / api/auth/register
 // ZOD va validé et normalisé email, pseudo et password
 export const register = async (req, res) => {
   try {
-    const { email, pseudo, password } = req.body;
+    const { email, password, nom, prenom, pseudo: optionalPseudo } = req.body;
 
-       // Vérification de  l'unicité email + pseudo en une seule requête
-    const existing  = await prisma.user.findFirst({
-      where: { OR: [{ email }, { pseudo }]},
+    const normalizedNom = String(nom || '').trim();
+    const normalizedPrenom = String(prenom || '').trim();
+    const providedPseudo = optionalPseudo ? String(optionalPseudo).trim() : null;
+    const pseudo = providedPseudo || await generateUniquePseudo({ prenom: normalizedPrenom, nom: normalizedNom });
+
+       // Vérification de l'unicité email + pseudo en une seule requête
+    const existing = await prisma.user.findFirst({
+      where: { OR: [{ email }, { pseudo }] },
     });
+
     if (existing) {
       const field = existing.email === email ? 'email' : 'pseudo';
       return res.status(409).json({ error: `Ce ${field} est déjà utilisé` });
@@ -37,7 +77,12 @@ export const register = async (req, res) => {
 
     // 4. Création de l'utilisateur
     const user = await prisma.user.create({
-      data: { email, pseudo, passwordHash },
+      data: {
+        email,
+        nom: normalizedNom,
+        pseudo,
+        passwordHash,
+      },
     });
 
     // Génération du JWT et renvoi sans le hash
@@ -92,6 +137,7 @@ export const getMe = async (req, res) => {
       select: {
         id:        true,
         email:     true,
+        nom:       true,
         pseudo:    true,
         role:      true,
         createdAt: true,
@@ -113,9 +159,10 @@ export const getMe = async (req, res) => {
 // Zod valide au - un champ présent et email normalisé
 export const updateMe = async (req, res) => {
   try {
-    const { pseudo, email } = req.body;
+    const { nom, pseudo, email } = req.body;
 
     const data = {};
+    if (nom !== undefined) data.nom = nom;
     if (pseudo) data.pseudo = pseudo;
     if (email) data.email = email;
 
@@ -125,6 +172,7 @@ export const updateMe = async (req, res) => {
       select: {
         id:        true,
         email:     true,
+        nom:       true,
         pseudo:    true,
         role:      true,
         createdAt: true,
@@ -138,6 +186,40 @@ export const updateMe = async (req, res) => {
       return res.status(409).json({ error: 'Email ou pseudo déjà utilisé' });
     }
     console.error('[updateMe]', error);
+    res.status(500).json({ error: 'Erreur serveur', details: error.message });
+  }
+};
+
+// PUT /api/auth/me/password
+export const updateMyPassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { id: true, passwordHash: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+
+    const isCurrentPasswordValid = await argon2.verify(user.passwordHash, currentPassword);
+
+    if (!isCurrentPasswordValid) {
+      return res.status(400).json({ error: 'Le mot de passe actuel est incorrect' });
+    }
+
+    const passwordHash = await argon2.hash(newPassword);
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { passwordHash },
+    });
+
+    res.json({ message: 'Mot de passe mis à jour' });
+  } catch (error) {
+    console.error('[updateMyPassword]', error);
     res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
 };

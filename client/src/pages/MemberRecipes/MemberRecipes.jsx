@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
-import { getMyRecipes } from '../../services/recipesService';
+import { deleteMyRecipe, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
+import RecipeCard from '../../components/RecipeCard';
 
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
@@ -16,6 +17,24 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
   || 'http://localhost:3000/api/ingredients';
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function parseOptionalPositiveInteger(value) {
+  if (value === '' || value === null || value === undefined) {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+function formatApiError(error, fallbackMessage) {
+  const details = Array.isArray(error?.data?.details)
+    ? error.data.details.filter(Boolean).join(' ')
+    : '';
+
+  return details || error?.message || fallbackMessage;
+}
 
 function normalizeCategoryLabel(value) {
   const source = String(value || '').trim().toLowerCase();
@@ -65,7 +84,7 @@ function normalizeRecipe(rawRecipe) {
     categorie: categoryLabel,
     filmId: rawRecipe?.filmId || rawRecipe?.mediaId || rawRecipe?.media?.id || null,
     film: rawRecipe?.film || rawRecipe?.media?.titre || 'Sans titre',
-    image: rawRecipe?.image || rawRecipe?.imageUrl || rawRecipe?.media?.posterUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400',
+    image: rawRecipe?.image || rawRecipe?.imageURL || rawRecipe?.imageUrl || rawRecipe?.media?.posterUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400',
     nbPersonnes: rawRecipe?.nbPersonnes || rawRecipe?.nombrePersonnes || '',
     ingredients: normalizedIngredients,
     etapes: Array.isArray(rawRecipe?.etapes)
@@ -80,6 +99,59 @@ function normalizeRecipe(rawRecipe) {
   };
 }
 
+function mapMemberRecipeToCard(recipe) {
+  const mediaType = String(recipe?.type || '').toUpperCase() === 'F' ? 'film' : 'serie';
+  const durationValue = String(recipe?.temps || '').match(/\d+/);
+  const duration = durationValue ? Number(durationValue[0]) : 0;
+
+  return {
+    id: recipe?.id,
+    slug: recipe?.slug,
+    title: recipe?.titre || 'Recette sans titre',
+    category: recipe?.categorie || 'Autre',
+    mediaTitle: recipe?.film || 'Sans média',
+    mediaType,
+    duration,
+    image: recipe?.image || '/img/hero-home.png',
+    fallbackImage: recipe?.image || '/img/hero-home.png',
+  };
+}
+
+function getRecipeModerationBadge(recipe) {
+  const status = String(recipe?.status || '').toUpperCase();
+  const rejectionReason = String(recipe?.rejectionReason || '').trim();
+
+  if (status === 'PUBLISHED') {
+    return {
+      label: 'Validee',
+      tone: 'published',
+      title: 'Recette validee par l\'admin',
+    };
+  }
+
+  if (status === 'PENDING') {
+    return {
+      label: 'En validation',
+      tone: 'pending',
+      title: 'Recette en cours de validation par l\'admin',
+    };
+  }
+
+  if (status === 'DRAFT' && rejectionReason) {
+    return {
+      label: 'Refusee',
+      tone: 'rejected',
+      title: `Recette refusee par l\'admin${rejectionReason ? ` : ${rejectionReason}` : ''}`,
+    };
+  }
+
+  return {
+    label: 'Brouillon',
+    tone: 'draft',
+    title: 'Recette non soumise a validation',
+  };
+}
+
 export default function MesRecettes() {
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
@@ -90,8 +162,10 @@ export default function MesRecettes() {
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [newRecipeName, setNewRecipeName] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [filmResults, setFilmResults] = useState([]);
   const [filmSearchLoading, setFilmSearchLoading] = useState(false);
   const [filmSearchError, setFilmSearchError] = useState('');
@@ -100,6 +174,7 @@ export default function MesRecettes() {
   const [editIngredientSearchLoading, setEditIngredientSearchLoading] = useState({});
   const [editIngredientSearchError, setEditIngredientSearchError] = useState({});
   const [creatingEditIngredient, setCreatingEditIngredient] = useState({});
+  const [openRejectionReasonId, setOpenRejectionReasonId] = useState(null);
   // Références pour debounce des recherches afin d'éviter trop d'appels API.
   const filmSearchTimeoutRef = useRef(null);
   const editIngredientSearchTimeouts = useRef({});
@@ -152,15 +227,23 @@ export default function MesRecettes() {
     fetchProfile();
   }, []);
 
-  // Récupérer les recettes au montage du composant
+  // Récupérer les recettes au montage puis au retour sur l'onglet/la fenêtre.
   useEffect(() => {
-    const fetchRecipes = async () => {
+    let isActive = true;
+
+    const fetchRecipes = async ({ silent = false } = {}) => {
       try {
+        if (!silent && isActive) {
+          setIsLoading(true);
+        }
+
         const token = localStorage.getItem('token');
 
         if (!token) {
-          setError('Token manquant. Veuillez vous reconnecter.');
-          setIsLoading(false);
+          if (isActive) {
+            setError('Token manquant. Veuillez vous reconnecter.');
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -171,17 +254,43 @@ export default function MesRecettes() {
             ? payload.data
             : [];
         const normalizedRecipes = data.map(normalizeRecipe);
-        setRecipes(normalizedRecipes);
-        setError('');
+
+        if (isActive) {
+          setRecipes(normalizedRecipes);
+          setError('');
+        }
       } catch (err) {
-        setError(err.message || 'Erreur lors de la récupération des recettes');
-        setRecipes([]);
+        if (isActive) {
+          setError(err.message || 'Erreur lors de la récupération des recettes');
+          setRecipes([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (isActive) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchRecipes();
+
+    const handleWindowFocus = () => {
+      fetchRecipes({ silent: true });
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchRecipes({ silent: true });
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      isActive = false;
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   // Navigation latérale du compte membre.
@@ -258,11 +367,24 @@ export default function MesRecettes() {
     setShowDeleteModal(true);
   }
 
-  // Suppression locale de la recette sélectionnée (UI-only pour l'instant).
-  function handleDeleteConfirm() {
-    setRecipes(prev => prev.filter(recette => recette.id !== recetteToDelete?.id));
-    setShowDeleteModal(false);
-    setRecetteToDelete(null);
+  // Suppression persistée côté API, puis synchronisation locale.
+  async function handleDeleteConfirm() {
+    if (!recetteToDelete?.id) {
+      return;
+    }
+
+    try {
+      setIsDeletingRecipe(true);
+      await deleteMyRecipe(recetteToDelete.id);
+      setRecipes(prev => prev.filter(recette => recette.id !== recetteToDelete.id));
+      setShowDeleteModal(false);
+      setRecetteToDelete(null);
+      setError('');
+    } catch (err) {
+      setError(err?.message || 'Impossible de supprimer la recette pour le moment.');
+    } finally {
+      setIsDeletingRecipe(false);
+    }
   }
 
   // Pré-remplit le formulaire d'édition avec les données de la carte sélectionnée.
@@ -554,39 +676,73 @@ export default function MesRecettes() {
     setFilmResults([]);
   }
 
-  // Persiste les modifications dans l'état local des recettes.
-  function handleEditSave() {
-    const computedTime = [editForm.tempsPreparation, editForm.tempsCuisson]
-      .filter(Boolean)
-      .join(' + ')
-      .trim();
+  // Persiste les modifications via l'API puis resynchronise la recette locale.
+  async function handleEditSave() {
+    if (!editForm.id) {
+      return;
+    }
 
-    setRecipes(prev => prev.map(recette => (
-      recette.id === editForm.id
-        ? {
-            ...recette,
-            titre: editForm.titre,
-            categorie: editForm.categorie,
-            filmId: editForm.filmId,
-            film: editForm.film,
-            nbPersonnes: editForm.nbPersonnes,
-            ingredients: editForm.ingredients,
-            etapes: editForm.etapes,
-            tempsPreparation: editForm.tempsPreparation,
-            tempsCuisson: editForm.tempsCuisson,
-            temps: computedTime || editForm.temps,
-            type: editForm.type,
-            image: editForm.image,
-          }
-        : recette
-    )));
+    const normalizedIngredients = editForm.ingredients
+      .map(ingredient => ({
+        nom: String(ingredient?.nom || '').trim(),
+        quantity: ingredient?.quantite === '' ? null : ingredient?.quantite ?? null,
+        unit: ingredient?.unite ? String(ingredient.unite).trim() : null,
+      }))
+      .filter(ingredient => ingredient.nom.length > 0);
 
-    setShowEditModal(false);
-    setShowEditConfirmModal(false);
+    const normalizedEtapes = editForm.etapes
+      .map(etape => String(etape || '').trim())
+      .filter(Boolean);
+
+    const payload = {
+      titre: String(editForm.titre || '').trim(),
+      categorie: editForm.categorie,
+      instructions: normalizedEtapes.join('\n'),
+      etapes: normalizedEtapes,
+      nombrePersonnes: parseOptionalPositiveInteger(editForm.nbPersonnes),
+      tempsPreparation: parseOptionalPositiveInteger(editForm.tempsPreparation),
+      tempsCuisson: parseOptionalPositiveInteger(editForm.tempsCuisson),
+      imageUrl: String(editForm.image || '').trim() || undefined,
+      ingredients: normalizedIngredients,
+    };
+
+    if (UUID_REGEX.test(String(editForm.filmId || ''))) {
+      payload.mediaId = editForm.filmId;
+    } else {
+      const parsedFilmId = Number(editForm.filmId);
+
+      if (Number.isInteger(parsedFilmId) && parsedFilmId > 0) {
+        payload.filmId = parsedFilmId;
+        payload.film = String(editForm.film || '').trim();
+        payload.type = editForm.type;
+      }
+    }
+
+    try {
+      setIsSavingEdit(true);
+      const response = await updateMyRecipe(editForm.id, payload);
+      const updatedRecipe = normalizeRecipe(response?.recipe || response?.data || response);
+
+      setRecipes(prev => prev.map(recette => (
+        recette.id === updatedRecipe.id ? updatedRecipe : recette
+      )));
+      setShowEditModal(false);
+      setShowEditConfirmModal(false);
+      setError('');
+    } catch (err) {
+      setError(formatApiError(err, 'Impossible de modifier la recette pour le moment.'));
+    } finally {
+      setIsSavingEdit(false);
+    }
   }
 
   function openEditConfirmModal() {
+    setError('');
     setShowEditConfirmModal(true);
+  }
+
+  function toggleRejectionReason(recipeId) {
+    setOpenRejectionReasonId(prev => (prev === recipeId ? null : recipeId));
   }
 
   // Déconnexion utilisateur locale.
@@ -609,6 +765,7 @@ export default function MesRecettes() {
               <button
                 className={styles.cancelBtn}
                 aria-label="Annuler la suppression de la recette"
+                disabled={isDeletingRecipe}
                 onClick={() => setShowDeleteModal(false)}
               >
                 Annuler
@@ -616,9 +773,10 @@ export default function MesRecettes() {
               <button
                 className={styles.confirmBtn}
                 aria-label="Confirmer la suppression de la recette"
+                disabled={isDeletingRecipe}
                 onClick={handleDeleteConfirm}
               >
-                Valider
+                {isDeletingRecipe ? 'Suppression...' : 'Valider'}
               </button>
             </div>
           </div>
@@ -897,12 +1055,14 @@ export default function MesRecettes() {
             <div className={styles.modalButtons}>
               <button
                 className={styles.cancelBtn}
+                disabled={isSavingEdit}
                 onClick={() => setShowEditModal(false)}
               >
                 Annuler
               </button>
               <button
                 className={styles.confirmBtn}
+                disabled={isSavingEdit}
                 onClick={openEditConfirmModal}
               >
                 Enregistrer
@@ -921,15 +1081,17 @@ export default function MesRecettes() {
             <div className={styles.modalButtons}>
               <button
                 className={styles.cancelBtn}
+                disabled={isSavingEdit}
                 onClick={() => setShowEditConfirmModal(false)}
               >
                 Annuler
               </button>
               <button
                 className={styles.confirmBtn}
+                disabled={isSavingEdit}
                 onClick={handleEditSave}
               >
-                Confirmer
+                {isSavingEdit ? 'Enregistrement...' : 'Confirmer'}
               </button>
             </div>
           </div>
@@ -976,6 +1138,7 @@ export default function MesRecettes() {
 
         <section className={styles.recipesPanel}>
           <h2 className={styles.title}>Mes recettes</h2>
+          {error && <p className={styles.errorText}>{error}</p>}
 
           {/* CRÉER UNE RECETTE */}
           <div className={styles.createBlock}>
@@ -1019,42 +1182,66 @@ export default function MesRecettes() {
               <h2 className={styles.sectionTitle}>{categorie}s</h2>
               <div className={styles.grid}>
                 {recettes.map(recette => (
-                  <div key={recette.id} className={styles.card}>
-                    <div className={styles.cardImage}>
-                      <img src={recette.image} alt="Illustration de la recette" />
-                      <div className={styles.cardActions}>
-                        <button
-                          className={styles.actionBtn}
-                          aria-label={`Modifier la recette ${recette.titre}`}
-                          onClick={() => handleEditClick(recette)}
-                        >
-                          <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-                        </button>
-                        <button
-                          className={styles.actionBtn}
-                          aria-label={`Supprimer la recette ${recette.titre}`}
-                          onClick={() => handleDeleteClick(recette)}
-                        >
-                          <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
-                        </button>
-                      </div>
-                      <span className={`${styles.cardTag} ${styles[String(recette.categorie || 'autre').toLowerCase()]}`}>
-                        {recette.categorie || 'Autre'}
-                      </span>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <h3 className={styles.cardTitle}>{recette.titre}</h3>
-                      <p className={styles.cardFilm}>
-                        <img src="/icon/Menu.svg" alt="" aria-hidden="true" />
-                        <span>{recette.film}</span>
-                      </p>
-                      <div className={styles.cardFooter}>
-                        <span className={styles.cardTemps}>
-                          <img src="/icon/Search.svg" alt="" aria-hidden="true" />
-                          <span>{recette.temps}</span>
-                        </span>
-                        <span className={styles.cardType}>{recette.type}</span>
-                      </div>
+                  <div key={recette.id} className={styles.cardShell}>
+                    <RecipeCard recipe={mapMemberRecipeToCard(recette)} />
+                    {(() => {
+                      const moderationBadge = getRecipeModerationBadge(recette);
+                      const isRejected = moderationBadge.tone === 'rejected' && Boolean(recette?.rejectionReason);
+                      const isTooltipOpen = openRejectionReasonId === recette.id;
+
+                      return (
+                        <div className={styles.moderationBadgeGroup}>
+                          <span
+                            className={`${styles.moderationBadge} ${styles[`moderationBadge_${moderationBadge.tone}`]}`}
+                            title={moderationBadge.title}
+                          >
+                            {moderationBadge.label}
+                          </span>
+
+                          {isRejected && (
+                            <>
+                              <button
+                                type="button"
+                                className={styles.rejectionInfoButton}
+                                aria-label={`Voir le motif de refus de la recette ${recette.titre}`}
+                                aria-expanded={isTooltipOpen}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  toggleRejectionReason(recette.id);
+                                }}
+                              >
+                                i
+                              </button>
+
+                              {isTooltipOpen && (
+                                <div className={styles.rejectionTooltip} role="status">
+                                  <strong className={styles.rejectionTooltipTitle}>Motif du refus</strong>
+                                  <p className={styles.rejectionTooltipText}>{recette.rejectionReason}</p>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    <div className={styles.cardActionsFloating}>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        aria-label={`Modifier la recette ${recette.titre}`}
+                        onClick={() => handleEditClick(recette)}
+                      >
+                        <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.actionBtn}
+                        aria-label={`Supprimer la recette ${recette.titre}`}
+                        onClick={() => handleDeleteClick(recette)}
+                      >
+                        <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                      </button>
                     </div>
                   </div>
                 ))}

@@ -55,11 +55,24 @@ export const registerSchema = z.object({
       .toLowerCase()      // normalise automatiquement en minuscules
       .trim(),
 
+    nom: z
+      .string({ required_error: 'Le nom est obligatoire' })
+      .min(2, 'Le nom doit contenir au moins 2 caractères')
+      .max(60, 'Le nom ne peut pas dépasser 60 caractères')
+      .trim(),
+
+    prenom: z
+      .string({ required_error: 'Le prénom est obligatoire' })
+      .min(2, 'Le prénom doit contenir au moins 2 caractères')
+      .max(60, 'Le prénom ne peut pas dépasser 60 caractères')
+      .trim(),
+
     pseudo: z
-      .string({ required_error: 'Le pseudo est obligatoire' })
+      .string()
       .min(2,  'Le pseudo doit contenir au moins 2 caractères')
       .max(30, 'Le pseudo ne peut pas dépasser 30 caractères')
-      .trim(),
+      .trim()
+      .optional(),
 
     password: passwordSchema,
   }),
@@ -89,6 +102,13 @@ export const registerSchema = z.object({
 export const updateMeSchema = z.object({
   body: z.object({
 
+    nom: z
+      .string()
+      .min(2, 'Le nom doit contenir au moins 2 caractères')
+      .max(60, 'Le nom ne peut pas dépasser 60 caractères')
+      .trim()
+      .optional(),
+
     pseudo: z
       .string()
       .min(2,  'Le pseudo doit contenir au moins 2 caractères')
@@ -105,7 +125,27 @@ export const updateMeSchema = z.object({
 
   // Règle custom : au moins un champ doit être fourni
   }).refine(
-    data => data.pseudo !== undefined || data.email !== undefined,
-    { message: 'Au moins un champ (pseudo ou email) est requis' }
+    data => data.nom !== undefined || data.pseudo !== undefined || data.email !== undefined,
+    { message: 'Au moins un champ (nom, pseudo ou email) est requis' }
+  ),
+});
+
+export const updatePasswordSchema = z.object({
+  body: z.object({
+    currentPassword: z
+      .string({ required_error: 'Le mot de passe actuel est obligatoire' })
+      .min(1, 'Le mot de passe actuel est obligatoire'),
+
+    newPassword: passwordSchema,
+
+    confirmPassword: z
+      .string({ required_error: 'La confirmation du mot de passe est obligatoire' })
+      .min(1, 'La confirmation du mot de passe est obligatoire'),
+  }).refine(
+    data => data.currentPassword !== data.newPassword,
+    { message: 'Le nouveau mot de passe doit être différent de l\'ancien', path: ['newPassword'] }
+  ).refine(
+    data => data.newPassword === data.confirmPassword,
+    { message: 'La confirmation du mot de passe ne correspond pas', path: ['confirmPassword'] }
   ),
 });
