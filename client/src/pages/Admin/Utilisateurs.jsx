@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
+import Alert from '../../components/Alert/Alert.jsx';
 import { deleteAdminUser, getAdminUsers, updateAdminUserRole } from '../../services/adminService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './AdminPages.module.scss';
+
+function getRoleLabel(role) {
+  return role === 'ADMIN' ? 'Administrateur' : 'Membre';
+}
 
 function AdminUtilisateurs() {
   const { user: currentUser } = useAuth();
@@ -13,6 +18,7 @@ function AdminUtilisateurs() {
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     setIsLoading(true);
@@ -38,6 +44,8 @@ function AdminUtilisateurs() {
   async function handleDeleteUser() {
     if (!selectedUser) return;
     try {
+      setError('');
+      setSuccessMessage('');
       await deleteAdminUser(selectedUser.id);
       setUsers((previous) => previous.filter((user) => user.id !== selectedUser.id));
       setSelectedUser(null);
@@ -52,10 +60,20 @@ function AdminUtilisateurs() {
     const newRole = selectedUser.role === 'ADMIN' ? 'MEMBER' : 'ADMIN';
     setIsUpdatingRole(true);
     setError('');
+    setSuccessMessage('');
     try {
       const updated = await updateAdminUserRole(selectedUser.id, newRole);
-      setUsers((previous) => previous.map((u) => (u.id === updated.id ? updated : u)));
-      setSelectedUser(updated);
+      const nextUser = updated?.id === selectedUser.id
+        ? updated
+        : { ...selectedUser, role: newRole };
+
+      setUsers((previous) => previous.map((user) => (
+        user.id === selectedUser.id
+          ? { ...user, ...nextUser }
+          : user
+      )));
+      setSelectedUser((previous) => (previous ? { ...previous, ...nextUser } : previous));
+      setSuccessMessage(`Rôle mis à jour : ${getRoleLabel(newRole)}.`);
     } catch (roleError) {
       setError(roleError.message || 'Modification du rôle impossible.');
     } finally {
@@ -87,11 +105,20 @@ function AdminUtilisateurs() {
           </div>
 
           {isLoading ? <p>Chargement des utilisateurs…</p> : null}
-          {error ? <p>{error}</p> : null}
+          <Alert type="error" message={error} onClose={() => setError('')} />
 
           <div className={styles.list}>
             {filteredUsers.map((user) => (
-              <button key={user.id} type="button" className={styles.rowCard} onClick={() => setSelectedUser(user)}>
+              <button
+                key={user.id}
+                type="button"
+                className={styles.rowCard}
+                onClick={() => {
+                  setSelectedUser(user);
+                  setError('');
+                  setSuccessMessage('');
+                }}
+              >
                 <span className={styles.userAvatar}>
                   <img src="/icon/User.svg" alt="" aria-hidden="true" />
                 </span>
@@ -108,6 +135,9 @@ function AdminUtilisateurs() {
 
       {selectedUser && (
         <>
+          <Alert type="success" message={successMessage} onClose={() => setSuccessMessage('')} />
+          <Alert type="error" message={error} onClose={() => setError('')} />
+
           <div className={styles.detailBox}>
             <div className={styles.field}>
               <label>Pseudo</label>
@@ -119,7 +149,7 @@ function AdminUtilisateurs() {
             </div>
             <div className={styles.field}>
               <label>Rôle</label>
-              <p>{selectedUser.role === 'ADMIN' ? 'Administrateur' : 'Membre'}</p>
+              <p>{getRoleLabel(selectedUser.role)}</p>
             </div>
 
             <div className={styles.recipesBlock}>
