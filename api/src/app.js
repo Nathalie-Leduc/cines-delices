@@ -1,5 +1,5 @@
 import express from 'express';
-import setupSwagger from './swagger.js';
+import setupSwagger from './swagger/swagger.js';
 import cors from 'cors'; // sur toutes les routes
 import helmet from 'helmet'; // Sécurité HTTP headers sur toutes les routes
 import fs from 'node:fs';
@@ -25,6 +25,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use('/uploads', express.static(uploadsDir));
+
+// Swagger docs
+setupSwagger(app);
 
 // Swagger docs
 setupSwagger(app);
