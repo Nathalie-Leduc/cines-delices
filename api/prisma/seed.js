@@ -841,7 +841,7 @@ async function main() {
 
   await createRecipe({
     titre: 'Whisky Sour de Breaking Bad',
-    imageURL: 'https://images.unsplash.com/photo-1659729683174-84f48ad87a94?w=600',
+    imageURL: 'https://images.unsplash.com/photo-1713720441159-466472b29b54?w=600',
     instructions: '1. Verser whisky, jus de citron fraîchement pressé, sucre et blanc d\'œuf dans un shaker.\n2. Shaker sans glace 15 sec (dry shake) pour émulsionner le blanc d\'œuf.\n3. Ajouter des glaçons et reshaker vigoureusement 15 sec.\n4. Double-filtrer dans un verre à cocktail refroidi.\n5. Décorer d\'un zeste de citron et de quelques gouttes d\'Angostura.',
     nombrePersonnes: 1, tempsPreparation: 5, tempsCuisson: 0,
     status: 'PUBLISHED', userId: userMarie.id, categoryId: catBoisson.id, mediaId: medias[1396].id,
