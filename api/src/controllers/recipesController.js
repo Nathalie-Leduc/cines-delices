@@ -137,7 +137,12 @@ export const createRecipe = async (req, res) => {
       );
 
       const media = await prisma.media.upsert({
-        where: { tmdbId },
+        where: {
+          tmdbId_type: {
+            tmdbId,
+            type: mediaType,
+          },
+        },
         update: {
           titre: normalizedTitle,
           type: mediaType,
@@ -426,7 +431,12 @@ export const updateRecipe = async (req, res) => {
       );
 
       const media = await prisma.media.upsert({
-        where: { tmdbId },
+        where: {
+          tmdbId_type: {
+            tmdbId,
+            type: mediaType,
+          },
+        },
         update: {
           titre: normalizedTitle,
           type: mediaType,

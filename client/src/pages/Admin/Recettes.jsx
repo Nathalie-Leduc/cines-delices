@@ -11,11 +11,12 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
-  || 'http://localhost:3000/api/tmdb/medias/search';
+  || `${API_BASE_URL}/api/tmdb/medias/search`;
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
-  || 'http://localhost:3000/api/ingredients';
+  || `${API_BASE_URL}/api/ingredients`;
 const UNITES_OPTIONS = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
 function toSlug(value) {

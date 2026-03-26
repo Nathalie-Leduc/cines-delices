@@ -20,18 +20,19 @@ import RecipeCard from '../../components/RecipeCard';
 // ──────────────────────────────────────────────────────────────────────────
 import { useAuth } from '../../contexts/AuthContext.jsx' 
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
-  || 'http://localhost:3000/api/tmdb/medias/search';
+  || `${API_BASE_URL}/api/tmdb/medias/search`;
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
   || import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
-  || 'http://localhost:3000/api/ingredients/search';
+  || `${API_BASE_URL}/api/ingredients/search`;
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
   || (import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
     ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '')
     : '')
-  || 'http://localhost:3000/api/ingredients';
-const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
+  || `${API_BASE_URL}/api/ingredients`;
+const PROFILE_API = import.meta.env.VITE_PROFILE_API || `${API_BASE_URL}/api/auth/me`;
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 

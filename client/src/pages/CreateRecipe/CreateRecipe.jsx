@@ -5,17 +5,18 @@ import Alert from '../../components/Alert/Alert.jsx';
 
 const categoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
+const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
   || import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
-  || 'http://localhost:3000/api/ingredients/search';
+  || `${API_BASE_URL}/api/ingredients/search`;
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
   || (import.meta.env.VITE_INGREDIENT_SEARCH_API_URL ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '') : '')
-  || 'http://localhost:3000/api/ingredients';
+  || `${API_BASE_URL}/api/ingredients`;
 const RECIPE_CREATE_API = import.meta.env.VITE_RECIPE_CREATE_API
   || import.meta.env.VITE_RECIPE_API_URL
-  || 'http://localhost:3000/api/recipes';
+  || `${API_BASE_URL}/api/recipes`;
 const TMDB_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
-  || 'http://localhost:3000/api/tmdb/medias/search';
+  || `${API_BASE_URL}/api/tmdb/medias/search`;
 
 const INITIAL_FORM = {
   titre: '',
