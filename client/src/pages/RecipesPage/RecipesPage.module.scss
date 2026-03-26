@@ -1,6 +1,8 @@
 @use "../../styles/visitor-mixins" as ui;
 
 .container {
+  --recipe-card-min-size: 165.47px;
+  --recipe-card-max-size: 238.47px;
   display: flex;
   flex-direction: column;
 }
@@ -151,6 +153,7 @@
   align-items: center;
   gap: 1.4rem;
   margin-bottom: 1.75rem;
+  min-width: 0;
 }
 
 .title {
@@ -172,12 +175,14 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+  min-width: 0;
 }
 
 .searchForm {
   display: flex;
   flex: 1 1 420px;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .searchField {
@@ -327,8 +332,11 @@
 
 .limitSelect {
   @include ui.input-surface;
-  max-width: 5rem;
-  padding-right: 2rem;
+  width: 5.75rem;
+  min-width: 5.75rem;
+  max-width: 100%;
+  padding-right: 2.5rem;
+  padding-left: 0.9rem;
 }
 
 .summaryRow {
@@ -358,12 +366,13 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.85rem;
+  min-width: 0;
 }
 
 .grid {
   display: grid;
   gap: 0.9rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--recipe-card-min-size)), var(--recipe-card-max-size)));
   justify-content: center;
 }
 
@@ -443,6 +452,8 @@
   }
 
   .titleRow {
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 0.85rem;
     margin-bottom: 1.25rem;
   }
@@ -545,6 +556,12 @@
     gap: 0.75rem;
     margin-top: 1.6rem;
   }
+
+  .paginationButton,
+  .paginationStatus {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 @media (min-width: 768px) {
@@ -562,7 +579,7 @@
 
   .grid {
     gap: 1rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(var(--recipe-card-min-size), var(--recipe-card-max-size)));
   }
 }
 
@@ -582,6 +599,6 @@
 
   .grid {
     gap: 1rem;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(var(--recipe-card-min-size), var(--recipe-card-max-size)));
   }
 }

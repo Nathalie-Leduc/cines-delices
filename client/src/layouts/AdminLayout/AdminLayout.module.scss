@@ -9,6 +9,7 @@
 .adminContainer {
   width: min(100%, 1180px);
   margin: 0 auto;
+  min-width: 0;
 }
 
 .pageHeader {
@@ -157,6 +158,10 @@
   .pageHeader h1 {
     font-size: 2.6rem;
   }
+
+  .pageHeader {
+    margin-bottom: 0.95rem;
+  }
 }
 
 @media (max-width: 767px) {
@@ -166,10 +171,16 @@
 
   .welcomeText {
     margin-bottom: 1.2rem;
+    font-size: 0.92rem;
 
     strong {
       font-size: 1.2rem;
     }
+  }
+
+  .pageHeader h1 {
+    font-size: 2rem;
+    text-align: center;
   }
 
   .desktopSidebar {
@@ -178,5 +189,6 @@
 
   .mobileSidebarDrawer {
     display: block;
+    padding-inline: 0.85rem;
   }
 }

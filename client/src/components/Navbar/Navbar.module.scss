@@ -20,6 +20,7 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
+  min-width: 0;
 }
 
 .logoLink {
@@ -38,6 +39,7 @@
 
 .desktopNav {
   display: none;
+  min-width: 0;
 }
 
 .desktopLinks {
@@ -59,6 +61,7 @@
   font-family: var(--font-display);
   font-size: 1rem;
   color: #ffffff;
+  white-space: nowrap;
   transition: color 0.2s ease;
 }
 
@@ -72,27 +75,32 @@
 
 .rightZone {
   display: none;
+  min-width: 0;
 }
 
 .searchForm {
   display: flex;
   align-items: center;
   min-width: 260px;
-  min-height: var(--control-height-md);
+  height: 46px;
+  min-height: 46px;
   border: 1px solid var(--color-border-soft);
   border-radius: var(--radius-md);
   overflow: hidden;
   background-color: rgba(246, 241, 232, 0.1);
+  max-width: 100%;
 }
 
 .searchInput {
   width: 100%;
   border: 0;
   outline: none;
-  min-height: var(--control-height-md);
-  padding: 0.85rem 1rem;
+  height: 46px;
+  min-height: 46px;
+  padding: 0.65rem 1rem;
   background: transparent;
   color: var(--color-text-primary);
+  font-size: 0.95rem;
 }
 
 .searchInput::placeholder {
@@ -103,7 +111,8 @@
   border: 0;
   background: transparent;
   color: var(--color-text-primary);
-  min-height: var(--control-height-md);
+  height: 46px;
+  min-height: 46px;
   padding: 0 1rem;
   cursor: pointer;
 }
@@ -160,8 +169,11 @@
 .desktopLoginLink {
   @include ui.primary-button;
   text-decoration: none;
-  font-size: 0.95rem;
-  min-width: 170px;
+  height: 46px;
+  min-height: 46px;
+  padding: 0.65rem 1.35rem;
+  font-size: 0.9rem;
+  min-width: 156px;
 }
 
 .desktopLoginIcon {
@@ -240,7 +252,7 @@
   position: relative;
   z-index: 1;
   min-height: 100dvh;
-  padding: 1.5rem 1rem 2rem;
+  padding: 1.25rem 1rem 1.5rem;
   display: flex;
   flex-direction: column;
   transform: translateY(16px);
@@ -362,7 +374,7 @@
   position: fixed;
   inset: 0 auto 0 0;
   width: min(100%, 430px);
-  padding: 2rem 2rem 2.5rem;
+  padding: 1.5rem 1.1rem 2rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -481,6 +493,7 @@
 
 .searchWrapper {
   position: relative;
+  min-width: 0;
 }
 
 .searchResults,
@@ -568,10 +581,10 @@
 
 @media (min-width: 1024px) {
   .container {
-    grid-template-columns: auto minmax(420px, 1fr) auto;
-    padding: 0 6rem;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding: 0 var(--layout-gutter);
     min-height: 82px;
-    column-gap: 2rem;
+    column-gap: clamp(1rem, 2vw, 2rem);
   }
 
   .burger,
@@ -590,24 +603,35 @@
     align-items: center;
     width: 100%;
     justify-self: stretch;
+    justify-content: center;
   }
 
   .desktopLinks {
-    width: 100%;
+    width: min(100%, 28rem);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(max-content, 1fr));
     align-items: center;
     justify-items: center;
-    gap: 0;
+    justify-content: stretch;
+    gap: clamp(0.9rem, 1.8vw, 1.6rem);
     list-style: none;
   }
 
   .rightZone {
     display: flex;
     align-items: center;
-    gap: 1.5rem;
+    gap: clamp(0.85rem, 1.8vw, 1.5rem);
     justify-self: end;
     margin-left: 0;
+  }
+
+  .searchForm {
+    min-width: clamp(220px, 25vw, 360px);
+  }
+
+  .link,
+  .activeLink {
+    font-size: 0.96rem;
   }
 
   .mobilePanel,
@@ -625,5 +649,77 @@
     width: 28px;
     height: 28px;
     display: block;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .logo {
+    height: 38px;
+  }
+
+  .desktopLinks {
+    width: min(100%, 24rem);
+    gap: 0.75rem;
+  }
+
+  .userGreeting {
+    font-size: 0.82rem;
+  }
+
+  .userName {
+    font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .container {
+    min-height: 68px;
+    column-gap: 0.65rem;
+  }
+
+  .logo {
+    height: 36px;
+  }
+
+  .mobileSearchTitleRow {
+    max-width: calc(100% - 3rem);
+  }
+
+  .mobileSearchEyebrow {
+    font-size: clamp(1.2rem, 6vw, 1.65rem);
+    padding-top: calc(0.35rem + 26px);
+  }
+
+  .mobileSearchTitleLine {
+    margin-top: 26px;
+  }
+
+  .mobileSearchField {
+    min-height: 58px;
+    padding: 0 0.95rem;
+  }
+
+  .mobileSearchInput {
+    font-size: 1rem;
+  }
+
+  .mobilePanel {
+    width: min(100%, 360px);
+  }
+
+  .mobileLink,
+  .mobileActiveLink {
+    padding: 1.05rem 0;
+    font-size: clamp(1.45rem, 7vw, 2.35rem);
+  }
+
+  .mobileBottom {
+    gap: 1.25rem;
+    padding-top: 1.35rem;
+  }
+
+  .mobileActionButton {
+    padding: 1rem 1.2rem;
+    font-size: 1.1rem;
   }
 }

@@ -8,6 +8,7 @@
   align-items: center;
   gap: 0.9rem;
   margin-bottom: 1.1rem;
+  min-width: 0;
 
   h2 {
     margin: 0;
@@ -15,7 +16,7 @@
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
     line-height: 1.1;
-    white-space: nowrap;
+    white-space: normal;
   }
 
   &::after {
@@ -33,6 +34,7 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  width: 100%;
 
   input {
     width: 100%;
@@ -113,6 +115,7 @@
   gap: 0.75rem;
   margin-bottom: 1rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .filterGroup {
@@ -177,6 +180,7 @@
   position: relative;
   max-width: 470px;
   margin-bottom: 0.9rem;
+  width: 100%;
 
   img {
     position: absolute;
@@ -209,6 +213,7 @@
   position: relative;
   max-width: 470px;
   margin-bottom: 0.9rem;
+  width: 100%;
 
   img {
     position: absolute;
@@ -244,6 +249,7 @@
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  width: 100%;
 }
 
 .categoriesSearchInput {
@@ -595,6 +601,7 @@
   display: grid;
   gap: 0.7rem;
   max-width: 720px;
+  min-width: 0;
 }
 
 .rowCard {
@@ -609,6 +616,7 @@
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 0;
  
   &:hover {
     border-color: rgba(201, 164, 92, 0.5);
@@ -784,6 +792,7 @@
   gap: 0.9rem;
   max-width: 760px;
   flex-direction: column;
+  min-width: 0;
 }
 
 .btnMuted,
@@ -1039,6 +1048,7 @@
 .editModalInput,
 .editModalSelect {
   width: 100%;
+  min-width: 0;
   border: 1px solid rgba(164, 66, 68, 0.35);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
@@ -1046,6 +1056,7 @@
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   padding: 0.7rem 0.8rem;
+  appearance: none;
 }
 
 .editModalInput::placeholder {
@@ -1091,6 +1102,11 @@
     max-width: none;
   }
 
+  .usersSearchRow,
+  .categoriesSearchRow {
+    max-width: none;
+  }
+
   .cardsGrid {
     grid-template-columns: 1fr;
   }
@@ -1106,6 +1122,17 @@
 
   .categoryRow {
     flex-wrap: wrap;
+  }
+
+  .rowCard {
+    flex-wrap: wrap;
+    padding: 0.9rem;
+  }
+
+  .rowArrow,
+  .recipesBadgeCentered,
+  .recipesBadge {
+    margin-left: 0;
   }
 
   .detailBox {
@@ -1172,6 +1199,13 @@
     padding-left: 0;
   }
 
+  .recipesBlock {
+    .badgesRow,
+    .countersRow {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
   .recipePill {
     font-size: 0.64rem;
     padding: 0.32rem 0.52rem;
@@ -1193,6 +1227,23 @@
     width: 14px;
     height: 14px;
     font-size: 0.5rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .recipesGridExact,
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inlineTools {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .roundIconBtn {
+    width: 36px;
+    height: 36px;
   }
 }
 
