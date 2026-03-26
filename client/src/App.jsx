@@ -20,9 +20,14 @@ import Signup from './pages/Signup';
 import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } from './pages/Admin';
 import ProtectedRoute from './router';
 import AdminRoute from './router/AdminRoute.jsx';
+import CookieConsent from './components/CookieConsent/CookieConsent.jsx';
+
+
 
 function App() {
   return (
+    <>
+      <CookieConsent />
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
@@ -63,6 +68,7 @@ function App() {
         </Route>
       </Route>
     </Routes>
+  </>
   );
 }
 
