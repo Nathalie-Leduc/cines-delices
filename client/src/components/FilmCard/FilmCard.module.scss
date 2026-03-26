@@ -1,0 +1,127 @@
+@use "../../styles/visitor-mixins" as ui;
+
+.card {
+  @include ui.card-shell;
+}
+
+.imageWrapper {
+  @include ui.card-image-shell;
+}
+
+.image {
+  @include ui.card-image;
+}
+
+.card:hover .image {
+  transform: scale(1.03);
+}
+
+.badge {
+  @include ui.badge-pill;
+  background: rgba(142, 31, 47, 0.95);
+}
+
+.content {
+  @include ui.card-content;
+}
+
+.title {
+  @include ui.card-title(2);
+}
+
+.divider {
+  margin: 0.45rem 0 0.5rem;
+  height: 1px;
+  width: 100%;
+  background: rgba(232, 220, 200, 0.18);
+}
+
+.metaColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.36rem;
+  margin-top: auto;
+  min-width: 0;
+}
+
+.infoRow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.genreIcon {
+  background-color: #c9a45c;
+  -webkit-mask-image: url("/icon/Movie.svg");
+  mask-image: url("/icon/Movie.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.directorIcon {
+  background-color: #f6f1e8;
+  -webkit-mask-image: url("/icon/User.svg");
+  mask-image: url("/icon/User.svg");
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.metaText {
+  color: rgba(246, 241, 232, 0.92);
+  font-family: "Inter", sans-serif;
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.15;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+
+@media (max-width: 767px) {
+  .card {
+    border-radius: var(--radius-lg);
+  }
+
+  .imageWrapper {
+    flex-basis: 42%;
+  }
+
+  .content {
+    padding: 0.72rem 0.76rem 0.76rem;
+  }
+
+  .title {
+    font-size: 0.8rem;
+  }
+
+  .metaText {
+    font-size: 0.74rem;
+  }
+
+  .badge {
+    top: 0.72rem;
+    right: 0.72rem;
+    padding: 0.28rem 0.64rem;
+    font-size: 0.68rem;
+  }
+}

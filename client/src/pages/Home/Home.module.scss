@@ -1,20 +1,580 @@
+@use "../../styles/visitor-mixins" as ui;
+
 .container {
+  --recipe-card-min-size: 165.47px;
+  --recipe-card-max-size: 238.47px;
   display: flex;
   flex-direction: column;
+}
+
+.latestSection {
+  @include ui.section-container;
+  padding-top: var(--section-space);
+  padding-bottom: 1.75rem;
+}
+
+.latestHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.sectionEyebrow {
+  margin: 0;
+  color: rgba(251, 220, 166, 0.78);
+  font-size: 0.9rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  @include ui.section-title;
+  margin-top: 0.35rem;
+  font-size: clamp(2rem, 3vw, 3rem);
+  line-height: 1.05;
+}
+
+.sectionText {
+  margin: 0.9rem 0 0;
+  max-width: 46rem;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  line-height: 1.5;
+  min-width: 0;
+}
+
+.secondaryLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.secondaryLink:hover {
+  color: var(--color-title);
+}
+
+.latestCarousel {
+  margin-top: 1.75rem;
+}
+
+.latestViewport {
+  position: relative;
+  overflow: hidden;
+  padding: 0.2rem;
+  mask-image: linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%);
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+}
+
+.latestViewportDragging {
+  cursor: grabbing;
+}
+
+.latestTrack {
+  display: flex;
+  gap: 1rem;
+  width: max-content;
+  will-change: transform;
+  transition: transform 0.75s ease;
+}
+
+.latestTrackDragging {
+  transition: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.latestSlide {
+  flex: 0 0 clamp(
+    var(--recipe-card-min-size),
+    calc((100vw - (var(--layout-gutter) * 2) - 2rem) / 3),
+    var(--recipe-card-max-size)
+  );
+  max-width: var(--recipe-card-max-size);
+}
+
+.carouselMeta {
+  display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 2rem;
   gap: 1rem;
+  margin-top: 1rem;
+}
+
+.carouselDots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.carouselDot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: rgba(246, 241, 232, 0.22);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.carouselDotActive {
+  background: var(--color-title);
+  transform: scale(1.15);
+}
+
+.latestStatus,
+.latestError {
+  margin: 1.5rem 0 0;
+  color: var(--color-text-primary);
+  font-size: 1rem;
+}
+
+.latestError {
+  color: var(--color-danger-soft);
+}
+
+.latestSlide :global(a) {
+  min-width: 0;
+}
+
+.hero {
+  @include ui.hero-shell;
+}
+
+.heroInner {
+  @include ui.section-container;
+  position: relative;
+  z-index: 2;
+}
+
+.heroImage {
+  @include ui.hero-image;
+}
+
+.heroOverlay {
+  @include ui.hero-overlay;
+}
+
+.heroContent {
+  @include ui.hero-content;
+}
+
+.heroReveal {
+  @include ui.hero-reveal-base;
+}
+
+.heroRevealVisible {
+  @include ui.hero-reveal-visible;
+}
+
+.conceptSection {
+  @include ui.section-container;
+  padding-top: 1.3rem;
+  padding-bottom: 0.85rem;
+}
+
+.conceptShell {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(232, 220, 200, 0.1);
+  border-radius: clamp(1.2rem, 2vw, 1.8rem);
+  background:
+    linear-gradient(135deg, rgba(31, 29, 30, 0.94), rgba(23, 21, 22, 0.88)),
+    url("/img/rocky-wall.png") center / cover no-repeat;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.2);
+}
+
+.conceptBackdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at top right, rgba(201, 164, 92, 0.18), transparent 32%),
+    radial-gradient(circle at bottom left, rgba(142, 31, 47, 0.16), transparent 30%);
+  pointer-events: none;
+}
+
+.conceptContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.4rem;
+  align-items: start;
+  padding: clamp(1.35rem, 2.4vw, 2.2rem);
+}
+
+.conceptCopy {
+  max-width: 35rem;
+}
+
+.conceptTitle {
+  @include ui.section-title;
+  margin-top: 0.42rem;
+  font-size: clamp(2rem, 3vw, 2.85rem);
+  line-height: 1;
+}
+
+.conceptAccent {
+  display: block;
+  width: min(11rem, 34vw);
+  height: 2px;
+  margin-top: 1rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(251, 220, 166, 0.95), rgba(251, 220, 166, 0.08));
+  transform: scaleX(0.2);
+  transform-origin: left center;
+  opacity: 0;
+  transition: transform 0.8s ease, opacity 0.4s ease;
+}
+
+.conceptAccentVisible {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.conceptIntro {
+  margin: 1rem 0 0;
+  max-width: 34rem;
+  color: rgba(246, 241, 232, 0.9);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.conceptTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.2rem;
+}
+
+.conceptTag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.2rem;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(251, 220, 166, 0.22);
+  border-radius: 999px;
+  background: rgba(246, 241, 232, 0.06);
+  color: rgba(246, 241, 232, 0.92);
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  backdrop-filter: blur(10px);
+}
+
+.conceptSteps {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.conceptStep {
+  position: relative;
+  overflow: hidden;
+  padding: 1rem 1rem 1.05rem;
+  border: 1px solid rgba(232, 220, 200, 0.1);
+  border-radius: 1.15rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.conceptStep::after {
+  content: "";
+  position: absolute;
+  inset: auto 1rem 0 1rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(251, 220, 166, 0.45), transparent);
+}
+
+.conceptStepVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.conceptStepDelay1 {
+  transition-delay: 0.12s;
+}
+
+.conceptStepDelay2 {
+  transition-delay: 0.22s;
+}
+
+.conceptStepDelay3 {
+  transition-delay: 0.32s;
+}
+
+.conceptStep:hover {
+  border-color: rgba(251, 220, 166, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+}
+
+.conceptStepNumber {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  margin-bottom: 0.82rem;
+  border-radius: 999px;
+  background: rgba(142, 31, 47, 0.84);
+  color: #f6f1e8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.conceptStepTitle {
+  margin: 0;
+  color: var(--color-title);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  line-height: 1.02;
+}
+
+.conceptStepText {
+  margin: 0.55rem 0 0;
+  color: rgba(246, 241, 232, 0.82);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.conceptReveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
+}
+
+.conceptRevealVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.conceptRevealDelay1 {
+  transition-delay: 0.08s;
+}
+
+.conceptRevealDelay2 {
+  transition-delay: 0.18s;
+}
+
+.conceptRevealDelay3 {
+  transition-delay: 0.28s;
+}
+
+.heroRevealDelay1 {
+  transition-delay: 0.08s;
+}
+
+.heroRevealDelay2 {
+  transition-delay: 0.2s;
+}
+
+.heroRevealDelay3 {
+  transition-delay: 0.32s;
 }
 
 .title {
-  font-size: 3rem;
-  font-weight: 700;
-  color: #e50914;
+  @include ui.hero-title;
 }
 
 .subtitle {
-  font-size: 1.25rem;
-  color: #555;
+  @include ui.hero-subtitle;
+}
+
+.cta {
+  @include ui.primary-button;
+  margin-top: 1.75rem;
+  text-decoration: none;
+  font-size: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroReveal {
+    @include ui.hero-reveal-reduced-motion;
+  }
+
+  .conceptReveal,
+  .conceptStep,
+  .conceptAccent {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .conceptSection {
+    padding-top: 0.85rem;
+    padding-bottom: 0.55rem;
+  }
+
+  .conceptContent {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1.1rem 1rem;
+  }
+
+  .conceptTitle {
+    font-size: clamp(1.8rem, 9vw, 2.2rem);
+  }
+
+  .conceptIntro {
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .conceptTags {
+    gap: 0.55rem;
+    margin-top: 1rem;
+  }
+
+  .conceptTag {
+    min-height: 2rem;
+    padding: 0.42rem 0.78rem;
+    font-size: 0.74rem;
+  }
+
+  .conceptSteps {
+    gap: 0.8rem;
+  }
+
+  .conceptStep {
+    padding: 0.95rem 0.9rem 1rem;
+  }
+
+  .conceptStepTitle {
+    font-size: 1.14rem;
+  }
+
+  .conceptStepText {
+    font-size: 0.88rem;
+  }
+
+  .latestSection {
+    padding-top: var(--section-space);
+    padding-bottom: 0.9rem;
+  }
+
+  .latestHeader {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .latestViewport {
+    padding-inline: 0.1rem;
+    mask-image: none;
+    cursor: default;
+  }
+
+  .latestTrack {
+    gap: 0.9rem;
+  }
+
+  .latestSlide {
+    flex-basis: min(calc(100vw - (var(--layout-gutter) * 2)), var(--recipe-card-max-size));
+    max-width: var(--recipe-card-max-size);
+  }
+
+  .hero {
+    min-height: 330px;
+  }
+
+  .heroInner {
+    min-height: 330px;
+  }
+
+  .heroContent {
+    max-width: 300px;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .title {
+    font-size: clamp(2.4rem, 11vw, 3rem);
+    line-height: 1;
+  }
+
+  .subtitle {
+    margin-top: 1rem;
+    max-width: 260px;
+    font-size: 0.95rem;
+    line-height: 1.35;
+  }
+
+  .cta {
+    margin-top: 1.25rem;
+    font-size: 0.95rem;
+    width: 100%;
+    max-width: 18rem;
+  }
+
+  .carouselMeta {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 768px) {
+  .conceptSteps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-self: stretch;
+  }
+
+  .latestSlide {
+    flex-basis: clamp(
+      var(--recipe-card-min-size),
+      calc((100vw - (var(--layout-gutter) * 2) - 2rem) / 3),
+      var(--recipe-card-max-size)
+    );
+    max-width: var(--recipe-card-max-size);
+  }
+
+  .heroInner {
+    min-height: var(--hero-height-desktop);
+  }
+
+  .heroContent {
+    max-width: 760px;
+  }
+
+  .title {
+    max-width: 700px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .latestTrack {
+    gap: 1rem;
+  }
+
+  .latestSlide {
+    flex-basis: clamp(
+      var(--recipe-card-min-size),
+      calc((min(100vw, var(--layout-max-width)) - (var(--layout-gutter) * 2) - 3rem) / 4),
+      var(--recipe-card-max-size)
+    );
+    max-width: var(--recipe-card-max-size);
+  }
+
+  .heroContent {
+    max-width: 860px;
+    padding-top: 4.2rem;
+  }
+
+  .title {
+    max-width: 780px;
+  }
 }

@@ -1,0 +1,643 @@
+@use "../../styles/visitor-mixins" as ui;
+
+.page {
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(31, 29, 30, 0.96), rgba(31, 29, 30, 0.96)),
+    url("/img/rocky-wall.png");
+  background-size: cover;
+  background-position: center;
+}
+
+.contentWrap {
+  @include ui.section-container(var(--layout-content-width));
+}
+
+.hero {
+  position: relative;
+  min-height: var(--hero-height-desktop);
+  overflow: hidden;
+  border-bottom: 1px solid rgba(246, 241, 232, 0.2);
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(31, 29, 30, 0.78) 0%, rgba(31, 29, 30, 0.48) 40%, rgba(31, 29, 30, 0.18) 100%),
+    linear-gradient(180deg, rgba(31, 29, 30, 0.08) 0%, rgba(31, 29, 30, 0.32) 100%);
+}
+
+.hero .contentWrap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 520px;
+}
+
+.backButton {
+  @include ui.secondary-button;
+  position: absolute;
+  top: 1.6rem;
+  left: 1rem;
+  gap: 0.55rem;
+  background: rgba(31, 29, 30, 0.38);
+  font-size: 0.92rem;
+  backdrop-filter: blur(4px);
+}
+
+.backButton:hover {
+  background: rgba(31, 29, 30, 0.58);
+  border-color: rgba(246, 241, 232, 0.75);
+  transform: translateY(-1px);
+}
+
+.backArrow {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.heroContent {
+  max-width: 420px;
+}
+
+.heroReveal {
+  @include ui.hero-reveal-base;
+}
+
+.heroRevealVisible {
+  @include ui.hero-reveal-visible;
+}
+
+.heroRevealDelay1 {
+  transition-delay: 0.08s;
+}
+
+.heroRevealDelay2 {
+  transition-delay: 0.18s;
+}
+
+.heroRevealDelay3 {
+  transition-delay: 0.3s;
+}
+
+.heroRevealDelay4 {
+  transition-delay: 0.38s;
+}
+
+.title {
+  @include ui.hero-title;
+  font-size: clamp(3rem, 5vw, 5rem);
+  line-height: 0.96;
+  letter-spacing: -0.04em;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 1.35rem 0 0;
+  padding: 0.72rem 1.1rem;
+  border-radius: 0.6rem;
+  background: #a61f33;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+  color: #f6f1e8;
+  font-family: "Playfair Display", serif;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.heroBadge span {
+  color: #d89b48;
+}
+
+.categoryTag {
+  position: absolute;
+  right: 2rem;
+  bottom: 2rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.42rem 0.95rem;
+  border: 1.5px solid #e8dcc8;
+  border-radius: 999px;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.24);
+  color: #f6f1e8;
+  font-family: "Inter", sans-serif;
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.categoryTag.entree {
+  background: rgba(110, 139, 91, 0.95);
+}
+
+.categoryTag.plat {
+  background: rgba(142, 31, 47, 0.95);
+}
+
+.categoryTag.dessert {
+  background: rgba(74, 52, 40, 0.95);
+}
+
+.categoryTag.boisson {
+  background: rgba(58, 138, 154, 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroReveal {
+    @include ui.hero-reveal-reduced-motion;
+  }
+}
+
+.metaStrip {
+  border-bottom: 1px solid rgba(246, 241, 232, 0.18);
+  background: rgba(24, 23, 24, 0.72);
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  padding: 0.525rem 0;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  min-height: 52px;
+  color: #f6f1e8;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+}
+
+.metaDivider {
+  display: none;
+}
+
+.metaIcon,
+.mediaBadgeIcon {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  background-color: #f0d29a;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  flex-shrink: 0;
+}
+
+.knifeIcon {
+  -webkit-mask-image: url("/icon/Knife.svg");
+  mask-image: url("/icon/Knife.svg");
+}
+
+.cookingIcon {
+  -webkit-mask-image: url("/icon/CookingPot.svg");
+  mask-image: url("/icon/CookingPot.svg");
+}
+
+.timeIcon {
+  -webkit-mask-image: url("/icon/Time.svg");
+  mask-image: url("/icon/Time.svg");
+}
+
+.groupIcon {
+  -webkit-mask-image: url("/icon/Group_fill.svg");
+  mask-image: url("/icon/Group_fill.svg");
+}
+
+.mainSection {
+  padding: var(--section-space) 0 3.5rem;
+}
+
+.layout {
+  display: grid;
+  gap: 2.25rem;
+}
+
+.section {
+  min-width: 0;
+}
+
+.ingredientsSection {
+  grid-area: ingredients;
+}
+
+.mediaSection {
+  grid-area: media;
+  align-self: stretch;
+}
+
+.stepsSection {
+  grid-area: steps;
+}
+
+.similarSection {
+  grid-area: similar;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.sectionTitle {
+  @include ui.section-title;
+  white-space: nowrap;
+  font-size: clamp(2rem, 3vw, 2.45rem);
+}
+
+.sectionLine {
+  width: 100%;
+  height: 1px;
+  background: rgba(240, 210, 154, 0.52);
+}
+
+.ingredientsList,
+.stepsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ingredientItem {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 2.85rem;
+  padding: 0.2rem 0.9rem;
+  border-radius: 0.45rem;
+  background: rgba(236, 232, 226, 0.72);
+  color: rgba(54, 48, 46, 0.94);
+  font-family: "Inter", sans-serif;
+  font-size: 0.95rem;
+}
+
+.ingredientItem + .ingredientItem {
+  margin-top: 0.75rem;
+}
+
+.ingredientDot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #7d2634;
+  flex-shrink: 0;
+}
+
+.stepItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.stepItem + .stepItem {
+  margin-top: 1.5rem;
+}
+
+.stepNumber {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: #7ba162;
+  color: #f6f1e8;
+  font-family: "Inter", sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.stepItem p {
+  margin: 0.1rem 0 0;
+  color: rgba(246, 241, 232, 0.92);
+  font-family: "Inter", sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.mediaCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem 1rem 1.2rem;
+  border-radius: 0.8rem;
+  background:
+    linear-gradient(rgba(36, 35, 37, 0.92), rgba(36, 35, 37, 0.92)),
+    url("/img/rocky-wall.png");
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.22);
+}
+
+.mediaTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mediaBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.42rem 0.8rem;
+  border-radius: 999px;
+  background: #a61f33;
+  color: #f0d29a;
+  font-family: "Inter", sans-serif;
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.movieBadgeIcon {
+  width: 18px;
+  height: 18px;
+  background-color: #f0d29a;
+  -webkit-mask-image: url("/icon/Recipes.svg");
+  mask-image: url("/icon/Recipes.svg");
+}
+
+.mediaTypeBox {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 0.55rem;
+  border: 2px solid #e8dcc8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #f6f1e8;
+  font-family: "Inter", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.mediaBody {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 1rem;
+  flex: 1;
+}
+
+.mediaPoster {
+  width: 100%;
+  aspect-ratio: 0.7 / 1;
+  object-fit: cover;
+  border-radius: 0.35rem;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.22);
+}
+
+.mediaCopy {
+  color: #f0d29a;
+  font-family: "Inter", sans-serif;
+  font-size: 0.95rem;
+}
+
+.mediaCopy p {
+  margin: 0.12rem 0;
+}
+
+.synopsisTitle {
+  margin: 1rem 0 0.55rem;
+  color: #f6f1e8;
+  font-family: "Playfair Display", serif;
+  font-size: 1.8rem;
+  font-weight: 500;
+}
+
+.synopsisText {
+  max-height: 10.5rem;
+  overflow-y: auto;
+  padding-right: 0.4rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(240, 210, 154, 0.5) rgba(255, 255, 255, 0.04);
+}
+
+.synopsisText::-webkit-scrollbar {
+  width: 8px;
+}
+
+.synopsisText::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+}
+
+.synopsisText::-webkit-scrollbar-thumb {
+  background: rgba(240, 210, 154, 0.5);
+  border-radius: 999px;
+}
+
+.synopsisText {
+  color: rgba(246, 241, 232, 0.82);
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.similarGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 165.47px), 238.47px));
+  gap: 1rem;
+  justify-content: center;
+}
+
+.notFound {
+  padding: 4rem 0;
+  color: #f6f1e8;
+  text-align: center;
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+  .contentWrap {
+    padding-inline: 2rem;
+  }
+
+  .backButton {
+    left: 2rem;
+  }
+
+  .layout {
+    grid-template-columns: minmax(0, 1.18fr) minmax(360px, 0.82fr);
+    grid-template-areas:
+      "ingredients media"
+      "steps similar";
+    align-items: start;
+  }
+
+  .metaGrid {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .metaDivider {
+    display: block;
+    width: 1px;
+    height: 1.6rem;
+    background: rgba(246, 241, 232, 0.28);
+  }
+
+}
+
+@media (max-width: 767px) {
+  .metaGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    padding: 0;
+  }
+
+  .metaItem {
+    min-height: 3.5rem;
+    justify-content: center;
+    padding: 0.7rem 1rem;
+  }
+
+  .metaDivider {
+    display: none;
+  }
+
+  .metaItem:nth-child(1),
+  .metaItem:nth-child(5) {
+    position: relative;
+  }
+
+  .metaItem:nth-child(1),
+  .metaItem:nth-child(3) {
+    border-bottom: 1px solid rgba(246, 241, 232, 0.2);
+  }
+
+  .metaItem:nth-child(1)::after,
+  .metaItem:nth-child(5)::after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    right: 0;
+    width: 1px;
+    height: calc(100% - 20px);
+    background: rgba(246, 241, 232, 0.2);
+  }
+
+  .layout {
+    grid-template-areas:
+      "media"
+      "ingredients"
+      "steps"
+      "similar";
+    gap: 1.75rem;
+  }
+
+  .hero,
+  .hero .contentWrap {
+    min-height: 380px;
+  }
+
+  .heroContent {
+    max-width: 260px;
+  }
+
+  .backButton {
+    top: 1rem;
+    left: 1rem;
+    gap: 0.4rem;
+    padding: 0.5rem 0.8rem;
+    font-size: 0.82rem;
+  }
+
+  .categoryTag {
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  .mainSection {
+    padding: 1.25rem 0 2.4rem;
+  }
+
+  .heroBadge {
+    font-size: 0.92rem;
+    line-height: 1.2;
+  }
+
+  .sectionHeading {
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .sectionTitle {
+    font-size: 1.85rem;
+  }
+
+  .mediaCard {
+    min-height: auto;
+    padding: 0.85rem 1rem 1rem;
+    margin-inline: -1rem;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .mediaTop {
+    margin-bottom: 0.75rem;
+  }
+
+  .mediaBadge {
+    font-size: 0.82rem;
+    padding: 0.38rem 0.72rem;
+  }
+
+  .mediaTypeBox {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.82rem;
+  }
+
+  .mediaBody {
+    grid-template-columns: 98px minmax(0, 1fr);
+    gap: 0.85rem;
+  }
+
+  .mediaCopy {
+    font-size: 0.88rem;
+  }
+
+  .synopsisTitle {
+    margin-top: 0.8rem;
+    font-size: 1.45rem;
+  }
+
+  .synopsisText {
+    max-height: 10rem;
+    overflow-y: auto;
+    padding-right: 0.3rem;
+    font-size: 0.88rem;
+    line-height: 1.3;
+  }
+
+  .similarGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .sectionHeading {
+    gap: 0.75rem;
+  }
+}
