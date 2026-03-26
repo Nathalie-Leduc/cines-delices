@@ -51,6 +51,7 @@ async function registerUser() {
       nom: 'Integration',
       prenom: 'Admin',
       password: 'Test1234!',
+      acceptedPolicies: true,
     }),
   });
 
