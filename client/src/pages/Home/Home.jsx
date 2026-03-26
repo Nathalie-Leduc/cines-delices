@@ -6,6 +6,24 @@ import useHeroReveal from "../../hooks/useHeroReveal";
 import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "./Home.module.scss";
 
+const CONCEPT_STEPS = [
+  {
+    step: "01",
+    title: "Explore",
+    text: "Parcours des recettes reliées à des films et séries cultes, avec un univers visuel pensé pour donner envie de cliquer.",
+  },
+  {
+    step: "02",
+    title: "Choisis",
+    text: "Filtre selon ton envie du moment : entrée, plat, dessert ou boisson, puis trouve la recette qui te parle le plus.",
+  },
+  {
+    step: "03",
+    title: "Cuisine",
+    text: "Retrouve les étapes, les ingrédients et le média associé pour prolonger l'expérience jusque dans l'assiette.",
+  },
+];
+
 function normalizeCategoryLabel(value) {
   const normalized = String(value || "").trim().toLowerCase();
 
@@ -58,13 +76,123 @@ function Home() {
   const [visibleSlides, setVisibleSlides] = useState(getVisibleSlides);
   const [carouselState, setCarouselState] = useState({ index: 0, direction: 1 });
   const [trackOffset, setTrackOffset] = useState(0);
-  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+  const [isViewportPaused, setIsViewportPaused] = useState(false);
+  const [isDraggingCarousel, setIsDraggingCarousel] = useState(false);
   const viewportRef = useRef(null);
   const trackRef = useRef(null);
   const slideRefs = useRef([]);
+  const trackOffsetRef = useRef(0);
+  const suppressClickRef = useRef(false);
+  const suppressClickTimeoutRef = useRef(null);
+  const conceptSectionRef = useRef(null);
+  const dragStateRef = useRef({
+    pointerId: null,
+    startX: 0,
+    startY: 0,
+    startOffset: 0,
+    hasMoved: false,
+    isHorizontalDrag: null,
+  });
   const isHeroVisible = useHeroReveal();
+  const [isConceptVisible, setIsConceptVisible] = useState(false);
 
   const maxCarouselIndex = Math.max(0, latestRecipes.length - visibleSlides);
+  const isCarouselPaused = isViewportPaused || isDraggingCarousel;
+
+  const getMaxTrackOffset = () => {
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+
+    if (!viewport || !track) {
+      return 0;
+    }
+
+    return Math.max(0, track.scrollWidth - viewport.clientWidth);
+  };
+
+  const clampTrackOffset = (value) => Math.min(Math.max(value, 0), getMaxTrackOffset());
+
+  const updateTrackOffset = (value) => {
+    const nextOffset = clampTrackOffset(value);
+    trackOffsetRef.current = nextOffset;
+    setTrackOffset(nextOffset);
+    return nextOffset;
+  };
+
+  const getClosestSlideIndex = (offset) => {
+    if (maxCarouselIndex <= 0) {
+      return 0;
+    }
+
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+
+    for (let index = 0; index <= maxCarouselIndex; index += 1) {
+      const slide = slideRefs.current[index];
+
+      if (!slide) {
+        continue;
+      }
+
+      const candidateOffset = clampTrackOffset(slide.offsetLeft);
+      const distance = Math.abs(candidateOffset - offset);
+
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    }
+
+    return closestIndex;
+  };
+
+  const resetDragState = () => {
+    dragStateRef.current = {
+      pointerId: null,
+      startX: 0,
+      startY: 0,
+      startOffset: 0,
+      hasMoved: false,
+      isHorizontalDrag: null,
+    };
+  };
+
+  const stopDragging = (pointerId) => {
+    const viewport = viewportRef.current;
+    const { pointerId: activePointerId, hasMoved, isHorizontalDrag } = dragStateRef.current;
+
+    if (activePointerId == null || (pointerId != null && pointerId !== activePointerId)) {
+      return;
+    }
+
+    if (viewport?.hasPointerCapture?.(activePointerId)) {
+      viewport.releasePointerCapture(activePointerId);
+    }
+
+    const nextOffset = trackOffsetRef.current;
+    resetDragState();
+    setIsDraggingCarousel(false);
+
+    if (!hasMoved || !isHorizontalDrag) {
+      return;
+    }
+
+    const nextIndex = getClosestSlideIndex(nextOffset);
+    suppressClickRef.current = true;
+
+    if (suppressClickTimeoutRef.current) {
+      window.clearTimeout(suppressClickTimeoutRef.current);
+    }
+
+    suppressClickTimeoutRef.current = window.setTimeout(() => {
+      suppressClickRef.current = false;
+    }, 250);
+
+    setCarouselState((previous) => ({
+      index: nextIndex,
+      direction: nextIndex >= previous.index ? 1 : -1,
+    }));
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -114,6 +242,46 @@ function Home() {
   }, []);
 
   useEffect(() => {
+    const sectionElement = conceptSectionRef.current;
+
+    if (!sectionElement) {
+      return undefined;
+    }
+
+    if (typeof window === "undefined" || !("IntersectionObserver" in window)) {
+      setIsConceptVisible(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) {
+          return;
+        }
+
+        setIsConceptVisible(true);
+        observer.disconnect();
+      },
+      {
+        rootMargin: "-10% 0px",
+        threshold: 0.18,
+      },
+    );
+
+    observer.observe(sectionElement);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => () => {
+    if (suppressClickTimeoutRef.current) {
+      window.clearTimeout(suppressClickTimeoutRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
     setCarouselState((previous) => ({
       index: Math.min(previous.index, maxCarouselIndex),
       direction: maxCarouselIndex === 0 ? 1 : previous.direction,
@@ -121,20 +289,23 @@ function Home() {
   }, [maxCarouselIndex]);
 
   useEffect(() => {
+    if (isDraggingCarousel) {
+      return;
+    }
+
     const activeSlide = slideRefs.current[carouselState.index];
     const viewport = viewportRef.current;
     const track = trackRef.current;
 
     if (!activeSlide || !viewport || !track) {
-      setTrackOffset(0);
+      updateTrackOffset(0);
       return;
     }
 
-    const maxOffset = Math.max(0, track.scrollWidth - viewport.clientWidth);
-    const nextOffset = Math.min(activeSlide.offsetLeft, maxOffset);
+    const nextOffset = clampTrackOffset(activeSlide.offsetLeft);
 
-    setTrackOffset(nextOffset);
-  }, [carouselState.index, latestRecipes.length, visibleSlides]);
+    updateTrackOffset(nextOffset);
+  }, [carouselState.index, isDraggingCarousel, latestRecipes.length, visibleSlides]);
 
   useEffect(() => {
     if (maxCarouselIndex === 0 || isCarouselPaused) {
@@ -165,6 +336,72 @@ function Home() {
       window.clearInterval(interval);
     };
   }, [isCarouselPaused, maxCarouselIndex]);
+
+  const handleCarouselPointerDown = (event) => {
+    if (maxCarouselIndex === 0) {
+      return;
+    }
+
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+
+    const viewport = viewportRef.current;
+
+    resetDragState();
+    dragStateRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startOffset: trackOffsetRef.current,
+      hasMoved: false,
+      isHorizontalDrag: null,
+    };
+
+    viewport?.setPointerCapture?.(event.pointerId);
+    setIsDraggingCarousel(true);
+  };
+
+  const handleCarouselPointerMove = (event) => {
+    const dragState = dragStateRef.current;
+
+    if (!isDraggingCarousel || dragState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragState.startX;
+    const deltaY = event.clientY - dragState.startY;
+
+    if (dragState.isHorizontalDrag == null) {
+      if (Math.abs(deltaX) < 6 && Math.abs(deltaY) < 6) {
+        return;
+      }
+
+      dragState.isHorizontalDrag = Math.abs(deltaX) > Math.abs(deltaY);
+
+      if (!dragState.isHorizontalDrag) {
+        stopDragging(event.pointerId);
+        return;
+      }
+    }
+
+    dragState.hasMoved = true;
+    updateTrackOffset(dragState.startOffset - deltaX);
+  };
+
+  const handleCarouselPointerEnd = (event) => {
+    stopDragging(event.pointerId);
+  };
+
+  const handleCarouselClickCapture = (event) => {
+    if (!suppressClickRef.current) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    suppressClickRef.current = false;
+  };
 
   return (
     <main className={styles.container}>
@@ -199,6 +436,63 @@ function Home() {
         </div>
       </section>
 
+      <section
+        ref={conceptSectionRef}
+        className={styles.conceptSection}
+        aria-label="Présentation du concept Cinés Délices"
+      >
+        <div className={styles.conceptShell}>
+          <div className={styles.conceptBackdrop} aria-hidden="true" />
+
+          <div className={styles.conceptContent}>
+            <div className={styles.conceptCopy}>
+              <p
+                className={`${styles.sectionEyebrow} ${styles.conceptReveal} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
+              >
+                Le concept
+              </p>
+              <h2
+                className={`${styles.conceptTitle} ${styles.conceptReveal} ${styles.conceptRevealDelay1} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
+              >
+                Le cinéma passe à table.
+              </h2>
+              <span
+                className={`${styles.conceptAccent} ${isConceptVisible ? styles.conceptAccentVisible : ""}`.trim()}
+                aria-hidden="true"
+              />
+              <p
+                className={`${styles.conceptIntro} ${styles.conceptReveal} ${styles.conceptRevealDelay2} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
+              >
+                Cinés Délices te fait découvrir des recettes inspirées de films et séries
+                cultes. Tu explores un univers, tu choisis une recette, puis tu la cuisines
+                chez toi.
+              </p>
+
+              <div
+                className={`${styles.conceptTags} ${styles.conceptReveal} ${styles.conceptRevealDelay3} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
+              >
+                <span className={styles.conceptTag}>Films</span>
+                <span className={styles.conceptTag}>Séries</span>
+                <span className={styles.conceptTag}>Recettes</span>
+              </div>
+            </div>
+
+            <div className={styles.conceptSteps}>
+              {CONCEPT_STEPS.map((item, index) => (
+                <article
+                  key={item.step}
+                  className={`${styles.conceptStep} ${styles[`conceptStepDelay${index + 1}`]} ${isConceptVisible ? styles.conceptStepVisible : ""}`.trim()}
+                >
+                  <span className={styles.conceptStepNumber}>{item.step}</span>
+                  <h3 className={styles.conceptStepTitle}>{item.title}</h3>
+                  <p className={styles.conceptStepText}>{item.text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className={styles.latestSection}>
         <div className={styles.latestHeader}>
           <div>
@@ -224,15 +518,21 @@ function Home() {
           <div className={styles.latestCarousel}>
             <div
               ref={viewportRef}
-              className={styles.latestViewport}
-              onMouseEnter={() => setIsCarouselPaused(true)}
-              onMouseLeave={() => setIsCarouselPaused(false)}
-              onFocusCapture={() => setIsCarouselPaused(true)}
-              onBlurCapture={() => setIsCarouselPaused(false)}
+              className={`${styles.latestViewport} ${isDraggingCarousel ? styles.latestViewportDragging : ""}`.trim()}
+              onMouseEnter={() => setIsViewportPaused(true)}
+              onMouseLeave={() => setIsViewportPaused(false)}
+              onFocusCapture={() => setIsViewportPaused(true)}
+              onBlurCapture={() => setIsViewportPaused(false)}
+              onPointerDown={handleCarouselPointerDown}
+              onPointerMove={handleCarouselPointerMove}
+              onPointerUp={handleCarouselPointerEnd}
+              onPointerCancel={handleCarouselPointerEnd}
+              onLostPointerCapture={handleCarouselPointerEnd}
+              onClickCapture={handleCarouselClickCapture}
             >
               <div
                 ref={trackRef}
-                className={styles.latestTrack}
+                className={`${styles.latestTrack} ${isDraggingCarousel ? styles.latestTrackDragging : ""}`.trim()}
                 style={{ transform: `translateX(-${trackOffset}px)` }}
               >
                 {latestRecipes.map((recipe, index) => (

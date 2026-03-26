@@ -16,6 +16,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 2rem;
+  min-width: 0;
 }
 
 .footerNav {
@@ -23,6 +24,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 1.4rem;
+  min-width: 0;
 }
 
 .footerLogo img {
@@ -55,7 +57,7 @@
   background-color: rgba(246, 241, 232, 0.52);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .footer {
     padding: 1.4rem var(--layout-gutter);
   }
@@ -70,6 +72,10 @@
   .footerNav {
     justify-content: center;
     gap: 1rem;
+  }
+
+  .separator {
+    display: none;
   }
 
   .footerLink {

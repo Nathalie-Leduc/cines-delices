@@ -45,6 +45,7 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-x: clip;
 }
 
 body {
@@ -56,10 +57,12 @@ body {
   line-height: 1.6;
   font-size: 16px;
   font-weight: 400;
+  overflow-x: clip;
 }
 
 #root {
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 h1,
@@ -84,6 +87,23 @@ input,
 select,
 textarea {
   font: inherit;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+small,
+strong,
+a,
+button,
+label {
+  overflow-wrap: anywhere;
 }
 
 main {
@@ -91,6 +111,7 @@ main {
   background:
     linear-gradient(var(--color-bg-overlay), var(--color-bg-overlay)),
     url('/img/rocky-wall.png') center/cover;
+  min-width: 0;
 }
 
 @keyframes visitor-hero-reveal {
