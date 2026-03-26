@@ -1,7 +1,21 @@
 import dotenv from 'dotenv';
 import { mapMedia } from '../mappers/mediaMapper.js';
+import { buildCacheKey, getOrFetch } from '../lib/tmdbCache.js';
 
 dotenv.config();
+
+// ============================================================
+// TMDB CONTROLLER — avec cache mémoire
+// ============================================================
+//
+// MODIFICATION : la fonction fetchTmdb passe maintenant par le cache.
+// Chaque appel TMDB est mis en cache 10 min (TTL par défaut).
+//
+// Impact sur les performances :
+//   - 1ère recherche "ratatouille" → ~300ms (appel TMDB réel)
+//   - 2ème recherche "ratatouille" dans les 10 min → ~1ms (cache hit)
+//   - La liste des genres est cachée 1h (change très rarement)
+// ============================================================
 
 const TMDB_PAGE_SIZE = 20;
 
@@ -25,14 +39,33 @@ function buildTmdbUrl(pathname, params = {}) {
   return `${process.env.TMDB_BASE_URL}${pathname}?${searchParams.toString()}`;
 }
 
-async function fetchTmdb(pathname, params = {}) {
-  const response = await fetch(buildTmdbUrl(pathname, params));
+// ─────────────────────────────────────────────
+// MODIFIÉ : fetchTmdb passe par le cache
+// ─────────────────────────────────────────────
+// Le cache est transparent : si les données sont en cache,
+// on les renvoie sans appeler TMDB. Sinon, on appelle TMDB
+// et on stocke le résultat pour les prochaines requêtes.
+//
+// Le paramètre ttl permet de personnaliser la durée de cache :
+//   - fetchTmdb('/genre/movie/list', {}, 3600) → 1h pour les genres
+//   - fetchTmdb('/search/movie', { query }) → 10min par défaut
 
-  if (!response.ok) {
-    throw new Error(`Erreur TMDB ${pathname}`);
-  }
+async function fetchTmdb(pathname, params = {}, ttl) {
+  const cacheKey = buildCacheKey(pathname, params);
 
-  return response.json();
+  return getOrFetch(
+    cacheKey,
+    async () => {
+      const response = await fetch(buildTmdbUrl(pathname, params));
+
+      if (!response.ok) {
+        throw new Error(`Erreur TMDB ${pathname}`);
+      }
+
+      return response.json();
+    },
+    ttl,
+  );
 }
 
 async function fetchByType(type) {
@@ -46,8 +79,9 @@ async function fetchMovieDirector(movieId) {
   return director?.name ?? null;
 }
 
+// ← TTL de 1h pour les genres (change très rarement sur TMDB)
 async function fetchMovieGenreMap() {
-  const data = await fetchTmdb('/genre/movie/list');
+  const data = await fetchTmdb('/genre/movie/list', {}, 3600);
   return new Map((data.genres || []).map((genre) => [genre.id, genre.name]));
 }
 

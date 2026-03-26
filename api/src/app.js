@@ -10,11 +10,23 @@ import routes from './routes/index.js'
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 
 const app = express();
+// AJOUT À FAIRE DANS app.js — trust proxy
+// ============================================================
+// À ajouter APRÈS la ligne : const app = express();
+// et AVANT : app.use(helmet());
+
+
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.CLIENT_URL;
 const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
 
 fs.mkdirSync(uploadsDir, { recursive: true });
+
+// AJOUT À FAIRE DANS app.js — trust proxy
+// ============================================================
+// À ajouter APRÈS la ligne : const app = express();
+// et AVANT : app.use(helmet());
+app.set('trust proxy', 1);
 
 
 // Sécurité et parsing
