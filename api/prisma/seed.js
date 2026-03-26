@@ -76,11 +76,11 @@ async function main() {
       (s) => prisma.media.findUnique({ where: { slug: s } }));
     medias[def.tmdbId] = await prisma.media.upsert({
       where:  { tmdbId: def.tmdbId },
-      update: {},
+      update: { realisateur: def.realisateur },
       create: {
         tmdbId: def.tmdbId, titre: def.titre, slug, type: def.type,
         posterUrl: def.poster, synopsis: def.synopsis, annee: def.annee,
-        realisateur: def.realisateur, // ajout
+        realisateur: def.realisateur,
         genres: { create: def.genres.map(gId => ({ genreId: gId })) },
       },
     });

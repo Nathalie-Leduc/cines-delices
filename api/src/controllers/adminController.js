@@ -331,7 +331,11 @@ export async function publishRecipe(req, res) {
   try {
     const recipeBeforeApproval = await prisma.recipe.findUnique({
       where: { id: req.params.id },
-      include: {
+      select: {
+        id: true,
+        titre: true,
+        status: true,
+        rejectionReason: true,
         ingredients: {
           include: {
             ingredient: true,
@@ -342,6 +346,18 @@ export async function publishRecipe(req, res) {
 
     if (!recipeBeforeApproval) {
       return res.status(404).json({ message: 'Recette introuvable.' });
+    }
+
+    if (recipeBeforeApproval.status !== 'PENDING') {
+      return res.status(409).json({
+        message: 'Cette recette ne peut pas être validée car elle n\'est plus en attente de validation.',
+      });
+    }
+
+    if (recipeBeforeApproval.rejectionReason) {
+      return res.status(409).json({
+        message: 'Cette recette ne peut pas être validée tant que le motif de refus n\'a pas été corrigé.',
+      });
     }
 
     const pendingIngredients = recipeBeforeApproval.ingredients
@@ -362,7 +378,7 @@ export async function publishRecipe(req, res) {
           status: 'PUBLISHED',
           rejectionReason: null,
         },
-        include: {
+      include: {
           user: {
             select: {
               nom: true,
@@ -544,7 +560,9 @@ export async function updateAdminRecipe(req, res) {
     }
 
     // Ingrédients : remplace la liste complète si fournie par le front
+    let hasUpdatedIngredients = false;
     if (Array.isArray(ingredients)) {
+      hasUpdatedIngredients = true;
       const resolvedIngredients = [];
 
       for (const item of ingredients) {
@@ -596,6 +614,16 @@ export async function updateAdminRecipe(req, res) {
             }
           : {}),
       };
+    }
+
+    // Une modification admin lève le blocage de refus précédent pour permettre une nouvelle validation.
+    if (Object.keys(data).length > 0) {
+      data.rejectionReason = null;
+    }
+
+    // Si l'admin corrige les ingrédients d'une recette en attente, elle reste dans le flux de validation.
+    if (hasUpdatedIngredients) {
+      data.status = 'PENDING';
     }
 
     if (Object.keys(data).length === 0) {
@@ -1033,25 +1061,73 @@ export async function deleteIngredient(req, res) {
   try {
     const ingredient = await prisma.ingredient.findUnique({
       where: { id: req.params.id },
-      select: { nom: true },
+      select: {
+        nom: true,
+        recipes: {
+          where: {
+            recipe: {
+              status: 'PENDING',
+            },
+          },
+          select: {
+            recipeId: true,
+            recipe: {
+              select: {
+                titre: true,
+                userId: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!ingredient) {
       return res.status(404).json({ message: 'Ingrédient introuvable.' });
     }
 
-    await prisma.$transaction([
-      prisma.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } }),
-      prisma.ingredient.delete({ where: { id: req.params.id } }),
-      prisma.notification.updateMany({
+    const impactedPendingRecipes = ingredient.recipes
+      .map((relation) => relation.recipe)
+      .filter(Boolean);
+
+    const rejectionReason = `Recette refusée automatiquement: l'ingrédient "${ingredient.nom}" a été refusé par l'administration.`;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } });
+      await tx.ingredient.delete({ where: { id: req.params.id } });
+
+      if (impactedPendingRecipes.length > 0) {
+        const impactedRecipeIds = ingredient.recipes.map((relation) => relation.recipeId);
+
+        await tx.recipe.updateMany({
+          where: {
+            id: { in: impactedRecipeIds },
+            status: 'PENDING',
+          },
+          data: {
+            status: 'PENDING',
+            rejectionReason,
+          },
+        });
+
+        await tx.notification.createMany({
+          data: impactedPendingRecipes.map((recipe) => ({
+            userId: recipe.userId,
+            type: 'RECIPE_SUBMITTED',
+            message: `Votre recette "${recipe.titre}" a été refusée: l'ingrédient "${ingredient.nom}" a été rejeté. Merci de corriger puis soumettre à nouveau.`,
+          })),
+        });
+      }
+
+      await tx.notification.updateMany({
         where: {
           userId: req.user.id,
           isRead: false,
           message: `Nouvel ingrédient soumis: ${ingredient.nom}`,
         },
         data: { isRead: true },
-      }),
-    ]);
+      });
+    });
 
     return res.status(204).send();
   } catch (error) {

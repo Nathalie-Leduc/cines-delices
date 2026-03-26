@@ -60,7 +60,7 @@ function buildPublishedMediaCatalogHandler(mediaType, responseKey) {
         year: item.annee,
         overview: item.synopsis,
         genre: item.genres.map((genreLink) => genreLink.genre?.nom).filter(Boolean).join(', '),
-        creator: null,
+        creator: item.realisateur,
       })),
       pagination: {
         page,
