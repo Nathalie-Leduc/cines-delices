@@ -12,6 +12,7 @@ export default function Signup() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorTitle, setErrorTitle] = useState('');
@@ -77,6 +78,11 @@ export default function Signup() {
       return;
     }
 
+    if (!acceptedPolicies) {
+      showFormError('Vous devez accepter la politique de confidentialité et la politique de cookies.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -85,6 +91,7 @@ export default function Signup() {
         nom: nom.trim(),
         prenom: prenom.trim(),
         password,
+        acceptedPolicies,
       });
 
       login({ token: payload?.token, user: payload?.user ?? null });
@@ -202,7 +209,30 @@ export default function Signup() {
             </div>
           </div>
 
-          <button type="submit" className={styles.submitButton}>
+          <div className={styles.policyConsent}>
+            <label htmlFor="acceptedPolicies" className={styles.policyLabel}>
+              <input
+                id="acceptedPolicies"
+                type="checkbox"
+                className={styles.policyCheckbox}
+                checked={acceptedPolicies}
+                onChange={(e) => setAcceptedPolicies(e.target.checked)}
+                required
+              />
+              <span>
+                J'accepte la{' '}
+                  <NavLink to="/politique-confidentialite" className={styles.link}>
+                    politique de confidentialité
+                </NavLink>{' '}
+                et la{' '}
+                  <NavLink to="/politique-cookies" className={styles.link}>
+                  politique de cookies
+                </NavLink>
+              </span>
+            </label>
+          </div>
+
+          <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
             {isSubmitting ? 'Création...' : 'Créer un compte'}
           </button>
 

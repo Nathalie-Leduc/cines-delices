@@ -13,6 +13,8 @@ import Movies from './pages/Movies';
 import Series from './pages/Series';
 import Contact from './pages/Contact';
 import MentionsLegales from './pages/MentionsLegales';
+import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
+import PolitiqueCookies from './pages/PolitiqueCookies';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } from './pages/Admin';
@@ -30,6 +32,8 @@ function App() {
         <Route path="/series" element={<Series />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
+        <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
+        <Route path="/politique-cookies" element={<PolitiqueCookies />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
       </Route>

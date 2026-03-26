@@ -18,6 +18,20 @@ export default function Footer() {
           </NavLink>
           <span className={styles.separator} aria-hidden="true" />
           <NavLink
+            to="/politique-confidentialite"
+            className={({ isActive }) => `${styles.footerLink} ${isActive ? styles.active : ''}`.trim()}
+          >
+            Politique de confidentialité
+          </NavLink>
+          <span className={styles.separator} aria-hidden="true" />
+          <NavLink
+            to="/politique-cookies"
+            className={({ isActive }) => `${styles.footerLink} ${isActive ? styles.active : ''}`.trim()}
+          >
+            Politique de cookies
+          </NavLink>
+          <span className={styles.separator} aria-hidden="true" />
+          <NavLink
             to="/contact"
             className={({ isActive }) => `${styles.footerLink} ${isActive ? styles.active : ''}`.trim()}
           >

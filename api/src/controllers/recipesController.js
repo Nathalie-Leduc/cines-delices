@@ -610,6 +610,7 @@ export const submitRecipe = asyncHandler(async (req, res) => {
       where: { id },
       data: {
         status: 'PENDING',
+        rejectionReason: null,
       },
       include: recipeRelationsInclude,
     });
