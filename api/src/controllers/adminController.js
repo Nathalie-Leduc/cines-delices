@@ -21,26 +21,6 @@ import { generateUniqueSlug } from '../utils/slug.js';
 // 5. Suppression du getAllRecipes placeholder (données en dur)
 // ============================================================
 
-// ============================================================
-// ADMIN CONTROLLER — Ciné Délices
-// ============================================================
-// MODIFICATIONS (intégrité BDD + schéma corrigé) :
-//
-// 1. deleteUser : supprime DRAFT/PENDING, garde PUBLISHED (SetNull)
-//    → les recettes publiées survivent avec userId = null
-//
-// 2. formatSubmitter : gère user === null (compte supprimé)
-//    → affiche "Ancien membre" côté front
-//
-// 3. resolveAdminMediaId : adapté à @@unique([tmdbId, type])
-//    → findUnique utilise la contrainte composite au lieu de tmdbId seul
-//
-// 4. publishRecipe / rejectRecipe : gère userId nullable
-//    → la notification n'est créée que si userId existe encore
-//
-// 5. Suppression du getAllRecipes placeholder (données en dur)
-// ============================================================
-
 const DEFAULT_CATEGORY_COLORS = {
   'entrée': '#84A767',
   entree: '#84A767',
@@ -80,19 +60,7 @@ function toDisplayWords(value) {
 // ─────────────────────────────────────────────
 // MODIFIÉ : gère le cas user === null
 // ─────────────────────────────────────────────
-// ─────────────────────────────────────────────
-// MODIFIÉ : gère le cas user === null
-// ─────────────────────────────────────────────
 function formatSubmitter(user) {
-  // ← AJOUT : si le user est null (compte supprimé via SetNull)
-  if (!user) {
-    return {
-      firstName: 'Ancien',
-      lastName: 'membre',
-      fullName: 'Ancien membre',
-    };
-  }
-
   // ← AJOUT : si le user est null (compte supprimé via SetNull)
   if (!user) {
     return {
@@ -130,7 +98,6 @@ function formatRecipe(recipe) {
     .reduce((sum, value) => sum + value, 0);
 
   // formatSubmitter gère déjà user === null
-  // formatSubmitter gère déjà user === null
   const submittedBy = formatSubmitter(recipe.user);
 
   return {
@@ -145,7 +112,6 @@ function formatRecipe(recipe) {
     media: recipe.media?.type === 'SERIES' ? 'S' : 'F',
     image: recipe.imageURL || recipe.media?.posterUrl || '/img/entrees.png',
     mediaPoster: recipe.media?.posterUrl || null,
-    director: recipe.media?.realisateur || null, // ← AJOUT : réalisateur/créateur du média
     director: recipe.media?.realisateur || null, // ← AJOUT : réalisateur/créateur du média
     status: recipe.status,
     instructions: recipe.instructions,
@@ -272,33 +238,7 @@ function extractDirector(tmdbMedia, prismaType) {
 // APRÈS : findUnique({ where: { tmdbId_type: { tmdbId, type } } })
 //   → utilise la contrainte composite @@unique([tmdbId, type])
 //   → le film 2062 et la série 2062 coexistent sans conflit
-// ─────────────────────────────────────────────
-// Extraction du réalisateur depuis les données TMDB
-// ─────────────────────────────────────────────
-// Pour un FILM : on cherche dans credits.crew le job "Director"
-// Pour une SÉRIE : TMDB fournit directement le champ "created_by"
-function extractDirector(tmdbMedia, prismaType) {
-  const people = prismaType === 'MOVIE'
-    ? (tmdbMedia?.credits?.crew || [])
-        .filter((person) => person.job === 'Director')
-        .map((person) => person.name)
-    : (tmdbMedia?.created_by || [])
-        .map((person) => person.name)
-        .filter(Boolean);
-
-  return people.length > 0 ? people.join(', ') : null;
-}
-
-// ─────────────────────────────────────────────────────────
-// MODIFIÉ : adapté à @@unique([tmdbId, type])
-// ─────────────────────────────────────────────────────────
-// AVANT : findUnique({ where: { tmdbId } })
-//   → marchait quand tmdbId était @unique seul
-//   → CASSAIT si un film et une série avaient le même tmdbId
 //
-// APRÈS : findUnique({ where: { tmdbId_type: { tmdbId, type } } })
-//   → utilise la contrainte composite @@unique([tmdbId, type])
-//   → le film 2062 et la série 2062 coexistent sans conflit
 async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
   if (mediaId !== undefined && mediaId !== null && mediaId !== '') {
     return mediaId;
@@ -327,32 +267,14 @@ async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
     },
   });
 
-  // ← MODIFIÉ : on détermine le type AVANT la recherche
-  const { prismaType, tmdbType } = normalizeMediaKind(mediaType);
-
-  // ← MODIFIÉ : contrainte composite au lieu de tmdbId seul
-  // Prisma génère automatiquement le nom "tmdbId_type" depuis @@unique([tmdbId, type])
-  const existingMedia = await prisma.media.findUnique({
-    where: {
-      tmdbId_type: {
-        tmdbId: normalizedTmdbId,
-        type: prismaType,
-      },
-    },
-  });
-
   if (existingMedia) {
     return existingMedia.id;
   }
 
   // ← MODIFIÉ : append_to_response=credits pour récupérer le réalisateur
   // en un seul appel API (au lieu de 2 appels séparés)
-
-  // ← MODIFIÉ : append_to_response=credits pour récupérer le réalisateur
-  // en un seul appel API (au lieu de 2 appels séparés)
-
+  
   const response = await fetch(
-    `${process.env.TMDB_BASE_URL}/${tmdbType}/${normalizedTmdbId}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&append_to_response=credits`
     `${process.env.TMDB_BASE_URL}/${tmdbType}/${normalizedTmdbId}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&append_to_response=credits`
   );
 
@@ -368,13 +290,7 @@ async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
   }
 
   // ← AJOUT : extraction du réalisateur selon le type de média
-  // 🍽️ Analogie :
-  // - Film = un plat unique → on cherche le "Chef" dans la brigade (crew)
-  // - Série = un menu complet → on cherche le "Créateur du concept" (created_by)
-  const realisateur = extractDirector(tmdbMedia, prismaType);
-
-  // ← AJOUT : extraction du réalisateur selon le type de média
-  // 🍽️ Analogie :
+  //  Analogie :
   // - Film = un plat unique → on cherche le "Chef" dans la brigade (crew)
   // - Série = un menu complet → on cherche le "Créateur du concept" (created_by)
   const realisateur = extractDirector(tmdbMedia, prismaType);
@@ -395,16 +311,11 @@ async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
       synopsis: tmdbMedia?.overview || null,
       annee: Number.isInteger(releaseYear) ? releaseYear : null,
       realisateur, // ← AJOUT : sauvegarde du réalisateur/créateur
-      realisateur, // ← AJOUT : sauvegarde du réalisateur/créateur
     },
   });
 
   return createdMedia.id;
 }
-
-// =====================
-// RECETTES — ADMIN CRUD
-// =====================
 
 // =====================
 // RECETTES — ADMIN CRUD
@@ -506,21 +417,11 @@ export async function getPendingRecipes(req, res) {
 // Avec SetNull, une recette PUBLISHED peut avoir userId = null
 // (si le membre a supprimé son compte entre-temps).
 // On ne crée la notification que si l'auteur existe encore.
-// ─────────────────────────────────────────────────────────
-// MODIFIÉ : publishRecipe gère userId nullable
-// ─────────────────────────────────────────────────────────
-// Avec SetNull, une recette PUBLISHED peut avoir userId = null
-// (si le membre a supprimé son compte entre-temps).
-// On ne crée la notification que si l'auteur existe encore.
 export async function publishRecipe(req, res) {
   try {
     const recipeBeforeApproval = await prisma.recipe.findUnique({
       where: { id: req.params.id },
-      select: {
-        id: true,
-        titre: true,
-        status: true,
-        rejectionReason: true,
+      include: {
         ingredients: {
           include: {
             ingredient: true,
@@ -531,18 +432,6 @@ export async function publishRecipe(req, res) {
 
     if (!recipeBeforeApproval) {
       return res.status(404).json({ message: 'Recette introuvable.' });
-    }
-
-    if (recipeBeforeApproval.status !== 'PENDING') {
-      return res.status(409).json({
-        message: 'Cette recette ne peut pas être validée car elle n\'est plus en attente de validation.',
-      });
-    }
-
-    if (recipeBeforeApproval.rejectionReason) {
-      return res.status(409).json({
-        message: 'Cette recette ne peut pas être validée tant que le motif de refus n\'a pas été corrigé.',
-      });
     }
 
     const pendingIngredients = recipeBeforeApproval.ingredients
@@ -563,7 +452,7 @@ export async function publishRecipe(req, res) {
           status: 'PUBLISHED',
           rejectionReason: null,
         },
-      include: {
+        include: {
           user: {
             select: {
               nom: true,
@@ -580,18 +469,6 @@ export async function publishRecipe(req, res) {
         },
       });
 
-      // ← MODIFIÉ : notification seulement si l'auteur existe encore
-      // (userId peut être null si le membre a supprimé son compte)
-      if (recipe.userId) {
-        await tx.notification.create({
-          data: {
-            userId: recipe.userId,
-            recipeId: recipe.id,
-            type: 'RECIPE_SUBMITTED',
-            message: `Votre recette "${recipe.titre}" a ete validee et publiee.`,
-          },
-        });
-      }
       // ← MODIFIÉ : notification seulement si l'auteur existe encore
       // (userId peut être null si le membre a supprimé son compte)
       if (recipe.userId) {
@@ -623,9 +500,6 @@ export async function publishRecipe(req, res) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// MODIFIÉ : rejectRecipe gère userId nullable
-// ─────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────
 // MODIFIÉ : rejectRecipe gère userId nullable
 // ─────────────────────────────────────────────────────────
@@ -661,17 +535,6 @@ export async function rejectRecipe(req, res) {
         },
       });
 
-      // ← MODIFIÉ : notification seulement si l'auteur existe encore
-      if (recipe.userId) {
-        await tx.notification.create({
-          data: {
-            userId: recipe.userId,
-            recipeId: recipe.id,
-            type: 'RECIPE_SUBMITTED',
-            message: `Votre recette "${recipe.titre}" a ete refusee. Motif : ${recipe.rejectionReason}`,
-          },
-        });
-      }
       // ← MODIFIÉ : notification seulement si l'auteur existe encore
       if (recipe.userId) {
         await tx.notification.create({
@@ -747,12 +610,6 @@ export async function updateAdminRecipe(req, res) {
         (candidate) => prisma.recipe.findUnique({ where: { slug: candidate } })
       );
     }
-      data.titre = String(titre).trim();
-      data.slug = await generateUniqueSlug(
-        data.titre,
-        (candidate) => prisma.recipe.findUnique({ where: { slug: candidate } })
-      );
-    }
     if (instructions !== undefined) data.instructions = String(instructions).trim();
     if (nombrePersonnes !== undefined) data.nombrePersonnes = nombrePersonnes ? parseInt(nombrePersonnes, 10) : null;
     if (tempsPreparation !== undefined) data.tempsPreparation = tempsPreparation ? parseInt(tempsPreparation, 10) : null;
@@ -772,7 +629,6 @@ export async function updateAdminRecipe(req, res) {
       }
     }
 
-
     if (categoryId !== undefined) {
       data.categoryId = categoryId;
     } else if (categoryName !== undefined) {
@@ -785,7 +641,6 @@ export async function updateAdminRecipe(req, res) {
     }
 
     if (Array.isArray(ingredients)) {
-      hasUpdatedIngredients = true;
       const resolvedIngredients = [];
 
       for (const item of ingredients) {
@@ -838,16 +693,6 @@ export async function updateAdminRecipe(req, res) {
       };
     }
 
-    // Une modification admin lève le blocage de refus précédent pour permettre une nouvelle validation.
-    if (Object.keys(data).length > 0) {
-      data.rejectionReason = null;
-    }
-
-    // Si l'admin corrige les ingrédients d'une recette en attente, elle reste dans le flux de validation.
-    if (hasUpdatedIngredients) {
-      data.status = 'PENDING';
-    }
-
     if (Object.keys(data).length === 0) {
       return res.status(400).json({ message: 'Aucun champ à modifier.' });
     }
@@ -896,10 +741,6 @@ export async function updateAdminRecipe(req, res) {
 // UTILISATEURS — ADMIN
 // =====================
 
-// =====================
-// UTILISATEURS — ADMIN
-// =====================
-
 export async function getAdminUsers(req, res) {
   try {
     const search = String(req.query.search || '').trim();
@@ -914,9 +755,7 @@ export async function getAdminUsers(req, res) {
         : undefined,
       include: {
         _count: {
-        _count: {
           select: { recipes: true },
-        },
         },
         recipes: {
           include: {
@@ -930,15 +769,12 @@ export async function getAdminUsers(req, res) {
     });
 
     const formattedUsers = users.map((user) => ({
-    const formattedUsers = users.map((user) => ({
       id: user.id,
       nom: user.pseudo.toUpperCase(),
       displayName: user.pseudo,
       prenom: user.pseudo,
       email: user.email,
       role: user.role,
-      totalRecipes: user._count.recipes,
-      recipeCounts: formatUser(user).recipeCounts,
       totalRecipes: user._count.recipes,
       recipeCounts: formatUser(user).recipeCounts,
     }));
@@ -949,25 +785,6 @@ export async function getAdminUsers(req, res) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// MODIFIÉ : deleteUser — suppression sécurisée d'un compte
-// ─────────────────────────────────────────────────────────
-
-// Un chef quitte le restaurant. Que fait-on ?
-//   1. Ses brouillons de recettes (DRAFT) → à la poubelle
-//   2. Ses recettes soumises en attente (PENDING) → à la poubelle
-//   3. Ses recettes publiées au menu (PUBLISHED) → restent !
-//      Le menu affiche "Recette d'un ancien chef"
-//   4. Ses notifications personnelles → supprimées (RGPD)
-//   5. Son compte → supprimé
-//
-// Techniquement, tout se passe dans une transaction :
-//   - deleteMany des recettes DRAFT + PENDING (nettoyage)
-//   - delete du User
-//     → Prisma applique automatiquement SetNull sur les PUBLISHED
-//     → Prisma applique automatiquement Cascade sur les notifications
-//
-// ⚠️ Sécurité : un admin ne peut pas se supprimer lui-même
 // ─────────────────────────────────────────────────────────
 // MODIFIÉ : deleteUser — suppression sécurisée d'un compte
 // ─────────────────────────────────────────────────────────
@@ -1032,56 +849,10 @@ export async function deleteUser(req, res) {
       await tx.user.delete({
         where: { id: targetUserId },
       });
-    const targetUserId = req.params.id;
-
-    // Sécurité : empêcher un admin de supprimer son propre compte via ce endpoint
-    if (req.user.id === targetUserId) {
-      return res.status(403).json({
-        message: 'Vous ne pouvez pas supprimer votre propre compte depuis le panel admin.',
-      });
-    }
-
-    // Vérifier que l'utilisateur existe
-    const userToDelete = await prisma.user.findUnique({
-      where: { id: targetUserId },
-      include: {
-        _count: {
-          select: { recipes: true },
-        },
-      },
-    });
-
-    if (!userToDelete) {
-      return res.status(404).json({ message: 'Utilisateur introuvable.' });
-    }
-
-    await prisma.$transaction(async (tx) => {
-      // Étape 1 : Supprimer les recettes DRAFT et PENDING
-      // (elles n'ont plus de raison d'exister sans auteur)
-      // Cascade s'applique : RecipeIngredient associés sont aussi supprimés,
-      // et les Notifications liées passent recipeId à null (SetNull)
-      await tx.recipe.deleteMany({
-        where: {
-          userId: targetUserId,
-          status: { in: ['DRAFT', 'PENDING'] },
-        },
-      });
-
-      // Étape 2 : Supprimer le user
-      // → SetNull s'applique automatiquement sur les recettes PUBLISHED
-      //   (userId passe à null, la recette reste intacte)
-      // → Cascade s'applique sur les notifications
-      //   (données personnelles supprimées = cohérent RGPD)
-      await tx.user.delete({
-        where: { id: targetUserId },
-      });
     });
 
     return res.status(204).send();
   } catch (error) {
-    if (error.code === 'P2025') {
-      return res.status(404).json({ message: 'Utilisateur introuvable.' });
-    }
     if (error.code === 'P2025') {
       return res.status(404).json({ message: 'Utilisateur introuvable.' });
     }
@@ -1120,10 +891,6 @@ export async function updateUserRole(req, res) {
     return sendError(res, error, 'Erreur lors de la mise à jour du rôle.');
   }
 }
-
-// =====================
-// CATÉGORIES — ADMIN
-// =====================
 
 // =====================
 // CATÉGORIES — ADMIN
@@ -1239,10 +1006,6 @@ export async function deleteCategory(req, res) {
 // INGRÉDIENTS — ADMIN
 // =====================
 
-// =====================
-// INGRÉDIENTS — ADMIN
-// =====================
-
 export async function getAdminIngredients(req, res) {
   try {
     const search = String(req.query.search || '').trim();
@@ -1295,7 +1058,6 @@ export async function updateIngredient(req, res) {
 
     if (!name) {
       return res.status(400).json({ message: 'Le nom de l\'ingrédient est requis.' });
-      return res.status(400).json({ message: 'Le nom de l\'ingrédient est requis.' });
     }
 
     const ingredient = await prisma.ingredient.update({
@@ -1325,7 +1087,6 @@ export async function updateIngredient(req, res) {
 
     return res.json(formatIngredient(ingredient));
   } catch (error) {
-    return sendError(res, error, 'Erreur lors de la modification de l\'ingrédient.');
     return sendError(res, error, 'Erreur lors de la modification de l\'ingrédient.');
   }
 }
@@ -1372,7 +1133,6 @@ export async function approveIngredient(req, res) {
       return res.status(404).json({ message: 'Ingrédient introuvable.' });
     }
     return sendError(res, error, 'Erreur lors de la validation de l\'ingrédient.');
-    return sendError(res, error, 'Erreur lors de la validation de l\'ingrédient.');
   }
 }
 
@@ -1380,73 +1140,25 @@ export async function deleteIngredient(req, res) {
   try {
     const ingredient = await prisma.ingredient.findUnique({
       where: { id: req.params.id },
-      select: {
-        nom: true,
-        recipes: {
-          where: {
-            recipe: {
-              status: 'PENDING',
-            },
-          },
-          select: {
-            recipeId: true,
-            recipe: {
-              select: {
-                titre: true,
-                userId: true,
-              },
-            },
-          },
-        },
-      },
+      select: { nom: true },
     });
 
     if (!ingredient) {
       return res.status(404).json({ message: 'Ingrédient introuvable.' });
     }
 
-    const impactedPendingRecipes = ingredient.recipes
-      .map((relation) => relation.recipe)
-      .filter(Boolean);
-
-    const rejectionReason = `Recette refusée automatiquement: l'ingrédient "${ingredient.nom}" a été refusé par l'administration.`;
-
-    await prisma.$transaction(async (tx) => {
-      await tx.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } });
-      await tx.ingredient.delete({ where: { id: req.params.id } });
-
-      if (impactedPendingRecipes.length > 0) {
-        const impactedRecipeIds = ingredient.recipes.map((relation) => relation.recipeId);
-
-        await tx.recipe.updateMany({
-          where: {
-            id: { in: impactedRecipeIds },
-            status: 'PENDING',
-          },
-          data: {
-            status: 'PENDING',
-            rejectionReason,
-          },
-        });
-
-        await tx.notification.createMany({
-          data: impactedPendingRecipes.map((recipe) => ({
-            userId: recipe.userId,
-            type: 'RECIPE_SUBMITTED',
-            message: `Votre recette "${recipe.titre}" a été refusée: l'ingrédient "${ingredient.nom}" a été rejeté. Merci de corriger puis soumettre à nouveau.`,
-          })),
-        });
-      }
-
-      await tx.notification.updateMany({
+    await prisma.$transaction([
+      prisma.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } }),
+      prisma.ingredient.delete({ where: { id: req.params.id } }),
+      prisma.notification.updateMany({
         where: {
           userId: req.user.id,
           isRead: false,
           message: `Nouvel ingrédient soumis: ${ingredient.nom}`,
         },
         data: { isRead: true },
-      });
-    });
+      }),
+    ]);
 
     return res.status(204).send();
   } catch (error) {
@@ -1457,11 +1169,7 @@ export async function deleteIngredient(req, res) {
 // =====================
 // NOTIFICATIONS — ADMIN
 // =====================
-// =====================
-// NOTIFICATIONS — ADMIN
-// =====================
 
-export async function getAdminNotifications(req, res) {
 export async function getAdminNotifications(req, res) {
   try {
     await prisma.notification.deleteMany({
@@ -1517,63 +1225,7 @@ export async function getAdminNotifications(req, res) {
       unreadCount,
       notifications: notifications.map(formatNotification),
     });
-    await prisma.notification.deleteMany({
-      where: {
-        userId: req.user.id,
-        isRead: false,
-        OR: [
-          {
-            message: {
-              startsWith: 'Nouvelle recette soumise:',
-            },
-            recipeId: null,
-          },
-          {
-            message: {
-              startsWith: 'Recette modifiée à valider de nouveau :',
-            },
-            recipeId: null,
-          },
-          {
-            recipeId: {
-              not: null,
-            },
-            recipe: {
-              is: {
-                status: {
-                  not: 'PENDING',
-                },
-              },
-            },
-          },
-        ],
-      },
-    });
-
-    const notifications = await prisma.notification.findMany({
-      where: {
-        userId: req.user.id,
-        isRead: false,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    });
-
-    const unreadCount = await prisma.notification.count({
-      where: {
-        userId: req.user.id,
-        isRead: false,
-      },
-    });
-
-    return res.json({
-      unreadCount,
-      notifications: notifications.map(formatNotification),
-    });
   } catch (error) {
     return sendError(res, error, 'Erreur lors de la récupération des notifications admin.');
-    return sendError(res, error, 'Erreur lors de la récupération des notifications admin.');
   }
-}
-
 }
