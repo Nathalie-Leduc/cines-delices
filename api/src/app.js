@@ -29,9 +29,6 @@ app.use('/uploads', express.static(uploadsDir));
 // Swagger docs
 setupSwagger(app);
 
-// Swagger docs
-setupSwagger(app);
-
 
 // Health Check
 app.get('/api/health', (_req, res) => {
