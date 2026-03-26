@@ -75,7 +75,7 @@ async function main() {
     const slug = await generateUniqueSlug(`${def.titre} ${def.annee}`,
       (s) => prisma.media.findUnique({ where: { slug: s } }));
     medias[def.tmdbId] = await prisma.media.upsert({
-      where:  { tmdbId: def.tmdbId },
+      where: { tmdbId_type: { tmdbId: def.tmdbId, type: def.type } },  // ← MODIF
       update: {},
       create: {
         tmdbId: def.tmdbId, titre: def.titre, slug, type: def.type,
