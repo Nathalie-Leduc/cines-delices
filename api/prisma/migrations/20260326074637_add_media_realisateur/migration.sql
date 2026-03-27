@@ -1,2 +1,3 @@
--- AlterTable
-ALTER TABLE "media" ADD COLUMN     "realisateur" TEXT;
+-- No-op migration kept to preserve the merged migration history.
+-- The real "realisateur" column addition is handled by
+-- 20260326090000_add_media_realisateur.
