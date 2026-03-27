@@ -1,5 +1,5 @@
 import express from 'express';
-import setupSwagger from './swagger/swagger.js';
+import setupSwagger from './swagger.js';
 import cors from 'cors'; // sur toutes les routes
 import helmet from 'helmet'; // Sécurité HTTP headers sur toutes les routes
 import fs from 'node:fs';
