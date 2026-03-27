@@ -20,8 +20,8 @@ export default function MentionsLegales() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>2. Hébergement</h2>
         <ul className={styles.list}>
-          <li><span className={styles.label}>Front-end :</span> Surge.sh</li>
-          <li><span className={styles.label}>Back-end :</span> Ngrok</li>
+          <li><span className={styles.label}>Front-end :</span> Render</li>
+          <li><span className={styles.label}>Back-end :</span> Render</li>
           <li><span className={styles.label}>Base de données :</span> PostgreSQL</li>
         </ul>
       </section>
