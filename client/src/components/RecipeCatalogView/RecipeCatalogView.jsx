@@ -461,6 +461,9 @@ export default function RecipeCatalogView({
               className={styles.catalogState}
             />
           )}
+          {isLoading && <p>{loadingMessage}</p>}
+          {isPaginating && !isLoading && <p className={styles.loadingInline}>{updatingMessage}</p>}
+          {error && !isLoading && <p>{error}</p>}
 
           {!isLoading && !error && (
             <section className={styles.grid}>
@@ -473,8 +476,7 @@ export default function RecipeCatalogView({
                     : emptyMessage}
                   className={styles.gridState}
                 />
-              )}
-
+           )}
               {recipes.map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={recipe} />
               ))}

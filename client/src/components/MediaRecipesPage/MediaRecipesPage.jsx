@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import RecipeCatalogView from "../RecipeCatalogView";
-import StatusBlock from "../StatusBlock/StatusBlock.jsx";
 import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "../../pages/RecipesPage/RecipesPage.module.scss";
 
@@ -73,6 +72,7 @@ export default function MediaRecipesPage({
               title={loadingEntityMessage}
               className={styles.catalogState}
             />
+            <p>{loadingEntityMessage}</p>
           </div>
         </section>
       </main>
@@ -105,6 +105,7 @@ export default function MediaRecipesPage({
                 className={styles.catalogState}
               />
             )}
+            <p className={styles.summaryText}>{mediaError || missingEntityMessage}</p>
 
             <Link className={styles.cta} to={listPath}>
               Retour aux {entityLabel}s
