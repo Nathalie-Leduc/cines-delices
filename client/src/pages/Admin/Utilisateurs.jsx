@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
+import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import { deleteAdminUser, getAdminUsers, updateAdminUserRole } from '../../services/adminService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './AdminPages.module.scss';
@@ -46,12 +47,12 @@ function AdminUtilisateurs() {
   const filteredUsers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     if (!normalizedQuery) {
-      return users;
+      return usersWithTotals;
     }
-    return users.filter((user) => {
+    return usersWithTotals.filter((user) => {
       return `${user.nom} ${user.displayName || user.prenom || ''} ${user.email}`.toLowerCase().includes(normalizedQuery);
     });
-  }, [query, users]);
+  }, [query, usersWithTotals]);
 
   async function handleDeleteUser() {
     if (!selectedUser) return;
@@ -116,11 +117,17 @@ function AdminUtilisateurs() {
             <h3>Listes des utilisateurs</h3>
           </div>
 
-          {isLoading ? <p>Chargement des utilisateurs…</p> : null}
-          <Alert type="error" message={error} onClose={() => setError('')} />
+          {isLoading ? (
+            <StatusBlock
+              variant="loading"
+              title="Chargement des utilisateurs"
+              className={styles.pageState}
+            />
+          ) : null}
+          <Alert type="error" message={error} onClose={() => setError('')} className={styles.pageState} />
 
           <div className={styles.list}>
-            {usersWithTotals.map((user) => (
+            {filteredUsers.map((user) => (
               <button key={user.id} type="button" className={styles.rowCard} onClick={() => setSelectedUser(user)}>
                 <span className={styles.userAvatar}>
                   <img src="/icon/User.svg" alt="" aria-hidden="true" />
@@ -135,14 +142,25 @@ function AdminUtilisateurs() {
                 <span className={styles.rowArrow}>›</span>
               </button>
             ))}
+
+            {!isLoading && !error && filteredUsers.length === 0 ? (
+              <StatusBlock
+                variant="empty"
+                title={query.trim() ? 'Aucun utilisateur trouvé' : 'Aucun utilisateur disponible'}
+                message={query.trim()
+                  ? 'Essaie une autre recherche pour retrouver un membre ou un administrateur.'
+                  : 'La liste des utilisateurs apparaîtra ici dès qu’un compte sera disponible.'}
+                className={styles.pageState}
+              />
+            ) : null}
           </div>
         </>
       )}
 
       {selectedUser && (
         <>
-          <Alert type="success" message={successMessage} onClose={() => setSuccessMessage('')} />
-          <Alert type="error" message={error} onClose={() => setError('')} />
+          <Alert type="success" message={successMessage} onClose={() => setSuccessMessage('')} className={styles.pageState} />
+          <Alert type="error" message={error} onClose={() => setError('')} className={styles.pageState} />
 
           <div className={styles.detailBox}>
             <div className={styles.field}>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, NavLink, useLocation } from 'react-router-dom';
+import Alert from '../../components/Alert/Alert.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { loginUser } from '../../services/authService.js';
 import styles from './Login.module.scss';
@@ -95,7 +96,12 @@ export default function Login() {
             {isSubmitting ? 'Connexion...' : 'Se connecter'}
           </button>
 
-          {error ? <p role="alert">{error}</p> : null}
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.formAlert}
+          />
         </form>
 
         <p className={styles.noAccount}>

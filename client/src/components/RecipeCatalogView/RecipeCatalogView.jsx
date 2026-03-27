@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import RecipeCard from "../RecipeCard";
+import StatusBlock from "../StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 import styles from "../../pages/RecipesPage/RecipesPage.module.scss";
 import {
@@ -436,14 +437,42 @@ export default function RecipeCatalogView({
             </div>
           </div>
 
-          {isLoading && <p>{loadingMessage}</p>}
-          {isPaginating && !isLoading && <p className={styles.loadingInline}>{updatingMessage}</p>}
-          {error && !isLoading && <p>{error}</p>}
+          {isLoading && (
+            <StatusBlock
+              variant="loading"
+              title={loadingMessage}
+              className={styles.catalogState}
+            />
+          )}
+          {isPaginating && !isLoading && (
+            <StatusBlock
+              variant="loading"
+              title={updatingMessage}
+              size="compact"
+              className={styles.catalogState}
+            />
+          )}
+          {error && !isLoading && (
+            <StatusBlock
+              variant="error"
+              title="Catalogue indisponible"
+              message={error}
+              fallbackMessage={errorFallbackMessage}
+              className={styles.catalogState}
+            />
+          )}
 
           {!isLoading && !error && (
             <section className={styles.grid}>
               {recipes.length === 0 && (
-                <p>{emptyMessage}</p>
+                <StatusBlock
+                  variant="empty"
+                  title={currentQuery ? "Aucune recette trouvée" : "Aucune recette publiée"}
+                  message={currentQuery
+                    ? `Aucune recette ne correspond à "${currentQuery}". Essaie un autre mot-clé ou un autre filtre.`
+                    : emptyMessage}
+                  className={styles.gridState}
+                />
               )}
 
               {recipes.map((recipe) => (

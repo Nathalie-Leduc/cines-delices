@@ -227,6 +227,11 @@
   font-size: 0.96rem;
 }
 
+.pageState {
+  max-width: 720px;
+  margin-bottom: 1rem;
+}
+
 .categoriesSearchRow {
   position: relative;
   max-width: 470px;
@@ -1676,6 +1681,9 @@
   border: 1px solid rgba(74, 52, 40, 0.2);
   border-radius: 8px;
   padding: 0.45rem 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
   color: #1F1D1E;
@@ -1684,6 +1692,37 @@
   &:hover {
     border-color: #C9A45C;
   }
+}
+
+.adminFilmSuggestionPoster {
+  width: 42px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(74, 52, 40, 0.12);
+  background-color: rgba(74, 52, 40, 0.08);
+  flex-shrink: 0;
+}
+
+.adminFilmSuggestionCopy {
+  min-width: 0;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.adminFilmSuggestionTitle {
+  color: #1F1D1E;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.adminFilmSuggestionMeta {
+  color: rgba(74, 52, 40, 0.68);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.74rem;
+  line-height: 1.2;
 }
 
 .adminCreateIngredientBtn {

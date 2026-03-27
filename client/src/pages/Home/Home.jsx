@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import HomeCategories from "../../components/HomeCategories";
 import RecipeCard from "../../components/RecipeCard";
+import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "./Home.module.scss";
@@ -553,11 +554,26 @@ function Home() {
         </p>
 
         {isLoadingLatestRecipes ? (
-          <p className={styles.latestStatus}>Chargement des dernières recettes…</p>
+          <StatusBlock
+            variant="loading"
+            title="Chargement des dernières recettes"
+            className={styles.latestState}
+          />
         ) : latestRecipesError ? (
-          <p className={styles.latestError}>{latestRecipesError}</p>
+          <StatusBlock
+            variant="error"
+            title="Dernières recettes indisponibles"
+            message={latestRecipesError}
+            fallbackMessage="Nous n’avons pas pu charger les dernières recettes. Réessaie dans quelques instants."
+            className={styles.latestState}
+          />
         ) : latestRecipes.length === 0 ? (
-          <p className={styles.latestStatus}>Aucune recette publiée pour le moment.</p>
+          <StatusBlock
+            variant="empty"
+            title="Aucune recette publiée"
+            message="Les nouveautés arriveront ici dès qu’une nouvelle recette sera publiée."
+            className={styles.latestState}
+          />
         ) : (
           <div className={styles.latestCarousel}>
             <div

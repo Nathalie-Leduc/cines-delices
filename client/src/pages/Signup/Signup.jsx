@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
+import Alert from '../../components/Alert/Alert.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { registerUser } from '../../services/authService.js';
 import styles from './Signup.module.scss';
@@ -237,14 +238,13 @@ export default function Signup() {
           </button>
 
           {errorMessages.length > 0 ? (
-            <div className={styles.errorBox} role="alert" aria-live="polite">
-              <p className={styles.errorTitle}>{errorTitle}</p>
+            <Alert type="error" title={errorTitle} className={styles.formAlert}>
               <ul className={styles.errorList}>
                 {errorMessages.map((message) => (
                   <li key={message}>{message}</li>
                 ))}
               </ul>
-            </div>
+            </Alert>
           ) : null}
         </form>
 

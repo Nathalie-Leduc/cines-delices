@@ -12,6 +12,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
 import { deleteMyRecipe, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
+import Alert from '../../components/Alert/Alert.jsx';
+import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import {
+  getMediaSuggestionMeta,
+  MEDIA_SUGGESTION_POSTER_FALLBACK,
+  normalizeTmdbSearchResult,
+} from '../../utils/mediaSearch.js';
 // ──────────────────────────────────────────────────────────────────────────
 //  MODIF 1 : import du hook useAuth
 //  Avant  : pas d'import, le logout se faisait manuellement via localStorage
@@ -388,6 +395,7 @@ export default function MesRecettes() {
     acc[recette.categorie].push(recette);
     return acc;
   }, {});
+  const hasVisibleRecipes = Object.keys(grouped).length > 0;
 
   // Ouvre la confirmation de suppression pour une recette ciblée.
   function handleDeleteClick(recette) {
@@ -674,11 +682,9 @@ export default function MesRecettes() {
 
       const payload = await response.json();
       const rawList = Array.isArray(payload) ? payload : payload.data || [];
-      const normalized = rawList.map(item => ({
-        id: item.id,
-        title: item.title || item.titre || item.name || item.nom || '',
-        type: item.type || item.mediaType || item.media_type || '',
-      })).filter(item => item.title);
+      const normalized = rawList
+        .map(normalizeTmdbSearchResult)
+        .filter(item => item.title);
 
       setFilmResults(normalized.slice(0, 8));
     } catch (error) {
@@ -955,7 +961,16 @@ export default function MesRecettes() {
                             className={styles.filmSuggestionBtn}
                             onClick={() => selectFilm(result)}
                           >
-                            {result.title}
+                            <img
+                              src={result.poster || MEDIA_SUGGESTION_POSTER_FALLBACK}
+                              alt=""
+                              aria-hidden="true"
+                              className={styles.filmSuggestionPoster}
+                            />
+                            <span className={styles.filmSuggestionCopy}>
+                              <span className={styles.filmSuggestionTitle}>{result.title}</span>
+                              <span className={styles.filmSuggestionMeta}>{getMediaSuggestionMeta(result)}</span>
+                            </span>
                           </button>
                         </li>
                       ))}
@@ -1253,7 +1268,12 @@ export default function MesRecettes() {
 
         <section className={styles.recipesPanel}>
           <h2 className={styles.title}>Mes recettes</h2>
-          {error && <p className={styles.errorText}>{error}</p>}
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.panelState}
+          />
 
           {/* CRÉER UNE RECETTE */}
           <div className={styles.createBlock}>
@@ -1273,74 +1293,93 @@ export default function MesRecettes() {
             </div>
           </div>
 
-          {/* FILTRES */}
-          <div className={styles.filters}>
-            {categories.map(cat => (
-              <div key={cat.label} className={styles.filterItem}>
-                <span className={`${styles.filterCount} ${styles[cat.color]}`}>
-                  {cat.count}
-                </span>
-                <button
-                  className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
-                  aria-label={`Filtrer les recettes: ${cat.label}`}
-                  onClick={() => setActiveFilter(cat.label)}
-                >
-                  {cat.label}
-                </button>
+          {isLoading ? (
+            <StatusBlock
+              variant="loading"
+              title="Chargement de vos recettes"
+              className={styles.panelState}
+            />
+          ) : (
+            <>
+              {/* FILTRES */}
+              <div className={styles.filters}>
+                {categories.map(cat => (
+                  <div key={cat.label} className={styles.filterItem}>
+                    <span className={`${styles.filterCount} ${styles[cat.color]}`}>
+                      {cat.count}
+                    </span>
+                    <button
+                      className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
+                      aria-label={`Filtrer les recettes: ${cat.label}`}
+                      onClick={() => setActiveFilter(cat.label)}
+                    >
+                      {cat.label}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* RECETTES GROUPÉES */}
-          {Object.entries(grouped).map(([categorie, recettes]) => (
-            <div key={categorie} className={styles.section}>
-              <h2 className={styles.sectionTitle}>{categorie}s</h2>
-              <div className={styles.grid}>
-                {recettes.map(recette => (
-                  <div key={recette.id} className={styles.cardShell}>
-                    <RecipeCard recipe={mapMemberRecipeToCard(recette)} />
-                    {(() => {
-                      const moderationBadge = getRecipeModerationBadge(recette);
-                      const isRejected = moderationBadge.tone === 'rejected' && Boolean(recette?.rejectionReason);
-                      const isTooltipOpen = openRejectionReasonId === recette.id;
+              {!error && !hasVisibleRecipes ? (
+                <StatusBlock
+                  variant="empty"
+                  title="Aucune recette à afficher"
+                  message={activeFilter === 'Tous'
+                    ? "Commence par créer une recette ou attends qu’un brouillon revienne dans cette liste."
+                    : `Aucune recette ${activeFilter.toLowerCase()} n’est disponible dans votre espace pour le moment.`}
+                  className={styles.panelState}
+                />
+              ) : null}
 
-                      return (
-                        <div className={styles.moderationBadgeGroup}>
-                          <span
-                            className={`${styles.moderationBadge} ${styles[`moderationBadge_${moderationBadge.tone}`]}`}
-                            title={moderationBadge.title}
-                          >
-                            {moderationBadge.label}
-                          </span>
+              {/* RECETTES GROUPÉES */}
+              {Object.entries(grouped).map(([categorie, recettes]) => (
+                <div key={categorie} className={styles.section}>
+                  <h2 className={styles.sectionTitle}>{categorie}s</h2>
+                  <div className={styles.grid}>
+                    {recettes.map(recette => (
+                      <div key={recette.id} className={styles.cardShell}>
+                        <RecipeCard recipe={mapMemberRecipeToCard(recette)} />
+                        {(() => {
+                          const moderationBadge = getRecipeModerationBadge(recette);
+                          const isRejected = moderationBadge.tone === 'rejected' && Boolean(recette?.rejectionReason);
+                          const isTooltipOpen = openRejectionReasonId === recette.id;
 
-                          {isRejected && (
-                            <>
-                              <button
-                                type="button"
-                                className={styles.rejectionInfoButton}
-                                aria-label={`Voir le motif de refus de la recette ${recette.titre}`}
-                                aria-expanded={isTooltipOpen}
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  toggleRejectionReason(recette.id);
-                                }}
+                          return (
+                            <div className={styles.moderationBadgeGroup}>
+                              <span
+                                className={`${styles.moderationBadge} ${styles[`moderationBadge_${moderationBadge.tone}`]}`}
+                                title={moderationBadge.title}
                               >
-                                i
-                              </button>
+                                {moderationBadge.label}
+                              </span>
 
-                              {isTooltipOpen && (
-                                <div className={styles.rejectionTooltip} role="status">
-                                  <strong className={styles.rejectionTooltipTitle}>Motif du refus</strong>
-                                  <p className={styles.rejectionTooltipText}>{recette.rejectionReason}</p>
-                                </div>
+                              {isRejected && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className={styles.rejectionInfoButton}
+                                    aria-label={`Voir le motif de refus de la recette ${recette.titre}`}
+                                    aria-expanded={isTooltipOpen}
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      toggleRejectionReason(recette.id);
+                                    }}
+                                  >
+                                    i
+                                  </button>
+
+                                  {isTooltipOpen && (
+                                    <div className={styles.rejectionTooltip} role="status">
+                                      <strong className={styles.rejectionTooltipTitle}>Motif du refus</strong>
+                                      <p className={styles.rejectionTooltipText}>{recette.rejectionReason}</p>
+                                    </div>
+                                  )}
+                                </>
                               )}
-                            </>
-                          )}
-                        </div>
-                      );
-                    })()}
-                    <div className={styles.cardActionsFloating}>
+                            </div>
+                          );
+                        })()}
+                        <div className={styles.cardActionsFloating}>
                       {/* ──────────────────────────────────────────────────
                            MODIF 3 : bouton "Soumettre" visible si DRAFT
                           
@@ -1387,12 +1426,14 @@ export default function MesRecettes() {
                       >
                         <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
                       </button>
-                    </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                </div>
+              ))}
+            </>
+          )}
         </section>
       </div>
 

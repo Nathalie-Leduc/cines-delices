@@ -323,6 +323,55 @@
   font-size: 0.85rem;
 }
 
+.mediaSuggestionBtn {
+  width: 100%;
+  text-align: left;
+  @include ui.outline-button(
+    $border-color: rgba(201, 164, 92, 0.2),
+    $hover-border-color: #C9A45C,
+    $background: #4A3428,
+    $hover-background: rgba(201, 164, 92, 0.08),
+    $color: #F6F1E8,
+    $radius: 8px,
+    $min-height: auto,
+    $padding: 0.45rem 0.55rem,
+    $hover-shadow: none
+  );
+  justify-content: flex-start;
+  gap: 0.65rem;
+}
+
+.mediaSuggestionPoster {
+  width: 42px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(201, 164, 92, 0.24);
+  background: rgba(31, 29, 30, 0.35);
+  flex-shrink: 0;
+}
+
+.mediaSuggestionCopy {
+  min-width: 0;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.mediaSuggestionTitle {
+  color: #F6F1E8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.mediaSuggestionMeta {
+  color: rgba(246, 241, 232, 0.66);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.74rem;
+  line-height: 1.2;
+}
+
 .createIngredientBtn {
   width: 100%;
   @include ui.outline-button(

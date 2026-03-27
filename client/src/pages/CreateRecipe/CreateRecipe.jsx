@@ -1,6 +1,11 @@
 import { useRef, useState } from 'react';
 import styles from './CreateRecipe.module.scss';
 import Alert from '../../components/Alert/Alert.jsx';
+import {
+  getMediaSuggestionMeta,
+  MEDIA_SUGGESTION_POSTER_FALLBACK,
+  normalizeTmdbSearchResult,
+} from '../../utils/mediaSearch.js';
 
 
 const categoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
@@ -159,11 +164,7 @@ export default function CreerRecette() {
       const rawList = Array.isArray(payload) ? payload : payload.data || [];
       // Normalisation des résultats : on garde id, titre et type
       const normalized = rawList
-        .map(item => ({
-          id: item.id,
-          title: item.title || item.name || item.titre || '',
-          type: item.type || item.media_type || '',
-        }))
+        .map(normalizeTmdbSearchResult)
         .filter(item => item.title); // on garde uniquement ceux qui ont un titre
 
       setFilmSearchResults(normalized.slice(0, 8)); // on limite à 8 résultats
@@ -522,7 +523,7 @@ export default function CreerRecette() {
 
       setAlert({
         type: 'success',
-        message: 'Recette créée avec succès.',
+        message: 'La recette a bien été enregistrée. Elle apparaîtra après validation.',
       });
       setShowSubmitModal(false);
       setImageError('');
@@ -622,11 +623,20 @@ export default function CreerRecette() {
                   <li key={`${result.id}-${result.type}`}>
                     <button
                       type="button"
-                      className={styles.ingredientSuggestionBtn}
+                      className={styles.mediaSuggestionBtn}
                       aria-label={`Sélectionner ${result.title}`}
                       onClick={() => selectFilm(result)}
                     >
-                      {result.title}
+                      <img
+                        src={result.poster || MEDIA_SUGGESTION_POSTER_FALLBACK}
+                        alt=""
+                        aria-hidden="true"
+                        className={styles.mediaSuggestionPoster}
+                      />
+                      <span className={styles.mediaSuggestionCopy}>
+                        <span className={styles.mediaSuggestionTitle}>{result.title}</span>
+                        <span className={styles.mediaSuggestionMeta}>{getMediaSuggestionMeta(result)}</span>
+                      </span>
                     </button>
                   </li>
                 ))}

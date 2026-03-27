@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Alert from '../../components/Alert/Alert.jsx';
 import { deleteMe, getMe, updateMe, updateMyPassword } from '../../services/api.js';
 import { getMyRecipes as getMyRecipesApi } from '../../services/recipesService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
@@ -532,11 +533,12 @@ export default function Profil() {
         <section className={styles.profilePanel}>
           <h1 className={styles.title}>Mes informations</h1>
 
-          {profileFeedback.message && (
-            <p className={profileFeedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess}>
-              {profileFeedback.message}
-            </p>
-          )}
+          <Alert
+            type={profileFeedback.type || 'info'}
+            message={profileFeedback.message}
+            onClose={() => setProfileFeedback({ type: '', message: '' })}
+            className={styles.feedbackAlert}
+          />
 
           <div className={styles.fields}>
         <div className={styles.field}>

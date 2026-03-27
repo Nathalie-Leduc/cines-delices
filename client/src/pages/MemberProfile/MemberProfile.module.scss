@@ -207,6 +207,10 @@
   color: #ffd4d9;
 }
 
+.feedbackAlert {
+  max-width: 680px;
+}
+
 /* ===== TITRE ===== */
 .title {
   @include ui.section-title;

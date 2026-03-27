@@ -1,52 +1,105 @@
+@use "../../styles/visitor-mixins" as ui;
+
 .alert {
+  @include ui.surface-panel(
+    $background: rgba(31, 29, 30, 0.72),
+    $border: rgba(232, 220, 200, 0.3),
+    $radius: 14px,
+    $padding: 0.9rem 1rem
+  );
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.75rem;
-  padding: 0.9rem 1.2rem;
-  border-radius: 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
   margin-bottom: 1rem;
   width: 100%;
-  max-width: 400px;
+  box-shadow: var(--shadow-soft);
 }
 
 .error {
-  background-color: rgba(142, 31, 47, 0.2);
-  border: 1px solid #8E1F2F;
-  color: #F6F1E8;
+  background: linear-gradient(180deg, rgba(82, 31, 40, 0.82), rgba(53, 26, 31, 0.78));
+  border-color: rgba(168, 42, 58, 0.42);
+  color: #ffd8d8;
 }
 
 .success {
-  background-color: rgba(110, 139, 91, 0.2);
-  border: 1px solid #6E8B5B;
-  color: #F6F1E8;
+  background: linear-gradient(180deg, rgba(53, 69, 49, 0.8), rgba(32, 44, 30, 0.72));
+  border-color: rgba(110, 139, 91, 0.38);
+  color: #d8efc8;
 }
 
 .info {
-  background-color: rgba(201, 164, 92, 0.15);
-  border: 1px solid #C9A45C;
-  color: #F6F1E8;
+  background: linear-gradient(180deg, rgba(42, 54, 58, 0.82), rgba(31, 29, 30, 0.68));
+  border-color: rgba(92, 177, 194, 0.32);
+  color: #c6edf3;
 }
 
 .icon {
-  font-size: 1rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+  font-weight: 700;
   flex-shrink: 0;
 }
 
-.message {
+.error .icon {
+  background: rgba(168, 42, 58, 0.18);
+}
+
+.success .icon {
+  background: rgba(110, 139, 91, 0.18);
+}
+
+.info .icon {
+  background: rgba(92, 177, 194, 0.16);
+}
+
+.copy {
   flex: 1;
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.title {
+  color: #f6f1e8;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  line-height: 1.1;
+}
+
+.message {
+  color: inherit;
+  font-size: 0.92rem;
   line-height: 1.4;
+
+  p,
+  ul {
+    margin: 0;
+  }
+
+  ul {
+    padding-left: 1rem;
+  }
+
+  li + li {
+    margin-top: 0.2rem;
+  }
 }
 
 .close {
   background: none;
   border: none;
-  color: rgba(246, 241, 232, 0.6);
+  color: rgba(246, 241, 232, 0.68);
   cursor: pointer;
   font-size: 0.9rem;
   padding: 0;
   flex-shrink: 0;
+  transition: color 0.2s ease;
 
   &:hover {
     color: #F6F1E8;

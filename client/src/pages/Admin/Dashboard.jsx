@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
+import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
+import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import { approveAdminRecipe, getPendingRecipes, rejectAdminRecipe } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
@@ -83,6 +85,7 @@ function AdminDashboard() {
   const [showValidateModal, setShowValidateModal] = useState(false);
   const [showRefuseModal, setShowRefuseModal] = useState(false);
   const [rejectReason, setRejectReason] = useState(`Votre recette n’a pas été validée.\n\nElle ne respecte pas nos règles de publication\n(contenu incohérent ou incomplet).\n\nMerci de modifier votre recette avant de la soumettre à nouveau.`);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -92,6 +95,8 @@ function AdminDashboard() {
         setPendingRecipes(Array.isArray(payload) ? payload : []);
       } catch (loadError) {
         setError(loadError.message || 'Impossible de charger les recettes à valider.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -216,11 +221,35 @@ function AdminDashboard() {
             ))}
           </div>
 
-          {error ? <p>{error}</p> : null}
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.pageState}
+          />
 
           <div className={styles.sectionTitle}>
             <h3>{activeFilter === 'Tous' ? 'Toutes les recettes' : `${activeFilter}s`}</h3>
           </div>
+
+          {isLoading ? (
+            <StatusBlock
+              variant="loading"
+              title="Chargement des recettes à valider"
+              className={styles.pageState}
+            />
+          ) : null}
+
+          {!isLoading && !error && filteredPendingRecipes.length === 0 ? (
+            <StatusBlock
+              variant="empty"
+              title="Aucune recette en attente"
+              message={activeFilter === 'Tous'
+                ? "Les nouvelles recettes soumises apparaîtront ici pour validation."
+                : `Aucune recette ${activeFilter.toLowerCase()} n’attend de validation pour le moment.`}
+              className={styles.pageState}
+            />
+          ) : null}
 
           <div className={styles.recipesGridExact}>
             {filteredPendingRecipes.map((recipe) => {
@@ -353,9 +382,12 @@ function AdminDashboard() {
             </button>
           </div>
 
-          {error ? (
-            <p style={{ marginTop: '0.7rem', color: '#f0a7a7' }}>{error}</p>
-          ) : null}
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.pageState}
+          />
         </>
       )}
 

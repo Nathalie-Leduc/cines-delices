@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import RecipeCatalogView from "../RecipeCatalogView";
+import StatusBlock from "../StatusBlock/StatusBlock.jsx";
 import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "../../pages/RecipesPage/RecipesPage.module.scss";
 
@@ -67,7 +68,11 @@ export default function MediaRecipesPage({
       <main className={styles.container}>
         <section className={styles.catalogue}>
           <div className={styles.catalogueInner}>
-            <p>{loadingEntityMessage}</p>
+            <StatusBlock
+              variant="loading"
+              title={loadingEntityMessage}
+              className={styles.catalogState}
+            />
           </div>
         </section>
       </main>
@@ -84,7 +89,22 @@ export default function MediaRecipesPage({
               <span className={styles.titleLine} />
             </div>
 
-            <p className={styles.summaryText}>{mediaError || missingEntityMessage}</p>
+            {!mediaError ? (
+              <StatusBlock
+                variant="empty"
+                title={missingEntityTitle}
+                message={missingEntityMessage}
+                className={styles.catalogState}
+              />
+            ) : (
+              <StatusBlock
+                variant="error"
+                title={loadEntityErrorMessage}
+                message={mediaError}
+                fallbackMessage={loadEntityErrorMessage}
+                className={styles.catalogState}
+              />
+            )}
 
             <Link className={styles.cta} to={listPath}>
               Retour aux {entityLabel}s

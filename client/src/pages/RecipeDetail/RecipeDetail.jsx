@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RecipeCard from "../../components/RecipeCard";
+import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
@@ -212,7 +213,11 @@ export default function RecipeDetail() {
     return (
       <main className={styles.page}>
         <div className={styles.contentWrap}>
-          <p className={styles.notFound}>Chargement de la recette...</p>
+          <StatusBlock
+            variant="loading"
+            title="Chargement de la recette"
+            className={styles.detailState}
+          />
         </div>
       </main>
     );
@@ -222,7 +227,13 @@ export default function RecipeDetail() {
     return (
       <main className={styles.page}>
         <div className={styles.contentWrap}>
-          <p className={styles.notFound}>{error}</p>
+          <StatusBlock
+            variant="error"
+            title="Recette indisponible"
+            message={error}
+            fallbackMessage="Nous n’avons pas pu charger cette recette. Réessaie dans quelques instants."
+            className={styles.detailState}
+          />
         </div>
       </main>
     );
@@ -232,7 +243,12 @@ export default function RecipeDetail() {
     return (
       <main className={styles.page}>
         <div className={styles.contentWrap}>
-          <p className={styles.notFound}>Recette introuvable.</p>
+          <StatusBlock
+            variant="empty"
+            title="Recette introuvable"
+            message="Cette recette n’est plus disponible ou son lien est incomplet."
+            className={styles.detailState}
+          />
         </div>
       </main>
     );

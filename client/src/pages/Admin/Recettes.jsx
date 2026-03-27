@@ -1,7 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
+import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
+import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import {
+  getMediaSuggestionMeta,
+  MEDIA_SUGGESTION_POSTER_FALLBACK,
+  normalizeTmdbSearchResult,
+} from '../../utils/mediaSearch.js';
 import {
   deleteAdminRecipe,
   getAdminCategories,
@@ -218,14 +225,9 @@ function AdminRecettes() {
       }
       const payload = await response.json();
       const rawList = Array.isArray(payload) ? payload : payload.data || [];
-      const normalized = rawList.map(item => ({
-        id: item.id,
-        title: item.title || item.titre || item.name || item.nom || '',
-        type: item.type || item.mediaType || item.media_type || '',
-        poster: item.poster || item.posterUrl || null,
-        year: item.year || null,
-        overview: item.overview || null,
-      })).filter(item => item.title);
+      const normalized = rawList
+        .map(normalizeTmdbSearchResult)
+        .filter(item => item.title);
       setFilmResults(normalized.slice(0, 8));
     } catch (err) {
       setFilmResults([]);
@@ -506,8 +508,30 @@ function AdminRecettes() {
           <h3>{activeFilter === 'Tous' ? 'Recettes' : `${activeFilter}s`}</h3>
         </div>
 
-        {isLoading ? <p>Chargement des recettes…</p> : null}
-        {error ? <p>{error}</p> : null}
+        {isLoading ? (
+          <StatusBlock
+            variant="loading"
+            title="Chargement des recettes"
+            className={styles.pageState}
+          />
+        ) : null}
+        <Alert
+          type="error"
+          message={error}
+          onClose={() => setError('')}
+          className={styles.pageState}
+        />
+
+        {!isLoading && !error && filteredRecipes.length === 0 ? (
+          <StatusBlock
+            variant="empty"
+            title="Aucune recette à afficher"
+            message={query.trim()
+              ? "Aucune recette ne correspond à cette recherche. Essaie un autre titre."
+              : "Aucune recette n’est disponible pour ce filtre pour le moment."}
+            className={styles.pageState}
+          />
+        ) : null}
 
         <div className={styles.recipesGridExact}>
           {filteredRecipes.map((recipe) => {
@@ -648,7 +672,16 @@ function AdminRecettes() {
                             className={styles.adminFilmSuggestionBtn}
                             onClick={() => selectFilm(result)}
                           >
-                            {result.title}
+                            <img
+                              src={result.poster || MEDIA_SUGGESTION_POSTER_FALLBACK}
+                              alt=""
+                              aria-hidden="true"
+                              className={styles.adminFilmSuggestionPoster}
+                            />
+                            <span className={styles.adminFilmSuggestionCopy}>
+                              <span className={styles.adminFilmSuggestionTitle}>{result.title}</span>
+                              <span className={styles.adminFilmSuggestionMeta}>{getMediaSuggestionMeta(result)}</span>
+                            </span>
                           </button>
                         </li>
                       ))}

@@ -360,6 +360,14 @@
   font-size: 0.95rem;
 }
 
+.catalogState {
+  margin-bottom: 1rem;
+}
+
+.gridState {
+  grid-column: 1 / -1;
+}
+
 .summaryMeta {
   display: flex;
   flex-wrap: wrap;

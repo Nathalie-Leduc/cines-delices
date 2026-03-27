@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
+import Alert from '../../components/Alert/Alert.jsx';
+import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import {
   approveAdminIngredient,
   deleteAdminIngredient,
@@ -23,6 +25,7 @@ function getSubmittedByLabel(item) {
 export default function IngredientsValidation() {
   const [ingredients, setIngredients] = useState([]);
   const [query, setQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const [showValidateModal, setShowValidateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -37,6 +40,8 @@ export default function IngredientsValidation() {
         setIngredients(Array.isArray(payload) ? payload : []);
       } catch (loadError) {
         setError(loadError.message || 'Impossible de charger les ingrédients.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -119,7 +124,20 @@ export default function IngredientsValidation() {
         <img src="/icon/Search.svg" alt="" aria-hidden="true" />
       </div>
 
-      {error ? <p>{error}</p> : null}
+      <Alert
+        type="error"
+        message={error}
+        onClose={() => setError('')}
+        className={styles.pageState}
+      />
+
+      {isLoading ? (
+        <StatusBlock
+          variant="loading"
+          title="Chargement des ingrédients"
+          className={styles.pageState}
+        />
+      ) : null}
 
       <div className={styles.sectionTitle}>
         <h3>Liste des ingrédients ({filteredIngredients.length})</h3>
@@ -169,8 +187,15 @@ export default function IngredientsValidation() {
           </div>
         ))}
 
-        {!filteredIngredients.length ? (
-          <p style={{ color: 'rgba(246, 241, 232, 0.82)', margin: 0 }}>Aucun ingrédient trouvé.</p>
+        {!isLoading && !filteredIngredients.length ? (
+          <StatusBlock
+            variant="empty"
+            title={query.trim() ? 'Aucun ingrédient trouvé' : 'Aucun ingrédient à valider'}
+            message={query.trim()
+              ? 'Essaie une autre recherche pour retrouver un ingrédient en attente.'
+              : 'Les ingrédients proposés par les membres apparaîtront ici pour validation.'}
+            className={styles.pageState}
+          />
         ) : null}
       </div>
 

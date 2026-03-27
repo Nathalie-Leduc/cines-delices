@@ -149,6 +149,10 @@
   color: var(--color-danger-soft);
 }
 
+.latestState {
+  margin-top: 1.5rem;
+}
+
 .latestSlide :global(a) {
   min-width: 0;
 }

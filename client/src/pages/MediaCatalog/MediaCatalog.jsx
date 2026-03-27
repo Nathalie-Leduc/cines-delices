@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
 import MediaCard from "../../components/MediaCard";
 import useHeroReveal from "../../hooks/useHeroReveal";
 import styles from "../RecipesPage/RecipesPage.module.scss";
@@ -350,14 +351,42 @@ export default function MediaCatalog({
             </div>
           </div>
 
-          {isLoading && <p>{loadingMessage}</p>}
-          {isPaginating && !isLoading && <p className={styles.loadingInline}>{updatingMessage}</p>}
-          {error && !isLoading && <p>{error}</p>}
+          {isLoading && (
+            <StatusBlock
+              variant="loading"
+              title={loadingMessage}
+              className={styles.catalogState}
+            />
+          )}
+          {isPaginating && !isLoading && (
+            <StatusBlock
+              variant="loading"
+              title={updatingMessage}
+              size="compact"
+              className={styles.catalogState}
+            />
+          )}
+          {error && !isLoading && (
+            <StatusBlock
+              variant="error"
+              title={`Catalogue ${title.toLowerCase()} indisponible`}
+              message={error}
+              fallbackMessage={errorMessage}
+              className={styles.catalogState}
+            />
+          )}
 
           {!isLoading && !error && (
             <section className={styles.grid}>
               {!hasResults && (
-                <p>{hasQuery ? `Aucun ${singularLabel} ne correspond à votre recherche.` : emptyMessage}</p>
+                <StatusBlock
+                  variant="empty"
+                  title={hasQuery ? `Aucun ${singularLabel} trouvé` : `Aucun ${singularLabel} disponible`}
+                  message={hasQuery
+                    ? `Aucun ${singularLabel} ne correspond à "${currentQuery}". Essaie une autre recherche.`
+                    : emptyMessage}
+                  className={styles.gridState}
+                />
               )}
 
               {items.map((item) => (

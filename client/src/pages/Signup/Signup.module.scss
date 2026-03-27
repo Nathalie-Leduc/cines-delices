@@ -131,27 +131,14 @@
   }
 }
 
-.errorBox {
-  margin: 0.35rem 0 0;
-  padding: 0.8rem 0.9rem;
-  border-radius: 0.7rem;
-  border: 1px solid rgba(255, 143, 143, 0.45);
-  background: linear-gradient(180deg, rgba(142, 31, 47, 0.22), rgba(142, 31, 47, 0.12));
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
-}
-
-.errorTitle {
-  margin: 0 0 0.45rem;
-  color: #ffd8d8;
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  font-weight: 700;
+.formAlert {
+  margin-top: 0.35rem;
 }
 
 .errorList {
   margin: 0;
   padding-left: 1rem;
-  color: #ffb3b3;
+  color: inherit;
   font-family: 'Inter', sans-serif;
   font-size: 0.88rem;
   line-height: 1.35;
