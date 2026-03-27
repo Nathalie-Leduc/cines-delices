@@ -163,6 +163,7 @@ export default function Profil() {
       label: 'Mes recettes',
       sub: `${totalRecipes} recette${totalRecipes > 1 ? 's' : ''}`,
       path: '/membre/mes-recettes',
+      subTone: 'recipe',
     },
     {
       icon: '/icon/Message_fill.svg',
@@ -512,7 +513,7 @@ export default function Profil() {
                 </span>
                 <span className={styles.accountContent}>
                   <strong>{item.label}</strong>
-                  <small>{item.sub}</small>
+                  <small className={item.subTone === 'recipe' ? styles.accountSubTag : undefined}>{item.sub}</small>
                 </span>
                 <span className={styles.accountArrow}>›</span>
               </button>

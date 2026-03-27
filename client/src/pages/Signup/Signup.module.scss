@@ -1,3 +1,4 @@
+@use "../../styles/visitor-mixins" as ui;
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
 
 .signupPage {
@@ -51,25 +52,17 @@
 }
 
 .input {
-  width: 100%;
-  border: 0;
-  border-radius: 0.6rem;
-  background-color: rgba(246, 241, 232, 0.18);
-  color: #F6F1E8;
-  font-family: 'Inter', sans-serif;
+  @include ui.input-surface(
+    $background: rgba(246, 241, 232, 0.18),
+    $color: #F6F1E8,
+    $border: rgba(246, 241, 232, 0.12),
+    $radius: var(--radius-md),
+    $padding: 0.85rem 1rem,
+    $placeholder: rgba(246, 241, 232, 0.5),
+    $focus-border: rgba(201, 164, 92, 0.75),
+    $focus-shadow: 0 0 0 3px rgba(201, 164, 92, 0.2)
+  );
   font-size: 1rem;
-  padding: 0.85rem 1rem;
-  outline: none;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-
-  &::placeholder {
-    color: rgba(246, 241, 232, 0.5);
-  }
-
-  &:focus {
-    background-color: rgba(246, 241, 232, 0.22);
-    box-shadow: 0 0 0 2px rgba(201, 164, 92, 0.2);
-  }
 }
 
 .inputWrapper {
@@ -125,30 +118,16 @@
 }
 
 .submitButton {
+  @include ui.solid-button(
+    $font-family: var(--font-display),
+    $font-size: 1.15rem,
+    $font-weight: 700
+  );
   width: 100%;
-  border: 0;
-  border-radius: 0.6rem;
-  background-color: #8E1F2F;
-  color: #F6F1E8;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
-  font-weight: 700;
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
   margin-top: 0.5rem;
-
-  &:hover {
-    background-color: #a02436;
-  }
 
   &:active {
     transform: scale(0.98);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
   }
 }
 

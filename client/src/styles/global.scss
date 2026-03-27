@@ -32,6 +32,7 @@
   --layout-gutter: #{tokens.$layout-gutter-mobile};
   --section-space: #{tokens.$section-space-mobile};
   --control-height-md: 46px;
+  --hero-height-mobile: 330px;
   --hero-height-desktop: 520px;
 }
 
@@ -156,6 +157,6 @@ main {
   :root {
     --layout-gutter: #{tokens.$layout-gutter-desktop};
     --section-space: #{tokens.$section-space-desktop};
-    --hero-height-desktop: 430px;
+    --hero-height-desktop: 445.99px;
   }
 }

@@ -24,6 +24,12 @@ const CONCEPT_STEPS = [
   },
 ];
 
+const CONCEPT_TAGS = [
+  { label: "Films", to: "/films", variant: "film" },
+  { label: "Séries", to: "/series", variant: "series" },
+  { label: "Recettes", to: "/recipes", variant: "recipe" },
+];
+
 function normalizeCategoryLabel(value) {
   const normalized = String(value || "").trim().toLowerCase();
 
@@ -346,8 +352,6 @@ function Home() {
       return;
     }
 
-    const viewport = viewportRef.current;
-
     resetDragState();
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -357,15 +361,12 @@ function Home() {
       hasMoved: false,
       isHorizontalDrag: null,
     };
-
-    viewport?.setPointerCapture?.(event.pointerId);
-    setIsDraggingCarousel(true);
   };
 
   const handleCarouselPointerMove = (event) => {
     const dragState = dragStateRef.current;
 
-    if (!isDraggingCarousel || dragState.pointerId !== event.pointerId) {
+    if (dragState.pointerId !== event.pointerId) {
       return;
     }
 
@@ -383,6 +384,9 @@ function Home() {
         stopDragging(event.pointerId);
         return;
       }
+
+      viewportRef.current?.setPointerCapture?.(event.pointerId);
+      setIsDraggingCarousel(true);
     }
 
     dragState.hasMoved = true;
@@ -471,9 +475,49 @@ function Home() {
               <div
                 className={`${styles.conceptTags} ${styles.conceptReveal} ${styles.conceptRevealDelay3} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
               >
-                <span className={styles.conceptTag}>Films</span>
-                <span className={styles.conceptTag}>Séries</span>
-                <span className={styles.conceptTag}>Recettes</span>
+                {CONCEPT_TAGS.map((tag) => (
+                  <Link
+                    key={tag.to}
+                    className={`${styles.conceptTag} ${styles[`conceptTag_${tag.variant}`]}`.trim()}
+                    to={tag.to}
+                  >
+                    {tag.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className={`${styles.conceptVisual} ${styles.conceptReveal} ${styles.conceptRevealDelay2} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
+              aria-hidden="true"
+            >
+              <div className={styles.conceptVisualPanel}>
+                <span className={styles.conceptVisualGlow} />
+                <span className={styles.conceptVisualSpark} />
+
+                <div className={styles.conceptClapper}>
+                  <span className={styles.conceptClapperTop} />
+                  <span className={styles.conceptClapperBody} />
+                </div>
+
+                <div className={styles.conceptFlames}>
+                  <span className={styles.conceptFireGlow} />
+                  <span className={`${styles.conceptFlame} ${styles.conceptFlame1}`} />
+                  <span className={`${styles.conceptFlame} ${styles.conceptFlame2}`} />
+                  <span className={`${styles.conceptFlame} ${styles.conceptFlame3}`} />
+                </div>
+
+                <div className={styles.conceptCookware}>
+                  <span className={styles.conceptCookwareHandleLeft} />
+                  <span className={styles.conceptCookwareHandleRight} />
+                  <span className={styles.conceptCookwareLid} />
+                  <span className={styles.conceptCookwareKnob} />
+                  <span className={styles.conceptCookwareBody} />
+                </div>
+
+                <span className={`${styles.conceptSteam} ${styles.conceptSteam1}`} />
+                <span className={`${styles.conceptSteam} ${styles.conceptSteam2}`} />
+                <span className={`${styles.conceptSteam} ${styles.conceptSteam3}`} />
               </div>
             </div>
 

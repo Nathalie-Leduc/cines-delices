@@ -42,7 +42,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 520px;
+  min-height: var(--hero-height-desktop);
 }
 
 .backButton {
@@ -50,6 +50,7 @@
   position: absolute;
   top: 1.6rem;
   left: 1rem;
+  z-index: 3;
   gap: 0.55rem;
   background: rgba(31, 29, 30, 0.38);
   font-size: 0.92rem;
@@ -68,7 +69,8 @@
 }
 
 .heroContent {
-  max-width: 420px;
+  max-width: min(34rem, 56vw);
+  padding-top: clamp(4rem, 8vw, 5rem);
 }
 
 .heroReveal {
@@ -97,9 +99,11 @@
 
 .title {
   @include ui.hero-title;
-  font-size: clamp(3rem, 5vw, 5rem);
-  line-height: 0.96;
+  font-size: clamp(2.6rem, 4.25vw, 4.35rem);
+  line-height: 0.92;
   letter-spacing: -0.04em;
+  max-width: 100%;
+  text-wrap: balance;
 }
 
 .heroBadge {
@@ -462,6 +466,18 @@
   justify-content: center;
 }
 
+.similarGrid > :nth-child(2n) {
+  --card-reveal-delay: 0.08s;
+}
+
+.similarGrid > :nth-child(3n) {
+  --card-reveal-delay: 0.14s;
+}
+
+.similarGrid > :nth-child(4n) {
+  --card-reveal-delay: 0.2s;
+}
+
 .notFound {
   padding: 4rem 0;
   color: #f6f1e8;
@@ -549,11 +565,18 @@
 
   .hero,
   .hero .contentWrap {
-    min-height: 380px;
+    min-height: var(--hero-height-mobile);
   }
 
   .heroContent {
-    max-width: 260px;
+    max-width: min(20rem, calc(100vw - 2rem));
+    padding-top: 3.5rem;
+  }
+
+  .title {
+    font-size: clamp(2.25rem, 10vw, 3.9rem);
+    line-height: 0.94;
+    text-wrap: pretty;
   }
 
   .backButton {

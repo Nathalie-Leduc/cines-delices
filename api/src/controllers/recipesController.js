@@ -686,6 +686,7 @@ export const getAllPublishedRecipes = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
   const categoryFilter = String(req.query.category || '').trim();
   const searchQuery = String(req.query.q || '').trim();
+  const mediaSlug = String(req.query.mediaSlug || '').trim();
 
   const andFilters = [{ status: 'PUBLISHED' }];
 
@@ -731,6 +732,14 @@ export const getAllPublishedRecipes = asyncHandler(async (req, res) => {
           },
         },
       ],
+    });
+  }
+
+  if (mediaSlug) {
+    andFilters.push({
+      media: {
+        slug: mediaSlug,
+      },
     });
   }
 

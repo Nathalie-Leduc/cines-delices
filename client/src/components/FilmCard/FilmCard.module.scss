@@ -16,9 +16,13 @@
   transform: scale(1.03);
 }
 
+.card:focus-within .image {
+  transform: scale(1.03);
+}
+
 .badge {
   @include ui.badge-pill;
-  background: rgba(142, 31, 47, 0.95);
+  @include ui.badge-gradient-film;
 }
 
 .content {

@@ -295,23 +295,39 @@ export default function MediaCatalog({
                   <ul className={styles.searchResults}>
                     {searchResults.map((item) => (
                       <li key={item.id} className={styles.searchResultItem}>
-                        <button
-                          type="button"
-                          onClick={() => handleSuggestionClick(item.title)}
-                          className={styles.searchResultButton}
-                        >
-                          <img
-                            src={item.poster || item.fallbackPoster}
-                            alt={item.title}
-                            className={styles.searchResultThumb}
-                          />
-                          <span className={styles.searchResultCopy}>
-                            <span>{item.title}</span>
-                            <small className={styles.searchResultMeta}>
-                              {item.genre || suggestionMetaFallback}
-                            </small>
-                          </span>
-                        </button>
+                        {item.to ? (
+                          <Link to={item.to} onClick={() => setSearchResults([])}>
+                            <img
+                              src={item.poster || item.fallbackPoster}
+                              alt={item.title}
+                              className={styles.searchResultThumb}
+                            />
+                            <span className={styles.searchResultCopy}>
+                              <span>{item.title}</span>
+                              <small className={styles.searchResultMeta}>
+                                {item.genre || suggestionMetaFallback}
+                              </small>
+                            </span>
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSuggestionClick(item.title)}
+                            className={styles.searchResultButton}
+                          >
+                            <img
+                              src={item.poster || item.fallbackPoster}
+                              alt={item.title}
+                              className={styles.searchResultThumb}
+                            />
+                            <span className={styles.searchResultCopy}>
+                              <span>{item.title}</span>
+                              <small className={styles.searchResultMeta}>
+                                {item.genre || suggestionMetaFallback}
+                              </small>
+                            </span>
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>

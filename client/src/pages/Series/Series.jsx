@@ -4,6 +4,8 @@ import { getSeriesCatalog } from "../../services/mediaService";
 function mapSeriesToCard(series) {
   return {
     id: series?.id,
+    slug: series?.slug,
+    to: series?.slug ? `/series/${series.slug}` : undefined,
     title: series?.title || "Série sans titre",
     poster: series?.poster || "/img/stranger-thing-poster.png",
     fallbackPoster: "/img/stranger-thing-poster.png",

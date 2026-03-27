@@ -214,6 +214,7 @@ export default function Membre() {
       sub: `${recipeCount} recette${recipeCount > 1 ? 's' : ''}`,
       // Pour admin : rediriger vers le tableau admin, pour membre : vers ses recettes
       path: userRole === 'ADMIN' ? '/admin' : '/membre/mes-recettes',
+      subTone: 'recipe',
     },
     {
       icon: '/icon/Message_fill.svg',
@@ -307,7 +308,7 @@ export default function Membre() {
             </span>
             <div className={styles.menuText}>
               <span className={styles.menuLabel}>{item.label}</span>
-              <span className={styles.menuSub}>{item.sub}</span>
+              <span className={`${styles.menuSub} ${item.subTone === 'recipe' ? styles.menuSubTag : ''}`.trim()}>{item.sub}</span>
             </div>
             <span className={styles.arrow}>›</span>
           </button>

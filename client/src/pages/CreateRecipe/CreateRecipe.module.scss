@@ -1,3 +1,4 @@
+@use "../../styles/visitor-mixins" as ui;
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
 
 .creerRecette {
@@ -91,21 +92,36 @@
 .inputIcon {
   display: flex;
   align-items: center;
-  background-color: #4A3428;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
+  @include ui.surface-panel(
+    $background: #4A3428,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem
+  );
+  min-height: var(--control-height-md);
   gap: 0.5rem;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.inputIcon:focus-within {
+  border-color: #C9A45C;
+  background-color: #5a4a3a;
+  box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.12);
 }
 
 .dropZone {
   display: flex;
   align-items: center;
-  background-color: #4A3428;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
+  @include ui.surface-panel(
+    $background: #4A3428,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem
+  );
+  min-height: var(--control-height-md);
   gap: 0.5rem;
-  border: 2px dashed transparent;
-  transition: border-color 0.25s ease, background-color 0.25s ease;
+  border-style: dashed;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .dropZoneActive {
@@ -144,23 +160,24 @@
 }
 
 .iconBtn {
-  background-color: transparent;
-  border: 2px solid #C9A45C;
-  color: #C9A45C;
+  @include ui.outline-button(
+    $border-color: #C9A45C,
+    $hover-border-color: #C9A45C,
+    $background: transparent,
+    $hover-background: rgba(201, 164, 92, 0.15),
+    $color: #C9A45C,
+    $radius: 8px,
+    $min-height: 32px,
+    $padding: 0
+  );
   width: 32px;
   height: 32px;
-  border-radius: 8px;
   font-size: 1.25rem;
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
   flex-shrink: 0;
   font-weight: 600;
 
   &:hover {
-    background-color: rgba(201, 164, 92, 0.15);
     transform: scale(1.05);
   }
 
@@ -173,13 +190,16 @@
 .selectWrapper {
   display: flex;
   align-items: center;
-  background-color: #4A3428;
-  border: 1.5px solid rgba(201, 164, 92, 0.2);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
+  @include ui.surface-panel(
+    $background: #4A3428,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem
+  );
+  min-height: var(--control-height-md);
   gap: 0.5rem;
   position: relative;
-  transition: all 0.25s ease;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
 
   &:hover {
     border-color: rgba(201, 164, 92, 0.4);
@@ -189,7 +209,7 @@
   &:focus-within {
     border-color: #C9A45C;
     background-color: #5a4a3a;
-    box-shadow: 0 0 0 2px rgba(201, 164, 92, 0.1);
+    box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.12);
   }
 }
 
@@ -287,41 +307,37 @@
 .ingredientSuggestionBtn {
   width: 100%;
   text-align: left;
-  background-color: #4A3428;
-  border: 1px solid rgba(201, 164, 92, 0.2);
-  border-radius: 8px;
-  color: #F6F1E8;
-  padding: 0.5rem 0.75rem;
+  @include ui.outline-button(
+    $border-color: rgba(201, 164, 92, 0.2),
+    $hover-border-color: #C9A45C,
+    $background: #4A3428,
+    $hover-background: rgba(201, 164, 92, 0.08),
+    $color: #F6F1E8,
+    $radius: 8px,
+    $min-height: auto,
+    $padding: 0.5rem 0.75rem,
+    $hover-shadow: none
+  );
+  justify-content: flex-start;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: #C9A45C;
-    background-color: rgba(201, 164, 92, 0.08);
-  }
 }
 
 .createIngredientBtn {
   width: 100%;
-  background-color: transparent;
-  border: 1px dashed #6E8B5B;
-  color: #6E8B5B;
-  border-radius: 8px;
-  padding: 0.45rem 0.65rem;
+  @include ui.outline-button(
+    $border-color: #6E8B5B,
+    $hover-border-color: #6E8B5B,
+    $background: transparent,
+    $hover-background: rgba(110, 139, 91, 0.1),
+    $color: #6E8B5B,
+    $radius: 8px,
+    $min-height: auto,
+    $padding: 0.45rem 0.65rem,
+    $hover-shadow: none
+  );
   font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
-  cursor: pointer;
-
-  &:hover {
-    background-color: rgba(110, 139, 91, 0.1);
-  }
-
-  &:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-  }
 }
 
 .ingredientBottom {
@@ -332,22 +348,21 @@
 }
 
 .addIngredientBtn {
-  background: none;
-  border: 1.5px solid #6E8B5B;
-  color: #6E8B5B;
-  border-radius: 20px;
-  padding: 6px 16px;
+  @include ui.outline-button(
+    $border-color: #6E8B5B,
+    $hover-border-color: #6E8B5B,
+    $background: transparent,
+    $hover-background: rgba(110, 139, 91, 0.15),
+    $color: #6E8B5B,
+    $font-size: 0.85rem,
+    $radius: 20px,
+    $min-height: auto,
+    $padding: 0.38rem 1rem,
+    $hover-shadow: none
+  );
   font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
   font-weight: 500;
-  cursor: pointer;
   align-self: flex-start;
-  transition: all 0.25s ease;
-
-  &:hover {
-    background-color: rgba(110, 139, 91, 0.15);
-    transform: translateY(-1px);
-  }
 
   &:active {
     transform: translateY(0);
@@ -355,25 +370,22 @@
 }
 
 .removeBtn {
-  background-color: rgba(142, 31, 47, 0.2);
-  border: 1.5px solid #8E1F2F;
-  color: #F6F1E8;
+  @include ui.solid-button(
+    $background: rgba(142, 31, 47, 0.2),
+    $hover-background: #8E1F2F,
+    $border-color: #8E1F2F,
+    $color: #F6F1E8,
+    $radius: 8px,
+    $min-height: 32px,
+    $padding: 0,
+    $hover-shadow: none
+  );
   width: 32px;
   height: 32px;
-  border-radius: 8px;
   font-size: 1.2rem;
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  transition: all 0.25s ease;
   font-weight: 600;
-
-  &:hover {
-    background-color: #8E1F2F;
-    transform: translateY(-2px);
-  }
 
   &:active {
     transform: translateY(0);
@@ -407,46 +419,35 @@
 
 .textarea {
   flex: 1;
-  background-color: #4A3428;
-  border: none;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  color: #F6F1E8;
+  @include ui.input-surface(
+    $background: #4A3428,
+    $color: #F6F1E8,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem,
+    $min-height: 8.5rem,
+    $placeholder: rgba(246, 241, 232, 0.3),
+    $focus-border: #C9A45C,
+    $focus-shadow: 0 0 0 3px rgba(201, 164, 92, 0.12)
+  );
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
-  outline: none;
   resize: none;
   line-height: 1.5;
-
-  &::placeholder {
-    color: rgba(246, 241, 232, 0.3);
-  }
-
-  &:focus {
-    border: 1px solid rgba(201, 164, 92, 0.3);
-  }
 }
 
 /* ===== SUBMIT ===== */
 .submitBtn {
+  @include ui.solid-button(
+    $font-size: 1rem,
+    $padding: 0.95rem 1.1rem,
+    $radius: 12px
+  );
   width: 100%;
-  padding: 1.1rem;
-  background-color: #8E1F2F;
   color: #FFFFFF;
-  border: none;
-  border-radius: 12px;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
   margin-top: 1rem;
-  transition: all 0.25s ease;
-
-  &:hover {
-    background-color: #a02436;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(142, 31, 47, 0.3);
-  }
 
   &:active {
     transform: translateY(0);
@@ -493,22 +494,17 @@
 }
 
 .cancelBtn {
+  @include ui.solid-button(
+    $background: #4A3428,
+    $hover-background: #5a4030,
+    $font-size: 1rem,
+    $padding: 0.85rem 1rem,
+    $radius: 10px,
+    $hover-shadow: 0 12px 24px rgba(0, 0, 0, 0.18)
+  );
   flex: 1;
-  padding: 0.9rem;
-  background-color: #4A3428;
-  color: #F6F1E8;
-  border: none;
-  border-radius: 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-
-  &:hover {
-    background-color: #5a4030;
-    transform: translateY(-2px);
-  }
 
   &:active {
     transform: translateY(0);
@@ -516,14 +512,14 @@
 }
 
 .confirmBtn {
+  @include ui.solid-button(
+    $font-size: 1rem,
+    $padding: 0.85rem 1rem,
+    $radius: 10px
+  );
   flex: 1;
-  padding: 0.9rem;
-  background-color: #8E1F2F;
   color: #FFFFFF;
-  border: none;
-  border-radius: 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;

@@ -327,6 +327,7 @@ export default function MesRecettes() {
       sub: `${recipes.length} recettes`,
       path: '/membre/mes-recettes',
       active: true,
+      subTone: 'recipe',
     },
     {
       icon: '/icon/Message_fill.svg',
@@ -1232,7 +1233,9 @@ export default function MesRecettes() {
                 </span>
                 <span className={styles.accountContent}>
                   <strong>{item.label}</strong>
-                  <small>{item.path === '/membre/mes-recettes' ? `${recipes.length} recettes` : item.sub}</small>
+                  <small className={item.subTone === 'recipe' ? styles.accountSubTag : undefined}>
+                    {item.path === '/membre/mes-recettes' ? `${recipes.length} recettes` : item.sub}
+                  </small>
                 </span>
                 <span className={styles.accountArrow}>›</span>
               </button>

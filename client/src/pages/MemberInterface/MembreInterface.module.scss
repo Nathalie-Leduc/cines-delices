@@ -1,3 +1,4 @@
+@use "../../styles/visitor-mixins" as ui;
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
 
 .membre {
@@ -13,13 +14,12 @@
 
 /* ===== TITRE ===== */
 .title {
-  font-family: 'Playfair Display', serif;
-  color: #C9A45C;
-  font-size: 3rem;
-  font-weight: 700;
+  @include ui.section-title;
+  font-size: clamp(2.55rem, 5vw, 3rem);
+  line-height: 1.02;
   text-align: center;
-  margin-bottom: 0.9rem;
-  letter-spacing: 0.02em;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
 }
 
 /* ===== MESSAGE DE BIENVENUE ===== */
@@ -38,13 +38,31 @@
 }
 
 .notificationsCard {
+  @include ui.surface-panel(
+    $background: rgba(31, 29, 30, 0.58),
+    $border: rgba(232, 220, 200, 0.35),
+    $radius: 14px,
+    $padding: 0.75rem 0.85rem
+  );
   width: 100%;
   max-width: 400px;
-  border: 1px solid rgba(232, 220, 200, 0.35);
-  border-radius: 14px;
-  background: rgba(31, 29, 30, 0.58);
-  padding: 0.75rem 0.85rem;
   margin-bottom: 0.9rem;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  animation: memberInterfaceCardReveal 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.notificationsCard:hover {
+  border-color: rgba(201, 164, 92, 0.5);
+  background-color: rgba(31, 29, 30, 0.72);
+  box-shadow: var(--shadow-lifted);
+  transform: translateY(-4px);
 }
 
 .notificationsHeader {
@@ -150,23 +168,50 @@
 
 /* ===== CARD ITEM ===== */
 .menuItem {
+  @include ui.surface-panel(
+    $background: rgba(31, 29, 30, 0.58),
+    $border: rgba(232, 220, 200, 0.35),
+    $radius: 14px,
+    $padding: 1rem 1.2rem
+  );
   width: 100%;
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 1.2rem;
-  background-color: rgba(31, 29, 30, 0.58);
-  border: 1px solid rgba(232, 220, 200, 0.35);
-  border-radius: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  animation: memberInterfaceCardReveal 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  box-shadow: var(--shadow-soft);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
   text-align: left;
 
   &:hover {
     border-color: rgba(201, 164, 92, 0.5);
     background-color: rgba(31, 29, 30, 0.72);
-    transform: translateY(-1px);
+    box-shadow: var(--shadow-lifted);
+    transform: translateY(-4px);
   }
+}
+
+.menu > :nth-child(1) {
+  animation-delay: 0.08s;
+}
+
+.menu > :nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.menu > :nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.menu > :nth-child(4) {
+  animation-delay: 0.26s;
 }
 
 .icon {
@@ -198,9 +243,45 @@
   font-weight: 600;
 }
 
+@keyframes memberInterfaceCardReveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notificationsCard,
+  .menuItem {
+    opacity: 1;
+    transform: none;
+    animation: none;
+    transition: none;
+  }
+}
+
 .menuSub {
   font-size: 0.82rem;
   color: rgba(246, 241, 232, 0.58);
+}
+
+.menuSubTag {
+  @include ui.badge-chip(
+    $background: rgba(142, 31, 47, 0.96),
+    $color: #fff7ea,
+    $border: rgba(251, 220, 166, 0.82),
+    $padding: 0.22rem 0.56rem,
+    $font-size: 0.7rem,
+    $font-weight: 700
+  );
+  @include ui.badge-gradient-recipe;
+  align-self: flex-start;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
 }
 
 .arrow {
@@ -210,14 +291,16 @@
 
 /* ===== BOUTON DÉCONNEXION ===== */
 .logout {
+  @include ui.solid-button(
+    $font-family: var(--font-display),
+    $font-size: 1rem,
+    $font-weight: 700,
+    $padding: 0.9rem 1.2rem,
+    $radius: 14px
+  );
   width: 100%;
   display: flex;
-  align-items: center;
   gap: 1rem;
-  padding: 1rem 1.2rem;
-  background-color: #8E1F2F;
-  border: none;
-  border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-top: 0.25rem;

@@ -164,7 +164,7 @@
 .titleLine {
   width: 100%;
   height: 1px;
-  background: rgba(240, 210, 154, 0.62);
+  background: rgba(232, 220, 200, 0.3);
   transform: translateY(0.18rem);
 }
 
@@ -376,6 +376,18 @@
   justify-content: center;
 }
 
+.grid > :nth-child(2n) {
+  --card-reveal-delay: 0.08s;
+}
+
+.grid > :nth-child(3n) {
+  --card-reveal-delay: 0.14s;
+}
+
+.grid > :nth-child(4n) {
+  --card-reveal-delay: 0.2s;
+}
+
 .pagination {
   display: flex;
   align-items: center;
@@ -383,10 +395,12 @@
   gap: 1rem;
   margin-top: 2rem;
   padding-top: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .paginationButton {
   @include ui.secondary-button;
+  min-width: 8rem;
 }
 
 .paginationButton:disabled {
@@ -395,17 +409,24 @@
 }
 
 .paginationStatus {
-  color: var(--color-title);
-  font-weight: 600;
+  @include ui.badge-chip(
+    $background: rgba(246, 241, 232, 0.08),
+    $color: var(--color-title),
+    $border: rgba(246, 241, 232, 0.18),
+    $padding: 0.45rem 0.92rem,
+    $font-size: 0.82rem,
+    $font-weight: 700
+  );
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.16);
 }
 
 @media (max-width: 767px) {
   .hero {
-    min-height: 330px;
+    min-height: var(--hero-height-mobile);
   }
 
   .heroInner {
-    min-height: 330px;
+    min-height: var(--hero-height-mobile);
   }
 
   .heroContent {

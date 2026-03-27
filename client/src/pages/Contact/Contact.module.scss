@@ -1,3 +1,4 @@
+@use "../../styles/visitor-mixins" as ui;
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&family=Inter:wght@400;500;600&display=swap');
 
 .contact {
@@ -94,20 +95,42 @@
   font-family: 'Inter', sans-serif;
   font-size: 0.98rem;
   font-weight: 500;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    background-color 0.2s ease;
 }
 
 .input {
-  min-height: 3.95rem;
-  padding: 1rem 1.1rem;
+  @include ui.input-surface(
+    $background: rgba(197, 191, 182, 0.34),
+    $color: rgba(44, 41, 40, 0.92),
+    $border: rgba(255, 255, 255, 0.08),
+    $radius: 0.9rem,
+    $padding: 0.85rem 1.05rem,
+    $min-height: var(--control-height-md),
+    $placeholder: rgba(58, 54, 51, 0.85),
+    $focus-border: rgba(251, 220, 166, 0.35),
+    $focus-shadow: 0 0 0 3px rgba(251, 220, 166, 0.08)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(1px);
+  font-size: 0.98rem;
+  font-weight: 500;
 }
 
 .textarea {
-  min-height: 12rem;
-  padding: 1rem 1.1rem;
+  @include ui.input-surface(
+    $background: rgba(197, 191, 182, 0.34),
+    $color: rgba(44, 41, 40, 0.92),
+    $border: rgba(255, 255, 255, 0.08),
+    $radius: 0.9rem,
+    $padding: 1rem 1.1rem,
+    $min-height: 12rem,
+    $placeholder: rgba(58, 54, 51, 0.85),
+    $focus-border: rgba(251, 220, 166, 0.35),
+    $focus-shadow: 0 0 0 3px rgba(251, 220, 166, 0.08)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(1px);
+  font-size: 0.98rem;
+  font-weight: 500;
   resize: vertical;
 }
 
@@ -115,8 +138,13 @@
   position: relative;
   display: flex;
   align-items: center;
-  min-height: 3.95rem;
+  min-height: var(--control-height-md);
   padding-left: 3.6rem;
+  border-radius: 0.9rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .emailInput {

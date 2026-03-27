@@ -109,6 +109,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
       icon: '/icon/Recipes.svg',
       title: 'Gérer les recettes',
       sub: `${counts.recipes} recette${counts.recipes > 1 ? 's' : ''}`,
+      subTone: 'recipe',
     },
     {
       to: '/admin/utilisateurs',
@@ -181,7 +182,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
                 </span>
                 <span className={styles.text}>
                   <strong>{item.title}</strong>
-                  <small>{item.sub}</small>
+                  <small className={item.subTone === 'recipe' ? styles.recipeCountTag : undefined}>{item.sub}</small>
                 </span>
                 <span className={styles.arrow} aria-hidden="true">›</span>
               </NavLink>

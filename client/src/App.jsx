@@ -10,7 +10,9 @@ import CreateRecipe from './pages/CreateRecipe';
 import RecipesPage from './pages/RecipesPage';
 import RecipeDetail from "./pages/RecipeDetail";
 import Movies from './pages/Movies';
+import MovieRecipes from './pages/MovieRecipes';
 import Series from './pages/Series';
+import SeriesRecipes from './pages/SeriesRecipes';
 import Contact from './pages/Contact';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
@@ -34,7 +36,9 @@ function App() {
         <Route path="/recipes" element={<RecipesPage />} />
         <Route path="/recipes/:slug" element={<RecipeDetail />} />
         <Route path="/films" element={<Movies />} />
+        <Route path="/films/:slug" element={<MovieRecipes />} />
         <Route path="/series" element={<Series />} />
+        <Route path="/series/:slug" element={<SeriesRecipes />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
