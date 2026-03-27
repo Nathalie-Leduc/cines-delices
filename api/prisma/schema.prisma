@@ -50,13 +50,14 @@ enum NotificationType {
 // mais ses brouillons personnels (DRAFT/PENDING) peuvent être nettoyés
 // côté applicatif avant la suppression du compte.
 model User {
-  id           String   @id @default(uuid())
-  email        String   @unique
+  id           String     @id @default(uuid())
+  email        String     @unique
   nom          String?
-  pseudo       String   @unique
-  passwordHash String   @map("password_hash")
-  role         Role     @default(MEMBER)
-  createdAt    DateTime @default(now()) @map("created_at")
+  pseudo       String     @unique
+  passwordHash String     @map("password_hash")
+  role         Role       @default(MEMBER)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  lastLoginAt  DateTime?  @map("last_login_at")
 
   // Relations
   recipes       Recipe[]
