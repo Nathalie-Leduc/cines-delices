@@ -849,6 +849,23 @@ export default function MesRecettes() {
     navigate('/');
   }
 
+  function openCreateRecipeForm() {
+    const trimmedTitle = newRecipeName.trim();
+
+    navigate('/membre/creer-recette', {
+      state: trimmedTitle ? { initialTitle: trimmedTitle } : null,
+    });
+  }
+
+  function handleCreateRecipeInputKeyDown(event) {
+    if (event.key !== 'Enter') {
+      return;
+    }
+
+    event.preventDefault();
+    openCreateRecipeForm();
+  }
+
  // ──────────────────────────────────────────────────────────────────────
   //  MODIF 2 : nouvelle fonction handleSubmitRecipe
   //
@@ -1286,8 +1303,14 @@ export default function MesRecettes() {
                 placeholder="Entrer son nom"
                 value={newRecipeName}
                 onChange={e => setNewRecipeName(e.target.value)}
+                onKeyDown={handleCreateRecipeInputKeyDown}
               />
-              <button className={styles.createBtn} aria-label="Aller au formulaire de création de recette" onClick={() => navigate('/membre/creer-recette')}>
+              <button
+                type="button"
+                className={styles.createBtn}
+                aria-label="Aller au formulaire de création de recette"
+                onClick={openCreateRecipeForm}
+              >
                 +
               </button>
             </div>

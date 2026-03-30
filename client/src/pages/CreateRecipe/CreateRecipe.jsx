@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import styles from './CreateRecipe.module.scss';
 import Alert from '../../components/Alert/Alert.jsx';
 import {
@@ -9,7 +10,7 @@ import {
 
 
 const categoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
-const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
+const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)', 'tasse'];
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
   || import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
@@ -34,11 +35,22 @@ const INITIAL_FORM = {
   tempsPréparation: '',
   tempsCuisson: '',
   nbPersonnes: '',
-  ingredients: [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
+  ingredients: [],
   etapes: [''],
 };
 
+const INITIAL_INGREDIENT_DRAFT = {
+  ingredientId: null,
+  nom: '',
+  quantite: '',
+  unite: '',
+};
+
 export default function CreerRecette() {
+  const location = useLocation();
+  const initialTitleFromNavigation = typeof location.state?.initialTitle === 'string'
+    ? location.state.initialTitle.trim()
+    : '';
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState({ type: 'info', message: '' });
@@ -47,15 +59,45 @@ export default function CreerRecette() {
   const [filmSearchResults, setFilmSearchResults] = useState([]);
   const [filmSearchLoading, setFilmSearchLoading] = useState(false);
   const [filmSearchError, setFilmSearchError] = useState('');
-  const [ingredientSearchResults, setIngredientSearchResults] = useState({});
-  const [ingredientSearchLoading, setIngredientSearchLoading] = useState({});
-  const [ingredientSearchError, setIngredientSearchError] = useState({});
-  const [creatingIngredient, setCreatingIngredient] = useState({});
+  const [ingredientDraft, setIngredientDraft] = useState(INITIAL_INGREDIENT_DRAFT);
+  const [ingredientAlreadyExists, setIngredientAlreadyExists] = useState(false);
+  const [ingredientSearchResults, setIngredientSearchResults] = useState([]);
+  const [ingredientSearchLoading, setIngredientSearchLoading] = useState(false);
+  const [ingredientSearchError, setIngredientSearchError] = useState('');
+  const [creatingIngredient, setCreatingIngredient] = useState(false);
   const filmSearchTimeoutRef = useRef(null);
-  const ingredientSearchTimeouts = useRef({});
+  const ingredientSearchTimeoutRef = useRef(null);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [lastSubmittedSignature, setLastSubmittedSignature] = useState('');
   //Média sélectionné depuis TMDB
   const [selectedMedia, setSelectedMedia] = useState(null); // état pour stocker le média choisi
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') {
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '')) {
+      return;
+    }
+
+    try {
+      window.scrollTo(0, 0);
+    } catch {
+      // Certains environnements de test ne supportent pas scrollTo.
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!initialTitleFromNavigation) {
+      return;
+    }
+
+    setForm(prev => ({
+      ...prev,
+      titre: prev.titre || initialTitleFromNavigation,
+    }));
+  }, [initialTitleFromNavigation]);
 
 
   // ===== HANDLERS GÉNÉRAUX =====
@@ -213,33 +255,22 @@ export default function CreerRecette() {
   }
 
   // ===== INGRÉDIENTS =====
-  function handleIngredientChange(index, field, value) {
-    const updated = [...form.ingredients];
-    updated[index][field] = value;
-
-    if (field === 'nom') {
-      updated[index].ingredientId = null;
-    }
-
-    setForm(prev => ({ ...prev, ingredients: updated }));
+  function clearIngredientSearchState() {
+    setIngredientSearchResults([]);
+    setIngredientSearchLoading(false);
+    setIngredientSearchError('');
   }
 
-  function clearIngredientSearchState(index) {
-    setIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
-    setIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
-    setIngredientSearchError(prev => ({ ...prev, [index]: '' }));
-  }
-
-  async function searchIngredients(index, query) {
+  async function searchIngredients(query) {
     const trimmed = query.trim();
 
     if (trimmed.length < 2) {
-      clearIngredientSearchState(index);
+      clearIngredientSearchState();
       return;
     }
 
-    setIngredientSearchLoading(prev => ({ ...prev, [index]: true }));
-    setIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+    setIngredientSearchLoading(true);
+    setIngredientSearchError('');
 
     try {
       const response = await fetch(`${INGREDIENT_SEARCH_API}?q=${encodeURIComponent(trimmed)}`);
@@ -260,47 +291,56 @@ export default function CreerRecette() {
       );
 
       if (exactMatch) {
-        selectIngredient(index, exactMatch);
+        selectIngredient(exactMatch);
+        setIngredientAlreadyExists(true);
         return;
       }
 
-      setIngredientSearchResults(prev => ({ ...prev, [index]: normalized }));
+      setIngredientSearchResults(normalized);
     } catch {
-      setIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
-      setIngredientSearchError(prev => ({
-        ...prev,
-        [index]: "Impossible de rechercher les ingrédients pour l'instant.",
-      }));
+      setIngredientSearchResults([]);
+      setIngredientSearchError("Impossible de rechercher les ingrédients pour l'instant.");
     } finally {
-      setIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
+      setIngredientSearchLoading(false);
     }
   }
 
-  function handleIngredientNameInput(index, value) {
-    handleIngredientChange(index, 'nom', value);
+  function handleIngredientNameInput(value) {
+    setIngredientDraft(prev => ({
+      ...prev,
+      nom: value,
+      ingredientId: null,
+    }));
+    setIngredientAlreadyExists(false);
 
-    clearTimeout(ingredientSearchTimeouts.current[index]);
-    ingredientSearchTimeouts.current[index] = setTimeout(() => {
-      searchIngredients(index, value);
+    clearTimeout(ingredientSearchTimeoutRef.current);
+    ingredientSearchTimeoutRef.current = setTimeout(() => {
+      searchIngredients(value);
     }, 300);
   }
 
-  function selectIngredient(index, ingredient) {
-    const updated = [...form.ingredients];
-    updated[index].ingredientId = ingredient.id || null;
-    updated[index].nom = ingredient.name;
-    setForm(prev => ({ ...prev, ingredients: updated }));
-    clearIngredientSearchState(index);
+  function handleIngredientDraftChange(field, value) {
+    setIngredientDraft(prev => ({ ...prev, [field]: value }));
   }
 
-  async function createIngredient(index) {
-    const name = form.ingredients[index]?.nom?.trim();
+  function selectIngredient(ingredient) {
+    setIngredientDraft(prev => ({
+      ...prev,
+      ingredientId: ingredient.id || null,
+      nom: ingredient.name,
+    }));
+    setIngredientAlreadyExists(true);
+    clearIngredientSearchState();
+  }
+
+  async function createIngredient() {
+    const name = String(ingredientDraft.nom || '').trim();
     if (!name) {
       return;
     }
 
-    setCreatingIngredient(prev => ({ ...prev, [index]: true }));
-    setIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+    setCreatingIngredient(true);
+    setIngredientSearchError('');
 
     try {
       const response = await fetch(INGREDIENT_CREATE_API, {
@@ -314,25 +354,41 @@ export default function CreerRecette() {
       }
 
       const created = await response.json();
-      selectIngredient(index, {
+      selectIngredient({
         id: created.id,
         name: created.name || created.nom || name,
       });
+      setIngredientAlreadyExists(true);
     } catch {
-      setIngredientSearchError(prev => ({
-        ...prev,
-        [index]: "Impossible de créer l'ingrédient pour l'instant.",
-      }));
+      setIngredientSearchError("Impossible de créer l'ingrédient pour l'instant.");
     } finally {
-      setCreatingIngredient(prev => ({ ...prev, [index]: false }));
+      setCreatingIngredient(false);
     }
   }
 
-  function addIngredient() {
+  function addIngredientToList() {
+    const ingredientName = String(ingredientDraft.nom || '').trim();
+    if (!ingredientName) {
+      setIngredientSearchError("Saisis au moins le nom de l'ingrédient.");
+      return;
+    }
+
     setForm(prev => ({
       ...prev,
-      ingredients: [...prev.ingredients, { ingredientId: null, nom: '', quantite: '', unite: '' }]
+      ingredients: [
+        ...prev.ingredients,
+        {
+          ingredientId: ingredientDraft.ingredientId || null,
+          nom: ingredientName,
+          quantite: String(ingredientDraft.quantite || '').trim(),
+          unite: String(ingredientDraft.unite || '').trim(),
+        },
+      ],
     }));
+
+    setIngredientDraft(INITIAL_INGREDIENT_DRAFT);
+    setIngredientAlreadyExists(false);
+    clearIngredientSearchState();
   }
 
   function removeIngredient(index) {
@@ -340,8 +396,17 @@ export default function CreerRecette() {
       ...prev,
       ingredients: prev.ingredients.filter((_, i) => i !== index)
     }));
+  }
 
-    clearIngredientSearchState(index);
+  function formatAddedIngredient(item) {
+    const quantite = String(item?.quantite || '').trim();
+    const unite = String(item?.unite || '').trim();
+    const nom = String(item?.nom || '').trim();
+
+    const prefix = [quantite, unite].filter(Boolean).join(' ').trim();
+    const suffix = [prefix, nom].filter(Boolean).join(' ').trim();
+
+    return suffix || nom;
   }
 
   // ===== ÉTAPES =====
@@ -389,6 +454,25 @@ export default function CreerRecette() {
     return '';
   }
 
+  function scrollToTopForNotification() {
+    if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') {
+      return;
+    }
+
+    if (typeof navigator !== 'undefined' && /jsdom/i.test(navigator.userAgent || '')) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    });
+  }
+
+  function showAlertAtTop(type, message) {
+    setAlert({ type, message });
+    scrollToTopForNotification();
+  }
+
   function buildRecipePayload() {
     const parseNullableNumber = (value) => {
       if (value === '' || value === null || value === undefined) {
@@ -414,26 +498,76 @@ export default function CreerRecette() {
       tempsCuisson: parseNullableNumber(form.tempsCuisson),
       nbPersonnes: parseNullableNumber(form.nbPersonnes),
       ingredients: form.ingredients
-        .map(item => ({
+        .map(item => {
+          const quantite = String(item.quantite || '').trim();
+          const unite = String(item.unite || '').trim();
+
+          return {
           ingredientId: item.ingredientId,
-          nom: item.nom.trim(),
-          quantity: item.quantite,
-          unit: item.unite,
-        }))
+          nom: String(item.nom || '').trim(),
+          quantity: quantite || null,
+          unit: unite || null,
+          };
+        })
         .filter(item => item.nom),
     };
   }
 
+  function buildSubmissionSignature(payload) {
+    return JSON.stringify({
+      titre: payload.titre,
+      filmId: payload.filmId,
+      type: payload.type,
+      categorie: payload.categorie,
+      instructions: payload.instructions,
+      tempsPreparation: payload.tempsPreparation ?? null,
+      tempsCuisson: payload.tempsCuisson ?? null,
+      nbPersonnes: payload.nbPersonnes ?? null,
+      ingredients: payload.ingredients,
+      etapes: payload.etapes,
+    });
+  }
+
   // ===== SUBMIT =====
   async function handleSubmit() {
+    if (isSubmitting) {
+      return;
+    }
+
     const payload = buildRecipePayload();
 
-    if (!payload.titre || !payload.categorie || !payload.filmId || payload.ingredients.length === 0 || payload.etapes.length === 0) {
-      setAlert({
-        type: 'error',
-        message: 'Veuillez remplir les champs obligatoires et sélectionner un film/série depuis la liste.',
-      });
+    const missingFields = [];
+
+    if (!payload.titre) {
+      missingFields.push('titre');
+    }
+
+    if (!payload.filmId) {
+      missingFields.push('film/série (sélection dans la liste)');
+    }
+
+    if (!payload.categorie) {
+      missingFields.push('catégorie');
+    }
+
+    if (payload.ingredients.length === 0) {
+      missingFields.push('au moins un ingrédient');
+    }
+
+    if (payload.etapes.length === 0) {
+      missingFields.push('au moins une étape de préparation');
+    }
+
+    if (missingFields.length > 0) {
+      showAlertAtTop('error', `Champs obligatoires manquants : ${missingFields.join(', ')}.`);
       setShowSubmitModal(false);
+      return;
+    }
+
+    const submissionSignature = buildSubmissionSignature(payload);
+    if (submissionSignature === lastSubmittedSignature) {
+      setShowSubmitModal(false);
+      showAlertAtTop('error', 'Cette recette a deja ete soumise. Modifie-la avant de valider de nouveau.');
       return;
     }
 
@@ -500,50 +634,42 @@ export default function CreerRecette() {
 
         if (response.status === 400 || response.status === 422) {
           setShowSubmitModal(false);
-          setAlert({
-            type: 'error',
-            message: apiMessage || 'Champs manquants ou invalides. Vérifie le formulaire.',
-          });
+          showAlertAtTop('error', apiMessage || 'Champs manquants ou invalides. Vérifie le formulaire.');
         } else if (response.status === 401 || response.status === 403) {
           setShowSubmitModal(false);
-          setAlert({
-            type: 'error',
-            message: apiMessage || 'Vous devez être connecté(e) pour créer une recette.',
-          });
+          showAlertAtTop('error', apiMessage || 'Vous devez être connecté(e) pour créer une recette.');
         } else {
           setShowSubmitModal(false);
-          setAlert({
-            type: 'error',
-            message: apiMessage || 'Erreur serveur lors de la création de la recette.',
-          });
+          showAlertAtTop('error', apiMessage || 'Erreur serveur lors de la création de la recette.');
         }
 
         return;
       }
 
-      setAlert({
-        type: 'success',
-        message: 'La recette a bien été enregistrée. Elle apparaîtra après validation.',
-      });
+      showAlertAtTop('success', 'La recette a bien été enregistrée. Elle apparaîtra après validation.');
+      setLastSubmittedSignature(submissionSignature);
       setShowSubmitModal(false);
       setImageError('');
-      setIngredientSearchResults({});
-      setIngredientSearchLoading({});
-      setIngredientSearchError({});
-      setCreatingIngredient({});
+      setIngredientDraft(INITIAL_INGREDIENT_DRAFT);
+      setIngredientAlreadyExists(false);
+      setIngredientSearchResults([]);
+      setIngredientSearchLoading(false);
+      setIngredientSearchError('');
+      setCreatingIngredient(false);
       setForm(INITIAL_FORM);
     } catch {
       setShowSubmitModal(false);
-      setAlert({
-        type: 'error',
-        message: 'Impossible de joindre le serveur. Réessaie dans quelques instants.',
-      });
+      showAlertAtTop('error', 'Impossible de joindre le serveur. Réessaie dans quelques instants.');
     } finally {
       setIsSubmitting(false);
     }
   }
 
   function openSubmitModal() {
+    if (isSubmitting) {
+      return;
+    }
+
     setShowSubmitModal(true);
   }
 
@@ -559,11 +685,17 @@ export default function CreerRecette() {
               <button
                 className={styles.cancelBtn}
                 aria-label="Annuler la création de la recette"
+                disabled={isSubmitting}
                 onClick={() => setShowSubmitModal(false)}
               >
                 Annuler
               </button>
-              <button className={styles.confirmBtn} aria-label="Valider la création de la recette" onClick={handleSubmit}>
+              <button
+                className={styles.confirmBtn}
+                aria-label="Valider la création de la recette"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+              >
                 {isSubmitting ? 'Création...' : 'Valider'}
               </button>
             </div>
@@ -579,6 +711,9 @@ export default function CreerRecette() {
       />
 
       {/* TITRE */}
+      <p className={`${styles.label} ${styles.titleRequiredLabel}`}>
+        Titre de la recette <span className={styles.requiredMark}>*</span>
+      </p>
       <div className={styles.titreBlock}>
         <span className={styles.titreDash}>—</span>
         <input
@@ -594,7 +729,9 @@ export default function CreerRecette() {
 
       {/* FILM / SÉRIE */}
       <div className={styles.field}>
-        <label className={styles.label}>Choisir un film ou une série</label>
+        <label className={styles.label}>
+          Choisir un film ou une série <span className={styles.requiredMark}>*</span>
+        </label>
         <div className={styles.inputIcon}>
           <input
             className={styles.input}
@@ -713,7 +850,9 @@ export default function CreerRecette() {
 
       {/* CATÉGORIE */}
       <div className={styles.field}>
-        <label className={styles.label}>Catégorie</label>
+        <label className={styles.label}>
+          Catégorie <span className={styles.requiredMark}>*</span>
+        </label>
         <div className={styles.selectWrapper}>
           <select
             className={styles.select}
@@ -776,117 +915,135 @@ export default function CreerRecette() {
 
       {/* INGRÉDIENTS */}
       <div className={styles.field}>
-        <label className={styles.label}>Ingrédients</label>
-
-        {form.ingredients.map((ing, index) => (
-          <div key={index} className={styles.ingredientRow}>
+        <label className={styles.label}>
+          Ingrédients <span className={styles.requiredMark}>*</span>
+        </label>
+        <div className={styles.ingredientComposer}>
+          <div className={styles.ingredientComposerGrid}>
             <div className={styles.inputIcon}>
               <input
                 className={styles.input}
                 type="text"
-                aria-label={`Nom de l'ingredient ${index + 1}`}
-                placeholder="Rechercher un ingrédient..."
-                value={ing.nom}
-                onChange={e => handleIngredientNameInput(index, e.target.value)}
+                aria-label="Nom de l'ingredient"
+                placeholder="Ingrédient"
+                value={ingredientDraft.nom}
+                onChange={e => handleIngredientNameInput(e.target.value)}
               />
               <span className={styles.inputIconRight}>🔍</span>
             </div>
-            {(ingredientSearchLoading[index]
-              || (ingredientSearchResults[index] && ingredientSearchResults[index].length > 0)
-              || ingredientSearchError[index]
-              || (ing.nom.trim().length >= 2 && !ingredientSearchLoading[index]
-                && (!ingredientSearchResults[index] || ingredientSearchResults[index].length === 0))) && (
-              <div className={styles.ingredientSearchBox}>
-                {ingredientSearchLoading[index] && (
-                  <p className={styles.ingredientSearchText}>Recherche en cours...</p>
-                )}
 
-                {ingredientSearchError[index] && (
-                  <p className={styles.ingredientSearchError}>{ingredientSearchError[index]}</p>
-                )}
+            <div className={styles.inputIcon}>
+              <input
+                className={styles.input}
+                type="text"
+                aria-label="Quantite de l'ingredient"
+                placeholder="Quantité"
+                value={ingredientDraft.quantite}
+                onChange={e => handleIngredientDraftChange('quantite', e.target.value)}
+              />
+            </div>
 
-                {ingredientSearchResults[index] && ingredientSearchResults[index].length > 0 && (
-                  <ul className={styles.ingredientSuggestionList}>
-                    {ingredientSearchResults[index].map(result => (
-                      <li key={result.id || result.name}>
-                        <button
-                          type="button"
-                          className={styles.ingredientSuggestionBtn}
-                          aria-label={`Selectionner l'ingredient ${result.name}`}
-                          onClick={() => selectIngredient(index, result)}
-                        >
-                          {result.name}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                {!ingredientSearchLoading[index]
-                  && !ingredientSearchError[index]
-                  && ing.nom.trim().length >= 2
-                  && (!ingredientSearchResults[index] || ingredientSearchResults[index].length === 0) && (
-                    <button
-                      type="button"
-                      className={styles.createIngredientBtn}
-                      aria-label={`Creer l'ingredient ${ing.nom.trim()}`}
-                      onClick={() => createIngredient(index)}
-                      disabled={creatingIngredient[index]}
-                    >
-                      {creatingIngredient[index]
-                        ? 'Creation...'
-                        : `Creer l'ingredient "${ing.nom.trim()}"`}
-                    </button>
-                  )}
-              </div>
-            )}
-<div className={styles.ingredientBottom}>
-
-  <input
-    className={styles.inputQuantite}
-    type="number"
-    aria-label={`Quantite de l'ingredient ${index + 1}`}
-    placeholder="Qté"
-    value={ing.quantite}
-    onChange={e => handleIngredientChange(index, 'quantite', e.target.value)}
-  />
-
-  <div className={styles.selectWrapper} style={{ flex: 1 }}>
-    <select
-      className={styles.select}
-      aria-label={`Unite de l'ingredient ${index + 1}`}
-      value={ing.unite}
-      onChange={e => handleIngredientChange(index, 'unite', e.target.value)}
-    >
-      <option value="">Unité</option>
-      {unitesOptions.map(u => (
-        <option key={u} value={u}>{u}</option>
-      ))}
-    </select>
-  </div>
-
-  {form.ingredients.length > 1 && (
-    <button
-      className={styles.removeBtn}
-      aria-label={`Supprimer l'ingredient ${index + 1}`}
-      onClick={() => removeIngredient(index)}
-    >
-    </button>
-  )}
-
-</div>
-      
+            <div className={styles.selectWrapper}>
+              <select
+                className={styles.select}
+                aria-label="Unite de l'ingredient"
+                value={ingredientDraft.unite}
+                onChange={e => handleIngredientDraftChange('unite', e.target.value)}
+              >
+                <option value="">Unité</option>
+                {unitesOptions.map(unite => (
+                  <option key={unite} value={unite}>{unite}</option>
+                ))}
+              </select>
+            </div>
           </div>
-        ))}
 
-        <button className={styles.addIngredientBtn} aria-label="Ajouter un ingredient" onClick={addIngredient}>
-          + Ajouter un ingrédient
-        </button>
+          {(ingredientSearchLoading
+            || ingredientSearchResults.length > 0
+            || ingredientSearchError
+            || (ingredientDraft.nom.trim().length >= 2
+              && !ingredientSearchLoading
+              && ingredientSearchResults.length === 0)) && (
+            <div className={styles.ingredientSearchBox}>
+              {ingredientSearchLoading && (
+                <p className={styles.ingredientSearchText}>Recherche en cours...</p>
+              )}
+
+              {ingredientSearchError && (
+                <p className={styles.ingredientSearchError}>{ingredientSearchError}</p>
+              )}
+
+              {ingredientSearchResults.length > 0 && (
+                <ul className={styles.ingredientSuggestionList}>
+                  {ingredientSearchResults.map(result => (
+                    <li key={result.id || result.name}>
+                      <button
+                        type="button"
+                        className={styles.ingredientSuggestionBtn}
+                        aria-label={`Selectionner l'ingredient ${result.name}`}
+                        onClick={() => selectIngredient(result)}
+                      >
+                        {result.name}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {!ingredientSearchLoading
+                && !ingredientSearchError
+                && ingredientDraft.nom.trim().length >= 2
+                && !ingredientAlreadyExists
+                && ingredientSearchResults.length === 0 && (
+                  <button
+                    type="button"
+                    className={styles.createIngredientBtn}
+                    aria-label={`Creer l'ingredient ${ingredientDraft.nom.trim()}`}
+                    onClick={createIngredient}
+                    disabled={creatingIngredient}
+                  >
+                    {creatingIngredient
+                      ? 'Creation...'
+                      : `Creer l'ingredient "${ingredientDraft.nom.trim()}"`}
+                  </button>
+                )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            className={styles.addIngredientBtn}
+            aria-label="Ajouter un ingredient"
+            onClick={addIngredientToList}
+          >
+            Ajouter ingrédient
+          </button>
+        </div>
+
+        {form.ingredients.length > 0 && (
+          <ul className={styles.addedIngredientsList}>
+            {form.ingredients.map((ingredient, index) => (
+              <li key={`${ingredient.nom}-${index}`} className={styles.addedIngredientItem}>
+                <span className={styles.addedIngredientText}>{formatAddedIngredient(ingredient)}</span>
+                <button
+                  type="button"
+                  className={styles.addedIngredientRemove}
+                  aria-label={`Supprimer l'ingredient ajoute ${index + 1}`}
+                  onClick={() => removeIngredient(index)}
+                >
+                  ×
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       {/* ÉTAPES */}
       <div className={styles.field}>
-        <label className={styles.label}>Étapes de préparation</label>
+        <label className={styles.label}>
+          Étapes de préparation <span className={styles.requiredMark}>*</span>
+        </label>
 
         {form.etapes.map((etape, index) => (
           <div key={index} className={styles.etapeRow}>
@@ -918,7 +1075,12 @@ export default function CreerRecette() {
       </div>
 
       {/* SUBMIT */}
-      <button className={styles.submitBtn} aria-label="Ouvrir la confirmation de creation de recette" onClick={openSubmitModal}>
+      <button
+        className={styles.submitBtn}
+        aria-label="Ouvrir la confirmation de creation de recette"
+        onClick={openSubmitModal}
+        disabled={isSubmitting}
+      >
         Valider
       </button>
 
