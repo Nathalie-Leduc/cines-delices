@@ -23,6 +23,7 @@ import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation, A
 import ProtectedRoute from './router';
 import AdminRoute from './router/AdminRoute.jsx';
 import CookieConsent from './components/CookieConsent/CookieConsent.jsx';
+import ResetPassword from './pages/resetPassword/resetPassword.jsx';
 import ReglesModeration from './pages/ReglesModeration/ReglesModerations.jsx';
 
 
@@ -49,6 +50,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
       </Route>
+
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         path="/membre/*"

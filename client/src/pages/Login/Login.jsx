@@ -3,7 +3,7 @@ import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import AuthShell from '../../components/AuthShell/AuthShell.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { loginUser } from '../../services/authService.js';
+import { loginUser, forgotPassword } from '../../services/authService.js';
 import styles from './Login.module.scss';
 
 export default function Login() {
@@ -15,7 +15,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const [showModal, setShowModal] = useState(false);
+  const [emailForReset, setEmailForReset] = useState('');
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -38,6 +40,25 @@ export default function Login() {
       setIsSubmitting(false);
     }
   };
+
+  const handleForgotPassword = async () => {
+   try {
+    // Appel de la fonction API avec l'email saisi
+    const res = await forgotPassword(emailForReset);
+     console.log("SUCCESS :", res);
+    // Message pour l'utilisateur
+    alert("Email envoyé si le compte existe !");
+
+    // Ferme la modal
+    setShowModal(false);
+
+  } catch (err) {
+    console.error(err);
+
+    // Message en cas d'erreur
+    alert("Erreur, réessaie");
+  }
+};
 
   return (
     <AuthShell title="Bienvenue" subtitle="Connectez-vous à votre compte">
@@ -91,7 +112,18 @@ export default function Login() {
                 className={`${styles.eyeIcon} ${showPassword ? styles.eyeVisible : styles.eyeHidden}`}
                 aria-hidden="true"
               />
-            </button>
+              <button
+                type="button"
+                className={styles.togglePassword}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              >
+                👁️
+              </button>
+            </div>
+            <NavLink to="#" className={styles.forgotPassword} onClick={() => setShowModal(true)}>
+              mot de passe oublié
+            </NavLink>
           </div>
           <NavLink to="#" className={styles.forgotPassword}>
             mot de passe oublié
@@ -102,6 +134,35 @@ export default function Login() {
           {isSubmitting ? 'Connexion...' : 'Se connecter'}
         </button>
 
+        {showModal && (
+          <div className={styles.overlay}>
+            <div className={styles.modal}>
+              <h2>Mot de passe oublié</h2>
+
+              <input
+                type="email"
+                placeholder="Votre email"
+                value={emailForReset}
+                onChange={(e) => setEmailForReset(e.target.value)}
+              />
+
+              <button className={styles.submitButtonMDP} onClick={handleForgotPassword}>
+                Envoyer
+              </button>
+
+              <button className={styles.submitButtonMDP} onClick={() => setShowModal(false)}>
+                Fermer
+              </button>
+            </div>
+          </div>
+        )}
+
+        <p className={styles.noAccount}>
+          Nouveau sur notre site ?{' '}
+          <NavLink to="/signup" className={styles.link}>
+            Créer un compte
+          </NavLink>
+        </p>
         <Alert
           type="error"
           message={error}

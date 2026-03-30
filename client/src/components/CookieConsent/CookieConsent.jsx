@@ -39,6 +39,9 @@ export default function CookieConsent() {
         return;
       }
 
+      // Forcer la langue française pour éviter les erreurs de clé manquante
+      window.tarteaucitronForceLanguage = 'fr';
+
       // ─────────────────────────────────────────────
       // Initialisation Tarteaucitron
       // ─────────────────────────────────────────────

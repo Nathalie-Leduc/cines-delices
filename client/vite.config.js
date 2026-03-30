@@ -12,12 +12,17 @@ export default defineConfig({
       '/src': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    proxy: {
+      '/api': 'http://api:3000',
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/tests/setup.js',
     env: {
-      VITE_API_URL:'http://localhost:3000',
+      VITE_API_URL:'http://api:3000',
     },
   },
 });

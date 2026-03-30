@@ -21,7 +21,8 @@ import {
   updateMeSchema,
   updatePasswordSchema,
 } from "../validators/authValidator.js";
-
+import {forgotPassword} from "../controllers/forgotPasswordController.js";
+import {resetPassword} from "../controllers/resetPasswordController.js";
 const router = Router();
 
 router.post('/register', validate(registerSchema), register);
@@ -37,6 +38,12 @@ router.put('/me', authMiddleware, validate(updateMeSchema), updateMe);
 router.patch('/me', authMiddleware, validate(updateMeSchema), updateMe);
 
 router.put('/me/password', authMiddleware, validate(updatePasswordSchema), updateMyPassword);
+
+// Route pour demander une réinitialisation
+router.post('/forgot-password', forgotPassword);
+
+// Route pour modifier le mot de passe
+router.post('/reset-password', resetPassword);
 
 router.delete('/me', authMiddleware, deleteMe);
 
