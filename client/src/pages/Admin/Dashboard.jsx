@@ -392,7 +392,13 @@ function AdminDashboard() {
       )}
 
       {showValidateModal && (
-        <AdminModal onCancel={() => setShowValidateModal(false)} onConfirm={handleApprove}>
+        <AdminModal
+          title="Valider la recette"
+          confirmLabel="Valider"
+          confirmVariant="success"
+          onCancel={() => setShowValidateModal(false)}
+          onConfirm={handleApprove}
+        >
           Êtes-vous sûr de vouloir valider cette recette ?
         </AdminModal>
       )}

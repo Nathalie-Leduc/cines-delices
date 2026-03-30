@@ -261,14 +261,16 @@ function AdminCategories() {
             onChange={(event) => setSelectedColor(`#${event.target.value.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6)}`)}
           />
 
-          <button type="button" className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowEditModal(true)}>
-            Valider
+          <button type="button" className={`${styles.btnSuccess} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowEditModal(true)}>
+            Enregistrer
           </button>
         </div>
       )}
 
       {showDeleteModal && (
         <AdminModal
+          title="Supprimer la catégorie"
+          confirmLabel="Supprimer"
           onCancel={() => {
             setShowDeleteModal(false);
             setEditingCategory(null);
@@ -285,7 +287,13 @@ function AdminCategories() {
       )}
 
       {showEditModal && (
-        <AdminModal onCancel={() => setShowEditModal(false)} onConfirm={handleUpdateCategory}>
+        <AdminModal
+          title="Mettre à jour la catégorie"
+          confirmLabel="Enregistrer"
+          confirmVariant="success"
+          onCancel={() => setShowEditModal(false)}
+          onConfirm={handleUpdateCategory}
+        >
           Êtes-vous sûr de vouloir enregistrer le nom et la couleur de cette catégorie ?
         </AdminModal>
       )}

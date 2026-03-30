@@ -203,19 +203,36 @@ export default function IngredientsValidation() {
       </div>
 
       {showValidateModal && (
-        <AdminModal onCancel={() => setShowValidateModal(false)} onConfirm={handleApproveIngredient}>
+        <AdminModal
+          title="Valider l’ingrédient"
+          confirmLabel="Valider"
+          confirmVariant="success"
+          onCancel={() => setShowValidateModal(false)}
+          onConfirm={handleApproveIngredient}
+        >
           Êtes-vous sûr de vouloir valider cet ingrédient ?
         </AdminModal>
       )}
 
       {showDeleteModal && (
-        <AdminModal onCancel={() => setShowDeleteModal(false)} onConfirm={handleDeleteIngredient}>
+        <AdminModal
+          title="Supprimer l’ingrédient"
+          confirmLabel="Supprimer"
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteIngredient}
+        >
           Êtes-vous sûr de vouloir supprimer cet ingrédient ?
         </AdminModal>
       )}
 
       {showEditModal && (
-        <AdminModal onCancel={() => setShowEditModal(false)} onConfirm={handleEditIngredient}>
+        <AdminModal
+          title="Modifier l’ingrédient"
+          confirmLabel="Enregistrer"
+          confirmVariant="success"
+          onCancel={() => setShowEditModal(false)}
+          onConfirm={handleEditIngredient}
+        >
           <input
             className={styles.modalInput}
             value={editedName}
