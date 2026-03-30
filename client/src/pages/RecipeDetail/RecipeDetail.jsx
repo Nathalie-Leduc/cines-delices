@@ -63,8 +63,8 @@ function normalizeApiRecipe(apiRecipe) {
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
     duration,
-    description: apiRecipe.description,
-    director: apiRecipe.director,
+    description: apiRecipe.description || apiRecipe.media?.synopsis || null,
+    director: apiRecipe.director || apiRecipe.media?.realisateur || null,
     year: apiRecipe.year,
     genre: apiRecipe.genre,
     servings: apiRecipe.servings ?? apiRecipe.nbPersonnes ?? undefined,
@@ -286,7 +286,7 @@ export default function RecipeDetail() {
   const recipeCookTime = cookTime ?? Math.max(15, Math.round((duration ?? 30) / 1.5));
   const recipeTotalTime = totalTime ?? duration ?? recipePrepTime + recipeCookTime;
   const recipeServings = servings ?? 4;
-  const recipeDirector = director ?? "Studio original";
+  const recipeDirector = director ?? recipe.media?.realisateur ?? "Studio original";
   const recipeYear = year ?? 2010;
   const recipeGenre = genre ?? "Cuisine fiction";
   const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;

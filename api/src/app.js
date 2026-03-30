@@ -37,7 +37,12 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
-app.use('/uploads', express.static(uploadsDir));
+
+//CORRECTIF
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(uploadsDir));
 
 // Swagger docs
 setupSwagger(app);
