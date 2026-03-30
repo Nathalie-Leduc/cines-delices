@@ -53,8 +53,6 @@ export default function Profil() {
   // Liens du panneau de navigation latéral (sidebar)
   // Données du profil affichées dans les champs
   const [userData, setUserData] = useState(initialUser);
-  // Contrôle la visibilité du mot de passe
-  const [showPassword, setShowPassword] = useState(false);
   // Contrôle l'affichage de la modale de suppression de compte
   const [showModal, setShowModal] = useState(false);
   // Contrôle l'affichage de la modale de modification d'un champ
@@ -382,14 +380,6 @@ export default function Profil() {
     navigate('/');
   }
 
-  function handleValidateProfile() {
-    syncDisplayName(userData.prenom);
-    setProfileFeedback({
-      type: 'success',
-      message: 'Les informations affichées sont synchronisées avec votre profil.',
-    });
-  }
-
   const isPasswordModal = editModalData?.mode === 'password';
 
   return (
@@ -621,14 +611,6 @@ export default function Profil() {
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
             <label className={styles.label}>E-mail</label>
-            <button
-              type="button"
-              className={styles.editBtn}
-              aria-label="Modifier l'email"
-              onClick={() => openEditModal('email', 'E-mail', 'email')}
-            >
-              <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-            </button>
           </div>
           <input
             className={styles.input}
@@ -651,28 +633,14 @@ export default function Profil() {
               <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
             </button>
           </div>
-          <div className={styles.passwordRow}>
-            <input
-              className={styles.input}
-              type={showPassword ? 'text' : 'password'}
-              name="motDePasse"
-              value={userData.motDePasse}
-              readOnly
-              aria-label="Mot de passe"
-            />
-            <button
-              type="button"
-              className={styles.eyeBtn}
-              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              <img
-                src="/icon/Eye.svg"
-                alt=""
-                aria-hidden="true"
-              />
-            </button>
-          </div>
+          <input
+            className={styles.input}
+            type="password"
+            name="motDePasse"
+            value={userData.motDePasse}
+            readOnly
+            aria-label="Mot de passe"
+          />
         </div>
       </div>
 
@@ -692,15 +660,6 @@ export default function Profil() {
                 <span className={styles.count}>{userData.recettes.boissons}</span>
               </div>
             </div>
-
-            <button
-              type="button"
-              className={styles.saveBtn}
-              aria-label="Valider les modifications du profil"
-              onClick={handleValidateProfile}
-            >
-              Valider les modifications
-            </button>
 
             <button
               className={styles.deleteBtn}
