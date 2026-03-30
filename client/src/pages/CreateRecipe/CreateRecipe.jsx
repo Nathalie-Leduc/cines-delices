@@ -1010,63 +1010,18 @@ export default function CreerRecette() {
             </div>
           )}
 
-                {!ingredientSearchLoading[index]
-                  && !ingredientSearchError[index]
-                  && !ing.ingredientId 
-                  && ing.nom.trim().length >= 2
-                  && (!ingredientSearchResults[index] || ingredientSearchResults[index].length === 0) && (
-                    <button
-                      type="button"
-                      className={styles.createIngredientBtn}
-                      aria-label={`Creer l'ingredient ${ing.nom.trim()}`}
-                      onClick={() => createIngredient(index)}
-                      disabled={creatingIngredient[index]}
-                    >
-                      {creatingIngredient[index]
-                        ? 'Creation...'
-                        : `Creer l'ingredient "${ing.nom.trim()}"`}
-                    </button>
-                  )}
-              </div>
-            )}
-<div className={styles.ingredientBottom}>
-
-  <input
-    className={styles.inputQuantite}
-    type="number"
-    aria-label={`Quantite de l'ingredient ${index + 1}`}
-    placeholder="Qté"
-    value={ing.quantite}
-    onChange={e => handleIngredientChange(index, 'quantite', e.target.value)}
-  />
-
-  <div className={styles.selectWrapper} style={{ flex: 1 }}>
-    <select
-      className={styles.select}
-      aria-label={`Unite de l'ingredient ${index + 1}`}
-      value={ing.unite}
-      onChange={e => handleIngredientChange(index, 'unite', e.target.value)}
-    >
-      <option value="">Unité</option>
-      {unitesOptions.map(u => (
-        <option key={u} value={u}>{u}</option>
-      ))}
-    </select>
-  </div>
-
-  {form.ingredients.length > 1 && (
-    <button
-      className={styles.removeBtn}
-      aria-label={`Supprimer l'ingredient ${index + 1}`}
-      onClick={() => removeIngredient(index)}
-    >
-    </button>
-  )}
-
-</div>
-      
+          <div className={styles.ingredientBottom}>
+            <button
+              type="button"
+              className={styles.addIngredientBtn}
+              aria-label="Ajouter l'ingredient a la liste"
+              onClick={addIngredientToList}
+              disabled={!String(ingredientDraft.nom || '').trim()}
+            >
+              + Ajouter l'ingredient
+            </button>
           </div>
-        ))}
+        </div>
 
         {form.ingredients.length > 0 && (
           <ul className={styles.addedIngredientsList}>
