@@ -155,15 +155,14 @@ export default function AdminLayout() {
       <section className={styles.adminSection}>
         <div className={styles.adminContainer}>
           <header className={styles.pageHeader}>
-            <h1>{roleLabel}</h1>
+            <div className={styles.pageHeading}>
+              <h1>Tableau de bord</h1>
+              <h2>Administrateur</h2>
+            </div>
           </header>
 
           <div className={styles.adminGrid}>
             <div className={styles.leftRail}>
-              <p className={styles.welcomeText}>
-                Bonjour <strong>{displayName}</strong>, bienvenue dans ton royaume !
-              </p>
-
               <div className={styles.desktopSidebar}>
                 <AdminSidebar />
               </div>

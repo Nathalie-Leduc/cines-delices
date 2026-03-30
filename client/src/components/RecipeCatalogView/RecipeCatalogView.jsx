@@ -430,11 +430,6 @@ export default function RecipeCatalogView({
 
           <div className={styles.summaryRow}>
             <p className={styles.summaryText}>{summaryText}</p>
-            <div className={styles.summaryMeta}>
-              <p className={styles.summaryText}>
-                Page {pagination.page} sur {Math.max(1, pagination.totalPages || 1)}
-              </p>
-            </div>
           </div>
 
           {isLoading && (
