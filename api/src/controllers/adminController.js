@@ -766,9 +766,9 @@ export async function getAdminUsers(req, res) {
 
     const formattedUsers = users.map((user) => ({
       id: user.id,
-      nom: user.pseudo.toUpperCase(),
-      displayName: user.pseudo,
+      nom: user.nom || '',
       prenom: user.pseudo,
+      displayName: user.pseudo,
       email: user.email,
       role: user.role,
       totalRecipes: user._count.recipes,
@@ -1104,6 +1104,7 @@ export async function approveIngredient(req, res) {
 
 export async function deleteIngredient(req, res) {
   try {
+    const ingredientId = req.params.id;
     const ingredient = await prisma.ingredient.findUnique({
       where: { id: req.params.id },
       select: { nom: true },
@@ -1113,22 +1114,117 @@ export async function deleteIngredient(req, res) {
       return res.status(404).json({ message: 'Ingrédient introuvable.' });
     }
 
-    await prisma.$transaction([
-      prisma.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } }),
-      prisma.ingredient.delete({ where: { id: req.params.id } }),
-      prisma.notification.updateMany({
+    const linkedRecipes = await prisma.recipeIngredient.findMany({
+      where: { ingredientId },
+      select: {
+        recipe: {
+          select: {
+            id: true,
+            titre: true,
+            status: true,
+            userId: true,
+          },
+        },
+      },
+    });
+
+    const pendingRecipes = linkedRecipes
+      .map((item) => item.recipe)
+      .filter((recipe) => recipe && recipe.status === 'PENDING');
+
+    const pendingRecipeIds = Array.from(new Set(pendingRecipes.map((recipe) => recipe.id)));
+    const rejectionReason = `Ingrédient ${ingredient.nom} refusé, veuillez modifier votre recette.`;
+
+    await prisma.$transaction(async (tx) => {
+      if (pendingRecipeIds.length > 0) {
+        await tx.recipe.updateMany({
+          where: {
+            id: { in: pendingRecipeIds },
+            status: 'PENDING',
+          },
+          data: {
+            status: 'DRAFT',
+            rejectionReason,
+          },
+        });
+
+        const notificationsPayload = pendingRecipes
+          .filter((recipe) => recipe.userId)
+          .map((recipe) => ({
+            userId: recipe.userId,
+            recipeId: recipe.id,
+            type: 'RECIPE_SUBMITTED',
+            message: `Ingrédient ${ingredient.nom} refusé, veuillez modifier votre recette "${recipe.titre}".`,
+          }));
+
+        if (notificationsPayload.length > 0) {
+          await tx.notification.createMany({
+            data: notificationsPayload,
+          });
+        }
+      }
+
+      await tx.recipeIngredient.deleteMany({ where: { ingredientId } });
+      await tx.ingredient.delete({ where: { id: ingredientId } });
+      await tx.notification.updateMany({
         where: {
           userId: req.user.id,
           isRead: false,
           message: `Nouvel ingrédient soumis: ${ingredient.nom}`,
         },
         data: { isRead: true },
-      }),
-    ]);
+      });
+    });
 
     return res.status(204).send();
   } catch (error) {
     return sendError(res, error, "Erreur lors de la suppression de l'ingrédient.");
+  }
+}
+
+export async function getValidatedIngredients(req, res) {
+  try {
+    const search = String(req.query.search || '').trim();
+    const ingredients = await prisma.ingredient.findMany({
+      where: {
+        approved: true,
+        ...(search
+          ? {
+              nom: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            }
+          : {}),
+      },
+      include: {
+        _count: {
+          select: { recipes: true },
+        },
+        recipes: {
+          include: {
+            recipe: {
+              select: {
+                createdAt: true,
+                user: {
+                  select: {
+                    nom: true,
+                    pseudo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        nom: 'asc',
+      },
+    });
+
+    return res.json(ingredients.map(formatIngredient));
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des ingrédients validés.');
   }
 }
 

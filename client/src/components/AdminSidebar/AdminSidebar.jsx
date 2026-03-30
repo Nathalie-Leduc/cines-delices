@@ -8,6 +8,7 @@ import {
   getAdminRecipes,
   getAdminUsers,
   getPendingRecipes,
+  getValidatedAdminIngredients,
 } from '../../services/adminService.js';
 import styles from './AdminSidebar.module.scss';
 
@@ -18,6 +19,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     recipes: 0,
     users: 0,
     categories: 0,
+    validatedIngredients: 0,
     pendingRecipes: 0,
     pendingIngredients: 0,
     unreadNotifications: 0,
@@ -37,10 +39,11 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
 
   async function loadCounts() {
     try {
-      const [recipes, users, categories, pendingRecipes, pendingIngredients, notificationsPayload] = await Promise.all([
+      const [recipes, users, categories, validatedIngredients, pendingRecipes, pendingIngredients, notificationsPayload] = await Promise.all([
         getAdminRecipes(),
         getAdminUsers(),
         getAdminCategories(),
+        getValidatedAdminIngredients(),
         getPendingRecipes(),
         getAdminIngredients(),
         getAdminNotifications(),
@@ -56,6 +59,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
         recipes: Array.isArray(recipes) ? recipes.length : 0,
         users: Array.isArray(users) ? users.length : 0,
         categories: Array.isArray(categories) ? categories.length : 0,
+        validatedIngredients: Array.isArray(validatedIngredients) ? validatedIngredients.length : 0,
         pendingRecipes: Array.isArray(pendingRecipes) ? pendingRecipes.length : 0,
         pendingIngredients: Array.isArray(pendingIngredients) ? pendingIngredients.length : 0,
         unreadNotifications: Number(notificationsPayload?.unreadCount || 0),
@@ -122,6 +126,12 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
       icon: '/icon/Recipes.svg',
       title: 'Gérer les catégories',
       sub: `${counts.categories} catégorie${counts.categories > 1 ? 's' : ''}`,
+    },
+    {
+      to: '/admin/ingredients',
+      icon: '/icon/Recipes.svg',
+      title: 'Gérer les ingrédients',
+      sub: `${counts.validatedIngredients} ingrédient${counts.validatedIngredients > 1 ? 's' : ''}`,
     },
     {
       to: '/admin/validation-recettes',

@@ -560,22 +560,6 @@ function AdminRecettes() {
                 <div className={styles.cardActionsExact}>
                   <button
                     type="button"
-                    aria-label="Voir la recette"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-
-                      if (!slug) {
-                        return;
-                      }
-
-                      navigate(`/recipes/${slug}`, { state: { recipe } });
-                    }}
-                  >
-                    <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
                     aria-label="Modifier la recette"
                     onClick={(event) => {
                       event.preventDefault();
@@ -614,8 +598,8 @@ function AdminRecettes() {
       )}
 
       {showEditModal && (
-        <div className={styles.adminEditOverlay}>
-          <div className={styles.adminEditModal}>
+        <div className={styles.adminEditOverlay} onClick={() => { setShowEditModal(false); setError(''); }}>
+          <div className={styles.adminEditModal} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.adminEditTitle}>Modifier la recette</h2>
 
             <div className={styles.adminEditFields}>

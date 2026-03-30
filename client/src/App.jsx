@@ -19,7 +19,7 @@ import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
 import PolitiqueCookies from './pages/PolitiqueCookies';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } from './pages/Admin';
+import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation, AdminIngredients } from './pages/Admin';
 import ProtectedRoute from './router';
 import AdminRoute from './router/AdminRoute.jsx';
 import CookieConsent from './components/CookieConsent/CookieConsent.jsx';
@@ -70,6 +70,7 @@ function App() {
           <Route index element={<Recettes />} />
           <Route path="recettes" element={<Recettes />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="ingredients" element={<AdminIngredients />} />
           <Route path="utilisateurs" element={<Utilisateurs />} />
           <Route path="validation-recettes" element={<Dashboard />} />
           <Route path="validation-ingredients" element={<IngredientsValidation />} />

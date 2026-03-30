@@ -13,6 +13,7 @@ import styles from './AdminPages.module.scss';
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [creatingWithColor, setCreatingWithColor] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [selectedColor, setSelectedColor] = useState('#CC9A5C');
@@ -50,10 +51,20 @@ function AdminCategories() {
       return;
     }
 
+    // Ouvrir la roue chromatique au lieu de créer directement
+    setSelectedColor('#CC9A5C');
+    setError('');
+    setCreatingWithColor(true);
+  }
+
+  async function handleConfirmCreate() {
+    const name = newCategoryName.trim();
     try {
       const created = await createAdminCategory({ name, color: selectedColor });
       setCategories((previous) => [created, ...previous]);
       setNewCategoryName('');
+      setSelectedColor('#CC9A5C');
+      setCreatingWithColor(false);
       setError('');
     } catch (createError) {
       setError(createError.message || 'Création impossible.');
@@ -131,7 +142,8 @@ function AdminCategories() {
         />
       ) : null}
 
-      {!editingCategory && (
+      {/* Vue 1 : liste + saisie du nom */}
+      {!editingCategory && !creatingWithColor && (
         <>
           <form
             className={styles.categoriesSearchRow}
@@ -217,6 +229,47 @@ function AdminCategories() {
         </>
       )}
 
+      {/* Vue 2 : choix couleur pour une NOUVELLE catégorie */}
+      {creatingWithColor && (
+        <div className={styles.colorEditor}>
+          <div className={styles.categoryCreateHeading}>
+            {newCategoryName.trim()}
+          </div>
+
+          <p className={styles.colorLabel}>Choisir une couleur de fond</p>
+
+          <div className={styles.colorWheelWrap}>
+            <input
+              type="color"
+              value={selectedColor}
+              onChange={(event) => setSelectedColor(event.target.value.toUpperCase())}
+            />
+          </div>
+
+          <input
+            className={styles.hexField}
+            value={selectedColor.replace('#', '')}
+            onChange={(event) => setSelectedColor(`#${event.target.value.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6)}`)}
+          />
+
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.pageState}
+          />
+
+          <button
+            type="button"
+            className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()}
+            onClick={handleConfirmCreate}
+          >
+            Valider
+          </button>
+        </div>
+      )}
+
+      {/* Vue 3 : modifier une catégorie existante */}
       {editingCategory && !showDeleteModal && (
         <div className={styles.colorEditor}>
           <div className={styles.headerLine}>
@@ -270,15 +323,8 @@ function AdminCategories() {
           }}
           onConfirm={handleDeleteCategory}
         >
-          <div className={styles.modalDeleteText}>
-            Êtes-vous sûr de vouloir supprimer cette catégorie ?
-          </div>
+          Êtes-vous sûr de vouloir supprimer cette catégorie ?
           {deleteModalError ? <div className={styles.modalDeleteError}>{deleteModalError}</div> : null}
-          <>
-            <p className={styles.adminModalText}>Êtes-vous sûr de vouloir supprimer cette catégorie ?</p>
-            {error ? <p className={styles.adminModalErrorText}>{error}</p> : null}
-          </>
-
         </AdminModal>
       )}
 

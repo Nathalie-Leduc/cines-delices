@@ -84,6 +84,10 @@ export const deleteAdminCategory = (id) =>
 export const getAdminIngredients = (search = '') =>
   request(`${ADMIN_API_BASE}/ingredients${search ? `?search=${encodeURIComponent(search)}` : ''}`);
 
+// Récupérer les ingrédients déjà validés
+export const getValidatedAdminIngredients = (search = '') =>
+  request(`${ADMIN_API_BASE}/ingredients/validated${search ? `?search=${encodeURIComponent(search)}` : ''}`);
+
 // Mettre à jour un ingrédient
 export const updateAdminIngredient = (id, payload) =>
   request(`${ADMIN_API_BASE}/ingredients/${id}`, { method: 'PATCH', body: payload });

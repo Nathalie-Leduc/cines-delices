@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -12,6 +13,7 @@ function getRoleLabel(role) {
 
 function AdminUtilisateurs() {
   const { user: currentUser } = useAuth();
+  const location = useLocation();
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
@@ -32,6 +34,10 @@ function AdminUtilisateurs() {
       (user.recipeCounts?.boisson || 0),
   }));
 }, [users]);
+
+  useEffect(() => {
+    setSelectedUser(null);
+  }, [location.key]);
 
   useEffect(() => {
     setIsLoading(true);
@@ -133,7 +139,7 @@ function AdminUtilisateurs() {
                   <img src="/icon/User.svg" alt="" aria-hidden="true" />
                 </span>
                 <span className={styles.rowText}>
-                  <strong>{user.nom}</strong>
+                  <strong>{[user.prenom, user.nom].filter(Boolean).join(' ') || user.email}</strong>
                   <small>{user.email}</small>
                 </span>
                 <span className={styles.recipesBadgeCentered}>
@@ -164,8 +170,12 @@ function AdminUtilisateurs() {
 
           <div className={styles.detailBox}>
             <div className={styles.field}>
-              <label>Pseudo</label>
-              <p>{selectedUser.displayName || selectedUser.prenom}</p>
+              <label>Prénom</label>
+              <p>{selectedUser.prenom || '—'}</p>
+            </div>
+            <div className={styles.field}>
+              <label>Nom</label>
+              <p>{selectedUser.nom || '—'}</p>
             </div>
             <div className={styles.field}>
               <label>E-mail</label>

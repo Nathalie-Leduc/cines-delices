@@ -10,8 +10,8 @@ export default function AdminModal({
   onConfirm,
 }) {
   return (
-    <div className={styles.backdrop} role="presentation">
-      <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title}>
+    <div className={styles.backdrop} role="presentation" onClick={onCancel}>
+      <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
         {title ? <p className={styles.kicker}>{title}</p> : null}
 
         <div className={styles.content}>
