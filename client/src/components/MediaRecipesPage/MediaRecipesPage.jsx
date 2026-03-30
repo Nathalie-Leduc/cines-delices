@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import RecipeCatalogView from "../RecipeCatalogView";
+import StatusBlock from "../StatusBlock/StatusBlock.jsx";
 import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "../../pages/RecipesPage/RecipesPage.module.scss";
 
