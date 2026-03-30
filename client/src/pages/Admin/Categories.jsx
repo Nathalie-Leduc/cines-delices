@@ -196,8 +196,8 @@ function AdminCategories() {
             className={styles.categoryCreatePromptButton}
             onClick={openCreateCategoryPanel}
           >
-            <span className={styles.categoryCreatePromptText}>Cliquez ici pour ajouter une catégorie</span>
             <span className={styles.categoryCreatePromptIcon} aria-hidden="true">+</span>
+            <span className={styles.categoryCreatePromptText}>Ajouter une catégorie</span>
           </button>
 
           <Alert
