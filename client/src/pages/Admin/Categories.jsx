@@ -191,17 +191,14 @@ function AdminCategories() {
             </div>
           </form>
 
-          <div className={styles.categoryCreatePrompt}>
-            <p className={styles.categoryCreatePromptText}>Cliquez ici pour ajouter une catégorie</p>
-            <button
-              type="button"
-              className={`${styles.roundIconBtn} ${styles.categoriesAddButton}`.trim()}
-              aria-label="Ajouter une catégorie"
-              onClick={openCreateCategoryPanel}
-            >
-              <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>+</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className={styles.categoryCreatePromptButton}
+            onClick={openCreateCategoryPanel}
+          >
+            <span className={styles.categoryCreatePromptText}>Cliquez ici pour ajouter une catégorie</span>
+            <span className={styles.categoryCreatePromptIcon} aria-hidden="true">+</span>
+          </button>
 
           <Alert
             type="error"
