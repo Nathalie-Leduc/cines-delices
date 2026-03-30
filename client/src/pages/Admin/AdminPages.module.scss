@@ -301,12 +301,55 @@
   max-width: 860px;
 }
 
+.categoryCreatePromptButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 860px);
+  margin: -0.2rem 0 1.15rem;
+  padding: 0.95rem 1.15rem;
+  border: 1px solid rgba(246, 241, 232, 0.78);
+  border-radius: 18px;
+  background: rgba(31, 29, 30, 0.32);
+  color: #f6f1e8;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: rgba(246, 241, 232, 0.96);
+    background: rgba(31, 29, 30, 0.48);
+    box-shadow: 0 14px 24px rgba(0, 0, 0, 0.16);
+  }
+}
+
 .categoryCreatePromptText {
   margin: 0;
   color: rgba(246, 241, 232, 0.86);
   font-family: 'Inter', sans-serif;
   font-size: 0.96rem;
   line-height: 1.4;
+}
+
+.categoryCreatePromptIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2.7rem;
+  height: 2.7rem;
+  border: 1px solid rgba(246, 241, 232, 0.78);
+  border-radius: 50%;
+  color: #f6f1e8;
+  font-size: 1.45rem;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .categoriesSearchInput {
@@ -1606,6 +1649,11 @@
     width: 100%;
     justify-content: space-between;
     gap: 0.7rem;
+  }
+
+  .categoryCreatePromptButton {
+    width: 100%;
+    padding: 0.9rem 1rem;
   }
 
   .usersSearchRow {
