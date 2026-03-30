@@ -112,6 +112,12 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
+    // ← AJOUT : mise à jour de la date de dernière connexion (RGPD)
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
     const token = signToken(user);
     res.json({ token, user: safeUser(user) });
     
@@ -225,13 +231,29 @@ export const updateMyPassword = async (req, res) => {
 };
 
 // DELETE /api/auth/me
+// Sécurisation de deleteMe
+
 export const deleteMe = async (req, res) => {
   try {
-    await prisma.user.delete({ where: { id: req.user.id } });
+    await prisma.$transaction(async (tx) => {
+      // Supprimer les recettes DRAFT et PENDING (plus utiles sans auteur)
+      await tx.recipe.deleteMany({
+        where: {
+          userId: req.user.id,
+          status: { in: ['DRAFT', 'PENDING'] },
+        },
+      });
+
+      // Supprimer le user
+      // → SetNull sur les recettes PUBLISHED (userId → null)
+      // → Cascade sur les notifications
+      await tx.user.delete({ where: { id: req.user.id } });
+    });
+
     res.json({ message: 'Compte supprimé' });
 
   } catch (error) {
     console.error('[deleteMe]', error);
     res.status(500).json({ error: 'Erreur serveur', details: error.message });
   }
-}
+};

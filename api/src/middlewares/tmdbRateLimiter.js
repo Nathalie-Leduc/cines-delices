@@ -26,7 +26,7 @@ const tmdbRateLimiter = rateLimit({
 
   // Message renvoyé quand la limite est atteinte
   message: {
-    message: 'Trop de requêtes vers TMDB. Réessayez dans quelques instants.',
+    message: 'La salle de cinéma est pleine. Revenez dans quelques instants pour une autre séance.',
   },
 });
 

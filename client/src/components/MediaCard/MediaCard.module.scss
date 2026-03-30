@@ -1,5 +1,12 @@
 @use "../../styles/visitor-mixins" as ui;
 
+.cardLink {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
 .card {
   @include ui.card-shell;
 }
@@ -16,11 +23,12 @@
   transform: scale(1.03);
 }
 
+.card:focus-within .image {
+  transform: scale(1.03);
+}
+
 .badge {
   @include ui.badge-pill;
-  border-color: rgba(251, 220, 166, 0.9);
-  background: linear-gradient(135deg, rgba(201, 164, 92, 0.96), rgba(108, 77, 46, 0.96));
-  color: #fff7ea;
   font-size: 0.74rem;
   font-weight: 600;
   letter-spacing: 0.03em;
@@ -28,15 +36,11 @@
 }
 
 .badge.film {
-  border-color: rgba(251, 220, 166, 0.9);
-  background: linear-gradient(135deg, rgba(201, 164, 92, 0.96), rgba(108, 77, 46, 0.96));
+  @include ui.badge-gradient-film;
 }
 
 .badge.serie {
-  border-color: rgba(232, 236, 240, 0.96);
-  background: linear-gradient(135deg, rgba(224, 229, 234, 0.96), rgba(143, 152, 162, 0.96));
-  color: #1f2429;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.25);
+  @include ui.badge-gradient-series;
 }
 
 .content {

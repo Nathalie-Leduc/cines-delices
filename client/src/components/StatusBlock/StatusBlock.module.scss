@@ -1,0 +1,155 @@
+@use "../../styles/visitor-mixins" as ui;
+
+.stateBlock {
+  @include ui.surface-panel(
+    $background: rgba(31, 29, 30, 0.58),
+    $border: rgba(232, 220, 200, 0.32),
+    $radius: 16px,
+    $padding: 1rem 1.1rem
+  );
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.95rem;
+  width: 100%;
+  box-shadow: var(--shadow-soft);
+}
+
+.compact {
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  gap: 0.8rem;
+
+  .title {
+    font-size: 0.96rem;
+  }
+
+  .message {
+    font-size: 0.88rem;
+    margin-top: 0.12rem;
+  }
+}
+
+.iconWrap {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.title,
+.message {
+  margin: 0;
+}
+
+.title {
+  color: #f6f1e8;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  line-height: 1.05;
+}
+
+.message {
+  margin-top: 0.28rem;
+  color: rgba(246, 241, 232, 0.78);
+  font-family: var(--font-body);
+  font-size: 0.94rem;
+  line-height: 1.5;
+}
+
+.symbol {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(246, 241, 232, 0.2);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: stateBlockSpin 0.8s linear infinite;
+}
+
+.loading {
+  border-color: rgba(201, 164, 92, 0.36);
+  background: linear-gradient(180deg, rgba(54, 47, 41, 0.84), rgba(31, 29, 30, 0.66));
+
+  .iconWrap {
+    background: rgba(201, 164, 92, 0.16);
+    color: #fbdca6;
+  }
+}
+
+.empty {
+  border-color: rgba(232, 220, 200, 0.28);
+  background: linear-gradient(180deg, rgba(44, 40, 38, 0.84), rgba(31, 29, 30, 0.62));
+
+  .iconWrap {
+    background: rgba(246, 241, 232, 0.08);
+    color: #e8dcc8;
+  }
+}
+
+.error {
+  border-color: rgba(168, 42, 58, 0.42);
+  background: linear-gradient(180deg, rgba(82, 31, 40, 0.82), rgba(53, 26, 31, 0.78));
+
+  .iconWrap {
+    background: rgba(168, 42, 58, 0.18);
+    color: #ffd8d8;
+  }
+}
+
+.success {
+  border-color: rgba(110, 139, 91, 0.38);
+  background: linear-gradient(180deg, rgba(53, 69, 49, 0.8), rgba(32, 44, 30, 0.72));
+
+  .iconWrap {
+    background: rgba(110, 139, 91, 0.18);
+    color: #d8efc8;
+  }
+}
+
+.info {
+  border-color: rgba(92, 177, 194, 0.32);
+  background: linear-gradient(180deg, rgba(42, 54, 58, 0.82), rgba(31, 29, 30, 0.68));
+
+  .iconWrap {
+    background: rgba(92, 177, 194, 0.16);
+    color: #c6edf3;
+  }
+}
+
+@keyframes stateBlockSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 767px) {
+  .stateBlock {
+    grid-template-columns: 1fr;
+    justify-items: start;
+  }
+
+  .iconWrap {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

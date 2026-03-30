@@ -208,6 +208,7 @@ export const listRecipesSchema = z.object({
     limit: optionalIntFromInput.default(12),
     category: optionalTrimmedString,
     q: optionalTrimmedString,
+    mediaSlug: optionalTrimmedString,
   }),
 });
 

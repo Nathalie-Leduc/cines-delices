@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Alert from '../../components/Alert/Alert.jsx';
 import { deleteMe, getMe, updateMe, updateMyPassword } from '../../services/api.js';
 import { getMyRecipes as getMyRecipesApi } from '../../services/recipesService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
@@ -15,6 +16,7 @@ const initialUser = {
     plats: 0,
     desserts: 0,
     boissons: 0,
+    recettesEnValidation: 0,
   },
   dateInscription: '',
 };
@@ -51,8 +53,6 @@ export default function Profil() {
   // Liens du panneau de navigation latéral (sidebar)
   // Données du profil affichées dans les champs
   const [userData, setUserData] = useState(initialUser);
-  // Contrôle la visibilité du mot de passe
-  const [showPassword, setShowPassword] = useState(false);
   // Contrôle l'affichage de la modale de suppression de compte
   const [showModal, setShowModal] = useState(false);
   // Contrôle l'affichage de la modale de modification d'un champ
@@ -119,16 +119,24 @@ export default function Profil() {
       plats: 0,
       desserts: 0,
       boissons: 0,
+      recettesEnValidation: 0,
     };
 
     recipes.forEach((recipe) => {
-      if (recipe.category && recipe.category.nom) {
+      const status = String(recipe?.status || '').toUpperCase();
+
+      if (status === 'PENDING') {
+        counts.recettesEnValidation += 1;
+      }
+
+      if (status !== 'PENDING' && recipe.category && recipe.category.nom) {
         const nomLower = recipe.category.nom.toLowerCase();
         if (nomLower === 'entrée') counts.entrees++;
         else if (nomLower === 'plat') counts.plats++;
         else if (nomLower === 'dessert') counts.desserts++;
         else if (nomLower === 'boisson') counts.boissons++;
       }
+
     });
 
     setUserData((prev) => ({
@@ -152,17 +160,26 @@ export default function Profil() {
     loadProfileData();
   }, []);
 
-  const totalRecipes = Object.values(userData.recettes).reduce(
-    (sum, value) => sum + Number(value || 0),
-    0,
-  );
+  const totalRecipes =
+    Number(userData.recettes.entrees || 0)
+    + Number(userData.recettes.plats || 0)
+    + Number(userData.recettes.desserts || 0)
+    + Number(userData.recettes.boissons || 0);
 
   const accountItems = [
     {
       icon: '/icon/Recipes.svg',
       label: 'Mes recettes',
       sub: `${totalRecipes} recette${totalRecipes > 1 ? 's' : ''}`,
+      subLinks: [
+        {
+          label: 'Recettes en cours de validation',
+          path: '/membre/mes-recettes/recettes-en-validation',
+          count: userData.recettes.recettesEnValidation || 0,
+        },
+      ],
       path: '/membre/mes-recettes',
+      subTone: 'recipe',
     },
     {
       icon: '/icon/Message_fill.svg',
@@ -363,14 +380,6 @@ export default function Profil() {
     navigate('/');
   }
 
-  function handleValidateProfile() {
-    syncDisplayName(userData.prenom);
-    setProfileFeedback({
-      type: 'success',
-      message: 'Les informations affichées sont synchronisées avec votre profil.',
-    });
-  }
-
   const isPasswordModal = editModalData?.mode === 'password';
 
   return (
@@ -512,7 +521,25 @@ export default function Profil() {
                 </span>
                 <span className={styles.accountContent}>
                   <strong>{item.label}</strong>
-                  <small>{item.sub}</small>
+                  <small className={item.subTone === 'recipe' ? styles.accountSubTag : undefined}>{item.sub}</small>
+                  {Array.isArray(item.subLinks) && item.subLinks.length > 0 ? (
+                    <span className={styles.accountSubLinks}>
+                      {item.subLinks.map((subLink) => (
+                        <button
+                          key={subLink.path}
+                          type="button"
+                          className={styles.accountSubLink}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(subLink.path);
+                          }}
+                        >
+                          <span>{subLink.label}</span>
+                          <strong>{subLink.count}</strong>
+                        </button>
+                      ))}
+                    </span>
+                  ) : null}
                 </span>
                 <span className={styles.accountArrow}>›</span>
               </button>
@@ -531,11 +558,12 @@ export default function Profil() {
         <section className={styles.profilePanel}>
           <h1 className={styles.title}>Mes informations</h1>
 
-          {profileFeedback.message && (
-            <p className={profileFeedback.type === 'error' ? styles.feedbackError : styles.feedbackSuccess}>
-              {profileFeedback.message}
-            </p>
-          )}
+          <Alert
+            type={profileFeedback.type || 'info'}
+            message={profileFeedback.message}
+            onClose={() => setProfileFeedback({ type: '', message: '' })}
+            className={styles.feedbackAlert}
+          />
 
           <div className={styles.fields}>
         <div className={styles.field}>
@@ -583,14 +611,6 @@ export default function Profil() {
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
             <label className={styles.label}>E-mail</label>
-            <button
-              type="button"
-              className={styles.editBtn}
-              aria-label="Modifier l'email"
-              onClick={() => openEditModal('email', 'E-mail', 'email')}
-            >
-              <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-            </button>
           </div>
           <input
             className={styles.input}
@@ -613,28 +633,14 @@ export default function Profil() {
               <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
             </button>
           </div>
-          <div className={styles.passwordRow}>
-            <input
-              className={styles.input}
-              type={showPassword ? 'text' : 'password'}
-              name="motDePasse"
-              value={userData.motDePasse}
-              readOnly
-              aria-label="Mot de passe"
-            />
-            <button
-              type="button"
-              className={styles.eyeBtn}
-              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              onClick={() => setShowPassword(!showPassword)}
-            >
-              <img
-                src="/icon/Eye.svg"
-                alt=""
-                aria-hidden="true"
-              />
-            </button>
-          </div>
+          <input
+            className={styles.input}
+            type="password"
+            name="motDePasse"
+            value={userData.motDePasse}
+            readOnly
+            aria-label="Mot de passe"
+          />
         </div>
       </div>
 
@@ -649,20 +655,11 @@ export default function Profil() {
               </div>
               <div className={styles.counts}>
                 <span className={styles.count}>{userData.recettes.entrees}</span>
-                <span className={styles.count}>{userData.recettes.plats.toString().padStart(2, '0')}</span>
+                <span className={styles.count}>{userData.recettes.plats}</span>
                 <span className={styles.count}>{userData.recettes.desserts}</span>
-                <span className={styles.count}>{userData.recettes.boissons.toString().padStart(2, '0')}</span>
+                <span className={styles.count}>{userData.recettes.boissons}</span>
               </div>
             </div>
-
-            <button
-              type="button"
-              className={styles.saveBtn}
-              aria-label="Valider les modifications du profil"
-              onClick={handleValidateProfile}
-            >
-              Valider les modifications
-            </button>
 
             <button
               className={styles.deleteBtn}

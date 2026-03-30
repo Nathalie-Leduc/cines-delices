@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
+import Alert from '../../components/Alert/Alert.jsx';
+import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import {
   createAdminCategory,
   deleteAdminCategory,
@@ -121,7 +123,13 @@ function AdminCategories() {
         <h2>Gérer les catégories</h2>
       </div>
 
-      {isLoading ? <p>Chargement des catégories…</p> : null}
+      {isLoading ? (
+        <StatusBlock
+          variant="loading"
+          title="Chargement des catégories"
+          className={styles.pageState}
+        />
+      ) : null}
 
       {!editingCategory && (
         <>
@@ -149,7 +157,12 @@ function AdminCategories() {
             </button>
           </form>
 
-          {error ? <p>{error}</p> : null}
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.pageState}
+          />
 
           <div className={styles.sectionTitle}>
             <h3>Listes des catégories</h3>
@@ -191,6 +204,15 @@ function AdminCategories() {
                 </span>
               </div>
             ))}
+
+            {!isLoading && !error && categories.length === 0 ? (
+              <StatusBlock
+                variant="empty"
+                title="Aucune catégorie enregistrée"
+                message="Ajoute une première catégorie pour commencer à organiser les recettes."
+                className={styles.pageState}
+              />
+            ) : null}
           </div>
         </>
       )}

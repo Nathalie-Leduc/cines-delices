@@ -69,6 +69,11 @@ function buildMediaCatalogRequest(pathname, params = {}) {
   return request(`${pathname}${suffix}`);
 }
 
+function buildMediaDetailPath(pathname, slug) {
+  const normalizedSlug = String(slug || '').trim();
+  return request(`${pathname}/${encodeURIComponent(normalizedSlug)}`);
+}
+
 export async function fetchMedia(type, search = '') {
   try {
     if (search) {
@@ -93,4 +98,12 @@ export async function getMoviesCatalog(params = {}) {
 export async function getSeriesCatalog(params = {}) {
   const payload = await buildMediaCatalogRequest('/api/media/series', params);
   return buildCatalogPayload(payload, params, 'series');
+}
+
+export function getMovieBySlug(slug) {
+  return buildMediaDetailPath('/api/media/movies', slug);
+}
+
+export function getSeriesBySlug(slug) {
+  return buildMediaDetailPath('/api/media/series', slug);
 }

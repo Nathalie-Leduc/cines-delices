@@ -1,0 +1,109 @@
+/* ============================================================
+   TARTEAUCITRON — Thème Cinés Délices
+   ============================================================
+   Surcharge le style par défaut de Tarteaucitron pour
+   l'adapter à la charte graphique du projet :
+     - OR #C9A45C
+     - BORDEAUX #8E1F2F
+     - CRÈME #FAF7F2
+   
+   Ce fichier est à placer dans public/tarteaucitron/
+   ou à importer dans votre CSS global.
+   ============================================================ */
+
+/* ─── Bandeau principal ─── */
+#tarteaucitronRoot #tarteaucitronAlertBig {
+  background: #FAF7F2 !important;
+  border-top: 3px solid #8E1F2F !important;
+  color: #2C2C2A !important;
+  font-family: inherit !important;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Texte du bandeau */
+#tarteaucitronRoot #tarteaucitronAlertBig #tarteaucitronDisclaimerAlert {
+  color: #2C2C2A !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* ─── Boutons ─── */
+
+/* Bouton "Tout accepter" — couleur bordeaux (action principale) */
+#tarteaucitronRoot #tarteaucitronAlertBig #tarteaucitronPersonalize {
+  background: #8E1F2F !important;
+  color: #FAF7F2 !important;
+  border: none !important;
+  border-radius: 6px !important;
+  padding: 10px 20px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: background 0.2s !important;
+}
+
+#tarteaucitronRoot #tarteaucitronAlertBig #tarteaucitronPersonalize:hover {
+  background: #6e1825 !important;
+}
+
+/* Bouton "Tout refuser" — même importance visuelle (obligation CNIL) */
+#tarteaucitronRoot #tarteaucitronAlertBig #tarteaucitronAllDenied2 {
+  background: transparent !important;
+  color: #8E1F2F !important;
+  border: 2px solid #8E1F2F !important;
+  border-radius: 6px !important;
+  padding: 8px 20px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+}
+
+#tarteaucitronRoot #tarteaucitronAlertBig #tarteaucitronAllDenied2:hover {
+  background: #8E1F2F !important;
+  color: #FAF7F2 !important;
+}
+
+/* Bouton "Personnaliser" */
+#tarteaucitronRoot #tarteaucitronAlertBig #tarteaucitronCloseAlert {
+  color: #C9A45C !important;
+  text-decoration: underline !important;
+  background: transparent !important;
+  border: none !important;
+  cursor: pointer !important;
+}
+
+/* ─── Panneau de contrôle (détail des cookies) ─── */
+#tarteaucitron {
+  font-family: inherit !important;
+}
+
+#tarteaucitron #tarteaucitronServices .tarteaucitronTitle {
+  background: #8E1F2F !important;
+  color: #FAF7F2 !important;
+}
+
+/* Boutons accepter/refuser dans le panneau */
+#tarteaucitron #tarteaucitronServices .tarteaucitronAllow {
+  background: #8E1F2F !important;
+  border-radius: 4px !important;
+}
+
+#tarteaucitron #tarteaucitronServices .tarteaucitronDeny {
+  background: #888780 !important;
+  border-radius: 4px !important;
+}
+
+/* ─── Icône "rouvrir les préférences" ─── */
+#tarteaucitronIcon {
+  background: #8E1F2F !important;
+  border-radius: 50% !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ─── Lien politique de confidentialité ─── */
+#tarteaucitronRoot a {
+  color: #C9A45C !important;
+}
+
+#tarteaucitronRoot a:hover {
+  color: #8E1F2F !important;
+}

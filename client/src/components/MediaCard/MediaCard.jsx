@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import styles from "./MediaCard.module.scss";
 
 const MEDIA_POSTER_FALLBACK = "/img/parrain-poster.png";
@@ -16,6 +17,7 @@ export default function MediaCard({
     fallbackPoster,
     genre,
     creator,
+    to,
   } = media;
 
   const handleImageError = (event) => {
@@ -28,7 +30,7 @@ export default function MediaCard({
     event.currentTarget.src = nextSource;
   };
 
-  return (
+  const content = (
     <article className={styles.card}>
       <div className={styles.imageWrapper}>
         <img
@@ -59,4 +61,14 @@ export default function MediaCard({
       </div>
     </article>
   );
+
+  if (to) {
+    return (
+      <Link to={to} className={styles.cardLink}>
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

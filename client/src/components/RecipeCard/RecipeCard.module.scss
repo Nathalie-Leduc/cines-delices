@@ -40,6 +40,21 @@
   transform: scale(1.03);
 }
 
+.cardLink:hover .card,
+.cardLink:focus-visible .card {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lifted);
+}
+
+.cardLink:hover .image,
+.cardLink:focus-visible .image {
+  transform: scale(1.03);
+}
+
+.cardLink:focus-visible {
+  outline: none;
+}
+
 .category {
   @include ui.badge-pill;
 }

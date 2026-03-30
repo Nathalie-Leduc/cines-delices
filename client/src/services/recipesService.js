@@ -15,6 +15,7 @@ export async function getRecipesCatalog(params = {}) {
   if (params.limit)    query.set('limit', params.limit);
   if (params.category) query.set('category', params.category);
   if (params.q)        query.set('q', params.q);
+  if (params.mediaSlug) query.set('mediaSlug', params.mediaSlug);
   const suffix = query.toString() ? `?${query.toString()}` : '';
   return request(`/api/recipes${suffix}`);
 }

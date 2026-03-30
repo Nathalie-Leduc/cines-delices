@@ -89,6 +89,16 @@
   overflow: hidden;
   background-color: rgba(246, 241, 232, 0.1);
   max-width: 100%;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.searchForm:focus-within {
+  border-color: rgba(251, 220, 166, 0.95);
+  background-color: rgba(246, 241, 232, 0.14);
+  box-shadow: var(--shadow-focus);
 }
 
 .searchInput {
@@ -115,6 +125,12 @@
   min-height: 46px;
   padding: 0 1rem;
   cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.searchButton:hover {
+  color: var(--color-title);
+  background: rgba(246, 241, 232, 0.06);
 }
 
 .userBlock {

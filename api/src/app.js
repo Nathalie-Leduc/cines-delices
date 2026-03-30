@@ -8,6 +8,7 @@ import 'dotenv/config';
 import authRoutes from './routes/authRoutes.js';
 import routes from './routes/index.js'
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
+import { startInactivityCron } from './jobs/inactivityCheck.js';
 
 const app = express();
 // AJOUT À FAIRE DANS app.js — trust proxy
@@ -67,4 +68,4 @@ app.listen(PORT, () => {
   console.log(`Origine client autorisée : ${CLIENT_URL}`);
 });
 
-
+startInactivityCron();

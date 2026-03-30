@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RecipeCard from "../../components/RecipeCard";
+import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
@@ -212,7 +213,11 @@ export default function RecipeDetail() {
     return (
       <main className={styles.page}>
         <div className={styles.contentWrap}>
-          <p className={styles.notFound}>Chargement de la recette...</p>
+          <StatusBlock
+            variant="loading"
+            title="Chargement de la recette"
+            className={styles.detailState}
+          />
         </div>
       </main>
     );
@@ -222,7 +227,13 @@ export default function RecipeDetail() {
     return (
       <main className={styles.page}>
         <div className={styles.contentWrap}>
-          <p className={styles.notFound}>{error}</p>
+          <StatusBlock
+            variant="error"
+            title="Recette indisponible"
+            message={error}
+            fallbackMessage="Nous n’avons pas pu charger cette recette. Réessaie dans quelques instants."
+            className={styles.detailState}
+          />
         </div>
       </main>
     );
@@ -232,7 +243,12 @@ export default function RecipeDetail() {
     return (
       <main className={styles.page}>
         <div className={styles.contentWrap}>
-          <p className={styles.notFound}>Recette introuvable.</p>
+          <StatusBlock
+            variant="empty"
+            title="Recette introuvable"
+            message="Cette recette n’est plus disponible ou son lien est incomplet."
+            className={styles.detailState}
+          />
         </div>
       </main>
     );
@@ -274,6 +290,15 @@ export default function RecipeDetail() {
   const recipeYear = year ?? 2010;
   const recipeGenre = genre ?? "Cuisine fiction";
   const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;
+  const canEditFromMemberSpace = Boolean(state?.fromMemberRecipes);
+
+  function handleOpenMemberEditForm() {
+    const targetRecipeId = state?.openEditRecipeId || recipe?.id;
+
+    navigate("/membre/mes-recettes", {
+      state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
+    });
+  }
 
   return (
     <main className={styles.page}>
@@ -295,6 +320,18 @@ export default function RecipeDetail() {
             <span className={styles.backArrow} aria-hidden="true">←</span>
             <span>Retour</span>
           </button>
+
+          {canEditFromMemberSpace && (
+            <button
+              type="button"
+              className={`${styles.editFromDetailButton} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              onClick={handleOpenMemberEditForm}
+              title="Ouvrir le formulaire de modification"
+            >
+              Modifier ma recette
+            </button>
+          )}
+
           <div className={styles.heroContent}>
             <h1 className={`${styles.title} ${styles.heroReveal} ${styles.heroRevealDelay2} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>{title}</h1>
             <p className={`${styles.heroBadge} ${styles.heroReveal} ${styles.heroRevealDelay3} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>

@@ -10,7 +10,9 @@ import CreateRecipe from './pages/CreateRecipe';
 import RecipesPage from './pages/RecipesPage';
 import RecipeDetail from "./pages/RecipeDetail";
 import Movies from './pages/Movies';
+import MovieRecipes from './pages/MovieRecipes';
 import Series from './pages/Series';
+import SeriesRecipes from './pages/SeriesRecipes';
 import Contact from './pages/Contact';
 import MentionsLegales from './pages/MentionsLegales';
 import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
@@ -20,20 +22,30 @@ import Signup from './pages/Signup';
 import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } from './pages/Admin';
 import ProtectedRoute from './router';
 import AdminRoute from './router/AdminRoute.jsx';
+import CookieConsent from './components/CookieConsent/CookieConsent.jsx';
+import ReglesModeration from './pages/ReglesModeration/ReglesModerations.jsx';
+
+
 
 function App() {
   return (
+    <>
+      <CookieConsent />
     <Routes>
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/recipes" element={<RecipesPage />} />
         <Route path="/recipes/:slug" element={<RecipeDetail />} />
         <Route path="/films" element={<Movies />} />
+        <Route path="/films/:slug" element={<MovieRecipes />} />
         <Route path="/series" element={<Series />} />
+        <Route path="/series/:slug" element={<SeriesRecipes />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
         <Route path="/politique-cookies" element={<PolitiqueCookies />} />
+        <Route path="/regles-moderation" element={<ReglesModeration />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
       </Route>
@@ -49,6 +61,7 @@ function App() {
         <Route index element={<MemberInterface />} />
         <Route path="profil" element={<MemberProfile />} />
         <Route path="mes-recettes" element={<MemberRecipes />} />
+        <Route path="mes-recettes/recettes-en-validation" element={<MemberRecipes />} />
         <Route path="creer-recette" element={<CreateRecipe />} />
       </Route>
 
@@ -63,6 +76,7 @@ function App() {
         </Route>
       </Route>
     </Routes>
+  </>
   );
 }
 

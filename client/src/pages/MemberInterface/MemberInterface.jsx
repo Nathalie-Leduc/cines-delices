@@ -37,6 +37,7 @@ export default function Membre() {
 
   // Nombre de recettes de l'utilisateur, mis à jour après l'appel API
   const [recipeCount, setRecipeCount] = useState(0);
+  const [pendingRecipeCount, setPendingRecipeCount] = useState(0);
 
   // Rôle de l'utilisateur (ADMIN ou MEMBER)
   const [userRole, setUserRole] = useState('');
@@ -172,11 +173,23 @@ export default function Membre() {
         const apiResponse = await response.json();
         // Les deux endpoints retournent directement un tableau
         const recipes = Array.isArray(apiResponse) ? apiResponse : [];
-        console.log('✅ Recettes chargées:', recipes.length, 'recette(s)');
-        setRecipeCount(recipes.length);
+        const memberPendingRecipes = recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() === 'PENDING');
+        const memberVisibleRecipes = recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() !== 'PENDING');
+
+        const visibleRecipeCount = isAdmin ? recipes.length : memberVisibleRecipes.length;
+
+        if (isAdmin) {
+          setPendingRecipeCount(0);
+        } else {
+          setPendingRecipeCount(memberPendingRecipes.length);
+        }
+
+        console.log('✅ Recettes chargées:', visibleRecipeCount, 'recette(s)');
+        setRecipeCount(visibleRecipeCount);
       } catch (error) {
         console.error('❌ Erreur fetchRecipes:', error);
         setRecipeCount(0);
+        setPendingRecipeCount(0);
       }
     };
 
@@ -212,8 +225,14 @@ export default function Membre() {
       label: userRole === 'ADMIN' ? 'Recettes en attente' : 'Mes recettes',
       // Affiche le nombre réel de recettes récupéré depuis l'API
       sub: `${recipeCount} recette${recipeCount > 1 ? 's' : ''}`,
+      details: userRole === 'ADMIN'
+        ? []
+        : [
+          `Recettes en cours de validation : ${pendingRecipeCount}`,
+        ],
       // Pour admin : rediriger vers le tableau admin, pour membre : vers ses recettes
       path: userRole === 'ADMIN' ? '/admin' : '/membre/mes-recettes',
+      subTone: 'recipe',
     },
     {
       icon: '/icon/Message_fill.svg',
@@ -307,7 +326,12 @@ export default function Membre() {
             </span>
             <div className={styles.menuText}>
               <span className={styles.menuLabel}>{item.label}</span>
-              <span className={styles.menuSub}>{item.sub}</span>
+              <span className={`${styles.menuSub} ${item.subTone === 'recipe' ? styles.menuSubTag : ''}`.trim()}>{item.sub}</span>
+              {item.path === '/membre/mes-recettes' && userRole !== 'ADMIN' ? (
+                <div className={styles.menuMeta}>
+                  <span className={styles.menuMetaItem}>Recettes en cours de validation : {pendingRecipeCount}</span>
+                </div>
+              ) : null}
             </div>
             <span className={styles.arrow}>›</span>
           </button>

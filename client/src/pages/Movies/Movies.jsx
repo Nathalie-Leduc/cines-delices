@@ -4,6 +4,8 @@ import { getMoviesCatalog } from "../../services/mediaService";
 function mapMovieToCard(movie) {
   return {
     id: movie?.id,
+    slug: movie?.slug,
+    to: movie?.slug ? `/films/${movie.slug}` : undefined,
     title: movie?.title || "Film sans titre",
     poster: movie?.poster || "/img/parrain-poster.png",
     fallbackPoster: "/img/parrain-poster.png",

@@ -1,3 +1,4 @@
+@use "../../styles/visitor-mixins" as ui;
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
 
 .creerRecette {
@@ -74,6 +75,16 @@
   color: rgba(246, 241, 232, 0.75);
 }
 
+.requiredMark {
+  color: #C9A45C;
+  font-weight: 700;
+  margin-left: 0.15rem;
+}
+
+.titleRequiredLabel {
+  text-align: center;
+}
+
 .hint {
   font-family: 'Inter', sans-serif;
   font-size: 0.75rem;
@@ -91,21 +102,40 @@
 .inputIcon {
   display: flex;
   align-items: center;
-  background-color: #4A3428;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
+  @include ui.surface-panel(
+    $background: #4A3428,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem
+  );
+  min-height: var(--control-height-md);
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
   gap: 0.5rem;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.inputIcon:focus-within {
+  border-color: #C9A45C;
+  background-color: #5a4a3a;
+  box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.12);
 }
 
 .dropZone {
   display: flex;
   align-items: center;
-  background-color: #4A3428;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
+  @include ui.surface-panel(
+    $background: #4A3428,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem
+  );
+  min-height: var(--control-height-md);
   gap: 0.5rem;
-  border: 2px dashed transparent;
-  transition: border-color 0.25s ease, background-color 0.25s ease;
+  border-style: dashed;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 .dropZoneActive {
@@ -119,6 +149,7 @@
 
 .input {
   flex: 1;
+  min-width: 0;
   background: none;
   border: none;
   color: #F6F1E8;
@@ -141,26 +172,28 @@
 .inputIconRight {
   font-size: 1rem;
   opacity: 0.5;
+  flex-shrink: 0;
 }
 
 .iconBtn {
-  background-color: transparent;
-  border: 2px solid #C9A45C;
-  color: #C9A45C;
+  @include ui.outline-button(
+    $border-color: #C9A45C,
+    $hover-border-color: #C9A45C,
+    $background: transparent,
+    $hover-background: rgba(201, 164, 92, 0.15),
+    $color: #C9A45C,
+    $radius: 8px,
+    $min-height: 32px,
+    $padding: 0
+  );
   width: 32px;
   height: 32px;
-  border-radius: 8px;
   font-size: 1.25rem;
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s ease;
   flex-shrink: 0;
   font-weight: 600;
 
   &:hover {
-    background-color: rgba(201, 164, 92, 0.15);
     transform: scale(1.05);
   }
 
@@ -173,13 +206,18 @@
 .selectWrapper {
   display: flex;
   align-items: center;
-  background-color: #4A3428;
-  border: 1.5px solid rgba(201, 164, 92, 0.2);
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
+  @include ui.surface-panel(
+    $background: #4A3428,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem
+  );
+  min-height: var(--control-height-md);
+  width: 100%;
+  min-width: 0;
   gap: 0.5rem;
   position: relative;
-  transition: all 0.25s ease;
+  transition: border-color 0.25s ease, background-color 0.25s ease, box-shadow 0.25s ease;
 
   &:hover {
     border-color: rgba(201, 164, 92, 0.4);
@@ -189,7 +227,7 @@
   &:focus-within {
     border-color: #C9A45C;
     background-color: #5a4a3a;
-    box-shadow: 0 0 0 2px rgba(201, 164, 92, 0.1);
+    box-shadow: 0 0 0 3px rgba(201, 164, 92, 0.12);
   }
 }
 
@@ -205,8 +243,9 @@
   font-weight: 500;
   outline: none;
   cursor: pointer;
-  padding: 0 2rem 0 0;
+  padding: 0.05rem 2rem 0.05rem 0.1rem;
   appearance: none;
+  -webkit-text-fill-color: #F6F1E8;
 
   &::-webkit-appearance {
     appearance: none;
@@ -228,9 +267,8 @@
     }
 
     &:checked {
-      background: linear-gradient(#C9A45C, #C9A45C);
-      background-color: #C9A45C;
-      color: #1F1D1E;
+      background-color: #3a3528;
+      color: #F6F1E8;
     }
   }
 }
@@ -254,6 +292,91 @@
   margin-bottom: 0.75rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(201, 164, 92, 0.1);
+}
+
+.ingredientComposer {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border-radius: 16px;
+  border: 1px solid rgba(201, 164, 92, 0.22);
+  background: rgba(74, 52, 40, 0.35);
+}
+
+.ingredientComposerGrid {
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.9fr) minmax(0, 0.9fr);
+  gap: 0.5rem;
+}
+
+.ingredientComposerGrid > * {
+  min-width: 0;
+}
+
+.ingredientTop {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ingredientTop .inputIcon {
+  flex: 1;
+}
+
+.ingredientFormatHint {
+  margin: -0.1rem 0 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.76rem;
+  color: rgba(201, 164, 92, 0.9);
+}
+
+.addedIngredientsList {
+  list-style: none;
+  padding: 0;
+  margin: 0.35rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.addedIngredientItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.45rem 0.2rem;
+  border-bottom: 1px solid rgba(201, 164, 92, 0.12);
+}
+
+.addedIngredientText {
+  color: #F6F1E8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.92rem;
+}
+
+.addedIngredientRemove {
+  @include ui.outline-button(
+    $border-color: rgba(240, 138, 149, 0.6),
+    $hover-border-color: #F08A95,
+    $background: transparent,
+    $hover-background: rgba(240, 138, 149, 0.15),
+    $color: #F08A95,
+    $radius: 50%,
+    $min-height: 28px,
+    $padding: 0,
+    $hover-shadow: none
+  );
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  line-height: 1;
 }
 
 .ingredientSearchBox {
@@ -287,41 +410,86 @@
 .ingredientSuggestionBtn {
   width: 100%;
   text-align: left;
-  background-color: #4A3428;
-  border: 1px solid rgba(201, 164, 92, 0.2);
-  border-radius: 8px;
-  color: #F6F1E8;
-  padding: 0.5rem 0.75rem;
+  @include ui.outline-button(
+    $border-color: rgba(201, 164, 92, 0.2),
+    $hover-border-color: #C9A45C,
+    $background: #4A3428,
+    $hover-background: rgba(201, 164, 92, 0.08),
+    $color: #F6F1E8,
+    $radius: 8px,
+    $min-height: auto,
+    $padding: 0.5rem 0.75rem,
+    $hover-shadow: none
+  );
+  justify-content: flex-start;
   font-family: 'Inter', sans-serif;
   font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
+}
 
-  &:hover {
-    border-color: #C9A45C;
-    background-color: rgba(201, 164, 92, 0.08);
-  }
+.mediaSuggestionBtn {
+  width: 100%;
+  text-align: left;
+  @include ui.outline-button(
+    $border-color: rgba(201, 164, 92, 0.2),
+    $hover-border-color: #C9A45C,
+    $background: #4A3428,
+    $hover-background: rgba(201, 164, 92, 0.08),
+    $color: #F6F1E8,
+    $radius: 8px,
+    $min-height: auto,
+    $padding: 0.45rem 0.55rem,
+    $hover-shadow: none
+  );
+  justify-content: flex-start;
+  gap: 0.65rem;
+}
+
+.mediaSuggestionPoster {
+  width: 42px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(201, 164, 92, 0.24);
+  background: rgba(31, 29, 30, 0.35);
+  flex-shrink: 0;
+}
+
+.mediaSuggestionCopy {
+  min-width: 0;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.mediaSuggestionTitle {
+  color: #F6F1E8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.mediaSuggestionMeta {
+  color: rgba(246, 241, 232, 0.66);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.74rem;
+  line-height: 1.2;
 }
 
 .createIngredientBtn {
   width: 100%;
-  background-color: transparent;
-  border: 1px dashed #6E8B5B;
-  color: #6E8B5B;
-  border-radius: 8px;
-  padding: 0.45rem 0.65rem;
+  @include ui.outline-button(
+    $border-color: #6E8B5B,
+    $hover-border-color: #6E8B5B,
+    $background: transparent,
+    $hover-background: rgba(110, 139, 91, 0.1),
+    $color: #6E8B5B,
+    $radius: 8px,
+    $min-height: auto,
+    $padding: 0.45rem 0.65rem,
+    $hover-shadow: none
+  );
   font-family: 'Inter', sans-serif;
   font-size: 0.82rem;
-  cursor: pointer;
-
-  &:hover {
-    background-color: rgba(110, 139, 91, 0.1);
-  }
-
-  &:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-  }
 }
 
 .ingredientBottom {
@@ -332,22 +500,21 @@
 }
 
 .addIngredientBtn {
-  background: none;
-  border: 1.5px solid #6E8B5B;
-  color: #6E8B5B;
-  border-radius: 20px;
-  padding: 6px 16px;
+  @include ui.outline-button(
+    $border-color: #6E8B5B,
+    $hover-border-color: #6E8B5B,
+    $background: transparent,
+    $hover-background: rgba(110, 139, 91, 0.15),
+    $color: #6E8B5B,
+    $font-size: 0.85rem,
+    $radius: 20px,
+    $min-height: auto,
+    $padding: 0.38rem 1rem,
+    $hover-shadow: none
+  );
   font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
   font-weight: 500;
-  cursor: pointer;
   align-self: flex-start;
-  transition: all 0.25s ease;
-
-  &:hover {
-    background-color: rgba(110, 139, 91, 0.15);
-    transform: translateY(-1px);
-  }
 
   &:active {
     transform: translateY(0);
@@ -355,25 +522,22 @@
 }
 
 .removeBtn {
-  background-color: rgba(142, 31, 47, 0.2);
-  border: 1.5px solid #8E1F2F;
-  color: #F6F1E8;
+  @include ui.solid-button(
+    $background: rgba(142, 31, 47, 0.2),
+    $hover-background: #8E1F2F,
+    $border-color: #8E1F2F,
+    $color: #F6F1E8,
+    $radius: 8px,
+    $min-height: 32px,
+    $padding: 0,
+    $hover-shadow: none
+  );
   width: 32px;
   height: 32px;
-  border-radius: 8px;
   font-size: 1.2rem;
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  transition: all 0.25s ease;
   font-weight: 600;
-
-  &:hover {
-    background-color: #8E1F2F;
-    transform: translateY(-2px);
-  }
 
   &:active {
     transform: translateY(0);
@@ -407,46 +571,35 @@
 
 .textarea {
   flex: 1;
-  background-color: #4A3428;
-  border: none;
-  border-radius: 10px;
-  padding: 0.75rem 1rem;
-  color: #F6F1E8;
+  @include ui.input-surface(
+    $background: #4A3428,
+    $color: #F6F1E8,
+    $border: rgba(201, 164, 92, 0.2),
+    $radius: var(--radius-md),
+    $padding: 0.75rem 1rem,
+    $min-height: 8.5rem,
+    $placeholder: rgba(246, 241, 232, 0.3),
+    $focus-border: #C9A45C,
+    $focus-shadow: 0 0 0 3px rgba(201, 164, 92, 0.12)
+  );
   font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
-  outline: none;
   resize: none;
   line-height: 1.5;
-
-  &::placeholder {
-    color: rgba(246, 241, 232, 0.3);
-  }
-
-  &:focus {
-    border: 1px solid rgba(201, 164, 92, 0.3);
-  }
 }
 
 /* ===== SUBMIT ===== */
 .submitBtn {
+  @include ui.solid-button(
+    $font-size: 1rem,
+    $padding: 0.95rem 1.1rem,
+    $radius: 12px
+  );
   width: 100%;
-  padding: 1.1rem;
-  background-color: #8E1F2F;
   color: #FFFFFF;
-  border: none;
-  border-radius: 12px;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
   margin-top: 1rem;
-  transition: all 0.25s ease;
-
-  &:hover {
-    background-color: #a02436;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(142, 31, 47, 0.3);
-  }
 
   &:active {
     transform: translateY(0);
@@ -493,22 +646,17 @@
 }
 
 .cancelBtn {
+  @include ui.solid-button(
+    $background: #4A3428,
+    $hover-background: #5a4030,
+    $font-size: 1rem,
+    $padding: 0.85rem 1rem,
+    $radius: 10px,
+    $hover-shadow: 0 12px 24px rgba(0, 0, 0, 0.18)
+  );
   flex: 1;
-  padding: 0.9rem;
-  background-color: #4A3428;
-  color: #F6F1E8;
-  border: none;
-  border-radius: 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
   font-weight: 600;
-  cursor: pointer;
-  transition: all 0.25s ease;
-
-  &:hover {
-    background-color: #5a4030;
-    transform: translateY(-2px);
-  }
 
   &:active {
     transform: translateY(0);
@@ -516,14 +664,14 @@
 }
 
 .confirmBtn {
+  @include ui.solid-button(
+    $font-size: 1rem,
+    $padding: 0.85rem 1rem,
+    $radius: 10px
+  );
   flex: 1;
-  padding: 0.9rem;
-  background-color: #8E1F2F;
   color: #FFFFFF;
-  border: none;
-  border-radius: 10px;
   font-family: 'Inter', sans-serif;
-  font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.25s ease;
@@ -557,14 +705,17 @@
   }
 
   .titreBlock,
-  .ingredientBottom,
+  .ingredientTop,
   .etapeRow,
   .modalButtons {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .inputQuantite,
+  .ingredientComposerGrid {
+    grid-template-columns: 1fr;
+  }
+
   .removeBtn,
   .addIngredientBtn,
   .cancelBtn,

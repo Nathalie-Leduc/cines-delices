@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import HomeCategories from "../../components/HomeCategories";
 import RecipeCard from "../../components/RecipeCard";
+import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 import { getRecipesCatalog } from "../../services/recipesService";
 import styles from "./Home.module.scss";
@@ -22,6 +23,12 @@ const CONCEPT_STEPS = [
     title: "Cuisine",
     text: "Retrouve les étapes, les ingrédients et le média associé pour prolonger l'expérience jusque dans l'assiette.",
   },
+];
+
+const CONCEPT_TAGS = [
+  { label: "Films", to: "/films", variant: "film" },
+  { label: "Séries", to: "/series", variant: "series" },
+  { label: "Recettes", to: "/recipes", variant: "recipe" },
 ];
 
 function normalizeCategoryLabel(value) {
@@ -346,8 +353,6 @@ function Home() {
       return;
     }
 
-    const viewport = viewportRef.current;
-
     resetDragState();
     dragStateRef.current = {
       pointerId: event.pointerId,
@@ -357,15 +362,12 @@ function Home() {
       hasMoved: false,
       isHorizontalDrag: null,
     };
-
-    viewport?.setPointerCapture?.(event.pointerId);
-    setIsDraggingCarousel(true);
   };
 
   const handleCarouselPointerMove = (event) => {
     const dragState = dragStateRef.current;
 
-    if (!isDraggingCarousel || dragState.pointerId !== event.pointerId) {
+    if (dragState.pointerId !== event.pointerId) {
       return;
     }
 
@@ -383,6 +385,9 @@ function Home() {
         stopDragging(event.pointerId);
         return;
       }
+
+      viewportRef.current?.setPointerCapture?.(event.pointerId);
+      setIsDraggingCarousel(true);
     }
 
     dragState.hasMoved = true;
@@ -471,9 +476,49 @@ function Home() {
               <div
                 className={`${styles.conceptTags} ${styles.conceptReveal} ${styles.conceptRevealDelay3} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
               >
-                <span className={styles.conceptTag}>Films</span>
-                <span className={styles.conceptTag}>Séries</span>
-                <span className={styles.conceptTag}>Recettes</span>
+                {CONCEPT_TAGS.map((tag) => (
+                  <Link
+                    key={tag.to}
+                    className={`${styles.conceptTag} ${styles[`conceptTag_${tag.variant}`]}`.trim()}
+                    to={tag.to}
+                  >
+                    {tag.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className={`${styles.conceptVisual} ${styles.conceptReveal} ${styles.conceptRevealDelay2} ${isConceptVisible ? styles.conceptRevealVisible : ""}`.trim()}
+              aria-hidden="true"
+            >
+              <div className={styles.conceptVisualPanel}>
+                <span className={styles.conceptVisualGlow} />
+                <span className={styles.conceptVisualSpark} />
+
+                <div className={styles.conceptClapper}>
+                  <span className={styles.conceptClapperTop} />
+                  <span className={styles.conceptClapperBody} />
+                </div>
+
+                <div className={styles.conceptFlames}>
+                  <span className={styles.conceptFireGlow} />
+                  <span className={`${styles.conceptFlame} ${styles.conceptFlame1}`} />
+                  <span className={`${styles.conceptFlame} ${styles.conceptFlame2}`} />
+                  <span className={`${styles.conceptFlame} ${styles.conceptFlame3}`} />
+                </div>
+
+                <div className={styles.conceptCookware}>
+                  <span className={styles.conceptCookwareHandleLeft} />
+                  <span className={styles.conceptCookwareHandleRight} />
+                  <span className={styles.conceptCookwareLid} />
+                  <span className={styles.conceptCookwareKnob} />
+                  <span className={styles.conceptCookwareBody} />
+                </div>
+
+                <span className={`${styles.conceptSteam} ${styles.conceptSteam1}`} />
+                <span className={`${styles.conceptSteam} ${styles.conceptSteam2}`} />
+                <span className={`${styles.conceptSteam} ${styles.conceptSteam3}`} />
               </div>
             </div>
 
@@ -509,11 +554,26 @@ function Home() {
         </p>
 
         {isLoadingLatestRecipes ? (
-          <p className={styles.latestStatus}>Chargement des dernières recettes…</p>
+          <StatusBlock
+            variant="loading"
+            title="Chargement des dernières recettes"
+            className={styles.latestState}
+          />
         ) : latestRecipesError ? (
-          <p className={styles.latestError}>{latestRecipesError}</p>
+          <StatusBlock
+            variant="error"
+            title="Dernières recettes indisponibles"
+            message={latestRecipesError}
+            fallbackMessage="Nous n’avons pas pu charger les dernières recettes. Réessaie dans quelques instants."
+            className={styles.latestState}
+          />
         ) : latestRecipes.length === 0 ? (
-          <p className={styles.latestStatus}>Aucune recette publiée pour le moment.</p>
+          <StatusBlock
+            variant="empty"
+            title="Aucune recette publiée"
+            message="Les nouveautés arriveront ici dès qu’une nouvelle recette sera publiée."
+            className={styles.latestState}
+          />
         ) : (
           <div className={styles.latestCarousel}>
             <div

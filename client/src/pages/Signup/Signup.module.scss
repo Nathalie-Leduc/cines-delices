@@ -1,181 +1,254 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
-
-.signupPage {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: 2rem 1rem;
-  background-image: linear-gradient(rgba(31, 29, 30, 0.85), rgba(31, 29, 30, 0.85)), url('/img/rocky-wall.png');
-  background-size: cover;
-  background-position: center;
-  background-attachment: fixed;
-}
-
-.container {
-  width: 100%;
-  max-width: 420px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.title {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #C9A45C;
-  text-align: center;
-  margin-bottom: 2rem;
-}
+@use "../../styles/visitor-mixins" as ui;
 
 .form {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 1.48rem;
+}
+
+.identityRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
 }
 
 .fieldGroup {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.72rem;
+  text-align: left;
 }
 
 .label {
+  margin-left: 0.12rem;
+  color: rgba(246, 241, 232, 0.94);
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  color: rgba(246, 241, 232, 0.9);
+  font-size: 1.02rem;
   font-weight: 500;
-}
-
-.input {
-  width: 100%;
-  border: 0;
-  border-radius: 0.6rem;
-  background-color: rgba(246, 241, 232, 0.18);
-  color: #F6F1E8;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-  padding: 0.85rem 1rem;
-  outline: none;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
-
-  &::placeholder {
-    color: rgba(246, 241, 232, 0.5);
-  }
-
-  &:focus {
-    background-color: rgba(246, 241, 232, 0.22);
-    box-shadow: 0 0 0 2px rgba(201, 164, 92, 0.2);
-  }
+  line-height: 1.24;
 }
 
 .inputWrapper {
   position: relative;
   display: flex;
   align-items: center;
+  min-height: 3.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.9rem;
+  background: rgba(217, 208, 196, 0.58);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 14px 32px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(1.6px);
+  overflow: hidden;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
-.inputWrapper .input {
-  padding-right: 2.8rem;
+.inputWrapper:focus-within {
+  border-color: rgba(251, 220, 166, 0.24);
+  background: rgba(228, 219, 206, 0.68);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 2px rgba(251, 220, 166, 0.1);
+}
+
+.input {
   width: 100%;
+  min-height: 3.6rem;
+  padding: 0 3.5rem 0 3.55rem;
+  border: 0;
+  background: transparent;
+  color: rgba(46, 42, 40, 0.95);
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.2;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(56, 52, 49, 0.84);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.72;
+  }
+}
+
+.leadingIcon {
+  position: absolute;
+  left: 1.15rem;
+  top: 50%;
+  width: 1.2rem;
+  height: 1.2rem;
+  transform: translateY(-50%);
+  color: rgba(60, 56, 53, 0.94);
+  pointer-events: none;
+}
+
+.emailIcon {
+  background-color: currentColor;
+  -webkit-mask-image: url('/icon/Message_fill.svg');
+  mask-image: url('/icon/Message_fill.svg');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.userIcon {
+  background-color: currentColor;
+  -webkit-mask-image: url('/icon/User.svg');
+  mask-image: url('/icon/User.svg');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.lockIcon {
+  background-color: currentColor;
+  -webkit-mask-image: url('/icon/Lock_fill.svg');
+  mask-image: url('/icon/Lock_fill.svg');
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
 }
 
 .togglePassword {
   position: absolute;
-  right: 1rem;
-  background: none;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
   border: none;
-  color: rgba(246, 241, 232, 0.6);
-  font-size: 1.1rem;
   cursor: pointer;
   padding: 0;
-  transition: color 0.2s ease;
+  color: rgba(60, 56, 53, 0.94);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 
   &:hover {
-    color: rgba(246, 241, 232, 0.9);
+    opacity: 1;
+    transform: translateY(-1px);
   }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px rgba(251, 220, 166, 0.36);
+  }
+
+  &[aria-pressed='true'] {
+    opacity: 1;
+  }
+}
+
+.eyeIcon {
+  width: 1.28rem;
+  height: 1.28rem;
+  display: block;
+  background-color: currentColor;
+  opacity: 0.84;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+.eyeHidden {
+  -webkit-mask-image: url('/icon/View_hide_fill.svg');
+  mask-image: url('/icon/View_hide_fill.svg');
+}
+
+.eyeVisible {
+  -webkit-mask-image: url('/icon/View_fill.svg');
+  mask-image: url('/icon/View_fill.svg');
 }
 
 .policyConsent {
   display: flex;
   align-items: flex-start;
-  margin-top: -0.25rem;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.4rem;
 }
 
 .policyLabel {
   display: flex;
   align-items: flex-start;
+  justify-content: center;
   gap: 0.65rem;
+  width: min(100%, 31rem);
+  color: rgba(246, 241, 232, 0.84);
   font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  line-height: 1.4;
-  color: rgba(246, 241, 232, 0.88);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-align: center;
   cursor: pointer;
 }
 
 .policyCheckbox {
-  margin-top: 0.15rem;
-  width: 1rem;
-  height: 1rem;
-  accent-color: #C9A45C;
+  margin-top: 0.18rem;
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #d4a84d;
   flex-shrink: 0;
 }
 
-.submitButton {
-  width: 100%;
-  border: 0;
-  border-radius: 0.6rem;
-  background-color: #8E1F2F;
-  color: #F6F1E8;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
-  font-weight: 700;
-  padding: 1rem 1.5rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  margin-top: 0.5rem;
+.policyText {
+  text-wrap: pretty;
+}
 
-  &:hover {
-    background-color: #a02436;
-  }
+.submitButton {
+  @include ui.solid-button(
+    $background: #9d2337,
+    $hover-background: #872334,
+    $font-family: var(--font-body),
+    $font-size: clamp(1.35rem, 1.9vw, 1.55rem),
+    $font-weight: 700,
+    $radius: 0.9rem,
+    $min-height: 3.5rem,
+    $padding: 0.75rem 1.4rem,
+    $hover-shadow: 0 10px 24px rgba(0, 0, 0, 0.18)
+  );
+  width: 100%;
+  margin-top: 1.55rem;
+  letter-spacing: 0.01em;
 
   &:active {
     transform: scale(0.98);
   }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
 }
 
-.errorBox {
-  margin: 0.35rem 0 0;
-  padding: 0.8rem 0.9rem;
-  border-radius: 0.7rem;
-  border: 1px solid rgba(255, 143, 143, 0.45);
-  background: linear-gradient(180deg, rgba(142, 31, 47, 0.22), rgba(142, 31, 47, 0.12));
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2);
-}
-
-.errorTitle {
-  margin: 0 0 0.45rem;
-  color: #ffd8d8;
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  font-weight: 700;
+.formAlert {
+  margin-top: 0.95rem;
 }
 
 .errorList {
   margin: 0;
   padding-left: 1rem;
-  color: #ffb3b3;
+  color: inherit;
   font-family: 'Inter', sans-serif;
   font-size: 0.88rem;
-  line-height: 1.35;
+  line-height: 1.4;
 
   li + li {
     margin-top: 0.2rem;
@@ -183,68 +256,116 @@
 }
 
 .hasAccount {
+  margin: 2.45rem auto 0;
+  color: rgba(246, 241, 232, 0.88);
   font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  color: rgba(246, 241, 232, 0.7);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.45;
   text-align: center;
-  margin-bottom: 2rem;
 }
 
 .link {
-  color: #C9A45C;
-  text-decoration: none;
+  color: #d4a84d;
+  text-decoration: underline;
+  text-decoration-thickness: 0.08em;
+  text-underline-offset: 0.16em;
   font-weight: 600;
-  transition: opacity 0.2s ease;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
 
   &:hover {
-    opacity: 0.8;
+    opacity: 0.9;
+    color: #efc46e;
   }
 }
 
-.logoContainer {
-  display: flex;
-  justify-content: center;
-}
-
-.logo {
-  height: 48px;
-  width: auto;
-  opacity: 0.95;
-}
-
-@media (min-width: 1024px) {
-  .signupPage {
-    padding: 0;
-  }
-
-  .container {
-    max-width: 500px;
-  }
-
-  .title {
-    font-size: 2.8rem;
-    margin-bottom: 2.5rem;
-  }
-
-  .form {
-    gap: 1.75rem;
-    margin-bottom: 2.5rem;
-  }
-
-  .fieldGroup {
-    gap: 0.7rem;
+@media (max-width: 767px) {
+  .identityRow {
+    grid-template-columns: 1fr;
+    gap: 1.48rem;
   }
 
   .input {
-    font-size: 1.05rem;
-    padding: 0.95rem 1.1rem;
-  }
-
-  .inputWrapper .input {
+    min-height: 3.3rem;
+    padding-left: 3.2rem;
     padding-right: 3rem;
+    font-size: 0.97rem;
   }
 
-  .logo {
-    height: 56px;
+  .inputWrapper {
+    min-height: 3.3rem;
+  }
+
+  .leadingIcon {
+    left: 1rem;
+    width: 1.12rem;
+    height: 1.12rem;
+  }
+
+  .togglePassword {
+    width: 3rem;
+  }
+
+  .eyeIcon {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  .submitButton {
+    min-height: 3.2rem;
+    margin-top: 1.3rem;
+    font-size: 1.26rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .form {
+    gap: 1.3rem;
+  }
+
+  .identityRow {
+    gap: 1.3rem;
+  }
+
+  .label {
+    margin-left: 0.2rem;
+    font-size: 0.94rem;
+  }
+
+  .inputWrapper {
+    min-height: 3.08rem;
+  }
+
+  .input {
+    min-height: 3.08rem;
+    padding-left: 2.85rem;
+    padding-right: 2.75rem;
+    font-size: 0.95rem;
+  }
+
+  .leadingIcon {
+    left: 0.88rem;
+    width: 1.05rem;
+    height: 1.05rem;
+  }
+
+  .togglePassword {
+    width: 2.75rem;
+  }
+
+  .eyeIcon {
+    width: 1.12rem;
+    height: 1.12rem;
+  }
+
+  .policyLabel {
+    font-size: 0.8rem;
+  }
+
+  .submitButton {
+    min-height: 3rem;
+    font-size: 1.16rem;
   }
 }

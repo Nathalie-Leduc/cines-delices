@@ -32,6 +32,14 @@ export default function Footer() {
           </NavLink>
           <span className={styles.separator} aria-hidden="true" />
           <NavLink
+            to="/regles-moderation"
+            className={({ isActive }) => `${styles.footerLink} ${isActive ? styles.active : ''}`.trim()}
+>
+            Règles de modération
+          </NavLink>
+          <span className={styles.separator} aria-hidden="true" />
+
+          <NavLink
             to="/contact"
             className={({ isActive }) => `${styles.footerLink} ${isActive ? styles.active : ''}`.trim()}
           >
