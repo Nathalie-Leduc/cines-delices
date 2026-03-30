@@ -1,19 +1,3 @@
-// ============================================================
-// PAGE CRÉATION DE RECETTE — Ciné Délices
-// ============================================================
-// Formulaire complet pour créer une recette :
-//   - Titre, film/série (recherche TMDB), catégorie
-//   - Image (upload fichier ou URL)
-//   - Ingrédients (recherche API + création à la volée)
-//   - Étapes de préparation
-//   - Soumission avec validation des champs obligatoires
-//
-// Système d'ingrédients :
-//   Un seul champ de saisie (ingredientDraft) pour composer
-//   un ingrédient (nom + quantité + unité), puis bouton
-//   "Ajouter" pour l'insérer dans la liste form.ingredients.
-// ============================================================
-
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import styles from './CreateRecipe.module.scss';
@@ -233,7 +217,6 @@ export default function CreerRecette() {
       setFilmSearchLoading(false);
     }
   }
-
   // Fonction appelée à chaque frappe dans l'input
   function handleFilmInput(value) {
     // Mise à jour du formulaire
@@ -249,7 +232,6 @@ export default function CreerRecette() {
       searchFilms(value);
     }, 300);
   }
-
   // Fonction pour sélectionner un film ou une série depuis la liste
   function selectFilm(media) {
     setSelectedMedia(media);// on stocke le média choisi pour l'enregistrer plus tard
@@ -260,7 +242,7 @@ export default function CreerRecette() {
       filmId: media.id ?? null,
     }));
     setFilmSearchResults([]);// on vide la liste
-    // On déduit le type de média pour le formulaire : 'F' = film, 'S' = série
+     // On déduit le type de média pour le formulaire : 'F' = film, 'S' = série
     const normalizedType = String(media.type || '').toLowerCase();
     if (normalizedType === 'movie') {
       handleChange('type', 'F');
@@ -521,10 +503,10 @@ export default function CreerRecette() {
           const unite = String(item.unite || '').trim();
 
           return {
-            ingredientId: item.ingredientId,
-            nom: String(item.nom || '').trim(),
-            quantity: quantite || null,
-            unit: unite || null,
+          ingredientId: item.ingredientId,
+          nom: String(item.nom || '').trim(),
+          quantity: quantite || null,
+          unit: unite || null,
           };
         })
         .filter(item => item.nom),
@@ -1028,14 +1010,17 @@ export default function CreerRecette() {
             </div>
           )}
 
-          <button
-            type="button"
-            className={styles.addIngredientBtn}
-            aria-label="Ajouter l'ingredient a la liste"
-            onClick={addIngredientToList}
-          >
-            + Ajouter l'ingrédient
-          </button>
+          <div className={styles.ingredientBottom}>
+            <button
+              type="button"
+              className={styles.addIngredientBtn}
+              aria-label="Ajouter l'ingredient a la liste"
+              onClick={addIngredientToList}
+              disabled={!String(ingredientDraft.nom || '').trim()}
+            >
+              + Ajouter l'ingredient
+            </button>
+          </div>
         </div>
 
         {form.ingredients.length > 0 && (

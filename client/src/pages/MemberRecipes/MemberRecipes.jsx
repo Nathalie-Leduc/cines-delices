@@ -913,14 +913,41 @@ export default function MesRecettes() {
     setActiveFilter('Tous');
   }, [location.pathname]);
 
+  useEffect(() => {
+    const openEditRecipeId = location.state?.openEditRecipeId;
+
+    if (!openEditRecipeId || recipes.length === 0) {
+      return;
+    }
+
+    const recipeToEdit = recipes.find(
+      (recipe) => String(recipe?.id) === String(openEditRecipeId),
+    );
+
+    if (!recipeToEdit) {
+      navigate(location.pathname, { replace: true, state: null });
+      return;
+    }
+
+    handleEditClick(recipeToEdit);
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate, recipes]);
+
 
   return (
     <div className={styles.mesRecettes}>
 
       {/* MODALE SUPPRESSION */}
       {showDeleteModal && (
-        <div className={styles.overlay}>
-          <div className={styles.modal}>
+        <div
+          className={styles.overlay}
+          onClick={() => {
+            if (!isDeletingRecipe) {
+              setShowDeleteModal(false);
+            }
+          }}
+        >
+          <div className={styles.modal} onClick={(event) => event.stopPropagation()}>
             <p className={styles.modalText}>
               Êtes-vous sûr de vouloir supprimer cette recette ?
             </p>
@@ -947,8 +974,18 @@ export default function MesRecettes() {
       )}
 
       {showEditModal && (
-        <div className={styles.overlay}>
-          <div className={`${styles.modal} ${styles.editModal}`}>
+        <div
+          className={styles.overlay}
+          onClick={() => {
+            if (!isSavingEdit) {
+              setShowEditModal(false);
+            }
+          }}
+        >
+          <div
+            className={`${styles.modal} ${styles.editModal}`}
+            onClick={(event) => event.stopPropagation()}
+          >
             <h2 className={styles.editTitle}>Modifier la recette</h2>
 
             <div className={styles.editFields}>
@@ -1245,8 +1282,18 @@ export default function MesRecettes() {
       )}
 
       {showEditConfirmModal && (
-        <div className={`${styles.overlay} ${styles.confirmOverlay}`}>
-          <div className={`${styles.modal} ${styles.confirmModal}`}>
+        <div
+          className={`${styles.overlay} ${styles.confirmOverlay}`}
+          onClick={() => {
+            if (!isSavingEdit) {
+              setShowEditConfirmModal(false);
+            }
+          }}
+        >
+          <div
+            className={`${styles.modal} ${styles.confirmModal}`}
+            onClick={(event) => event.stopPropagation()}
+          >
             <p className={styles.modalText}>
               Voulez-vous confirmer les modifications de cette recette ?
             </p>
@@ -1405,7 +1452,14 @@ export default function MesRecettes() {
                   <div className={styles.grid}>
                     {recettes.map(recette => (
                       <div key={recette.id} className={styles.cardShell}>
-                        <RecipeCard recipe={mapMemberRecipeToCard(recette)} />
+                        <RecipeCard
+                          recipe={mapMemberRecipeToCard(recette)}
+                          to={`/recipes/${recette.slug || recette.id}`}
+                          linkState={{
+                            fromMemberRecipes: true,
+                            openEditRecipeId: recette.id,
+                          }}
+                        />
                         {(() => {
                           const moderationBadge = getRecipeModerationBadge(recette);
                           const isRejected = moderationBadge.tone === 'rejected' && Boolean(recette?.rejectionReason);
@@ -1467,22 +1521,13 @@ export default function MesRecettes() {
                         </button>
                       )}
 
-                      {/* ──────────────────────────────────────────────────
-                           MODIF 4 : bouton "Modifier" désactivé si PENDING
-                          
-                          Avant  : toujours cliquable
-                          Après  : disabled quand status === 'PENDING'
-                          
-                          On ne peut pas modifier une recette qui est en
-                          cours de validation par l'admin.
-                      ────────────────────────────────────────────────── */}
+                      {/* Le membre peut modifier sa recette quel que soit son statut. */}
 
                        <button
                         type="button"
                         className={styles.actionBtn}
                         aria-label={`Modifier la recette ${recette.titre}`}
                         onClick={() => handleEditClick(recette)}
-                        disabled={String(recette.status || '').toUpperCase() === 'PENDING'}
                       >
                         <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
                       </button>
