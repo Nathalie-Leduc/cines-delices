@@ -5,7 +5,7 @@ import styles from './PublicLayout.module.scss';
 
 export default function PublicLayout() {
   return (
-    <>
+    <div className={styles.layout}>
       <Navbar />
 
       <main className={styles.main}>
@@ -13,6 +13,6 @@ export default function PublicLayout() {
       </main>
 
       <Footer />
-    </>
+    </div>
   );
 }

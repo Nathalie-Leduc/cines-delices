@@ -1,9 +1,21 @@
 import { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
+import AuthShell from '../../components/AuthShell/AuthShell.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { registerUser } from '../../services/authService.js';
 import styles from './Signup.module.scss';
+
+function formatIdentityValue(value, fallback) {
+  const normalized = String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 60);
+
+  if (normalized.length < 2) return fallback;
+
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -69,11 +81,6 @@ export default function Signup() {
     setErrorTitle('');
     setErrorMessages([]);
 
-    if (!nom.trim() || !prenom.trim()) {
-      showFormError('Le nom et le prénom sont obligatoires.');
-      return;
-    }
-
     if (password !== confirmPassword) {
       showFormError('Les mots de passe ne correspondent pas.');
       return;
@@ -89,8 +96,8 @@ export default function Signup() {
     try {
       const payload = await registerUser({
         email: email.trim(),
-        nom: nom.trim(),
-        prenom: prenom.trim(),
+        nom: formatIdentityValue(nom, nom.trim()),
+        prenom: formatIdentityValue(prenom, prenom.trim()),
         password,
         acceptedPolicies,
       });
@@ -106,49 +113,65 @@ export default function Signup() {
   };
 
   return (
-    <div className={styles.signupPage}>
-      <div className={styles.container}>
-        <h1 className={styles.title}>Créer un compte</h1>
-
-        <form className={styles.form} onSubmit={handleSubmit}>
+    <AuthShell title="Créer un compte">
+      <form className={styles.form} onSubmit={handleSubmit}>
+        <div className={styles.identityRow}>
           <div className={styles.fieldGroup}>
             <label htmlFor="nom" className={styles.label}>
               Nom
             </label>
-            <input
-              id="nom"
-              type="text"
-              className={styles.input}
-              placeholder="Entrez votre nom"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              required
-              minLength={2}
-              maxLength={60}
-            />
+            <div className={styles.inputWrapper}>
+              <span
+                className={`${styles.leadingIcon} ${styles.userIcon}`}
+                aria-hidden="true"
+              />
+              <input
+                id="nom"
+                type="text"
+                className={styles.input}
+                placeholder="Entrez votre nom"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                autoComplete="family-name"
+                minLength={2}
+                required
+              />
+            </div>
           </div>
 
           <div className={styles.fieldGroup}>
             <label htmlFor="prenom" className={styles.label}>
               Prénom
             </label>
-            <input
-              id="prenom"
-              type="text"
-              className={styles.input}
-              placeholder="Entrez votre prénom"
-              value={prenom}
-              onChange={(e) => setPrenom(e.target.value)}
-              required
-              minLength={2}
-              maxLength={60}
-            />
+            <div className={styles.inputWrapper}>
+              <span
+                className={`${styles.leadingIcon} ${styles.userIcon}`}
+                aria-hidden="true"
+              />
+              <input
+                id="prenom"
+                type="text"
+                className={styles.input}
+                placeholder="Entrez votre prénom"
+                value={prenom}
+                onChange={(e) => setPrenom(e.target.value)}
+                autoComplete="given-name"
+                minLength={2}
+                required
+              />
+            </div>
           </div>
+        </div>
 
-          <div className={styles.fieldGroup}>
-            <label htmlFor="email" className={styles.label}>
-              Adresse e-mail
-            </label>
+        <div className={styles.fieldGroup}>
+          <label htmlFor="email" className={styles.label}>
+            Adresse e-mail
+          </label>
+          <div className={styles.inputWrapper}>
+            <span
+              className={`${styles.leadingIcon} ${styles.emailIcon}`}
+              aria-hidden="true"
+            />
             <input
               id="email"
               type="email"
@@ -156,113 +179,118 @@ export default function Signup() {
               placeholder="Entrez votre e-mail"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
               required
             />
           </div>
-
-          <div className={styles.fieldGroup}>
-            <label htmlFor="password" className={styles.label}>
-              Mot de passe
-            </label>
-            <div className={styles.inputWrapper}>
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                className={styles.input}
-                placeholder="Entrez votre mot de passe"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                className={styles.togglePassword}
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              >
-                👁️
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.fieldGroup}>
-            <label htmlFor="confirmPassword" className={styles.label}>
-              Confirmer le mot de passe
-            </label>
-            <div className={styles.inputWrapper}>
-              <input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                className={styles.input}
-                placeholder="Confirmez votre mot de passe"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-              <button
-                type="button"
-                className={styles.togglePassword}
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              >
-                👁️
-              </button>
-            </div>
-          </div>
-
-          <div className={styles.policyConsent}>
-            <label htmlFor="acceptedPolicies" className={styles.policyLabel}>
-              <input
-                id="acceptedPolicies"
-                type="checkbox"
-                className={styles.policyCheckbox}
-                checked={acceptedPolicies}
-                onChange={(e) => setAcceptedPolicies(e.target.checked)}
-                required
-              />
-              <span>
-                J'accepte la{' '}
-                  <NavLink to="/politique-confidentialite" className={styles.link}>
-                    politique de confidentialité
-                </NavLink>{' '}
-                et la{' '}
-                  <NavLink to="/politique-cookies" className={styles.link}>
-                  politique de cookies
-                </NavLink>
-              </span>
-            </label>
-          </div>
-
-          <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-            {isSubmitting ? 'Création...' : 'Créer un compte'}
-          </button>
-
-          {errorMessages.length > 0 ? (
-            <Alert type="error" title={errorTitle} className={styles.formAlert}>
-              <ul className={styles.errorList}>
-                {errorMessages.map((message) => (
-                  <li key={message}>{message}</li>
-                ))}
-              </ul>
-            </Alert>
-          ) : null}
-        </form>
-
-        <p className={styles.hasAccount}>
-          Déjà un compte ?{' '}
-          <NavLink to="/login" className={styles.link}>
-            Se connecter
-          </NavLink>
-        </p>
-
-        <div className={styles.logoContainer}>
-          <img
-            src="/img/logo-cine-delices.png"
-            alt="CinéDélices"
-            className={styles.logo}
-          />
         </div>
-      </div>
-    </div>
+
+        <div className={styles.fieldGroup}>
+          <label htmlFor="password" className={styles.label}>
+            Mot de passe
+          </label>
+          <div className={styles.inputWrapper}>
+            <span className={`${styles.leadingIcon} ${styles.lockIcon}`} aria-hidden="true" />
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              className={styles.input}
+              placeholder="Entrez votre mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+            />
+            <button
+              type="button"
+              className={styles.togglePassword}
+              onClick={() => setShowPassword((currentValue) => !currentValue)}
+              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              aria-pressed={showPassword}
+            >
+              <span
+                className={`${styles.eyeIcon} ${showPassword ? styles.eyeVisible : styles.eyeHidden}`}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.fieldGroup}>
+          <label htmlFor="confirmPassword" className={styles.label}>
+            Confirmer le mot de passe
+          </label>
+          <div className={styles.inputWrapper}>
+            <span className={`${styles.leadingIcon} ${styles.lockIcon}`} aria-hidden="true" />
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? 'text' : 'password'}
+              className={styles.input}
+              placeholder="Confirmez votre mot de passe"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+            />
+            <button
+              type="button"
+              className={styles.togglePassword}
+              onClick={() => setShowConfirmPassword((currentValue) => !currentValue)}
+              aria-label={showConfirmPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              aria-pressed={showConfirmPassword}
+            >
+              <span
+                className={`${styles.eyeIcon} ${showConfirmPassword ? styles.eyeVisible : styles.eyeHidden}`}
+                aria-hidden="true"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.policyConsent}>
+          <label htmlFor="acceptedPolicies" className={styles.policyLabel}>
+            <input
+              id="acceptedPolicies"
+              type="checkbox"
+              className={styles.policyCheckbox}
+              checked={acceptedPolicies}
+              onChange={(e) => setAcceptedPolicies(e.target.checked)}
+              required
+            />
+            <span className={styles.policyText}>
+              J'accepte la{' '}
+              <NavLink to="/politique-confidentialite" className={styles.link}>
+                politique de confidentialité
+              </NavLink>{' '}
+              et la{' '}
+              <NavLink to="/politique-cookies" className={styles.link}>
+                politique de cookies
+              </NavLink>
+            </span>
+          </label>
+        </div>
+
+        <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+          {isSubmitting ? 'Création...' : 'Créer un compte'}
+        </button>
+
+        {errorMessages.length > 0 ? (
+          <Alert type="error" title={errorTitle} className={styles.formAlert}>
+            <ul className={styles.errorList}>
+              {errorMessages.map((message) => (
+                <li key={message}>{message}</li>
+              ))}
+            </ul>
+          </Alert>
+        ) : null}
+      </form>
+
+      <p className={styles.hasAccount}>
+        Déjà un compte ?{' '}
+        <NavLink to="/login" className={styles.link}>
+          Se connecter
+        </NavLink>
+      </p>
+    </AuthShell>
   );
 }

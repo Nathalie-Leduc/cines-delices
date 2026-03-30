@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+
+.page {
+  position: relative;
+  flex: 1 0 auto;
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+  padding: clamp(1.25rem, 2.4vw, 2rem);
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(rgba(31, 29, 30, 0.5), rgba(31, 29, 30, 0.6)),
+    url('/img/rocky-wall.png') center center / cover no-repeat;
+}
+
+.page::before,
+.page::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.page::before {
+  background:
+    radial-gradient(circle at 50% 14%, rgba(255, 214, 149, 0.16), transparent 23%),
+    linear-gradient(
+      180deg,
+      rgba(18, 12, 14, 0.22) 0%,
+      rgba(18, 12, 14, 0.1) 32%,
+      rgba(18, 12, 14, 0.16) 62%,
+      rgba(18, 12, 14, 0.28) 100%
+    ),
+    url('/img/fond-auth.png') center center / cover no-repeat;
+  opacity: 0.4;
+  z-index: -2;
+}
+
+.page::after {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(10, 6, 8, 0.26) 0%,
+      rgba(10, 6, 8, 0.1) 24%,
+      rgba(10, 6, 8, 0.03) 50%,
+      rgba(10, 6, 8, 0.1) 76%,
+      rgba(10, 6, 8, 0.26) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(8, 5, 6, 0.28) 0%,
+      rgba(8, 5, 6, 0.04) 24%,
+      rgba(8, 5, 6, 0.08) 58%,
+      rgba(8, 5, 6, 0.34) 100%
+    );
+  z-index: -1;
+}
+
+.content {
+  width: min(100%, 38.25rem);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(2.75rem, 6vh, 5rem) 0 clamp(1.35rem, 3vh, 2.4rem);
+}
+
+.header {
+  width: min(100%, 36rem);
+  display: grid;
+  gap: 0.95rem;
+  margin-bottom: clamp(2.4rem, 5vh, 3.75rem);
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  color: #f2d29d;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.75rem, 5.1vw, 4.2rem);
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: 0.01em;
+}
+
+.subtitle {
+  margin: 0;
+  color: rgba(246, 241, 232, 0.88);
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(1.12rem, 1.7vw, 1.3rem);
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.body {
+  width: min(100%, 36rem);
+}
+
+.brand {
+  margin-top: auto;
+  padding-top: clamp(1.5rem, 4vh, 3rem);
+  display: flex;
+  justify-content: center;
+}
+
+.logo {
+  width: min(11.5rem, 58vw);
+  height: auto;
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .page {
+    background-attachment: fixed;
+  }
+}
+
+@media (max-width: 767px) {
+  .content {
+    padding-top: clamp(2.3rem, 6vh, 3.25rem);
+  }
+
+  .header {
+    gap: 0.65rem;
+    margin-bottom: 1.9rem;
+  }
+
+  .title {
+    font-size: clamp(2.4rem, 12vw, 3.4rem);
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+
+  .brand {
+    padding-top: 1.75rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .page {
+    padding-inline: 0.95rem;
+  }
+
+  .content {
+    padding-bottom: 1.1rem;
+  }
+}
+
+@media (max-height: 900px) {
+  .content {
+    padding-top: 2.2rem;
+    padding-bottom: 1.1rem;
+  }
+
+  .header {
+    margin-bottom: 1.8rem;
+  }
+
+  .brand {
+    padding-top: 1.25rem;
+  }
+}

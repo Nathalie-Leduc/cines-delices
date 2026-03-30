@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Alert from '../../components/Alert/Alert.jsx';
+import AuthShell from '../../components/AuthShell/AuthShell.jsx';
 import styles from './Contact.module.scss';
 
 export default function Contact() {
@@ -86,8 +88,7 @@ export default function Contact() {
   }
 
   return (
-    <div className={styles.contact}>
-      {/* MODAL SUCCÈS */}
+    <>
       {showSuccessModal && (
         <div className={styles.overlay}>
           <div className={styles.modalStack}>
@@ -105,60 +106,73 @@ export default function Contact() {
         </div>
       )}
 
-      <div className={styles.container}>
-        <h1 className={styles.title}>Contact</h1>
-        <p className={styles.subtitle}>help@support.cine-delices.com</p>
-
+      <AuthShell
+        title="Contact"
+        subtitle="help@support.cine-delices.com"
+        contentClassName={styles.shellContent}
+        bodyClassName={styles.shellBody}
+      >
         <form onSubmit={handleSubmit} className={styles.form}>
-          {/* NOM */}
-          <div className={styles.formGroup}>
-            <label htmlFor="nom" className={styles.label}>
-              Nom
-            </label>
-            <input
-              id="nom"
-              type="text"
-              className={`${styles.input} ${errors.nom ? styles.inputError : ''}`}
-              placeholder="Dupont"
-              value={form.nom}
-              onChange={e => handleChange('nom', e.target.value)}
-              disabled={isSubmitting}
-            />
-            {errors.nom && (
-              <p className={styles.errorText}>{errors.nom}</p>
-            )}
+          <div className={styles.identityRow}>
+            <div className={styles.formGroup}>
+              <label htmlFor="nom" className={styles.label}>
+                Nom
+              </label>
+              <div className={`${styles.inputWrapper} ${errors.nom ? styles.inputError : ''}`.trim()}>
+                <span
+                  className={`${styles.leadingIcon} ${styles.userIcon}`}
+                  aria-hidden="true"
+                />
+                <input
+                  id="nom"
+                  type="text"
+                  className={styles.input}
+                  placeholder="Entrez votre nom"
+                  value={form.nom}
+                  onChange={e => handleChange('nom', e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+              {errors.nom && (
+                <p className={styles.errorText}>{errors.nom}</p>
+              )}
+            </div>
+
+            <div className={styles.formGroup}>
+              <label htmlFor="prenom" className={styles.label}>
+                Prénom
+              </label>
+              <div className={`${styles.inputWrapper} ${errors.prenom ? styles.inputError : ''}`.trim()}>
+                <span
+                  className={`${styles.leadingIcon} ${styles.userIcon}`}
+                  aria-hidden="true"
+                />
+                <input
+                  id="prenom"
+                  type="text"
+                  className={styles.input}
+                  placeholder="Entrez votre prénom"
+                  value={form.prenom}
+                  onChange={e => handleChange('prenom', e.target.value)}
+                  disabled={isSubmitting}
+                />
+              </div>
+              {errors.prenom && (
+                <p className={styles.errorText}>{errors.prenom}</p>
+              )}
+            </div>
           </div>
 
-          {/* PRÉNOM */}
-          <div className={styles.formGroup}>
-            <label htmlFor="prenom" className={styles.label}>
-              Prénom
-            </label>
-            <input
-              id="prenom"
-              type="text"
-              className={`${styles.input} ${errors.prenom ? styles.inputError : ''}`}
-              placeholder="Jean"
-              value={form.prenom}
-              onChange={e => handleChange('prenom', e.target.value)}
-              disabled={isSubmitting}
-            />
-            {errors.prenom && (
-              <p className={styles.errorText}>{errors.prenom}</p>
-            )}
-          </div>
-
-          {/* EMAIL */}
           <div className={styles.formGroup}>
             <label htmlFor="email" className={styles.label}>
               Adresse e-mail
             </label>
-            <div className={styles.emailField}>
-              <span className={styles.emailIcon} aria-hidden="true" />
+            <div className={`${styles.inputWrapper} ${errors.email ? styles.inputError : ''}`.trim()}>
+              <span className={`${styles.leadingIcon} ${styles.emailIcon}`} aria-hidden="true" />
               <input
                 id="email"
                 type="email"
-                className={`${styles.emailInput} ${errors.email ? styles.inputError : ''}`}
+                className={styles.input}
                 placeholder="Entrez votre e-mail"
                 value={form.email}
                 onChange={e => handleChange('email', e.target.value)}
@@ -170,31 +184,32 @@ export default function Contact() {
             )}
           </div>
 
-          {/* DEMANDE */}
           <div className={styles.formGroup}>
             <label htmlFor="demande" className={styles.label}>
               Indiquez votre demande :
             </label>
-            <textarea
-              id="demande"
-              className={`${styles.textarea} ${errors.demande ? styles.inputError : ''}`}
-              placeholder="Bonjour, ..."
-              rows="6"
-              value={form.demande}
-              onChange={e => handleChange('demande', e.target.value)}
-              disabled={isSubmitting}
-            />
+            <div className={`${styles.textareaWrapper} ${errors.demande ? styles.inputError : ''}`.trim()}>
+              <textarea
+                id="demande"
+                className={styles.textarea}
+                placeholder="Bonjour, ..."
+                rows="6"
+                value={form.demande}
+                onChange={e => handleChange('demande', e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
             {errors.demande && (
               <p className={styles.errorText}>{errors.demande}</p>
             )}
           </div>
 
-          {/* ERREUR GÉNÉRALE */}
           {errors.submit && (
-            <p className={styles.errorAlert}>{errors.submit}</p>
+            <Alert type="error" title="Envoi impossible" className={styles.formAlert}>
+              {errors.submit}
+            </Alert>
           )}
 
-          {/* BOUTON SOUMETTRE */}
           <button
             type="submit"
             className={styles.submitBtn}
@@ -203,7 +218,7 @@ export default function Contact() {
             {isSubmitting ? 'Envoi en cours...' : 'Envoyer'}
           </button>
         </form>
-      </div>
-    </div>
+      </AuthShell>
+    </>
   );
 }
