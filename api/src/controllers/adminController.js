@@ -1240,7 +1240,6 @@ export async function getIngredientRecipes(req, res) {
     return sendError(res, error, 'Erreur lors de la récupération des recettes liées à l\'ingrédient.');
   }
 }
-
 // =====================
 // NOTIFICATIONS — ADMIN
 // =====================

@@ -84,7 +84,6 @@ function AdminCategories() {
 
   async function handleConfirmCreate() {
     const name = newCategoryName.trim();
-
     const alreadyExists = categories.some(
       (category) => category.name.trim().toLowerCase() === name.toLowerCase(),
     );
@@ -302,7 +301,6 @@ function AdminCategories() {
               />
             </label>
           )}
-
           <p className={styles.colorLabel}>Choisir une couleur de fond</p>
 
           <div className={styles.colorWheelWrap}>

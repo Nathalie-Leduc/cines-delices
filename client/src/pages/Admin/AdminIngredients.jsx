@@ -46,7 +46,6 @@ export default function AdminIngredients() {
   function canDeleteIngredient(ingredient) {
     return (ingredient?.recipesCount || 0) === 0;
   }
-
   async function handleDeleteIngredient() {
     if (!selectedIngredient) return;
 
