@@ -1281,6 +1281,9 @@
   background: rgba(31, 29, 30, 0.58);
   transition: all 0.2s ease;
   min-width: 0;
+  opacity: 0;
+  transform: translate3d(0, 18px, 0);
+  animation: adminCardReveal 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 
   &:hover {
     border-color: rgba(201, 164, 92, 0.5);
