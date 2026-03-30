@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -32,6 +32,18 @@ function AdminCategories() {
       .catch((err) => setError(err.message || 'Impossible de charger les catégories.'))
       .finally(() => setIsLoading(false));
   }, []);
+
+  const filteredCategories = useMemo(() => {
+    const normalizedQuery = newCategoryName.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return categories;
+    }
+
+    return categories.filter((category) => (
+      String(category.name || '').toLowerCase().includes(normalizedQuery)
+    ));
+  }, [categories, newCategoryName]);
 
   async function handleCreateCategory() {
     const name = newCategoryName.trim();
@@ -137,24 +149,32 @@ function AdminCategories() {
             className={styles.categoriesSearchRow}
             onSubmit={(event) => {
               event.preventDefault();
-              handleCreateCategory();
             }}
           >
-            <input
-              type="text"
-              className={styles.categoriesSearchInput}
-              placeholder="Entrer son nom"
-              value={newCategoryName}
-              onChange={(event) => {
-                setNewCategoryName(event.target.value);
-                if (error) {
-                  setError('');
-                }
-              }}
-            />
-            <button type="submit" className={styles.roundIconBtn} aria-label="Ajouter">
-              <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>+</span>
-            </button>
+            <div className={styles.categoriesSearchField}>
+              <input
+                type="search"
+                className={styles.categoriesSearchInput}
+                placeholder="Rechercher une catégorie"
+                value={newCategoryName}
+                onChange={(event) => {
+                  setNewCategoryName(event.target.value);
+                  if (error) {
+                    setError('');
+                  }
+                }}
+                aria-label="Rechercher une catégorie"
+              />
+            </div>
+
+            <div className={styles.categoriesSearchActions}>
+              <button type="submit" className={styles.categoriesSearchButton}>
+                Rechercher
+              </button>
+              <button type="button" className={`${styles.roundIconBtn} ${styles.categoriesAddButton}`.trim()} aria-label="Ajouter" onClick={handleCreateCategory}>
+                <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>+</span>
+              </button>
+            </div>
           </form>
 
           <Alert
@@ -169,7 +189,7 @@ function AdminCategories() {
           </div>
 
           <div className={styles.list}>
-            {categories.map((category) => (
+            {filteredCategories.map((category) => (
               <div key={category.id} className={styles.categoryRow}>
                 <div className={styles.categoryIdentity}>
                   <span className={styles.categoryDot} style={{ background: category.color }}>
@@ -212,11 +232,13 @@ function AdminCategories() {
               </div>
             ))}
 
-            {!isLoading && !error && categories.length === 0 ? (
+            {!isLoading && !error && filteredCategories.length === 0 ? (
               <StatusBlock
                 variant="empty"
-                title="Aucune catégorie enregistrée"
-                message="Ajoute une première catégorie pour commencer à organiser les recettes."
+                title={newCategoryName.trim() ? 'Aucune catégorie trouvée' : 'Aucune catégorie enregistrée'}
+                message={newCategoryName.trim()
+                  ? 'Essaie une autre recherche pour retrouver une catégorie.'
+                  : 'Ajoute une première catégorie pour commencer à organiser les recettes.'}
                 className={styles.pageState}
               />
             ) : null}

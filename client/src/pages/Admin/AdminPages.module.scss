@@ -271,29 +271,57 @@
 }
 
 .categoriesSearchRow {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   max-width: 860px;
   margin-bottom: 1.25rem;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.85rem;
   width: 100%;
+  min-width: 0;
+}
+
+.categoriesSearchField {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.categoriesSearchActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 0 auto;
 }
 
 .categoriesSearchInput {
-  @include ui.input-surface(
-    $background: rgba(235, 224, 203, 0.86),
-    $color: rgba(49, 38, 34, 0.85),
-    $border: rgba(232, 220, 200, 0.22),
-    $radius: 18px,
-    $padding: 1rem 1.15rem,
-    $min-height: 3.9rem,
-    $placeholder: rgba(84, 72, 64, 0.55),
-    $focus-border: rgba(201, 164, 92, 0.62),
-    $focus-shadow: 0 0 0 3px rgba(201, 164, 92, 0.14)
-  );
+  @include ui.input-surface;
+  appearance: none;
+  -webkit-appearance: none;
   font-size: 1rem;
+}
+
+.categoriesSearchInput::-webkit-search-decoration,
+.categoriesSearchInput::-webkit-search-cancel-button,
+.categoriesSearchInput::-webkit-search-results-button,
+.categoriesSearchInput::-webkit-search-results-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+  display: none;
+}
+
+.categoriesSearchInput::-ms-clear,
+.categoriesSearchInput::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.categoriesSearchButton {
+  @include ui.primary-button;
+}
+
+.categoriesAddButton {
+  flex: 0 0 auto;
 }
 
 .recipeFiltersRow {
@@ -1478,6 +1506,23 @@
   .usersSearchRow,
   .categoriesSearchRow {
     max-width: none;
+  }
+
+  .categoriesSearchRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .categoriesSearchField {
+    width: 100%;
+  }
+
+  .categoriesSearchActions {
+    width: 100%;
+  }
+
+  .categoriesSearchButton {
+    flex: 1 1 auto;
   }
 
   .usersSearchRow {
