@@ -653,7 +653,8 @@ function AdminRecettes() {
 
       {modalState?.type === 'delete' && (
         <AdminModal
-          confirmLabel="valider"
+          title="Supprimer la recette"
+          confirmLabel="Supprimer"
           onCancel={() => setModalState(null)}
           onConfirm={handleDeleteRecipe}
         >

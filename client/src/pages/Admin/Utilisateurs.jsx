@@ -244,7 +244,12 @@ function AdminUtilisateurs() {
       )}
 
       {showDeleteModal && (
-        <AdminModal onCancel={() => setShowDeleteModal(false)} onConfirm={handleDeleteUser}>
+        <AdminModal
+          title="Supprimer l’utilisateur"
+          confirmLabel="Supprimer"
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteUser}
+        >
           Êtes-vous sûr de vouloir supprimer cet utilisateur ?
         </AdminModal>
       )}
