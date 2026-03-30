@@ -293,6 +293,22 @@
   flex: 0 0 auto;
 }
 
+.categoryCreatePrompt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: -0.2rem 0 1.15rem;
+  max-width: 860px;
+}
+
+.categoryCreatePromptText {
+  margin: 0;
+  color: rgba(246, 241, 232, 0.86);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.96rem;
+  line-height: 1.4;
+}
+
 .categoriesSearchInput {
   @include ui.input-surface;
   appearance: none;
@@ -1369,29 +1385,12 @@
   text-align: left;
 }
 
-.categoryCreateHeading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  margin: 0.5rem auto 1.4rem;
-  color: #c9a45c;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
-  font-weight: 700;
-  white-space: nowrap;
-
-  &::before,
-  &::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: rgba(232, 220, 200, 0.36);
-  }
-
-  .roundIconBtn {
-    flex-shrink: 0;
-  }
+.categoryEditorLead {
+  margin: 0 0 1rem;
+  color: rgba(246, 241, 232, 0.82);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.94rem;
+  line-height: 1.5;
 }
 
 .categoryNameLabel {
@@ -1458,6 +1457,12 @@
   font-family: 'Inter', sans-serif;
   font-weight: 700;
   padding: 0.85rem 0.75rem;
+}
+
+.categoryEditorActions {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
 }
 
 .heroRecipe {
@@ -1595,6 +1600,12 @@
 
   .categoriesSearchButton {
     flex: 1 1 auto;
+  }
+
+  .categoryCreatePrompt {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0.7rem;
   }
 
   .usersSearchRow {
