@@ -19,7 +19,6 @@ export default function Login() {
   const [emailForReset, setEmailForReset] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -120,7 +119,18 @@ export default function Login() {
                 className={`${styles.eyeIcon} ${showPassword ? styles.eyeVisible : styles.eyeHidden}`}
                 aria-hidden="true"
               />
-            </button>
+              <button
+                type="button"
+                className={styles.togglePassword}
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              >
+                👁️
+              </button>
+            </div>
+            <NavLink to="#" className={styles.forgotPassword} onClick={() => setShowModal(true)}>
+              mot de passe oublié
+            </NavLink>
           </div>
 
           {/* ✅ Un seul lien mot de passe oublié */}
