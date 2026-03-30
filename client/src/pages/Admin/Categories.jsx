@@ -250,6 +250,7 @@ function AdminCategories() {
                   <button
                     type="button"
                     className={styles.roundIconBtn}
+                    aria-label={`Modifier la catégorie ${category.name}`}
                     onClick={() => {
                       setEditingCategory(category);
                       setEditingCategoryName(category.name);

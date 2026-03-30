@@ -11,6 +11,13 @@ function getRoleLabel(role) {
   return role === 'ADMIN' ? 'Administrateur' : 'Membre';
 }
 
+function getUserIdentityLabel(user) {
+  return [user?.nom, user?.displayName || user?.prenom]
+    .filter(Boolean)
+    .join(' ')
+    .trim() || 'Utilisateur';
+}
+
 function AdminUtilisateurs() {
   const { user: currentUser } = useAuth();
   const location = useLocation();
@@ -120,7 +127,7 @@ function AdminUtilisateurs() {
           </div>
 
           <div className={styles.sectionTitle}>
-            <h3>Listes des utilisateurs</h3>
+            <h3>Liste des utilisateurs</h3>
           </div>
 
           {isLoading ? (
@@ -139,8 +146,13 @@ function AdminUtilisateurs() {
                   <img src="/icon/User.svg" alt="" aria-hidden="true" />
                 </span>
                 <span className={styles.rowText}>
-                  <strong>{[user.prenom, user.nom].filter(Boolean).join(' ') || user.email}</strong>
-                  <small>{user.email}</small>
+                  <strong>{getUserIdentityLabel(user)}</strong>
+                  <span className={styles.rowMeta}>
+                    <small>{user.email}</small>
+                    <span className={`${styles.statusPill} ${user.role === 'ADMIN' ? styles.statusAdmin : styles.statusMember}`.trim()}>
+                      {getRoleLabel(user.role)}
+                    </span>
+                  </span>
                 </span>
                 <span className={styles.recipesBadgeCentered}>
                   {user.totalRecipes} recette{user.totalRecipes > 1 ? 's' : ''}
@@ -183,7 +195,11 @@ function AdminUtilisateurs() {
             </div>
             <div className={styles.field}>
               <label>Rôle</label>
-              <p>{getRoleLabel(selectedUser.role)}</p>
+              <p>
+                <span className={`${styles.statusPill} ${selectedUser.role === 'ADMIN' ? styles.statusAdmin : styles.statusMember}`.trim()}>
+                  {getRoleLabel(selectedUser.role)}
+                </span>
+              </p>
             </div>
 
             <div className={styles.recipesBlock}>
