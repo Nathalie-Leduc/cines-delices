@@ -149,6 +149,41 @@
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
 }
 
+.accountSubLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  margin-top: 0.35rem;
+}
+
+.accountSubLink {
+  border: 1px solid rgba(232, 220, 200, 0.22);
+  background: rgba(246, 241, 232, 0.06);
+  border-radius: 8px;
+  padding: 0.3rem 0.42rem;
+  color: rgba(246, 241, 232, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: left;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+
+  strong {
+    font-size: 0.74rem;
+    color: #fbdca6;
+    font-weight: 700;
+  }
+
+  &:hover {
+    border-color: rgba(201, 164, 92, 0.55);
+    background: rgba(201, 164, 92, 0.12);
+  }
+}
+
 .accountArrow {
   color: #E8DCC8;
   font-size: 1.4rem;
@@ -378,7 +413,7 @@
 
 .tags {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.5rem;
   margin-bottom: 0.75rem;
 }
@@ -444,7 +479,7 @@
 
 .counts {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
 }
 
@@ -518,6 +553,11 @@
 
   .input {
     font-size: 0.96rem;
+  }
+
+  .tags,
+  .counts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

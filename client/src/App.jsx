@@ -58,6 +58,7 @@ function App() {
         <Route index element={<MemberInterface />} />
         <Route path="profil" element={<MemberProfile />} />
         <Route path="mes-recettes" element={<MemberRecipes />} />
+        <Route path="mes-recettes/recettes-en-validation" element={<MemberRecipes />} />
         <Route path="creer-recette" element={<CreateRecipe />} />
       </Route>
 

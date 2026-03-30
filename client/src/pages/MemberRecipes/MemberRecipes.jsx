@@ -8,7 +8,7 @@
 
 
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
 import { deleteMyRecipe, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
@@ -181,6 +181,7 @@ function getRecipeModerationBadge(recipe) {
 
 export default function MesRecettes() {
   const navigate = useNavigate();
+  const location = useLocation();
   // ──────────────────────────────────────────────────────────────────────
   //  MODIF 1 (suite) : on récupère logout depuis le contexte
   //  Avant  : pas de useAuth()
@@ -212,6 +213,8 @@ export default function MesRecettes() {
   const filmSearchTimeoutRef = useRef(null);
   const editIngredientSearchTimeouts = useRef({});
   const [recetteToDelete, setRecetteToDelete] = useState(null);
+
+  const isPendingRecipesView = location.pathname === '/membre/mes-recettes/recettes-en-validation';
 
   // Récupérer le profil au montage pour afficher un nom/e-mail dynamiques.
   useEffect(() => {
@@ -327,14 +330,34 @@ export default function MesRecettes() {
   }, []);
 
   // Navigation latérale du compte membre.
+  const pendingRecipesCount = recipes.filter(
+    (recipe) => String(recipe?.status || '').toUpperCase() === 'PENDING',
+  ).length;
+
+  const recipesForCurrentPage = isPendingRecipesView
+    ? recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() === 'PENDING')
+    : recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() !== 'PENDING');
+
+  const recipesPageTitle = isPendingRecipesView
+    ? 'Recettes en cours de validation'
+    : 'Mes recettes';
+
   const accountItems = [
     {
       icon: '/icon/Recipes.svg',
       label: 'Mes recettes',
-      sub: `${recipes.length} recettes`,
+      sub: `${recipesForCurrentPage.length} recette${recipesForCurrentPage.length > 1 ? 's' : ''}`,
       path: '/membre/mes-recettes',
-      active: true,
+      active: location.pathname.startsWith('/membre/mes-recettes'),
       subTone: 'recipe',
+      subLinks: [
+        {
+          label: 'Recettes en cours de validation',
+          path: '/membre/mes-recettes/recettes-en-validation',
+          count: pendingRecipesCount,
+          active: isPendingRecipesView,
+        },
+      ],
     },
     {
       icon: '/icon/Message_fill.svg',
@@ -377,17 +400,17 @@ export default function MesRecettes() {
 
   // Compteurs dynamiques par catégorie à partir des recettes chargées.
   const categories = [
-    { label: 'Tous', count: recipes.length, color: 'tous' },
-    { label: 'Entrée', count: recipes.filter(r => r.categorie === 'Entrée').length, color: 'entree' },
-    { label: 'Plat', count: recipes.filter(r => r.categorie === 'Plat').length, color: 'plat' },
-    { label: 'Dessert', count: recipes.filter(r => r.categorie === 'Dessert').length, color: 'dessert' },
-    { label: 'Boisson', count: recipes.filter(r => r.categorie === 'Boisson').length, color: 'boisson' },
+    { label: 'Tous', count: recipesForCurrentPage.length, color: 'tous' },
+    { label: 'Entrée', count: recipesForCurrentPage.filter(r => r.categorie === 'Entrée').length, color: 'entree' },
+    { label: 'Plat', count: recipesForCurrentPage.filter(r => r.categorie === 'Plat').length, color: 'plat' },
+    { label: 'Dessert', count: recipesForCurrentPage.filter(r => r.categorie === 'Dessert').length, color: 'dessert' },
+    { label: 'Boisson', count: recipesForCurrentPage.filter(r => r.categorie === 'Boisson').length, color: 'boisson' },
   ];
 
   // Application du filtre actif.
   const filtered = activeFilter === 'Tous'
-    ? recipes
-    : recipes.filter(r => r.categorie === activeFilter);
+    ? recipesForCurrentPage
+    : recipesForCurrentPage.filter(r => r.categorie === activeFilter);
 
   // Grouper par catégorie
   const grouped = filtered.reduce((acc, recette) => {
@@ -886,6 +909,10 @@ export default function MesRecettes() {
   }
 }
 
+  useEffect(() => {
+    setActiveFilter('Tous');
+  }, [location.pathname]);
+
 
   return (
     <div className={styles.mesRecettes}>
@@ -1266,8 +1293,26 @@ export default function MesRecettes() {
                 <span className={styles.accountContent}>
                   <strong>{item.label}</strong>
                   <small className={item.subTone === 'recipe' ? styles.accountSubTag : undefined}>
-                    {item.path === '/membre/mes-recettes' ? `${recipes.length} recettes` : item.sub}
+                    {item.path === '/membre/mes-recettes' ? item.sub : item.sub}
                   </small>
+                  {Array.isArray(item.subLinks) && item.subLinks.length > 0 ? (
+                    <span className={styles.accountSubLinks}>
+                      {item.subLinks.map((subLink) => (
+                        <button
+                          key={subLink.path}
+                          type="button"
+                          className={`${styles.accountSubLink} ${subLink.active ? styles.accountSubLinkActive : ''}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(subLink.path);
+                          }}
+                        >
+                          <span>{subLink.label}</span>
+                          <strong>{subLink.count}</strong>
+                        </button>
+                      ))}
+                    </span>
+                  ) : null}
                 </span>
                 <span className={styles.accountArrow}>›</span>
               </button>
@@ -1284,7 +1329,7 @@ export default function MesRecettes() {
         </aside>
 
         <section className={styles.recipesPanel}>
-          <h2 className={styles.title}>Mes recettes</h2>
+          <h2 className={styles.title}>{recipesPageTitle}</h2>
           <Alert
             type="error"
             message={error}

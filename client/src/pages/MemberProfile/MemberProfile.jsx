@@ -16,6 +16,7 @@ const initialUser = {
     plats: 0,
     desserts: 0,
     boissons: 0,
+    recettesEnValidation: 0,
   },
   dateInscription: '',
 };
@@ -120,16 +121,24 @@ export default function Profil() {
       plats: 0,
       desserts: 0,
       boissons: 0,
+      recettesEnValidation: 0,
     };
 
     recipes.forEach((recipe) => {
-      if (recipe.category && recipe.category.nom) {
+      const status = String(recipe?.status || '').toUpperCase();
+
+      if (status === 'PENDING') {
+        counts.recettesEnValidation += 1;
+      }
+
+      if (status !== 'PENDING' && recipe.category && recipe.category.nom) {
         const nomLower = recipe.category.nom.toLowerCase();
         if (nomLower === 'entrée') counts.entrees++;
         else if (nomLower === 'plat') counts.plats++;
         else if (nomLower === 'dessert') counts.desserts++;
         else if (nomLower === 'boisson') counts.boissons++;
       }
+
     });
 
     setUserData((prev) => ({
@@ -153,16 +162,24 @@ export default function Profil() {
     loadProfileData();
   }, []);
 
-  const totalRecipes = Object.values(userData.recettes).reduce(
-    (sum, value) => sum + Number(value || 0),
-    0,
-  );
+  const totalRecipes =
+    Number(userData.recettes.entrees || 0)
+    + Number(userData.recettes.plats || 0)
+    + Number(userData.recettes.desserts || 0)
+    + Number(userData.recettes.boissons || 0);
 
   const accountItems = [
     {
       icon: '/icon/Recipes.svg',
       label: 'Mes recettes',
       sub: `${totalRecipes} recette${totalRecipes > 1 ? 's' : ''}`,
+      subLinks: [
+        {
+          label: 'Recettes en cours de validation',
+          path: '/membre/mes-recettes/recettes-en-validation',
+          count: userData.recettes.recettesEnValidation || 0,
+        },
+      ],
       path: '/membre/mes-recettes',
       subTone: 'recipe',
     },
@@ -515,6 +532,24 @@ export default function Profil() {
                 <span className={styles.accountContent}>
                   <strong>{item.label}</strong>
                   <small className={item.subTone === 'recipe' ? styles.accountSubTag : undefined}>{item.sub}</small>
+                  {Array.isArray(item.subLinks) && item.subLinks.length > 0 ? (
+                    <span className={styles.accountSubLinks}>
+                      {item.subLinks.map((subLink) => (
+                        <button
+                          key={subLink.path}
+                          type="button"
+                          className={styles.accountSubLink}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            navigate(subLink.path);
+                          }}
+                        >
+                          <span>{subLink.label}</span>
+                          <strong>{subLink.count}</strong>
+                        </button>
+                      ))}
+                    </span>
+                  ) : null}
                 </span>
                 <span className={styles.accountArrow}>›</span>
               </button>
@@ -652,9 +687,9 @@ export default function Profil() {
               </div>
               <div className={styles.counts}>
                 <span className={styles.count}>{userData.recettes.entrees}</span>
-                <span className={styles.count}>{userData.recettes.plats.toString().padStart(2, '0')}</span>
+                <span className={styles.count}>{userData.recettes.plats}</span>
                 <span className={styles.count}>{userData.recettes.desserts}</span>
-                <span className={styles.count}>{userData.recettes.boissons.toString().padStart(2, '0')}</span>
+                <span className={styles.count}>{userData.recettes.boissons}</span>
               </div>
             </div>
 
