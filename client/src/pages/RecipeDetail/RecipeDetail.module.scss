@@ -63,6 +63,28 @@
   transform: translateY(-1px);
 }
 
+.editFromDetailButton {
+  @include ui.secondary-button;
+  position: absolute;
+  top: 1.6rem;
+  right: 1rem;
+  z-index: 3;
+  background: rgba(31, 29, 30, 0.38);
+  font-size: 0.9rem;
+  backdrop-filter: blur(4px);
+}
+
+.editFromDetailButton:hover:not(:disabled) {
+  background: rgba(31, 29, 30, 0.58);
+  border-color: rgba(246, 241, 232, 0.75);
+  transform: translateY(-1px);
+}
+
+.editFromDetailButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .backArrow {
   font-size: 1rem;
   line-height: 1;
@@ -162,6 +184,15 @@
 @media (prefers-reduced-motion: reduce) {
   .heroReveal {
     @include ui.hero-reveal-reduced-motion;
+  }
+}
+
+@media (max-width: 767px) {
+  .editFromDetailButton {
+    top: 4.6rem;
+    right: 1rem;
+    font-size: 0.82rem;
+    padding-inline: 0.72rem;
   }
 }
 

@@ -290,6 +290,15 @@ export default function RecipeDetail() {
   const recipeYear = year ?? 2010;
   const recipeGenre = genre ?? "Cuisine fiction";
   const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;
+  const canEditFromMemberSpace = Boolean(state?.fromMemberRecipes);
+
+  function handleOpenMemberEditForm() {
+    const targetRecipeId = state?.openEditRecipeId || recipe?.id;
+
+    navigate("/membre/mes-recettes", {
+      state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
+    });
+  }
 
   return (
     <main className={styles.page}>
@@ -311,6 +320,18 @@ export default function RecipeDetail() {
             <span className={styles.backArrow} aria-hidden="true">←</span>
             <span>Retour</span>
           </button>
+
+          {canEditFromMemberSpace && (
+            <button
+              type="button"
+              className={`${styles.editFromDetailButton} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              onClick={handleOpenMemberEditForm}
+              title="Ouvrir le formulaire de modification"
+            >
+              Modifier ma recette
+            </button>
+          )}
+
           <div className={styles.heroContent}>
             <h1 className={`${styles.title} ${styles.heroReveal} ${styles.heroRevealDelay2} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>{title}</h1>
             <p className={`${styles.heroBadge} ${styles.heroReveal} ${styles.heroRevealDelay3} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>

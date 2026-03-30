@@ -3,12 +3,13 @@ import styles from "./RecipeCard.module.scss";
 
 const RECIPE_IMAGE_FALLBACK = "/img/hero-home.png";
 
-export default function RecipeCard({ recipe }) {
+export default function RecipeCard({ recipe, to, linkState }) {
   if (!recipe) return null;
 
   const { id, image, fallbackImage, title, category, mediaTitle, mediaType, duration } = recipe;
   const categoryKey = category?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const mediaTypeLabel = mediaType?.toLowerCase().startsWith("f") ? "F" : "S";
+  const targetPath = to || `/recipes/${recipe.slug || recipe.id}`;
 
   const handleImageError = (event) => {
     const nextSource = event.currentTarget.dataset.fallbackSrc || RECIPE_IMAGE_FALLBACK;
@@ -21,7 +22,7 @@ export default function RecipeCard({ recipe }) {
   };
 
   return (
-    <Link to={`/recipes/${recipe.slug || recipe.id}`} className={styles.cardLink}>
+    <Link to={targetPath} state={linkState} className={styles.cardLink}>
       <article className={`${styles.card} ${styles[categoryKey] || ""}`}>
         <div className={styles.imageWrapper}>
           <img
