@@ -31,10 +31,25 @@ function normalizeCategoryLabel(value) {
   return value || "Autre";
 }
 
+function toFiniteNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function normalizeApiRecipe(apiRecipe) {
-  const prep = Number(apiRecipe?.tempsPreparation);
-  const cook = Number(apiRecipe?.tempsCuisson);
-  const duration = [prep, cook].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
+  const prepTime = toFiniteNumber(apiRecipe?.prepTime)
+    ?? toFiniteNumber(apiRecipe?.preparationTime)
+    ?? toFiniteNumber(apiRecipe?.tempsPreparation);
+  const cookTime = toFiniteNumber(apiRecipe?.cookTime)
+    ?? toFiniteNumber(apiRecipe?.cookingTime)
+    ?? toFiniteNumber(apiRecipe?.tempsCuisson);
+  const servings = toFiniteNumber(apiRecipe?.servings)
+    ?? toFiniteNumber(apiRecipe?.people)
+    ?? toFiniteNumber(apiRecipe?.nbPersonnes)
+    ?? toFiniteNumber(apiRecipe?.nombrePersonnes);
+  const totalTime = toFiniteNumber(apiRecipe?.totalTime)
+    ?? toFiniteNumber(apiRecipe?.duration)
+    ?? [prepTime, cookTime].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
 
   const ingredients = (apiRecipe.ingredients || []).map((ingredient) => {
     if (typeof ingredient === 'string') return ingredient;
@@ -62,14 +77,15 @@ function normalizeApiRecipe(apiRecipe) {
     posterImage: apiRecipe.posterImage || apiRecipe.media?.posterUrl || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
-    duration,
+    duration: totalTime,
     description: apiRecipe.description || apiRecipe.media?.synopsis || null,
     director: apiRecipe.director || apiRecipe.media?.realisateur || null,
     year: apiRecipe.year,
     genre: apiRecipe.genre,
-    servings: apiRecipe.servings ?? apiRecipe.nbPersonnes ?? undefined,
-    prepTime: apiRecipe.prepTime ?? apiRecipe.tempsPreparation ?? undefined,
-    cookTime: apiRecipe.cookTime ?? apiRecipe.tempsCuisson ?? undefined,
+    servings,
+    prepTime,
+    cookTime,
+    totalTime,
     ingredients,
     steps,
   };
@@ -437,11 +453,17 @@ export default function RecipeDetail() {
                 <span className={styles.sectionLine} />
               </div>
 
-              <div className={styles.similarGrid}>
-                {similarRecipes.map((similarRecipe) => (
-                  <RecipeCard key={similarRecipe.id} recipe={similarRecipe} />
-                ))}
-              </div>
+              {similarRecipes.length > 0 ? (
+                <div className={styles.similarGrid}>
+                  {similarRecipes.map((similarRecipe) => (
+                    <RecipeCard key={similarRecipe.id} recipe={similarRecipe} />
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.similarEmptyState}>
+                  Aucune recette similaire n'est disponible pour le moment.
+                </p>
+              )}
             </section>
           </div>
         </div>
