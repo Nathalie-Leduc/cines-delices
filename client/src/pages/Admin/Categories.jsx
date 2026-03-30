@@ -10,12 +10,15 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
+const DEFAULT_CATEGORY_COLOR = '#CC9A5C';
+
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
-  const [newCategoryName, setNewCategoryName] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
-  const [editingCategoryName, setEditingCategoryName] = useState('');
-  const [selectedColor, setSelectedColor] = useState('#CC9A5C');
+  const [categoryFormName, setCategoryFormName] = useState('');
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_CATEGORY_COLOR);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,7 +37,7 @@ function AdminCategories() {
   }, []);
 
   const filteredCategories = useMemo(() => {
-    const normalizedQuery = newCategoryName.trim().toLowerCase();
+    const normalizedQuery = searchInput.trim().toLowerCase();
 
     if (!normalizedQuery) {
       return categories;
@@ -43,10 +46,29 @@ function AdminCategories() {
     return categories.filter((category) => (
       String(category.name || '').toLowerCase().includes(normalizedQuery)
     ));
-  }, [categories, newCategoryName]);
+  }, [categories, searchInput]);
+
+  function resetCategoryEditor() {
+    setIsCreatingCategory(false);
+    setEditingCategory(null);
+    setCategoryFormName('');
+    setSelectedColor(DEFAULT_CATEGORY_COLOR);
+    setShowEditModal(false);
+    setShowDeleteModal(false);
+    setDeleteModalError('');
+  }
+
+  function openCreateCategoryPanel() {
+    setIsCreatingCategory(true);
+    setEditingCategory(null);
+    setCategoryFormName('');
+    setSelectedColor(DEFAULT_CATEGORY_COLOR);
+    setDeleteModalError('');
+    setError('');
+  }
 
   async function handleCreateCategory() {
-    const name = newCategoryName.trim();
+    const name = categoryFormName.trim();
 
     if (!name) {
       setError('Veuillez saisir un nom de catégorie.');
@@ -65,7 +87,7 @@ function AdminCategories() {
     try {
       const created = await createAdminCategory({ name, color: selectedColor });
       setCategories((previous) => [created, ...previous]);
-      setNewCategoryName('');
+      resetCategoryEditor();
       setError('');
     } catch (createError) {
       setError(createError.message || 'Création impossible.');
@@ -77,7 +99,7 @@ function AdminCategories() {
       return;
     }
 
-    const nextName = editingCategoryName.trim();
+    const nextName = categoryFormName.trim();
 
     if (!nextName) {
       setError('Le nom de la catégorie est obligatoire.');
@@ -97,9 +119,7 @@ function AdminCategories() {
     try {
       const updatedCategory = await updateAdminCategory(editingCategory.id, { name: nextName, color: selectedColor });
       setCategories((previous) => previous.map((category) => (category.id === updatedCategory.id ? updatedCategory : category)));
-      setShowEditModal(false);
-      setEditingCategory(null);
-      setEditingCategoryName('');
+      resetCategoryEditor();
       setError('');
     } catch (updateError) {
       setError(updateError.message || 'Modification impossible.');
@@ -119,10 +139,7 @@ function AdminCategories() {
     try {
       await deleteAdminCategory(editingCategory.id);
       setCategories((previous) => previous.filter((category) => category.id !== editingCategory.id));
-      setShowDeleteModal(false);
-      setEditingCategory(null);
-      setEditingCategoryName('');
-      setDeleteModalError('');
+      resetCategoryEditor();
       setError('');
     } catch (deleteError) {
       setDeleteModalError(deleteError.message || 'Suppression impossible.');
@@ -143,7 +160,7 @@ function AdminCategories() {
         />
       ) : null}
 
-      {!editingCategory && (
+      {!editingCategory && !isCreatingCategory && (
         <>
           <form
             className={styles.categoriesSearchRow}
@@ -156,9 +173,9 @@ function AdminCategories() {
                 type="search"
                 className={styles.categoriesSearchInput}
                 placeholder="Rechercher une catégorie"
-                value={newCategoryName}
+                value={searchInput}
                 onChange={(event) => {
-                  setNewCategoryName(event.target.value);
+                  setSearchInput(event.target.value);
                   if (error) {
                     setError('');
                   }
@@ -171,11 +188,20 @@ function AdminCategories() {
               <button type="submit" className={styles.categoriesSearchButton}>
                 Rechercher
               </button>
-              <button type="button" className={`${styles.roundIconBtn} ${styles.categoriesAddButton}`.trim()} aria-label="Ajouter" onClick={handleCreateCategory}>
-                <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>+</span>
-              </button>
             </div>
           </form>
+
+          <div className={styles.categoryCreatePrompt}>
+            <p className={styles.categoryCreatePromptText}>Cliquez ici pour ajouter une catégorie</p>
+            <button
+              type="button"
+              className={`${styles.roundIconBtn} ${styles.categoriesAddButton}`.trim()}
+              aria-label="Ajouter une catégorie"
+              onClick={openCreateCategoryPanel}
+            >
+              <span style={{ fontSize: '1.15rem', lineHeight: 1 }}>+</span>
+            </button>
+          </div>
 
           <Alert
             type="error"
@@ -206,8 +232,9 @@ function AdminCategories() {
                     aria-label={`Modifier la catégorie ${category.name}`}
                     onClick={() => {
                       setEditingCategory(category);
-                      setEditingCategoryName(category.name);
+                      setCategoryFormName(category.name);
                       setSelectedColor(category.color);
+                      setIsCreatingCategory(false);
                       setDeleteModalError('');
                       setError('');
                     }}
@@ -220,7 +247,8 @@ function AdminCategories() {
                     aria-label={`Supprimer la catégorie ${category.name}`}
                     onClick={() => {
                       setEditingCategory(category);
-                      setEditingCategoryName(category.name);
+                      setCategoryFormName(category.name);
+                      setIsCreatingCategory(false);
                       setDeleteModalError('');
                       setShowDeleteModal(true);
                       setError('');
@@ -235,8 +263,8 @@ function AdminCategories() {
             {!isLoading && !error && filteredCategories.length === 0 ? (
               <StatusBlock
                 variant="empty"
-                title={newCategoryName.trim() ? 'Aucune catégorie trouvée' : 'Aucune catégorie enregistrée'}
-                message={newCategoryName.trim()
+                title={searchInput.trim() ? 'Aucune catégorie trouvée' : 'Aucune catégorie enregistrée'}
+                message={searchInput.trim()
                   ? 'Essaie une autre recherche pour retrouver une catégorie.'
                   : 'Ajoute une première catégorie pour commencer à organiser les recettes.'}
                 className={styles.pageState}
@@ -246,24 +274,38 @@ function AdminCategories() {
         </>
       )}
 
-      {editingCategory && !showDeleteModal && (
+      {(editingCategory || isCreatingCategory) && !showDeleteModal && (
         <div className={styles.colorEditor}>
           <div className={styles.headerLine}>
-            <h2>Modifier une catégorie</h2>
+            <h2>{isCreatingCategory ? 'Ajouter une catégorie' : 'Modifier une catégorie'}</h2>
           </div>
+
+          <p className={styles.categoryEditorLead}>
+            {isCreatingCategory
+              ? 'Choisissez un nom et une couleur pour créer une nouvelle catégorie.'
+              : 'Modifiez le nom et la couleur de la catégorie sélectionnée.'}
+          </p>
+
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.pageState}
+          />
 
           <label className={styles.categoryNameLabel}>
             Nom de la catégorie
             <input
               type="text"
               className={styles.categoryNameField}
-              value={editingCategoryName}
+              value={categoryFormName}
               onChange={(event) => {
-                setEditingCategoryName(event.target.value);
+                setCategoryFormName(event.target.value);
                 if (error) {
                   setError('');
                 }
               }}
+              placeholder={isCreatingCategory ? 'Ex. Brunch' : undefined}
             />
           </label>
 
@@ -283,9 +325,26 @@ function AdminCategories() {
             onChange={(event) => setSelectedColor(`#${event.target.value.replace(/[^0-9A-Fa-f]/g, '').slice(0, 6)}`)}
           />
 
-          <button type="button" className={`${styles.btnSuccess} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowEditModal(true)}>
-            Enregistrer
-          </button>
+          <div className={styles.categoryEditorActions}>
+            <button
+              type="button"
+              className={`${styles.btnSuccess} ${styles.fullWidthBtn}`.trim()}
+              onClick={isCreatingCategory ? handleCreateCategory : () => setShowEditModal(true)}
+            >
+              {isCreatingCategory ? 'Ajouter la catégorie' : 'Enregistrer'}
+            </button>
+
+            <button
+              type="button"
+              className={`${styles.btnMuted} ${styles.fullWidthBtn}`.trim()}
+              onClick={() => {
+                resetCategoryEditor();
+                setError('');
+              }}
+            >
+              Retour à la liste
+            </button>
+          </div>
         </div>
       )}
 
@@ -294,10 +353,7 @@ function AdminCategories() {
           title="Supprimer la catégorie"
           confirmLabel="Supprimer"
           onCancel={() => {
-            setShowDeleteModal(false);
-            setEditingCategory(null);
-            setEditingCategoryName('');
-            setDeleteModalError('');
+            resetCategoryEditor();
           }}
           onConfirm={handleDeleteCategory}
         >
