@@ -304,15 +304,16 @@
 .categoryCreatePromptButton {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  width: min(100%, 860px);
+  justify-content: center;
+  gap: 0.7rem;
+  width: fit-content;
+  max-width: 100%;
   margin: -0.2rem 0 1.15rem;
-  padding: 0.95rem 1.15rem;
-  border: 1px solid rgba(246, 241, 232, 0.78);
-  border-radius: 18px;
-  background: rgba(31, 29, 30, 0.32);
-  color: #f6f1e8;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(246, 241, 232, 0.34);
+  border-radius: 999px;
+  background: rgba(31, 29, 30, 0.18);
+  color: rgba(246, 241, 232, 0.9);
   text-align: left;
   cursor: pointer;
   transition:
@@ -323,18 +324,19 @@
 
   &:hover {
     transform: translateY(-1px);
-    border-color: rgba(246, 241, 232, 0.96);
-    background: rgba(31, 29, 30, 0.48);
-    box-shadow: 0 14px 24px rgba(0, 0, 0, 0.16);
+    border-color: rgba(246, 241, 232, 0.62);
+    background: rgba(31, 29, 30, 0.28);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
   }
 }
 
 .categoryCreatePromptText {
   margin: 0;
-  color: rgba(246, 241, 232, 0.86);
+  color: inherit;
   font-family: 'Inter', sans-serif;
-  font-size: 0.96rem;
-  line-height: 1.4;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.2;
 }
 
 .categoryCreatePromptIcon {
@@ -342,12 +344,12 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
-  width: 2.7rem;
-  height: 2.7rem;
-  border: 1px solid rgba(246, 241, 232, 0.78);
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 1px solid rgba(246, 241, 232, 0.42);
   border-radius: 50%;
-  color: #f6f1e8;
-  font-size: 1.45rem;
+  color: inherit;
+  font-size: 1.12rem;
   font-weight: 600;
   line-height: 1;
 }
@@ -1652,8 +1654,9 @@
   }
 
   .categoryCreatePromptButton {
-    width: 100%;
-    padding: 0.9rem 1rem;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0.68rem 0.95rem;
   }
 
   .usersSearchRow {
