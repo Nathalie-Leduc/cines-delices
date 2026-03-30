@@ -1,11 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import AuthShell from '../../components/AuthShell/AuthShell.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { getMe } from '../../services/api.js';
 import styles from './Contact.module.scss';
+
+const EMPTY_IDENTITY = {
+  nom: '',
+  prenom: '',
+  email: '',
+};
+
+function mapProfileToIdentity(profile) {
+  return {
+    nom: String(profile?.nom || '').trim(),
+    prenom: String(profile?.prenom || profile?.pseudo || '').trim(),
+    email: String(profile?.email || '').trim(),
+  };
+}
 
 export default function Contact() {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
+  const [prefilledIdentity, setPrefilledIdentity] = useState(EMPTY_IDENTITY);
   const [form, setForm] = useState({
     nom: '',
     prenom: '',
@@ -15,6 +33,69 @@ export default function Contact() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!isAuthenticated) {
+      setPrefilledIdentity(EMPTY_IDENTITY);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    const hydrateIdentity = async () => {
+      const fromContext = mapProfileToIdentity(user);
+      const fromStorage = (() => {
+        try {
+          const raw = localStorage.getItem('auth_user');
+          return raw ? mapProfileToIdentity(JSON.parse(raw)) : EMPTY_IDENTITY;
+        } catch {
+          return EMPTY_IDENTITY;
+        }
+      })();
+
+      const fallbackIdentity = {
+        nom: fromContext.nom || fromStorage.nom,
+        prenom: fromContext.prenom || fromStorage.prenom,
+        email: fromContext.email || fromStorage.email,
+      };
+
+      if (isMounted) {
+        setPrefilledIdentity(fallbackIdentity);
+        setForm((prev) => ({
+          ...prev,
+          nom: prev.nom || fallbackIdentity.nom,
+          prenom: prev.prenom || fallbackIdentity.prenom,
+          email: prev.email || fallbackIdentity.email,
+        }));
+      }
+
+      try {
+        const profile = await getMe();
+        if (!isMounted) {
+          return;
+        }
+
+        const resolvedIdentity = mapProfileToIdentity(profile);
+        setPrefilledIdentity(resolvedIdentity);
+        setForm((prev) => ({
+          ...prev,
+          nom: prev.nom || resolvedIdentity.nom,
+          prenom: prev.prenom || resolvedIdentity.prenom,
+          email: prev.email || resolvedIdentity.email,
+        }));
+      } catch {
+        // On garde le fallback (context/localStorage) si l'API échoue.
+      }
+    };
+
+    hydrateIdentity();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated, user]);
 
   function handleChange(field, value) {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -68,9 +149,9 @@ export default function Contact() {
 
       // Réinitialise le formulaire
       setForm({
-        nom: '',
-        prenom: '',
-        email: '',
+        nom: prefilledIdentity.nom,
+        prenom: prefilledIdentity.prenom,
+        email: prefilledIdentity.email,
         demande: '',
       });
     } catch {
