@@ -91,7 +91,11 @@
   white-space: nowrap;
   margin: 0 auto;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
-  display: block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 2.35rem;
 }
 
 .topRow {
@@ -928,6 +932,31 @@
 .recipesBadgeCentered {
   margin: 0 0 0 auto;
   align-self: center;
+}
+
+.adminCrownBadge {
+  @include ui.badge-chip(
+    $background: rgba(201, 164, 92, 0.18),
+    $color: #fbdca6,
+    $border: rgba(201, 164, 92, 0.55),
+    $padding: 0.42rem 0.78rem,
+    $font-size: 0.74rem,
+    $font-weight: 700
+  );
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.1rem;
+  min-height: 2.35rem;
+  margin: 0 0 0 auto;
+  align-self: center;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
+
+  img {
+    width: 17px;
+    height: 17px;
+    display: block;
+  }
 }
 
 
