@@ -165,9 +165,15 @@ function AdminUtilisateurs() {
                     </span>
                   </span>
                 </span>
-                <span className={styles.recipesBadgeCentered}>
-                  {user.totalRecipes} recette{user.totalRecipes > 1 ? 's' : ''}
-                </span>
+                {user.role === 'ADMIN' ? (
+                  <span className={styles.adminCrownBadge} aria-label="Administrateur" title="Administrateur">
+                    <img src="/icon/Crown.svg" alt="" aria-hidden="true" />
+                  </span>
+                ) : (
+                  <span className={styles.recipesBadgeCentered}>
+                    {user.totalRecipes} recette{user.totalRecipes > 1 ? 's' : ''}
+                  </span>
+                )}
                 <span className={styles.rowArrow}>›</span>
               </button>
             ))}
