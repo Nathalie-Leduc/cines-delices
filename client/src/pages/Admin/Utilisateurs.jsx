@@ -22,7 +22,7 @@ function AdminUtilisateurs() {
   const { user: currentUser } = useAuth();
   const location = useLocation();
   const [users, setUsers] = useState([]);
-  const [query, setQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,14 +58,14 @@ function AdminUtilisateurs() {
   }, []);
 
   const filteredUsers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = searchInput.trim().toLowerCase();
     if (!normalizedQuery) {
       return usersWithTotals;
     }
     return usersWithTotals.filter((user) => {
       return `${user.nom} ${user.displayName || user.prenom || ''} ${user.email}`.toLowerCase().includes(normalizedQuery);
     });
-  }, [query, usersWithTotals]);
+  }, [searchInput, usersWithTotals]);
 
   async function handleDeleteUser() {
     if (!selectedUser) return;
@@ -115,16 +115,27 @@ function AdminUtilisateurs() {
 
       {!selectedUser && (
         <>
-          <div className={styles.usersSearchRow}>
-            <input
-              className={styles.usersSearchInput}
-              type="text"
-              placeholder="Rechercher un utilisateur"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            <img src="/icon/Search.svg" alt="" aria-hidden="true" />
-          </div>
+          <form
+            className={styles.usersSearchRow}
+            onSubmit={(event) => {
+              event.preventDefault();
+            }}
+          >
+            <div className={styles.usersSearchField}>
+              <input
+                className={styles.usersSearchInput}
+                type="search"
+                placeholder="Rechercher un utilisateur"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                aria-label="Rechercher un utilisateur"
+              />
+            </div>
+
+            <button type="submit" className={styles.usersSearchButton}>
+              Rechercher
+            </button>
+          </form>
 
           <div className={styles.sectionTitle}>
             <h3>Liste des utilisateurs</h3>
@@ -164,8 +175,8 @@ function AdminUtilisateurs() {
             {!isLoading && !error && filteredUsers.length === 0 ? (
               <StatusBlock
                 variant="empty"
-                title={query.trim() ? 'Aucun utilisateur trouvé' : 'Aucun utilisateur disponible'}
-                message={query.trim()
+                title={searchInput.trim() ? 'Aucun utilisateur trouvé' : 'Aucun utilisateur disponible'}
+                message={searchInput.trim()
                   ? 'Essaie une autre recherche pour retrouver un membre ou un administrateur.'
                   : 'La liste des utilisateurs apparaîtra ici dès qu’un compte sera disponible.'}
                 className={styles.pageState}
