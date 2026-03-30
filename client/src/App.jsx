@@ -23,6 +23,7 @@ import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } 
 import ProtectedRoute from './router';
 import AdminRoute from './router/AdminRoute.jsx';
 import CookieConsent from './components/CookieConsent/CookieConsent.jsx';
+import ReglesModeration from './pages/ReglesModeration/ReglesModerations.jsx';
 
 
 
@@ -43,6 +44,8 @@ function App() {
         <Route path="/mentions-legales" element={<MentionsLegales />} />
         <Route path="/politique-confidentialite" element={<PolitiqueConfidentialite />} />
         <Route path="/politique-cookies" element={<PolitiqueCookies />} />
+        <Route path="/regles-moderation" element={<ReglesModeration />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
       </Route>

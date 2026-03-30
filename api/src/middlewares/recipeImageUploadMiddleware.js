@@ -1,29 +1,45 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import multer from 'multer';
+import sharp from 'sharp';
+
+// ============================================================
+// MIDDLEWARE UPLOAD IMAGE — Multer + Sharp
+// ============================================================
+//
+// Flux :
+//   1. Multer reçoit l'image en mémoire (buffer, pas sur disque)
+//   2. Sharp convertit en WebP, redimensionne si trop grande
+//   3. Le fichier final .webp est écrit sur disque
+//   4. L'URL publique est injectée dans req.body.imageUrl
+//
+// Avantages du WebP :
+//   - 25-35% plus léger que JPG à qualité égale
+//   - Supporté par tous les navigateurs modernes
+//   - Meilleur pour le SEO et les performances
+// ============================================================
 
 const UPLOADS_DIR = path.resolve(process.cwd(), 'public', 'uploads');
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp']);
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 
-function ensureUploadsDir() {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-}
+// Configuration Sharp : qualité et dimensions max
+const SHARP_CONFIG = {
+  webpQuality: 80,        // 80% = bon compromis qualité/poids
+  maxWidth: 1200,          // largeur max (les recettes n'ont pas besoin de 4K)
+  maxHeight: 1200,         // hauteur max
+};
 
-ensureUploadsDir();
+// Créer le dossier uploads s'il n'existe pas
+fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, UPLOADS_DIR);
-  },
-  filename: (_req, file, cb) => {
-    const originalExt = path.extname(file.originalname || '').toLowerCase();
-    const ext = ALLOWED_IMAGE_EXTENSIONS.has(originalExt) ? originalExt : '.png';
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `recipe-${unique}${ext}`);
-  },
-});
+// ─────────────────────────────────────────────
+// Multer en mode MÉMOIRE (buffer)
+// ─────────────────────────────────────────────
+// On ne sauvegarde pas le fichier brut sur disque.
+// On le garde en RAM le temps que Sharp le convertisse.
+const memoryStorage = multer.memoryStorage();
 
 function imageFileFilter(_req, file, cb) {
   const extension = path.extname(file.originalname || '').toLowerCase();
@@ -38,59 +54,62 @@ function imageFileFilter(_req, file, cb) {
   cb(new Error('Seuls les fichiers PNG, JPG, JPEG ou WEBP sont acceptes.'));
 }
 
-const uploadSingleRecipeImage = multer({
-  storage,
+const uploadToMemory = multer({
+  storage: memoryStorage,
   fileFilter: imageFileFilter,
   limits: {
     fileSize: MAX_IMAGE_SIZE_BYTES,
   },
 }).single('image');
 
+// ─────────────────────────────────────────────
+// Conversion Sharp : buffer → fichier .webp
+// ─────────────────────────────────────────────
+//   1. Redimensionne si trop grande (max 1200x1200)
+//   2. Convertit en WebP (format optimisé)
+//   3. Compresse à 80% de qualité
+//   4. Écrit le fichier final sur disque
+async function convertToWebp(buffer) {
+  const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+  const filename = `recipe-${unique}.webp`;
+  const outputPath = path.join(UPLOADS_DIR, filename);
+
+  await sharp(buffer)
+    .resize({
+      width: SHARP_CONFIG.maxWidth,
+      height: SHARP_CONFIG.maxHeight,
+      fit: 'inside',            // garde les proportions, ne déforme pas
+      withoutEnlargement: true, // ne pas agrandir si plus petit que le max
+    })
+    .webp({
+      quality: SHARP_CONFIG.webpQuality,
+    })
+    .toFile(outputPath);
+
+  return filename;
+}
+
+// ─────────────────────────────────────────────
+// URL publique
+// ─────────────────────────────────────────────
 function buildPublicImageUrl(req, filename) {
   const baseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`;
   return `${baseUrl}/uploads/${filename}`;
 }
 
-function hasValidImageSignature(filePath) {
-  const descriptor = fs.openSync(filePath, 'r');
-
-  try {
-    const header = Buffer.alloc(16);
-    const bytesRead = fs.readSync(descriptor, header, 0, header.length, 0);
-    const signature = header.subarray(0, bytesRead);
-
-    const isPng = signature.length >= 8
-      && signature[0] === 0x89
-      && signature[1] === 0x50
-      && signature[2] === 0x4e
-      && signature[3] === 0x47
-      && signature[4] === 0x0d
-      && signature[5] === 0x0a
-      && signature[6] === 0x1a
-      && signature[7] === 0x0a;
-
-    const isJpeg = signature.length >= 3
-      && signature[0] === 0xff
-      && signature[1] === 0xd8
-      && signature[2] === 0xff;
-
-    const isWebp = signature.length >= 12
-      && signature.subarray(0, 4).toString('ascii') === 'RIFF'
-      && signature.subarray(8, 12).toString('ascii') === 'WEBP';
-
-    return isPng || isJpeg || isWebp;
-  } finally {
-    fs.closeSync(descriptor);
-  }
-}
-
+// ─────────────────────────────────────────────
+// Middleware principal : upload + conversion
+// ─────────────────────────────────────────────
+// Remplace l'ancien handleRecipeImageUpload.
+// Même signature, même comportement côté contrôleur,
+// mais maintenant les images sortent en WebP optimisé.
 export function handleRecipeImageUpload(req, res, next) {
-  uploadSingleRecipeImage(req, res, (error) => {
+  uploadToMemory(req, res, async (error) => {
+    // Gestion des erreurs Multer (taille, type...)
     if (error instanceof multer.MulterError) {
       if (error.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ message: 'Image trop lourde: 5MB maximum.' });
       }
-
       return res.status(400).json({ message: 'Upload image invalide.' });
     }
 
@@ -98,19 +117,33 @@ export function handleRecipeImageUpload(req, res, next) {
       return res.status(400).json({ message: error.message || 'Upload image invalide.' });
     }
 
-    if (req.file?.filename) {
-      if (!hasValidImageSignature(req.file.path)) {
-        fs.unlink(req.file.path, () => {});
-        return res.status(400).json({ message: 'Le fichier envoye n\'est pas une image valide (PNG, JPG, JPEG ou WEBP).' });
-      }
-
-      req.body.imageUrl = buildPublicImageUrl(req, req.file.filename);
+    // Si pas de fichier uploadé, on continue (l'image est optionnelle)
+    if (!req.file?.buffer) {
+      return next();
     }
 
-    return next();
+    // Conversion en WebP avec Sharp
+    try {
+      const filename = await convertToWebp(req.file.buffer);
+      req.body.imageUrl = buildPublicImageUrl(req, filename);
+
+      // Stocker le nom du fichier pour d'éventuels usages ultérieurs
+      req.file.filename = filename;
+      req.file.path = path.join(UPLOADS_DIR, filename);
+
+      return next();
+    } catch (sharpError) {
+      console.error('[SHARP] Erreur conversion image :', sharpError.message);
+      return res.status(400).json({
+        message: 'Impossible de traiter cette image. Vérifiez qu\'il s\'agit bien d\'un fichier PNG, JPG ou WEBP valide.',
+      });
+    }
   });
 }
 
+// ─────────────────────────────────────────────
+// Parser les champs multipart (inchangé)
+// ─────────────────────────────────────────────
 export function parseRecipeMultipartFields(req, _res, next) {
   if (typeof req.body?.ingredients === 'string') {
     try {

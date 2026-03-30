@@ -11,287 +11,274 @@ import styles from './PolitiqueConfidentialite.module.scss';
 export default function PolitiqueConfidentialite() {
   return (
     <div className={styles.page}>
-      <h1 className={styles.title}>Politique de confidentialité</h1>
+      <h1 className={styles.title}>🔐 Politique de confidentialité</h1>
 
       {/* ── Introduction ── */}
       <section className={styles.section}>
         <p>
-          La présente politique de confidentialité décrit comment CinéDélices
-          collecte, utilise et protège vos données personnelles, conformément
-          au Règlement Général sur la Protection des Données (RGPD — Règlement
-          UE 2016/679) et à la loi Informatique et Libertés du 6 janvier 1978
-          modifiée.
+          Bienvenue dans les coulisses de CinéDélices ! Ce document
+          explique comment on gère vos données personnelles. Spoiler
+          alert : on les protège mieux que le One Ring dans le Mordor.
         </p>
         <p>
-          CinéDélices est un projet pédagogique réalisé dans le cadre de la
-          formation CDA de l'école O'Clock. Il n'a pas de vocation commerciale.
+          CinéDélices est une production pédagogique O'Clock 2026.
+          Pas de studio hollywoodien derrière, juste une équipe de
+          développeurs passionnés de cinéma et de cuisine.
         </p>
       </section>
 
-      {/* ── 1. Responsable du traitement ── */}
+      {/* ── 1. Le réalisateur des données ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>1. Responsable du traitement</h2>
+        <h2 className={styles.sectionTitle}>🎬 Scène 1 — Le réalisateur des données</h2>
         <ul className={styles.list}>
-          <li><span className={styles.label}>Projet :</span> CinéDélices</li>
-          <li><span className={styles.label}>Responsable :</span> Équipe CinéDélices — O'Clock 2026</li>
+          <li><span className={styles.label}>Production :</span> CinéDélices</li>
+          <li><span className={styles.label}>Réalisateur :</span> Équipe CinéDélices — O'Clock 2026</li>
           <li>
-            <span className={styles.label}>Contact :</span> via
-            la <Link to="/contact" className={styles.link}>page Contact</Link> du site
+            <span className={styles.label}>Contacter le réalisateur :</span> via
+            la <Link to="/contact" className={styles.link}>page Contact</Link>
           </li>
         </ul>
       </section>
 
-      {/* ── 2. Données collectées ── */}
+      {/* ── 2. Ce qu'on filme ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>2. Données collectées</h2>
+        <h2 className={styles.sectionTitle}>📹 Scène 2 — Ce qu'on filme (données collectées)</h2>
 
-        <h3 className={styles.sectionTitle}>2.1 Données fournies par l'utilisateur</h3>
+        <h3 className={styles.sectionTitle}>Les scènes que vous nous donnez</h3>
         <ul className={styles.list}>
           <li>
-            <span className={styles.label}>Inscription :</span> adresse email,
-            pseudo, nom (optionnel), mot de passe
+            <span className={styles.label}>Casting (inscription) :</span> email,
+            pseudo, nom (optionnel), mot de passe — votre fiche d'acteur
           </li>
           <li>
-            <span className={styles.label}>Contribution :</span> recettes
-            (titre, instructions, ingrédients, image), association à un
-            film ou une série
+            <span className={styles.label}>Tournage (contribution) :</span> recettes,
+            ingrédients, photos — vos scénarios culinaires
           </li>
           <li>
-            <span className={styles.label}>Profil :</span> modifications du
-            pseudo, de l'email ou du nom
+            <span className={styles.label}>Retouches (profil) :</span> modifications
+            de pseudo, email ou nom — corrections au générique
           </li>
         </ul>
 
-        <h3 className={styles.sectionTitle}>2.2 Données collectées automatiquement</h3>
+        <h3 className={styles.sectionTitle}>Les scènes captées automatiquement</h3>
         <ul className={styles.list}>
           <li>
-            <span className={styles.label}>Date de dernière connexion :</span> enregistrée
-            à chaque authentification réussie, utilisée exclusivement pour
-            la gestion de l'inactivité des comptes
+            <span className={styles.label}>Date de dernière visite :</span> on
+            note quand vous êtes venu au cinéma pour la dernière fois.
+            Uniquement pour savoir si vous êtes encore dans la salle.
           </li>
           <li>
             <span className={styles.label}>Préférences cookies :</span> votre
-            choix d'acceptation ou de refus des cookies, stocké dans le
-            cookie « tarteaucitron » (durée : 6 mois)
+            choix au buffet Tarteaucitron (6 mois de mémoire)
           </li>
         </ul>
 
-        <h3 className={styles.sectionTitle}>2.3 Données NON collectées</h3>
+        <h3 className={styles.sectionTitle}>Ce qu'on ne filme JAMAIS</h3>
         <ul className={styles.list}>
-          <li>✅ Aucune donnée de géolocalisation</li>
-          <li>✅ Aucune donnée de navigation (pas d'analytics)</li>
-          <li>✅ Aucune donnée bancaire ou de paiement</li>
-          <li>✅ Aucune donnée sensible (santé, religion, orientation, etc.)</li>
+          <li>✅ Aucune donnée de géolocalisation (on ne vous suit pas avec un drone)</li>
+          <li>✅ Aucune donnée de navigation (pas de caméra cachée)</li>
+          <li>✅ Aucune donnée bancaire (c'est gratuit, comme un film en plein air)</li>
+          <li>✅ Aucune donnée sensible (votre vie privée reste hors-champ)</li>
         </ul>
       </section>
 
-      {/* ── 3. Finalités du traitement ── */}
+      {/* ── 3. Pourquoi on filme ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>3. Finalités du traitement</h2>
-        <p>Vos données sont utilisées exclusivement pour :</p>
+        <h2 className={styles.sectionTitle}>🎯 Scène 3 — Pourquoi on filme (finalités)</h2>
+        <p>
+          Chaque scène a une raison d'être dans un bon film.
+          Pareil pour vos données :
+        </p>
         <ul className={styles.list}>
           <li>
-            <span className={styles.label}>Authentification :</span> créer
-            votre compte, vous connecter et sécuriser votre session
+            <span className={styles.label}>Vous reconnaître :</span> vérifier
+            votre badge d'accès au plateau (authentification)
           </li>
           <li>
-            <span className={styles.label}>Fonctionnalités :</span> publier
-            des recettes, gérer vos contributions, recevoir des notifications
-            de modération
+            <span className={styles.label}>Tourner ensemble :</span> publier
+            des recettes, gérer vos contributions, recevoir les notes
+            du réalisateur (notifications de modération)
           </li>
           <li>
-            <span className={styles.label}>Conformité RGPD :</span> détecter
-            les comptes inactifs et vous prévenir avant suppression
-            automatique
+            <span className={styles.label}>Ranger le plateau :</span> détecter
+            les acteurs qui ont quitté la salle et nettoyer après eux (RGPD)
           </li>
           <li>
-            <span className={styles.label}>Communication :</span> vous envoyer
-            des emails liés au fonctionnement du service (prévenance
-            d'inactivité, confirmation de suppression)
+            <span className={styles.label}>Vous prévenir :</span> envoyer
+            des courriers de production (prévenance d'inactivité,
+            confirmation de suppression)
           </li>
         </ul>
-        <p>
-          Vos données ne sont <strong>jamais</strong> utilisées à des fins
-          publicitaires, de profilage, ou transmises à des tiers à des fins
-          commerciales.
+        <p className={styles.tmdb}>
+          🎯 Vos données ne sont <strong>jamais</strong> vendues,
+          échangées, ou projetées dans un autre cinéma. Promis sur
+          le Code du Cinéma.
         </p>
       </section>
 
       {/* ── 4. Base légale ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>4. Base légale du traitement</h2>
+        <h2 className={styles.sectionTitle}>⚖️ Scène 4 — Le contrat de production (base légale)</h2>
         <ul className={styles.list}>
           <li>
-            <span className={styles.label}>Consentement :</span> pour le dépôt
-            de cookies non essentiels (images TMDB)
+            <span className={styles.label}>Consentement :</span> pour le
+            buffet cookies (vous choisissez ce que vous mangez)
           </li>
           <li>
             <span className={styles.label}>Exécution du contrat :</span> pour
-            la création du compte et l'utilisation des fonctionnalités
-            du site
+            créer votre compte et utiliser le plateau (les fonctionnalités)
           </li>
           <li>
             <span className={styles.label}>Intérêt légitime :</span> pour
-            la sécurité du site (rate limiting, hashage des mots de passe)
-            et la gestion de l'inactivité
+            la sécurité du plateau (rate limiting, hashage) et le ménage
+            des comptes inactifs
           </li>
         </ul>
       </section>
 
       {/* ── 5. Durée de conservation ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>5. Durée de conservation</h2>
+        <h2 className={styles.sectionTitle}>⏱️ Scène 5 — Combien de temps on garde les rushes</h2>
         <p>
-          Conformément aux recommandations de la CNIL, vos données
-          personnelles sont conservées selon les règles suivantes :
+          Comme au cinéma, les rushes inutilisés finissent par être effacés.
+          La CNIL (notre critique de cinéma officiel) recommande :
         </p>
         <ul className={styles.list}>
           <li>
-            <span className={styles.label}>Compte actif :</span> vos données
-            sont conservées tant que vous utilisez le service
+            <span className={styles.label}>Compte actif :</span> vos rushes
+            sont conservés tant que vous tournez avec nous
           </li>
           <li>
-            <span className={styles.label}>11 mois d'inactivité :</span> un
-            email de prévenance vous est envoyé pour vous informer de
-            la suppression prochaine de votre compte
+            <span className={styles.label}>11 mois d'absence :</span> on
+            vous envoie un pigeon voyageur — « Le tournage continue,
+            vous revenez quand ? »
           </li>
           <li>
-            <span className={styles.label}>12 mois d'inactivité :</span> votre
-            compte et vos données personnelles sont automatiquement
-            supprimés. Un email de confirmation vous est envoyé.
+            <span className={styles.label}>12 mois d'absence :</span> clap
+            de fin. Compte supprimé, email de confirmation envoyé.
+            Fondu au noir.
           </li>
           <li>
-            <span className={styles.label}>Mot de passe :</span> stocké
-            uniquement sous forme hashée (Argon2), jamais en clair.
-            Supprimé avec le compte.
+            <span className={styles.label}>Mot de passe :</span> hashé avec
+            Argon2 (illisible même pour nous), supprimé avec le compte
           </li>
           <li>
-            <span className={styles.label}>Cookie de consentement :</span> durée
-            maximale de 6 mois (182 jours), conformément à la CNIL
+            <span className={styles.label}>Cookie de consentement :</span> 6
+            mois max — le chef pâtissier a une mémoire limitée
           </li>
         </ul>
       </section>
 
       {/* ── 6. Partage des données ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>6. Partage des données</h2>
+        <h2 className={styles.sectionTitle}>🤝 Scène 6 — Les partenaires de production</h2>
         <p>
-          Vos données personnelles ne sont <strong>jamais vendues</strong> à
-          des tiers. Elles peuvent être partagées dans les cas suivants
-          uniquement :
+          Vos données ne sont <strong>jamais vendues</strong>. Mais comme
+          tout film, on a quelques partenaires techniques :
         </p>
         <ul className={styles.list}>
           <li>
-            <span className={styles.label}>Hébergeur (Render) :</span> vos
-            données sont stockées sur les serveurs de Render dans le
-            cadre de l'hébergement du site
+            <span className={styles.label}>Render (hébergeur) :</span> nos
+            studios de tournage — vos données y sont stockées
           </li>
           <li>
-            <span className={styles.label}>TMDB :</span> lorsque vous
-            consultez une page contenant des images de films/séries,
-            votre navigateur contacte les serveurs de TMDB
-            (image.tmdb.org) pour charger les posters. Ce chargement
-            est soumis à votre consentement via le bandeau cookies.
+            <span className={styles.label}>TMDB (affiches) :</span> quand
+            vous regardez une page avec des posters, votre navigateur
+            contacte les entrepôts de TMDB. Soumis à votre accord au buffet.
           </li>
           <li>
-            <span className={styles.label}>Email (SMTP) :</span> les emails
-            de prévenance et de confirmation transitent par notre
-            fournisseur SMTP
+            <span className={styles.label}>SMTP (courrier) :</span> notre
+            facteur qui livre vos emails de prévenance
           </li>
         </ul>
       </section>
 
       {/* ── 7. Vos droits ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>7. Vos droits</h2>
+        <h2 className={styles.sectionTitle}>⭐ Scène 7 — Vos droits de star</h2>
         <p>
-          Conformément au RGPD, vous disposez des droits suivants :
+          Le RGPD, c'est comme la convention collective des acteurs.
+          Voici vos droits :
         </p>
         <ul className={styles.list}>
           <li>
             <span className={styles.label}>Droit d'accès (art. 15) :</span> consulter
-            toutes les données associées à votre compte depuis votre profil
+            votre fiche de casting depuis votre profil
           </li>
           <li>
-            <span className={styles.label}>Droit de rectification (art. 16) :</span> modifier
-            vos informations depuis votre profil membre
+            <span className={styles.label}>Droit de rectification (art. 16) :</span> corriger
+            votre nom au générique
           </li>
           <li>
-            <span className={styles.label}>Droit à l'effacement (art. 17) :</span> supprimer
-            votre compte à tout moment via « Supprimer mon compte »
-            dans votre profil
+            <span className={styles.label}>Droit à l'effacement (art. 17) :</span> quitter
+            la distribution à tout moment — « Supprimer mon compte »
           </li>
           <li>
             <span className={styles.label}>Droit d'opposition (art. 21) :</span> refuser
-            les cookies non essentiels via le panneau Tarteaucitron
+            les extras au buffet cookies via Tarteaucitron
           </li>
           <li>
             <span className={styles.label}>Droit à la portabilité (art. 20) :</span> demander
-            l'export de vos données en nous contactant
+            une copie de votre filmographie personnelle
           </li>
           <li>
-            <span className={styles.label}>Droit à la limitation (art. 18) :</span> demander
-            la suspension du traitement de vos données
+            <span className={styles.label}>Droit à la limitation (art. 18) :</span> mettre
+            le tournage en pause sur vos données
           </li>
         </ul>
         <p>
-          Pour exercer ces droits, contactez-nous via
+          Pour exercer vos droits, contactez la production via
           la <Link to="/contact" className={styles.link}>page Contact</Link>.
-          Nous répondrons dans un délai maximum de 30 jours.
+          Réponse en moins de 30 jours — plus rapide qu'un Marvel au montage.
         </p>
       </section>
 
       {/* ── 8. Sécurité ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>8. Mesures de sécurité</h2>
-        <p>
-          CinéDélices met en œuvre les mesures techniques et organisationnelles
-          suivantes pour protéger vos données :
-        </p>
+        <h2 className={styles.sectionTitle}>🛡️ Scène 8 — Les vigiles du plateau</h2>
         <ul className={styles.list}>
           <li>
-            <span className={styles.label}>Hashage :</span> mots de passe
-            hashés avec Argon2 (recommandation OWASP)
+            <span className={styles.label}>Hashage Argon2 :</span> vos mots
+            de passe sont broyés comme dans un mixer de Gordon Ramsay
           </li>
           <li>
-            <span className={styles.label}>Chiffrement :</span> communications
-            HTTPS (TLS) entre votre navigateur et nos serveurs
+            <span className={styles.label}>HTTPS :</span> vos données
+            voyagent en limousine blindée, pas en bus scolaire
           </li>
           <li>
-            <span className={styles.label}>Protection HTTP :</span> headers
-            de sécurité configurés avec Helmet.js
+            <span className={styles.label}>Helmet.js :</span> le casque
+            de sécurité obligatoire sur notre plateau
           </li>
           <li>
-            <span className={styles.label}>API sécurisée :</span> clé API TMDB
-            protégée côté serveur (proxy), rate limiting sur les routes
-            sensibles
+            <span className={styles.label}>Proxy TMDB :</span> la clé API
+            est planquée côté serveur, comme le twist d'un Nolan
           </li>
           <li>
-            <span className={styles.label}>Authentification :</span> tokens
-            JWT avec expiration automatique
+            <span className={styles.label}>JWT :</span> votre pass VIP
+            expire automatiquement — pas de resquille
           </li>
         </ul>
       </section>
 
       {/* ── 9. Réclamation ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>9. Réclamation</h2>
+        <h2 className={styles.sectionTitle}>📝 Scène 9 — Le bureau des réclamations</h2>
         <p>
-          Si vous estimez que le traitement de vos données ne respecte
-          pas la réglementation en vigueur, vous pouvez introduire une
-          réclamation auprès de la{' '}
+          Si vous pensez qu'on a raté notre prise sur la protection de
+          vos données, vous pouvez contacter les critiques officiels :
+          la{' '}
           <a
             href="https://www.cnil.fr/fr/plaintes"
             target="_blank"
             rel="noopener noreferrer"
             className={styles.link}
           >
-            CNIL (Commission Nationale de l'Informatique et des Libertés)
-          </a>.
+            CNIL
+          </a>{' '}
+          — les Rotten Tomatoes de la vie privée.
         </p>
       </section>
 
-      {/* ── Dernière mise à jour ── */}
       <p style={{ textAlign: 'center', opacity: 0.4, fontSize: '0.8rem', marginTop: '2rem' }}>
         Dernière mise à jour : mars 2026
       </p>

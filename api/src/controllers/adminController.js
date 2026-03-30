@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 import { generateUniqueSlug } from '../utils/slug.js';
+import { downloadAndConvertPoster } from '../lib/posterService.js';
 
 // ============================================================
 // ADMIN CONTROLLER — Ciné Délices
@@ -19,6 +20,8 @@ import { generateUniqueSlug } from '../utils/slug.js';
 //    → la notification n'est créée que si userId existe encore
 //
 // 5. Suppression du getAllRecipes placeholder (données en dur)
+//
+// 6 . Poster TMDB : téléchargés et convertis en WebP local via sharp
 // ============================================================
 
 const DEFAULT_CATEGORY_COLORS = {
@@ -57,11 +60,7 @@ function toDisplayWords(value) {
     .join(' ');
 }
 
-// ─────────────────────────────────────────────
-// MODIFIÉ : gère le cas user === null
-// ─────────────────────────────────────────────
 function formatSubmitter(user) {
-  // ← AJOUT : si le user est null (compte supprimé via SetNull)
   if (!user) {
     return {
       firstName: 'Ancien',
@@ -97,7 +96,6 @@ function formatRecipe(recipe) {
     .filter((value) => Number.isFinite(value) && value > 0)
     .reduce((sum, value) => sum + value, 0);
 
-  // formatSubmitter gère déjà user === null
   const submittedBy = formatSubmitter(recipe.user);
 
   return {
@@ -112,7 +110,7 @@ function formatRecipe(recipe) {
     media: recipe.media?.type === 'SERIES' ? 'S' : 'F',
     image: recipe.imageURL || recipe.media?.posterUrl || '/img/entrees.png',
     mediaPoster: recipe.media?.posterUrl || null,
-    director: recipe.media?.realisateur || null, // ← AJOUT : réalisateur/créateur du média
+    director: recipe.media?.realisateur || null,
     status: recipe.status,
     instructions: recipe.instructions,
     people: recipe.nombrePersonnes || 0,
@@ -211,11 +209,6 @@ function normalizeMediaKind(value) {
   return { prismaType: 'MOVIE', tmdbType: 'movie' };
 }
 
-// ─────────────────────────────────────────────
-// Extraction du réalisateur depuis les données TMDB
-// ─────────────────────────────────────────────
-// Pour un FILM : on cherche dans credits.crew le job "Director"
-// Pour une SÉRIE : TMDB fournit directement le champ "created_by"
 function extractDirector(tmdbMedia, prismaType) {
   const people = prismaType === 'MOVIE'
     ? (tmdbMedia?.credits?.crew || [])
@@ -229,16 +222,16 @@ function extractDirector(tmdbMedia, prismaType) {
 }
 
 // ─────────────────────────────────────────────────────────
-// MODIFIÉ : adapté à @@unique([tmdbId, type])
+// resolveAdminMediaId — avec poster WebP local
 // ─────────────────────────────────────────────────────────
-// AVANT : findUnique({ where: { tmdbId } })
-//   → marchait quand tmdbId était @unique seul
-//   → CASSAIT si un film et une série avaient le même tmdbId
+//    Quand un nouveau média arrive sur le plateau :
+//   1. On vérifie s'il existe déjà en BDD (contrainte composite)
+//   2. Sinon, on va chercher ses infos sur TMDB
+//   3. On télécharge son affiche et on la convertit en WebP local
+//   4. On crée le média en BDD avec l'URL locale du poster
 //
-// APRÈS : findUnique({ where: { tmdbId_type: { tmdbId, type } } })
-//   → utilise la contrainte composite @@unique([tmdbId, type])
-//   → le film 2062 et la série 2062 coexistent sans conflit
-//
+// Avantage : plus de requêtes vers image.tmdb.org depuis le
+// navigateur du visiteur → plus de problème RGPD/cookies !
 async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
   if (mediaId !== undefined && mediaId !== null && mediaId !== '') {
     return mediaId;
@@ -253,11 +246,8 @@ async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
     throw new Error('Média invalide. Sélectionne un film depuis TMDB.');
   }
 
-  // ← MODIFIÉ : on détermine le type AVANT la recherche
   const { prismaType, tmdbType } = normalizeMediaKind(mediaType);
 
-  // ← MODIFIÉ : contrainte composite au lieu de tmdbId seul
-  // Prisma génère automatiquement le nom "tmdbId_type" depuis @@unique([tmdbId, type])
   const existingMedia = await prisma.media.findUnique({
     where: {
       tmdbId_type: {
@@ -271,9 +261,6 @@ async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
     return existingMedia.id;
   }
 
-  // ← MODIFIÉ : append_to_response=credits pour récupérer le réalisateur
-  // en un seul appel API (au lieu de 2 appels séparés)
-  
   const response = await fetch(
     `${process.env.TMDB_BASE_URL}/${tmdbType}/${normalizedTmdbId}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&append_to_response=credits`
   );
@@ -289,10 +276,6 @@ async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
     throw new Error('Titre du média manquant.');
   }
 
-  // ← AJOUT : extraction du réalisateur selon le type de média
-  //  Analogie :
-  // - Film = un plat unique → on cherche le "Chef" dans la brigade (crew)
-  // - Série = un menu complet → on cherche le "Créateur du concept" (created_by)
   const realisateur = extractDirector(tmdbMedia, prismaType);
 
   const releaseYear = Number.parseInt(String(tmdbMedia?.release_date || tmdbMedia?.first_air_date || '').slice(0, 4), 10);
@@ -301,16 +284,41 @@ async function resolveAdminMediaId({ tmdbId, mediaId, mediaTitle, mediaType }) {
     (slug) => prisma.media.findUnique({ where: { slug } }),
   );
 
+  // ─────────────────────────────────────────────
+  // MODIFIÉ : poster téléchargé et converti en WebP local
+  // ─────────────────────────────────────────────
+  // AVANT :
+  //   posterUrl: `https://image.tmdb.org/t/p/w500${tmdbMedia.poster_path}`
+  //   → l'image était servie depuis les serveurs TMDB
+  //   → requête tierce visible par le navigateur (problème RGPD)
+  //
+  // APRÈS :
+  //   posterUrl: `http://localhost:3000/uploads/posters/poster-xxx.webp`
+  //   → l'image est téléchargée, convertie en WebP, et stockée localement
+  //   → plus de requête tierce, plus de problème RGPD
+  //   → en bonus : image optimisée (25-35% plus légère)
+  //
+
+  const tmdbPosterUrl = tmdbMedia?.poster_path
+    ? `https://image.tmdb.org/t/p/w500${tmdbMedia.poster_path}`
+    : null;
+
+  // downloadAndConvertPoster renvoie l'URL locale si succès, null si échec
+  // En cas d'échec, on garde l'URL TMDB en fallback (mieux que rien)
+  const localPosterUrl = tmdbPosterUrl
+    ? await downloadAndConvertPoster(tmdbPosterUrl)
+    : null;
+
   const createdMedia = await prisma.media.create({
     data: {
       tmdbId: normalizedTmdbId,
       titre: title,
       slug: mediaSlug,
       type: prismaType,
-      posterUrl: tmdbMedia?.poster_path ? `https://image.tmdb.org/t/p/w500${tmdbMedia.poster_path}` : null,
+      posterUrl: localPosterUrl || tmdbPosterUrl, // WebP local en priorité, TMDB en fallback
       synopsis: tmdbMedia?.overview || null,
       annee: Number.isInteger(releaseYear) ? releaseYear : null,
-      realisateur, // ← AJOUT : sauvegarde du réalisateur/créateur
+      realisateur,
     },
   });
 
@@ -411,12 +419,6 @@ export async function getPendingRecipes(req, res) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// MODIFIÉ : publishRecipe gère userId nullable
-// ─────────────────────────────────────────────────────────
-// Avec SetNull, une recette PUBLISHED peut avoir userId = null
-// (si le membre a supprimé son compte entre-temps).
-// On ne crée la notification que si l'auteur existe encore.
 export async function publishRecipe(req, res) {
   try {
     const recipeBeforeApproval = await prisma.recipe.findUnique({
@@ -469,8 +471,6 @@ export async function publishRecipe(req, res) {
         },
       });
 
-      // ← MODIFIÉ : notification seulement si l'auteur existe encore
-      // (userId peut être null si le membre a supprimé son compte)
       if (recipe.userId) {
         await tx.notification.create({
           data: {
@@ -500,9 +500,6 @@ export async function publishRecipe(req, res) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// MODIFIÉ : rejectRecipe gère userId nullable
-// ─────────────────────────────────────────────────────────
 export async function rejectRecipe(req, res) {
   try {
     const rejectionReason = String(req.body.rejectionReason || '').trim();
@@ -535,7 +532,6 @@ export async function rejectRecipe(req, res) {
         },
       });
 
-      // ← MODIFIÉ : notification seulement si l'auteur existe encore
       if (recipe.userId) {
         await tx.notification.create({
           data: {
@@ -785,37 +781,16 @@ export async function getAdminUsers(req, res) {
   }
 }
 
-// ─────────────────────────────────────────────────────────
-// MODIFIÉ : deleteUser — suppression sécurisée d'un compte
-// ─────────────────────────────────────────────────────────
-
-// Un chef quitte le restaurant. Que fait-on ?
-//   1. Ses brouillons de recettes (DRAFT) → à la poubelle
-//   2. Ses recettes soumises en attente (PENDING) → à la poubelle
-//   3. Ses recettes publiées au menu (PUBLISHED) → restent !
-//      Le menu affiche "Recette d'un ancien chef"
-//   4. Ses notifications personnelles → supprimées (RGPD)
-//   5. Son compte → supprimé
-//
-// Techniquement, tout se passe dans une transaction :
-//   - deleteMany des recettes DRAFT + PENDING (nettoyage)
-//   - delete du User
-//     → Prisma applique automatiquement SetNull sur les PUBLISHED
-//     → Prisma applique automatiquement Cascade sur les notifications
-//
-// ⚠️ Sécurité : un admin ne peut pas se supprimer lui-même
 export async function deleteUser(req, res) {
   try {
     const targetUserId = req.params.id;
 
-    // Sécurité : empêcher un admin de supprimer son propre compte via ce endpoint
     if (req.user.id === targetUserId) {
       return res.status(403).json({
         message: 'Vous ne pouvez pas supprimer votre propre compte depuis le panel admin.',
       });
     }
 
-    // Vérifier que l'utilisateur existe
     const userToDelete = await prisma.user.findUnique({
       where: { id: targetUserId },
       include: {
@@ -830,10 +805,6 @@ export async function deleteUser(req, res) {
     }
 
     await prisma.$transaction(async (tx) => {
-      // Étape 1 : Supprimer les recettes DRAFT et PENDING
-      // (elles n'ont plus de raison d'exister sans auteur)
-      // Cascade s'applique : RecipeIngredient associés sont aussi supprimés,
-      // et les Notifications liées passent recipeId à null (SetNull)
       await tx.recipe.deleteMany({
         where: {
           userId: targetUserId,
@@ -841,11 +812,6 @@ export async function deleteUser(req, res) {
         },
       });
 
-      // Étape 2 : Supprimer le user
-      // → SetNull s'applique automatiquement sur les recettes PUBLISHED
-      //   (userId passe à null, la recette reste intacte)
-      // → Cascade s'applique sur les notifications
-      //   (données personnelles supprimées = cohérent RGPD)
       await tx.user.delete({
         where: { id: targetUserId },
       });
