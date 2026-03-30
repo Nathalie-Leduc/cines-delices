@@ -12,7 +12,7 @@ export default function AdminModal({
   return (
     <div className={styles.backdrop} role="presentation">
       <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title}>
-        {title ? <p className={styles.kicker}>{title}</p> : null}
+        {title ? <h2 className={styles.title}>{title}</h2> : null}
 
         <div className={styles.content}>
           {children}

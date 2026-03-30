@@ -158,18 +158,30 @@ export default function AdminLayout() {
             <h1>{roleLabel}</h1>
           </header>
 
-          <p className={styles.welcomeText}>
-            Bonjour <strong>{displayName}</strong>, que souhaitez-vous gérer aujourd&apos;hui ?
-          </p>
-
           <div className={styles.adminGrid}>
-            <div className={styles.desktopSidebar}>
-              <AdminSidebar />
+            <div className={styles.leftRail}>
+              <p className={styles.welcomeText}>
+                Bonjour <strong>{displayName}</strong>, bienvenue dans ton royaume !
+              </p>
+
+              <div className={styles.desktopSidebar}>
+                <AdminSidebar />
+              </div>
             </div>
 
             <main className={styles.adminMain}>
               <Outlet />
             </main>
+          </div>
+
+          <div className={styles.mobileWelcome}>
+            <p className={styles.welcomeText}>
+              Bonjour <strong>{displayName}</strong>, bienvenue dans ton royaume !
+            </p>
+          </div>
+
+          <div className={styles.mobileSidebarOnly}>
+            <AdminSidebar />
           </div>
         </div>
       </section>
