@@ -171,13 +171,19 @@ function AdminCategories() {
           <div className={styles.list}>
             {categories.map((category) => (
               <div key={category.id} className={styles.categoryRow}>
-                <span className={styles.categoryDot} style={{ background: category.color }}>
-                  {category.name}
-                </span>
+                <div className={styles.categoryIdentity}>
+                  <span className={styles.categoryDot} style={{ background: category.color }}>
+                    {category.name}
+                  </span>
+                  <small className={styles.categoryMeta}>
+                    {(category.recipesCount || 0)} recette{(category.recipesCount || 0) > 1 ? 's' : ''}
+                  </small>
+                </div>
                 <span className={styles.inlineTools}>
                   <button
                     type="button"
                     className={styles.roundIconBtn}
+                    aria-label={`Modifier la catégorie ${category.name}`}
                     onClick={() => {
                       setEditingCategory(category);
                       setEditingCategoryName(category.name);
@@ -191,6 +197,7 @@ function AdminCategories() {
                   <button
                     type="button"
                     className={styles.roundIconBtn}
+                    aria-label={`Supprimer la catégorie ${category.name}`}
                     onClick={() => {
                       setEditingCategory(category);
                       setEditingCategoryName(category.name);
@@ -274,11 +281,6 @@ function AdminCategories() {
             Êtes-vous sûr de vouloir supprimer cette catégorie ?
           </div>
           {deleteModalError ? <div className={styles.modalDeleteError}>{deleteModalError}</div> : null}
-          <>
-            <p className={styles.adminModalText}>Êtes-vous sûr de vouloir supprimer cette catégorie ?</p>
-            {error ? <p className={styles.adminModalErrorText}>{error}</p> : null}
-          </>
-
         </AdminModal>
       )}
 

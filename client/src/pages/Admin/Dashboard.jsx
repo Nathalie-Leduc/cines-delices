@@ -202,8 +202,8 @@ function AdminDashboard() {
 
       {!selectedRecipe && (
         <>
-          <p style={{ marginBottom: '0.9rem', color: 'rgba(246, 241, 232, 0.86)' }}>
-            Vous avez <strong style={{ color: '#c9a45c' }}>{pendingRecipes.length}</strong> recettes à valider
+          <p className={`${styles.summaryText} ${styles.summaryTextCentered}`.trim()}>
+            Vous avez <strong className={styles.summaryStrong}>{pendingRecipes.length}</strong> recettes à valider
           </p>
 
           <div className={styles.filterCountRow}>
@@ -374,10 +374,10 @@ function AdminDashboard() {
           </article>
 
           <div className={styles.actionButtons} style={{ marginTop: '0.9rem' }}>
-            <button type="button" className={`${styles.btnMuted} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowRefuseModal(true)}>
+            <button type="button" className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowRefuseModal(true)}>
               Refuser
             </button>
-            <button type="button" className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowValidateModal(true)}>
+            <button type="button" className={`${styles.btnSuccess} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowValidateModal(true)}>
               Valider
             </button>
           </div>

@@ -109,8 +109,8 @@ export default function IngredientsValidation() {
         <h2>Validation des ingrédients</h2>
       </div>
 
-      <p style={{ marginBottom: '0.9rem', color: 'rgba(246, 241, 232, 0.86)' }}>
-        Vous avez <strong style={{ color: '#c9a45c' }}>{ingredients.length}</strong> ingrédients à valider
+      <p className={styles.summaryText}>
+        Vous avez <strong className={styles.summaryStrong}>{ingredients.length}</strong> ingrédients à valider
       </p>
 
       <div className={styles.usersSearchRow}>
@@ -147,7 +147,7 @@ export default function IngredientsValidation() {
         {filteredIngredients.map((ingredient, index) => (
           <div key={`${ingredient.id}-${index}`} className={styles.categoryRow}>
             <div className={styles.ingredientIdentity}>
-              <strong style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.35rem', fontWeight: 700 }}>{ingredient.name}</strong>
+              <strong className={styles.ingredientName}>{ingredient.name}</strong>
               <span className={styles.submittedByRowTag}>Soumis par {getSubmittedByLabel(ingredient)}</span>
             </div>
 
@@ -155,6 +155,7 @@ export default function IngredientsValidation() {
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundBlue}`.trim()}
+                aria-label={`Modifier l'ingrédient ${ingredient.name}`}
                 onClick={() => {
                   setSelectedIngredient(ingredient);
                   setEditedName(ingredient.name);
@@ -166,6 +167,7 @@ export default function IngredientsValidation() {
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundRed}`.trim()}
+                aria-label={`Supprimer l'ingrédient ${ingredient.name}`}
                 onClick={() => {
                   setSelectedIngredient(ingredient);
                   setShowDeleteModal(true);
@@ -176,12 +178,13 @@ export default function IngredientsValidation() {
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundGreen}`.trim()}
+                aria-label={`Valider l'ingrédient ${ingredient.name}`}
                 onClick={() => {
                   setSelectedIngredient(ingredient);
                   setShowValidateModal(true);
                 }}
               >
-                <img src="/icon/close_menu.svg" alt="" aria-hidden="true" style={{ transform: 'rotate(45deg)' }} />
+                <img src="/icon/check_ring_round.svg" alt="" aria-hidden="true" />
               </button>
             </span>
           </div>
