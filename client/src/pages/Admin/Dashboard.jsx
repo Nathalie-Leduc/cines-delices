@@ -475,7 +475,7 @@ function AdminDashboard() {
           />
 
           <div className={styles.sectionTitle}>
-            <h3>{activeFilter === 'Tous' ? 'Toutes les recettes' : `${activeFilter}s`}</h3>
+            <h3>{activeFilter === 'Tous' ? 'Liste des recettes' : `${activeFilter}s`}</h3>
           </div>
 
           {isLoading ? (
