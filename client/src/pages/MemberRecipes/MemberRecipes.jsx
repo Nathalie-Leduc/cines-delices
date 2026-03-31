@@ -43,6 +43,36 @@ const PROFILE_API = import.meta.env.VITE_PROFILE_API || `${API_BASE_URL}/api/aut
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// ✅ CORRECTIF TEMPS — remplace parseOptionalPositiveInteger pour les temps.
+// Comprend tous les formats courants et les convertit en minutes (entier).
+// Exemples : "70" → 70, "30min" → 30, "1h" → 60, "1h10" → 70, "1:10" → 70
+// Analogie : un assistant qui comprend toutes les façons de dire un temps
+// et répond toujours en minutes pour la BDD.
+function parseTimeToMinutes(value) {
+  if (value === '' || value === null || value === undefined) return undefined;
+  const str = String(value).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '.');
+  // "1h10", "1h10min", "1h"
+  const hMatch = str.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
+  if (hMatch) {
+    const total = Math.round(parseFloat(hMatch[1]) * 60 + parseInt(hMatch[2] || '0', 10));
+    return total > 0 ? total : undefined;
+  }
+  // "1:10"
+  const colonMatch = str.match(/^(\d+):(\d+)(?::\d+)?$/);
+  if (colonMatch) {
+    const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
+    return total > 0 ? total : undefined;
+  }
+  // "30min", "30m", "30"
+  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+  if (minMatch) {
+    const parsed = Math.round(parseFloat(minMatch[1]));
+    return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
+  }
+  return undefined;
+}
+
+// Reste utilisé pour nbPersonnes uniquement
 function parseOptionalPositiveInteger(value) {
   if (value === '' || value === null || value === undefined) {
     return undefined;
@@ -768,8 +798,12 @@ export default function MesRecettes() {
       instructions: normalizedEtapes.join('\n'),
       etapes: normalizedEtapes,
       nombrePersonnes: parseOptionalPositiveInteger(editForm.nbPersonnes),
-      tempsPreparation: parseOptionalPositiveInteger(editForm.tempsPreparation),
-      tempsCuisson: parseOptionalPositiveInteger(editForm.tempsCuisson),
+      // ✅ CORRECTIF TEMPS — parseTimeToMinutes comprend "1h10", "1:10", "70", "30min"
+      // et convertit tout en minutes entières pour la BDD.
+      // Analogie : la BDD ne stocke que des minutes, comme un minuteur de cuisine.
+      // "1h10" → 70, "65min" → 65, total → 70 + 65 = 135 → affiché "2h15min"
+      tempsPreparation: parseTimeToMinutes(editForm.tempsPreparation),
+      tempsCuisson: parseTimeToMinutes(editForm.tempsCuisson),
       imageUrl: String(editForm.image || '').trim() || undefined,
       ingredients: normalizedIngredients,
     };
@@ -858,14 +892,6 @@ export default function MesRecettes() {
   // Déconnexion utilisateur locale.
   // ──────────────────────────────────────────────────────────────────────
   //  MODIF 1 (fin) : handleLogout passe par le contexte AuthContext
-  //
-  //   Avant  : localStorage.removeItem('token') → ne vidait pas le state
-  //             React → la Navbar affichait toujours "Bonjour Marie"
-  //
-  //   Après  : logout() du contexte fait tout d'un coup :
-  //             - supprime token, auth_user, displayName du localStorage
-  //             - remet isAuthenticated à false dans le state React
-  //             - la Navbar se re-rend automatiquement avec "Se connecter"
   // ──────────────────────────────────────────────────────────────────────
   function handleLogout() {
     logout()
@@ -891,12 +917,6 @@ export default function MesRecettes() {
 
  // ──────────────────────────────────────────────────────────────────────
   //  MODIF 2 : nouvelle fonction handleSubmitRecipe
-  //
-  //   Permet de soumettre un brouillon (DRAFT) pour validation admin.
-  //   Envoie un PATCH à l'API avec le status 'PENDING', puis met à jour
-  //   la recette localement pour un feedback immédiat sans recharger.
-  //   Le ticket passe de "en préparation"
-  //    (DRAFT) à "en attente de validation" (PENDING).
   // ──────────────────────────────────────────────────────────────────────
   async function handleSubmitRecipe(recipeId) {
   try {
@@ -1185,11 +1205,13 @@ export default function MesRecettes() {
                 </button>
               </div>
 
+              {/* ✅ CORRECTIF TEMPS — placeholders mis à jour pour indiquer les formats acceptés */}
               <label className={styles.editLabel}>
                 Temps de préparation
                 <input
                   className={styles.editInput}
                   type="text"
+                  placeholder="ex: 20, 1h, 1h30"
                   value={editForm.tempsPreparation}
                   onChange={e => handleEditChange('tempsPreparation', e.target.value)}
                 />
@@ -1200,6 +1222,7 @@ export default function MesRecettes() {
                 <input
                   className={styles.editInput}
                   type="text"
+                  placeholder="ex: 30, 1h, 1h10"
                   value={editForm.tempsCuisson}
                   onChange={e => handleEditChange('tempsCuisson', e.target.value)}
                 />
@@ -1439,8 +1462,8 @@ export default function MesRecettes() {
                   variant="empty"
                   title="Aucune recette à afficher"
                   message={activeFilter === 'Tous'
-                    ? "Commence par créer une recette ou attends qu’un brouillon revienne dans cette liste."
-                    : `Aucune recette ${activeFilter.toLowerCase()} n’est disponible dans votre espace pour le moment.`}
+                    ? "Commence par créer une recette ou attends qu'un brouillon revienne dans cette liste."
+                    : `Aucune recette ${activeFilter.toLowerCase()} n'est disponible dans votre espace pour le moment.`}
                   className={styles.panelState}
                 />
               ) : null}
@@ -1502,14 +1525,7 @@ export default function MesRecettes() {
                           );
                         })()}
                         <div className={styles.cardActionsFloating}>
-                      {/* ──────────────────────────────────────────────────
-                           MODIF 3 : bouton "Soumettre" visible si DRAFT
-                          
-                          Affiche un bouton pour soumettre la recette à
-                          l'admin quand elle est en brouillon. Le clic
-                          appelle handleSubmitRecipe qui envoie un PATCH
-                          et met à jour le badge localement.
-                      ────────────────────────────────────────────────── */}
+                      {/* MODIF 3 : bouton "Soumettre" visible si DRAFT */}
                       {String(recette.status || '').toUpperCase() === 'DRAFT' && (
                         <button
                           type="button"
@@ -1520,8 +1536,6 @@ export default function MesRecettes() {
                           Soumettre
                         </button>
                       )}
-
-                      {/* Le membre peut modifier sa recette quel que soit son statut. */}
 
                        <button
                         type="button"
