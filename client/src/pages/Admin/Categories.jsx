@@ -270,7 +270,7 @@ function AdminCategories() {
                 <span className={styles.inlineTools}>
                   <button
                     type="button"
-                    className={styles.roundIconBtn}
+                    className={`${styles.roundIconBtn} ${styles.roundIconBtnEdit}`.trim()}
                     aria-label={`Modifier la catégorie ${category.name}`}
                     onClick={() => {
                       setEditingCategory(category);
@@ -281,17 +281,18 @@ function AdminCategories() {
                       setError('');
                     }}
                   >
-                    <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+                    <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
-                    className={`${styles.roundIconBtn} ${styles.roundRed}`.trim()}
+                    className={`${styles.roundIconBtn} ${styles.roundIconBtnDelete}`.trim()}
                     disabled={!canDeleteCategory(category)}
                     title={
                       canDeleteCategory(category)
                         ? 'Supprimer'
                         : `Suppression impossible : ${category.recipesCount} recette${category.recipesCount > 1 ? 's utilisent' : ' utilise'} cette catégorie`
                     }
+                    aria-label={`Supprimer la catégorie ${category.name}`}
                     onClick={() => {
                       if (!canDeleteCategory(category)) {
                         return;
@@ -304,7 +305,7 @@ function AdminCategories() {
                       setError('');
                     }}
                   >
-                    <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                    <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
                   </button>
                 </span>
               </div>
