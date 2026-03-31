@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../lib/responseHelper.js';
 import { generateUniqueSlug } from '../utils/slug.js';
+import { downloadAndConvertPoster } from '../lib/posterService.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -39,6 +40,104 @@ const recipeRelationsInclude = {
     },
   },
 };
+
+// ─────────────────────────────────────────────────────────
+// resolveMediaFromTmdb — Résout ou crée un média depuis TMDB
+// ─────────────────────────────────────────────────────────
+//  Quand un membre crée ou modifie une recette, cette fonction :
+//   1. Vérifie si le média existe déjà en BDD (contrainte composite tmdbId + type)
+//   2. Si non, appelle l'API TMDB pour récupérer les détails complets
+//   3. Télécharge le poster et le convertit en WebP local (via posterService)
+//   4. Crée le média en BDD avec poster local, synopsis et réalisateur
+//
+// C'est la même logique que resolveAdminMediaId dans adminController,
+// mais factorisée ici pour être utilisée dans createRecipe et updateRecipe.
+async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
+  const tmdbType = mediaType === 'SERIES' ? 'tv' : 'movie';
+
+  // 1. Le média existe déjà en BDD ?
+  const existingMedia = await prisma.media.findUnique({
+    where: {
+      tmdbId_type: {
+        tmdbId,
+        type: mediaType,
+      },
+    },
+  });
+
+  if (existingMedia) {
+    return existingMedia.id;
+  }
+
+  // 2. Appeler TMDB pour récupérer les détails complets
+  //    append_to_response=credits → récupère le réalisateur en un seul appel
+  let tmdbData = null;
+  try {
+    const tmdbUrl = `${process.env.TMDB_BASE_URL}/${tmdbType}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&append_to_response=credits`;
+    const response = await fetch(tmdbUrl);
+
+    if (response.ok) {
+      tmdbData = await response.json();
+    } else {
+      console.warn(`[TMDB] Impossible de récupérer le média ${tmdbId} (HTTP ${response.status})`);
+    }
+  } catch (error) {
+    console.warn('[TMDB] Erreur appel API :', error.message);
+  }
+
+  // 3. Extraire les infos du média
+  const finalTitle = title || tmdbData?.title || tmdbData?.name || 'Sans titre';
+  const synopsis = tmdbData?.overview || null;
+
+  // Extraire le réalisateur (film = Director dans crew, série = created_by)
+  let realisateur = null;
+  if (tmdbData) {
+    const people = mediaType === 'MOVIE'
+      ? (tmdbData.credits?.crew || [])
+          .filter((person) => person.job === 'Director')
+          .map((person) => person.name)
+      : (tmdbData.created_by || [])
+          .map((person) => person.name)
+          .filter(Boolean);
+
+    realisateur = people.length > 0 ? people.join(', ') : null;
+  }
+
+  // Extraire l'année de sortie
+  const releaseYear = Number.parseInt(
+    String(tmdbData?.release_date || tmdbData?.first_air_date || '').slice(0, 4),
+    10,
+  );
+
+  // 4. Télécharger et convertir le poster en WebP local
+  const tmdbPosterUrl = tmdbData?.poster_path
+    ? `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`
+    : null;
+  const localPosterUrl = tmdbPosterUrl
+    ? await downloadAndConvertPoster(tmdbPosterUrl)
+    : null;
+
+  // 5. Créer le média en BDD
+  const mediaSlug = await generateUniqueSlug(
+    `${finalTitle}-${Number.isInteger(releaseYear) ? releaseYear : new Date().getFullYear()}`,
+    (s) => prisma.media.findUnique({ where: { slug: s } }),
+  );
+
+  const createdMedia = await prisma.media.create({
+    data: {
+      tmdbId,
+      titre: finalTitle,
+      slug: mediaSlug,
+      type: mediaType,
+      posterUrl: localPosterUrl || tmdbPosterUrl, // WebP local en priorité, TMDB en fallback
+      synopsis,
+      annee: Number.isInteger(releaseYear) ? releaseYear : null,
+      realisateur,
+    },
+  });
+
+  return createdMedia.id;
+}
 
 /**
  * Crée une nouvelle recette
@@ -116,6 +215,7 @@ export const createRecipe = async (req, res) => {
         return res.status(404).json({ message: 'Média introuvable' });
       }
     } else {
+      // Nouveau média depuis TMDB
       const tmdbId = Number(filmId);
       if (!Number.isInteger(tmdbId) || tmdbId <= 0) {
         return res.status(400).json({ message: 'Média invalide. Sélectionne un film/série depuis la recherche.' });
@@ -131,33 +231,12 @@ export const createRecipe = async (req, res) => {
         ? 'SERIES'
         : 'MOVIE';
 
-      const mediaSlug = await generateUniqueSlug(
-        `${normalizedTitle}-${new Date().getFullYear()}`,
-        (s) => prisma.media.findUnique({ where: { slug: s } }),
-      );
-
-      const media = await prisma.media.upsert({
-        where: {
-          tmdbId_type: {
-            tmdbId,
-            type: mediaType,
-          },
-        },
-        update: {
-          titre: normalizedTitle,
-          type: mediaType,
-          // Ne pas écraser le posterUrl TMDB avec l'image uploadée de la recette
-        },
-        create: {
-          tmdbId,
-          titre: normalizedTitle,
-          slug: mediaSlug,
-          type: mediaType,
-          posterUrl: null,
-        },
+      // Appel TMDB + téléchargement poster WebP + création en BDD
+      mediaId = await resolveMediaFromTmdb({
+        tmdbId,
+        title: normalizedTitle,
+        mediaType,
       });
-
-      mediaId = media.id;
     }
 
     if (normalizedInstructions.length < 1) {
@@ -425,33 +504,12 @@ export const updateRecipe = async (req, res) => {
         ? 'SERIES'
         : 'MOVIE';
 
-      const mediaSlug = await generateUniqueSlug(
-        `${normalizedTitle}-${new Date().getFullYear()}`,
-        (slug) => prisma.media.findUnique({ where: { slug } }),
-      );
-
-      const media = await prisma.media.upsert({
-        where: {
-          tmdbId_type: {
-            tmdbId,
-            type: mediaType,
-          },
-        },
-        update: {
-          titre: normalizedTitle,
-          type: mediaType,
-          // Ne pas écraser le posterUrl TMDB avec l'image uploadée de la recette
-        },
-        create: {
-          tmdbId,
-          titre: normalizedTitle,
-          slug: mediaSlug,
-          type: mediaType,
-          posterUrl: null,
-        },
+      // Appel TMDB + téléchargement poster WebP + création en BDD
+      mediaId = await resolveMediaFromTmdb({
+        tmdbId,
+        title: normalizedTitle,
+        mediaType,
       });
-
-      mediaId = media.id;
     }
 
     // Mettre à jour la recette

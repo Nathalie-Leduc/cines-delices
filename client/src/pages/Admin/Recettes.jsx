@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
@@ -55,6 +55,7 @@ function countClass(label) {
 }
 
 function AdminRecettes() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
   const [query, setQuery] = useState('');
@@ -110,6 +111,20 @@ function AdminRecettes() {
       .catch((err) => setError(err.message || 'Impossible de charger les recettes.'))
       .finally(() => setIsLoading(false));
   }, []);
+
+  useEffect(() => {
+    const targetRecipeId = location.state?.openEditRecipeId;
+
+    if (!targetRecipeId || recipes.length === 0) {
+      return;
+    }
+
+    const recipe = recipes.find((item) => item.id === targetRecipeId);
+    if (recipe) {
+      openEditModal(recipe);
+      navigate('/admin/recettes', { replace: true, state: {} });
+    }
+  }, [location.state, recipes, navigate]);
 
   const filteredRecipes = useMemo(() => {
     return recipes.filter((item) => {
@@ -560,22 +575,6 @@ function AdminRecettes() {
                 <div className={styles.cardActionsExact}>
                   <button
                     type="button"
-                    aria-label="Voir la recette"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-
-                      if (!slug) {
-                        return;
-                      }
-
-                      navigate(`/recipes/${slug}`, { state: { recipe } });
-                    }}
-                  >
-                    <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
                     aria-label="Modifier la recette"
                     onClick={(event) => {
                       event.preventDefault();
@@ -614,8 +613,8 @@ function AdminRecettes() {
       )}
 
       {showEditModal && (
-        <div className={styles.adminEditOverlay}>
-          <div className={styles.adminEditModal}>
+        <div className={styles.adminEditOverlay} onClick={() => { setShowEditModal(false); setError(''); }}>
+          <div className={styles.adminEditModal} onClick={(e) => e.stopPropagation()}>
             <h2 className={styles.adminEditTitle}>Modifier la recette</h2>
 
             <div className={styles.adminEditFields}>

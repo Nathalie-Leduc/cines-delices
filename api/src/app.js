@@ -10,6 +10,8 @@ import routes from './routes/index.js'
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 import { startInactivityCron } from './jobs/inactivityCheck.js';
 
+import { sendResetPasswordMail } from './lib/mailer.js';
+
 const app = express();
 // AJOUT À FAIRE DANS app.js — trust proxy
 // ============================================================
@@ -34,10 +36,15 @@ app.set('trust proxy', 1);
 app.use(helmet());
 app.use(cors({
   origin: CLIENT_URL,
-  credentials: true,
+  credentials: true,  // Autoriser les cookies et autres credentials
 }));
 app.use(express.json());
-app.use('/uploads', express.static(uploadsDir));
+
+//CORRECTIF
+app.use('/uploads', (req, res, next) => {
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(uploadsDir));
 
 // Swagger docs
 setupSwagger(app);

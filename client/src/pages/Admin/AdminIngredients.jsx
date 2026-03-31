@@ -1,32 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import {
-  approveAdminIngredient,
   deleteAdminIngredient,
-  getAdminIngredients,
+  getValidatedAdminIngredients,
   updateAdminIngredient,
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
-function getSubmittedByLabel(item) {
-  if (item?.submittedByLabel) {
-    return item.submittedByLabel;
-  }
-
-  const firstName = String(item?.submittedBy?.firstName || '').trim();
-  const lastName = String(item?.submittedBy?.lastName || '').trim();
-  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
-
-  return fullName || 'Membre inconnu';
-}
-
-export default function IngredientsValidation() {
+export default function AdminIngredients() {
   const [ingredients, setIngredients] = useState([]);
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [showValidateModal, setShowValidateModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
@@ -36,7 +23,7 @@ export default function IngredientsValidation() {
   useEffect(() => {
     const loadIngredients = async () => {
       try {
-        const payload = await getAdminIngredients();
+        const payload = await getValidatedAdminIngredients();
         setIngredients(Array.isArray(payload) ? payload : []);
       } catch (loadError) {
         setError(loadError.message || 'Impossible de charger les ingrédients.');
@@ -50,37 +37,18 @@ export default function IngredientsValidation() {
 
   const filteredIngredients = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return ingredients;
-    }
-
-    return ingredients.filter((ingredient) => (ingredient.name || '').toLowerCase().includes(normalizedQuery));
+    if (!normalizedQuery) return ingredients;
+    return ingredients.filter((ingredient) =>
+      (ingredient.name || '').toLowerCase().includes(normalizedQuery),
+    );
   }, [ingredients, query]);
 
   function canDeleteIngredient(ingredient) {
     return (ingredient?.recipesCount || 0) === 0;
   }
 
-  async function handleApproveIngredient() {
-    if (!selectedIngredient) {
-      return;
-    }
-
-    try {
-      await approveAdminIngredient(selectedIngredient.id);
-      setIngredients((previous) => previous.filter((ingredient) => ingredient.id !== selectedIngredient.id));
-      setShowValidateModal(false);
-      setSelectedIngredient(null);
-    } catch (approveError) {
-      setError(approveError.message || 'Validation impossible.');
-    }
-  }
-
   async function handleDeleteIngredient() {
-    if (!selectedIngredient) {
-      return;
-    }
+    if (!selectedIngredient) return;
 
     try {
       await deleteAdminIngredient(selectedIngredient.id);
@@ -93,13 +61,13 @@ export default function IngredientsValidation() {
   }
 
   async function handleEditIngredient() {
-    if (!selectedIngredient || !editedName.trim()) {
-      return;
-    }
+    if (!selectedIngredient || !editedName.trim()) return;
 
     try {
       const updated = await updateAdminIngredient(selectedIngredient.id, { name: editedName });
-      setIngredients((previous) => previous.map((ingredient) => (ingredient.id === updated.id ? updated : ingredient)));
+      setIngredients((previous) =>
+        previous.map((ingredient) => (ingredient.id === updated.id ? updated : ingredient)),
+      );
       setShowEditModal(false);
       setSelectedIngredient(null);
     } catch (updateError) {
@@ -110,11 +78,12 @@ export default function IngredientsValidation() {
   return (
     <div className={styles.page}>
       <div className={styles.headerLine}>
-        <h2>Validation des ingrédients</h2>
+        <h2>Gérer les ingrédients</h2>
       </div>
 
       <p style={{ marginBottom: '0.9rem', color: 'rgba(246, 241, 232, 0.86)' }}>
-        Vous avez <strong style={{ color: '#c9a45c' }}>{ingredients.length}</strong> ingrédients à valider
+        <strong style={{ color: '#c9a45c' }}>{ingredients.length}</strong> ingrédient
+        {ingredients.length > 1 ? 's' : ''} validé{ingredients.length > 1 ? 's' : ''}
       </p>
 
       <div className={styles.usersSearchRow}>
@@ -151,14 +120,25 @@ export default function IngredientsValidation() {
         {filteredIngredients.map((ingredient, index) => (
           <div key={`${ingredient.id}-${index}`} className={styles.categoryRow}>
             <div className={styles.ingredientIdentity}>
-              <strong style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.35rem', fontWeight: 700 }}>{ingredient.name}</strong>
-              <span className={styles.submittedByRowTag}>Soumis par {getSubmittedByLabel(ingredient)}</span>
+              <strong style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.35rem', fontWeight: 700 }}>
+                {ingredient.name}
+              </strong>
+              {ingredient.recipesCount > 0 && (
+                <Link
+                  to={`/admin/ingredients/${ingredient.id}/recettes`}
+                  className={`${styles.submittedByRowTag} ${styles.clickableTag}`}
+                  aria-label={`Voir les ${ingredient.recipesCount} recettes liées à l'ingrédient ${ingredient.name}`}
+                >
+                  Utilisé dans {ingredient.recipesCount} recette{ingredient.recipesCount > 1 ? 's' : ''}
+                </Link>
+              )}
             </div>
 
             <span className={styles.inlineTools}>
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundBlue}`.trim()}
+                title="Modifier"
                 onClick={() => {
                   setSelectedIngredient(ingredient);
                   setEditedName(ingredient.name);
@@ -186,16 +166,6 @@ export default function IngredientsValidation() {
               >
                 <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
               </button>
-              <button
-                type="button"
-                className={`${styles.roundIconBtn} ${styles.roundGreen}`.trim()}
-                onClick={() => {
-                  setSelectedIngredient(ingredient);
-                  setShowValidateModal(true);
-                }}
-              >
-                <img src="/icon/close_menu.svg" alt="" aria-hidden="true" style={{ transform: 'rotate(45deg)' }} />
-              </button>
             </span>
           </div>
         ))}
@@ -203,34 +173,49 @@ export default function IngredientsValidation() {
         {!isLoading && !filteredIngredients.length ? (
           <StatusBlock
             variant="empty"
-            title={query.trim() ? 'Aucun ingrédient trouvé' : 'Aucun ingrédient à valider'}
-            message={query.trim()
-              ? 'Essaie une autre recherche pour retrouver un ingrédient en attente.'
-              : 'Les ingrédients proposés par les membres apparaîtront ici pour validation.'}
+            title={query.trim() ? 'Aucun ingrédient trouvé' : 'Aucun ingrédient validé'}
+            message={
+              query.trim()
+                ? 'Essaie une autre recherche pour retrouver un ingrédient validé.'
+                : 'Les ingrédients approuvés apparaîtront ici.'
+            }
             className={styles.pageState}
           />
         ) : null}
       </div>
 
-      {showValidateModal && (
-        <AdminModal onCancel={() => setShowValidateModal(false)} onConfirm={handleApproveIngredient}>
-          Êtes-vous sûr de vouloir valider cet ingrédient ?
-        </AdminModal>
-      )}
-
       {showDeleteModal && (
-        <AdminModal onCancel={() => setShowDeleteModal(false)} onConfirm={handleDeleteIngredient}>
-          Êtes-vous sûr de vouloir supprimer cet ingrédient ?
+        <AdminModal
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setSelectedIngredient(null);
+          }}
+          onConfirm={handleDeleteIngredient}
+        >
+          Êtes-vous sûr de vouloir supprimer l'ingrédient{' '}
+          <strong>{selectedIngredient?.name}</strong> ?
+          {selectedIngredient?.recipesCount > 0 && (
+            <p style={{ marginTop: '0.5rem', color: '#f4a555', fontSize: '0.9rem' }}>
+              Attention : cet ingrédient est utilisé dans {selectedIngredient.recipesCount} recette
+              {selectedIngredient.recipesCount > 1 ? 's' : ''}.
+            </p>
+          )}
         </AdminModal>
       )}
 
       {showEditModal && (
-        <AdminModal onCancel={() => setShowEditModal(false)} onConfirm={handleEditIngredient}>
+        <AdminModal
+          onCancel={() => {
+            setShowEditModal(false);
+            setSelectedIngredient(null);
+          }}
+          onConfirm={handleEditIngredient}
+        >
           <input
             className={styles.modalInput}
             value={editedName}
             onChange={(event) => setEditedName(event.target.value)}
-            placeholder="Nom de l’ingrédient"
+            placeholder="Nom de l'ingrédient"
           />
         </AdminModal>
       )}

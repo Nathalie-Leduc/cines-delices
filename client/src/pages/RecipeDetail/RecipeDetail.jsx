@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RecipeCard from "../../components/RecipeCard";
 import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
@@ -31,10 +32,25 @@ function normalizeCategoryLabel(value) {
   return value || "Autre";
 }
 
+function toFiniteNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
 function normalizeApiRecipe(apiRecipe) {
-  const prep = Number(apiRecipe?.tempsPreparation);
-  const cook = Number(apiRecipe?.tempsCuisson);
-  const duration = [prep, cook].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
+  const prepTime = toFiniteNumber(apiRecipe?.prepTime)
+    ?? toFiniteNumber(apiRecipe?.preparationTime)
+    ?? toFiniteNumber(apiRecipe?.tempsPreparation);
+  const cookTime = toFiniteNumber(apiRecipe?.cookTime)
+    ?? toFiniteNumber(apiRecipe?.cookingTime)
+    ?? toFiniteNumber(apiRecipe?.tempsCuisson);
+  const servings = toFiniteNumber(apiRecipe?.servings)
+    ?? toFiniteNumber(apiRecipe?.people)
+    ?? toFiniteNumber(apiRecipe?.nbPersonnes)
+    ?? toFiniteNumber(apiRecipe?.nombrePersonnes);
+  const totalTime = toFiniteNumber(apiRecipe?.totalTime)
+    ?? toFiniteNumber(apiRecipe?.duration)
+    ?? [prepTime, cookTime].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
 
   const ingredients = (apiRecipe.ingredients || []).map((ingredient) => {
     if (typeof ingredient === 'string') return ingredient;
@@ -62,14 +78,15 @@ function normalizeApiRecipe(apiRecipe) {
     posterImage: apiRecipe.posterImage || apiRecipe.media?.posterUrl || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
-    duration,
-    description: apiRecipe.description,
-    director: apiRecipe.director,
+    duration: totalTime,
+    description: apiRecipe.description || apiRecipe.media?.synopsis || null,
+    director: apiRecipe.director || apiRecipe.media?.realisateur || null,
     year: apiRecipe.year,
     genre: apiRecipe.genre,
-    servings: apiRecipe.servings ?? apiRecipe.nbPersonnes ?? undefined,
-    prepTime: apiRecipe.prepTime ?? apiRecipe.tempsPreparation ?? undefined,
-    cookTime: apiRecipe.cookTime ?? apiRecipe.tempsCuisson ?? undefined,
+    servings,
+    prepTime,
+    cookTime,
+    totalTime,
     ingredients,
     steps,
   };
@@ -97,6 +114,7 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { slug } = useParams();
+  const { isAdmin } = useAuth();
   const isHeroVisible = useHeroReveal();
   const [recipes, setRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -286,16 +304,25 @@ export default function RecipeDetail() {
   const recipeCookTime = cookTime ?? Math.max(15, Math.round((duration ?? 30) / 1.5));
   const recipeTotalTime = totalTime ?? duration ?? recipePrepTime + recipeCookTime;
   const recipeServings = servings ?? 4;
-  const recipeDirector = director ?? "Studio original";
+  const recipeDirector = director ?? recipe.media?.realisateur ?? "Studio original";
   const recipeYear = year ?? 2010;
   const recipeGenre = genre ?? "Cuisine fiction";
   const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;
   const canEditFromMemberSpace = Boolean(state?.fromMemberRecipes);
+  const canEditFromAdminSpace = Boolean(isAdmin && recipe?.id);
 
   function handleOpenMemberEditForm() {
     const targetRecipeId = state?.openEditRecipeId || recipe?.id;
 
     navigate("/membre/mes-recettes", {
+      state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
+    });
+  }
+
+  function handleOpenAdminEditForm() {
+    const targetRecipeId = state?.openEditRecipeId || recipe?.id;
+
+    navigate("/admin/recettes", {
       state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
     });
   }
@@ -329,6 +356,17 @@ export default function RecipeDetail() {
               title="Ouvrir le formulaire de modification"
             >
               Modifier ma recette
+            </button>
+          )}
+
+          {!canEditFromMemberSpace && canEditFromAdminSpace && (
+            <button
+              type="button"
+              className={`${styles.editFromDetailButton} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              onClick={handleOpenAdminEditForm}
+              title="Modifier cette recette dans l'administration"
+            >
+              Modifier la recette
             </button>
           )}
 
@@ -437,11 +475,17 @@ export default function RecipeDetail() {
                 <span className={styles.sectionLine} />
               </div>
 
-              <div className={styles.similarGrid}>
-                {similarRecipes.map((similarRecipe) => (
-                  <RecipeCard key={similarRecipe.id} recipe={similarRecipe} />
-                ))}
-              </div>
+              {similarRecipes.length > 0 ? (
+                <div className={styles.similarGrid}>
+                  {similarRecipes.map((similarRecipe) => (
+                    <RecipeCard key={similarRecipe.id} recipe={similarRecipe} />
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.similarEmptyState}>
+                  Aucune recette similaire n'est disponible pour le moment.
+                </p>
+              )}
             </section>
           </div>
         </div>

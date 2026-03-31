@@ -157,25 +157,18 @@ export const updateRecipeSchema = z.object({
 
     type: z.enum(['F', 'S', 'movie', 'tv', 'series']).optional(),
 
-    nombrePersonnes: z
-      .number()
-      .int('Le nombre de personnes doit être un entier')
-      .positive('Le nombre de personnes doit être positif')
-      .optional(),
+
+    // Remplacé par optionalIntFromImput comme dans createRecipeShema
+    // pour accepter les string et les convertir
+    // Avec Formdata (multipart) ==> avec le fichier image, tous les champs arrivaient en string,
+    // Pas en number ==> rejet Zod = Données invalides
+    nombrePersonnes: optionalIntFromInput,
 
     nbPersonnes: optionalIntFromInput,
 
-    tempsPreparation: z
-      .number()
-      .int('Le temps de préparation doit être un entier (en minutes)')
-      .positive('Le temps de préparation doit être positif')
-      .optional(),
+    tempsPreparation: optionalIntFromInput,
 
-    tempsCuisson: z
-      .number()
-      .int('Le temps de cuisson doit être un entier (en minutes)')
-      .positive('Le temps de cuisson doit être positif')
-      .optional(),
+    tempsCuisson: optionalIntFromInput,
 
     ingredients: z
       .array(ingredientSchema)

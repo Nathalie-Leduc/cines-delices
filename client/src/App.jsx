@@ -19,10 +19,11 @@ import PolitiqueConfidentialite from './pages/PolitiqueConfidentialite';
 import PolitiqueCookies from './pages/PolitiqueCookies';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
-import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation } from './pages/Admin';
+import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation, AdminIngredients, AdminIngredientRecipes } from './pages/Admin';
 import ProtectedRoute from './router';
 import AdminRoute from './router/AdminRoute.jsx';
 import CookieConsent from './components/CookieConsent/CookieConsent.jsx';
+import ResetPassword from './pages/resetPassword/resetPassword.jsx';
 import ReglesModeration from './pages/ReglesModeration/ReglesModerations.jsx';
 
 
@@ -50,6 +51,8 @@ function App() {
         <Route path="/signup" element={<Signup />} />
       </Route>
 
+      <Route path="/reset-password" element={<ResetPassword />} />
+
       <Route
         path="/membre/*"
         element={
@@ -70,6 +73,8 @@ function App() {
           <Route index element={<Recettes />} />
           <Route path="recettes" element={<Recettes />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="ingredients" element={<AdminIngredients />} />
+          <Route path="ingredients/:id/recettes" element={<AdminIngredientRecipes />} />
           <Route path="utilisateurs" element={<Utilisateurs />} />
           <Route path="validation-recettes" element={<Dashboard />} />
           <Route path="validation-ingredients" element={<IngredientsValidation />} />

@@ -3,7 +3,7 @@ import { useNavigate, NavLink, useLocation } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import AuthShell from '../../components/AuthShell/AuthShell.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { loginUser } from '../../services/authService.js';
+import { loginUser, forgotPassword } from '../../services/authService.js';
 import styles from './Login.module.scss';
 
 export default function Login() {
@@ -15,10 +15,13 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [emailForReset, setEmailForReset] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError('');
     setIsSubmitting(true);
 
@@ -26,7 +29,6 @@ export default function Login() {
       const payload = await loginUser({ email, password });
       login({ token: payload?.token, user: payload?.user ?? null });
 
-      // Déterminer la redirection selon le rôle
       let redirectPath = location.state?.from?.pathname || '/membre';
       if (payload?.user?.role === 'ADMIN') {
         redirectPath = '/admin';
@@ -39,9 +41,31 @@ export default function Login() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    setResetMessage('');
+    setResetError('');
+    try {
+      await forgotPassword(emailForReset);
+      setResetMessage('Email envoyé si le compte existe !');
+      setEmailForReset('');
+    } catch (err) {
+      console.error(err);
+      setResetError('Une erreur est survenue, réessaie.');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEmailForReset('');
+    setResetMessage('');
+    setResetError('');
+  };
+
   return (
     <AuthShell title="Bienvenue" subtitle="Connectez-vous à votre compte">
       <form className={styles.form} onSubmit={handleSubmit}>
+
+        {/* EMAIL */}
         <div className={styles.fieldGroup}>
           <label htmlFor="email" className={styles.label}>
             Adresse e-mail
@@ -64,12 +88,16 @@ export default function Login() {
           </div>
         </div>
 
+        {/* MOT DE PASSE */}
         <div className={styles.fieldGroup}>
           <label htmlFor="password" className={styles.label}>
             Mot de passe
           </label>
           <div className={styles.inputWrapper}>
-            <span className={`${styles.leadingIcon} ${styles.lockIcon}`} aria-hidden="true" />
+            <span
+              className={`${styles.leadingIcon} ${styles.lockIcon}`}
+              aria-hidden="true"
+            />
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -80,10 +108,11 @@ export default function Login() {
               autoComplete="current-password"
               required
             />
+            {/* ✅ Un seul bouton toggle */}
             <button
               type="button"
               className={styles.togglePassword}
-              onClick={() => setShowPassword((currentValue) => !currentValue)}
+              onClick={() => setShowPassword((current) => !current)}
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
             >
@@ -93,29 +122,84 @@ export default function Login() {
               />
             </button>
           </div>
-          <NavLink to="#" className={styles.forgotPassword}>
-            mot de passe oublié
-          </NavLink>
+
+          {/* ✅ Un seul lien mot de passe oublié */}
+          <button
+            type="button"
+            className={styles.forgotPassword}
+            onClick={() => setShowModal(true)}
+          >
+            Mot de passe oublié ?
+          </button>
         </div>
 
-        <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+        {/* SUBMIT */}
+        <button
+          type="submit"
+          className={styles.submitButton}
+          disabled={isSubmitting}
+        >
           {isSubmitting ? 'Connexion...' : 'Se connecter'}
         </button>
 
+        {/* ALERT ERREUR */}
         <Alert
           type="error"
           message={error}
           onClose={() => setError('')}
           className={styles.formAlert}
         />
+
+        {/* LIEN INSCRIPTION */}
+        <p className={styles.noAccount}>
+          Nouveau sur notre site ?{' '}
+          <NavLink to="/signup" className={styles.link}>
+            Créer un compte
+          </NavLink>
+        </p>
+
       </form>
 
-      <p className={styles.noAccount}>
-        Nouveau sur notre site ?{' '}
-        <NavLink to="/signup" className={styles.link}>
-          Créer un compte
-        </NavLink>
-      </p>
+      {/* MODALE MOT DE PASSE OUBLIÉ */}
+      {showModal && (
+        <div className={styles.overlay}>
+          <div className={styles.modal}>
+            <h2>Mot de passe oublié</h2>
+
+            <input
+              type="email"
+              placeholder="Votre email"
+              value={emailForReset}
+              onChange={(e) => setEmailForReset(e.target.value)}
+            />
+
+            {/* ✅ Messages dans la modale au lieu de alert() */}
+            {resetMessage && (
+              <p className={styles.resetSuccess}>{resetMessage}</p>
+            )}
+            {resetError && (
+              <p className={styles.resetError}>{resetError}</p>
+            )}
+
+            <button
+              type="button"
+              className={styles.submitButtonMDP}
+              onClick={handleForgotPassword}
+            >
+              Envoyer
+            </button>
+
+            <button
+              type="button"
+              className={styles.submitButtonMDP}
+              onClick={handleCloseModal}
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
+
     </AuthShell>
   );
 }

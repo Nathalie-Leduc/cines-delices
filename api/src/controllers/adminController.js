@@ -766,9 +766,9 @@ export async function getAdminUsers(req, res) {
 
     const formattedUsers = users.map((user) => ({
       id: user.id,
-      nom: user.pseudo.toUpperCase(),
-      displayName: user.pseudo,
+      nom: user.nom || '',
       prenom: user.pseudo,
+      displayName: user.pseudo,
       email: user.email,
       role: user.role,
       totalRecipes: user._count.recipes,
@@ -1104,31 +1104,140 @@ export async function approveIngredient(req, res) {
 
 export async function deleteIngredient(req, res) {
   try {
+    const ingredientId = req.params.id;
     const ingredient = await prisma.ingredient.findUnique({
       where: { id: req.params.id },
-      select: { nom: true },
+      select: {
+        nom: true,
+        _count: {
+          select: { recipes: true },
+        },
+      },
     });
 
     if (!ingredient) {
       return res.status(404).json({ message: 'Ingrédient introuvable.' });
     }
 
-    await prisma.$transaction([
-      prisma.recipeIngredient.deleteMany({ where: { ingredientId: req.params.id } }),
-      prisma.ingredient.delete({ where: { id: req.params.id } }),
-      prisma.notification.updateMany({
+    if ((ingredient._count?.recipes || 0) > 0) {
+      return res.status(409).json({
+        message: 'Impossible de supprimer un ingrédient déjà utilisé dans une recette.',
+      });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      await tx.recipeIngredient.deleteMany({ where: { ingredientId } });
+      await tx.ingredient.delete({ where: { id: ingredientId } });
+      await tx.notification.updateMany({
         where: {
           userId: req.user.id,
           isRead: false,
           message: `Nouvel ingrédient soumis: ${ingredient.nom}`,
         },
         data: { isRead: true },
-      }),
-    ]);
+      });
+    });
 
     return res.status(204).send();
   } catch (error) {
     return sendError(res, error, "Erreur lors de la suppression de l'ingrédient.");
+  }
+}
+
+export async function getValidatedIngredients(req, res) {
+  try {
+    const search = String(req.query.search || '').trim();
+    const ingredients = await prisma.ingredient.findMany({
+      where: {
+        approved: true,
+        ...(search
+          ? {
+              nom: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            }
+          : {}),
+      },
+      include: {
+        _count: {
+          select: { recipes: true },
+        },
+        recipes: {
+          include: {
+            recipe: {
+              select: {
+                createdAt: true,
+                user: {
+                  select: {
+                    nom: true,
+                    pseudo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        nom: 'asc',
+      },
+    });
+
+    return res.json(ingredients.map(formatIngredient));
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des ingrédients validés.');
+  }
+}
+
+export async function getIngredientRecipes(req, res) {
+  try {
+    const ingredient = await prisma.ingredient.findUnique({
+      where: { id: req.params.id },
+      include: {
+        _count: {
+          select: { recipes: true },
+        },
+        recipes: {
+          include: {
+            recipe: {
+              include: {
+                category: true,
+                media: true,
+                user: {
+                  select: {
+                    nom: true,
+                    pseudo: true,
+                  },
+                },
+                ingredients: {
+                  include: {
+                    ingredient: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!ingredient) {
+      return res.status(404).json({ message: 'Ingrédient introuvable.' });
+    }
+
+    const recipes = ingredient.recipes
+      .map((relation) => relation.recipe)
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(formatRecipe);
+
+    return res.json({
+      ingredient: formatIngredient(ingredient),
+      recipes,
+    });
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des recettes liées à l\'ingrédient.');
   }
 }
 

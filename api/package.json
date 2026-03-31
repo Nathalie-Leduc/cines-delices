@@ -13,6 +13,7 @@
     "convert:images": "node scripts/convert-images-to-webp.mjs",
     "convert:posters": "node scripts/migrate-posters-to-webp.mjs",
     "convert:all": "node scripts/convert-images-to-webp.mjs && node scripts/migrate-posters-to-webp.mjs",
+    "fix:media": "node scripts/fix-media-details.mjs",
     "swagger:validate": "node src/docs/validateSwaggerSpec.js",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",

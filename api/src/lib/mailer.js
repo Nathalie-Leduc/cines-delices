@@ -1,4 +1,43 @@
+import 'dotenv/config';
 import nodemailer from 'nodemailer';
+
+export const transporter = nodemailer.createTransport({
+  host: process.env.MAIL_HOST,
+  port: Number(process.env.MAIL_PORT),
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+});
+
+  
+export async function sendResetPasswordMail(to, resetLink) {
+  try {const info = await transporter.sendMail({
+    from: '"CinéDélices" <no-reply@cinedelices.fr>',
+    to,
+    subject: 'Réinitialisation de votre mot de passe',
+    text: `Pour réinitialiser votre mot de passe, cliquez sur ce lien : ${resetLink}`,
+    html: `<p>Pour réinitialiser votre mot de passe, cliquez sur ce lien : <a href="${resetLink}">${resetLink}</a></p>`,
+  });
+  console.log('📧 Email envoyé :', info);
+  
+  }catch (err) {
+  console.error('Erreur envoi mail ', err);
+  }
+}
+
+export async function sendPasswordChangedMail(to) {
+  const info = await transporter.sendMail({
+    from: '"CinéDélices" <no-reply@cinedelices.fr>',
+    to,
+    subject: 'Votre mot de passe a été modifié',
+    text: 'Votre mot de passe a bien été modifié.',
+    html: '<p>Votre mot de passe a bien été modifié.</p>',
+  });
+  console.log('✅ Confirmation de changement de mot de passe envoyé à :', to, '| Message ID:', info.messageId);
+  return info;
+}
+
 
 // ============================================================
 // SERVICE EMAIL — Nodemailer
@@ -16,15 +55,6 @@ import nodemailer from 'nodemailer';
 //   SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM
 // ============================================================
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: Number(process.env.SMTP_PORT) === 465, // true pour 465, false pour 587
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
 
 /**
  * Envoie un email.

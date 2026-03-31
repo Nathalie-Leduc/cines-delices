@@ -64,11 +64,25 @@ export default function Membre() {
   function getNotificationVariantClass(message) {
     const normalizedMessage = String(message || '').toLowerCase();
 
-    if (normalizedMessage.includes('a ete validee') || normalizedMessage.includes('a été validée')) {
+    if (
+      normalizedMessage.includes('a ete validee')
+      || normalizedMessage.includes('a été validée')
+      || normalizedMessage.includes('validee')
+      || normalizedMessage.includes('validée')
+      || normalizedMessage.includes('valide')
+      || normalizedMessage.includes('validé')
+    ) {
       return styles.notificationApproved;
     }
 
-    if (normalizedMessage.includes('a ete refusee') || normalizedMessage.includes('a été refusée')) {
+    if (
+      normalizedMessage.includes('a ete refusee')
+      || normalizedMessage.includes('a été refusée')
+      || normalizedMessage.includes('refusee')
+      || normalizedMessage.includes('refusée')
+      || normalizedMessage.includes('refuse')
+      || normalizedMessage.includes('refusé')
+    ) {
       return styles.notificationRejected;
     }
 
