@@ -4,6 +4,11 @@ import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import {
+  FILTERS,
+  LIMIT_OPTIONS,
+  normalizeCategoryLabel,
+} from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 import { approveAdminRecipe, getPendingRecipes, rejectAdminRecipe } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
@@ -76,11 +81,31 @@ function getSubmittedByLabel(item) {
   return fullName || 'Membre inconnu';
 }
 
+function countClass(label) {
+  const key = String(label || '').toLowerCase();
+  if (key === 'entrée') return styles.countEntree;
+  if (key === 'plat') return styles.countPlat;
+  if (key === 'dessert') return styles.countDessert;
+  if (key === 'boisson') return styles.countBoisson;
+  return '';
+}
+
+function filterToneClass(key) {
+  if (key === 'tous') return styles.recipePillTous;
+  if (key === 'entree') return styles.recipePillEntree;
+  if (key === 'plat') return styles.recipePillPlat;
+  if (key === 'dessert') return styles.recipePillDessert;
+  if (key === 'boisson') return styles.recipePillBoisson;
+  return '';
+}
+
 function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const [pendingRecipes, setPendingRecipes] = useState([]);
   const [activeFilter, setActiveFilter] = useState('Tous');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[LIMIT_OPTIONS.length - 1]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showValidateModal, setShowValidateModal] = useState(false);
   const [showRefuseModal, setShowRefuseModal] = useState(false);
@@ -118,7 +143,7 @@ function AdminDashboard() {
 
   const counters = useMemo(() => {
     return pendingRecipes.reduce((accumulator, recipe) => {
-      const key = recipe.category || 'Autre';
+      const key = normalizeCategoryLabel(recipe.category);
       accumulator[key] = (accumulator[key] || 0) + 1;
       return accumulator;
     }, {});
@@ -129,16 +154,31 @@ function AdminDashboard() {
       return pendingRecipes;
     }
 
-    return pendingRecipes.filter((recipe) => recipe.category === activeFilter);
+    return pendingRecipes.filter((recipe) => normalizeCategoryLabel(recipe.category) === activeFilter);
   }, [pendingRecipes, activeFilter]);
 
-  const filters = useMemo(() => ([
-    { label: 'Tous', count: pendingRecipes.length, countClass: '' },
-    { label: 'Entrée', count: counters['Entrée'] || 0, countClass: styles.countEntree },
-    { label: 'Plat', count: counters.Plat || 0, countClass: styles.countPlat },
-    { label: 'Dessert', count: counters.Dessert || 0, countClass: styles.countDessert },
-    { label: 'Boisson', count: counters.Boisson || 0, countClass: styles.countBoisson },
-  ]), [pendingRecipes.length, counters]);
+  const filters = useMemo(() => (
+    FILTERS.map((filter) => ({
+      ...filter,
+      count: filter.value === 'Tous' ? pendingRecipes.length : (counters[filter.value] || 0),
+    }))
+  ), [pendingRecipes.length, counters]);
+
+  const totalPendingRecipes = filteredPendingRecipes.length;
+  const totalPages = Math.max(1, Math.ceil(totalPendingRecipes / currentLimit));
+  const paginatedPendingRecipes = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredPendingRecipes.slice(startIndex, startIndex + currentLimit);
+  }, [filteredPendingRecipes, currentLimit, currentPage]);
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+  const summaryText = `${totalPendingRecipes} recette${totalPendingRecipes > 1 ? 's' : ''} à valider${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}.`;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const selectedRecipeHeroImage = selectedRecipe ? getRecipeImage(selectedRecipe) : '';
   const selectedRecipeMediaPoster = selectedRecipe ? getMediaPoster(selectedRecipe) : '';
@@ -206,19 +246,69 @@ function AdminDashboard() {
             Vous avez <strong className={styles.summaryStrong}>{pendingRecipes.length}</strong> recettes à valider
           </p>
 
-          <div className={styles.filterCountRow}>
+          <div className={styles.recipeFiltersRow}>
             {filters.map((filter) => (
-              <div key={filter.label} className={`${styles.filterGroup} ${styles.filterGroupVertical}`.trim()}>
-                <span className={`${styles.count} ${filter.countClass}`.trim()}>{filter.count}</span>
+              <div key={filter.label} className={styles.filterGroup}>
+                <span className={`${styles.count} ${countClass(filter.label)}`.trim()}>{filter.count}</span>
                 <button
                   type="button"
-                  className={`${styles.pill} ${activeFilter === filter.label ? styles.pillActive : ''}`.trim()}
-                  onClick={() => setActiveFilter(filter.label)}
+                  className={`${styles.recipePill} ${filterToneClass(filter.key)} ${activeFilter === filter.value ? styles.recipePillActive : ''}`.trim()}
+                  onClick={() => {
+                    setActiveFilter(filter.value);
+                    setCurrentPage(1);
+                  }}
+                  aria-pressed={activeFilter === filter.value}
                 >
                   {filter.label}
                 </button>
               </div>
             ))}
+          </div>
+
+          <div className={styles.recipeSummaryRow}>
+            <p className={styles.recipeSummaryText}>{summaryText}</p>
+            <div className={styles.recipeSummaryMeta}>
+              <label className={styles.limitControl}>
+                <span>Par page</span>
+                <select
+                  value={currentLimit}
+                  onChange={(event) => {
+                    setCurrentLimit(Number(event.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className={styles.limitSelect}
+                >
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>
+                      {limit}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className={styles.mobileLimitControl} aria-label="Nombre de recettes par page">
+                <div className={styles.mobileLimitPills}>
+                  {LIMIT_OPTIONS.map((limit) => {
+                    const isActive = currentLimit === limit;
+
+                    return (
+                      <button
+                        key={limit}
+                        type="button"
+                        className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ''}`.trim()}
+                        onClick={() => {
+                          setCurrentLimit(limit);
+                          setCurrentPage(1);
+                        }}
+                        aria-pressed={isActive}
+                      >
+                        {limit}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
 
           <Alert
@@ -240,7 +330,7 @@ function AdminDashboard() {
             />
           ) : null}
 
-          {!isLoading && !error && filteredPendingRecipes.length === 0 ? (
+          {!isLoading && !error && totalPendingRecipes === 0 ? (
             <StatusBlock
               variant="empty"
               title="Aucune recette en attente"
@@ -252,7 +342,7 @@ function AdminDashboard() {
           ) : null}
 
           <div className={styles.recipesGridExact}>
-            {filteredPendingRecipes.map((recipe) => {
+            {paginatedPendingRecipes.map((recipe) => {
               const slug = recipe.slug || String(recipe.id);
               const primaryImage = getRecipeImage(recipe);
               const fallbackImage = getMediaPoster(recipe) || '/img/hero-home.png';
@@ -262,7 +352,7 @@ function AdminDashboard() {
                 image: primaryImage || fallbackImage || '/img/placeholder.jpg',
                 fallbackImage,
                 title: recipe.title,
-                category: recipe.category,
+                category: normalizeCategoryLabel(recipe.category),
                 mediaTitle: recipe.movie || 'Film non renseigné',
                 mediaType: recipe.media === 'S' ? 'serie' : 'film',
                 duration: getDurationMinutes(recipe.duration),
@@ -291,6 +381,32 @@ function AdminDashboard() {
               );
             })}
           </div>
+
+          {!isLoading && !error && totalPages > 1 ? (
+            <nav className={styles.pagination} aria-label="Pagination des recettes à valider">
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+                disabled={!hasPreviousPage}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.paginationStatus}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+                disabled={!hasNextPage}
+              >
+                Suivant
+              </button>
+            </nav>
+          ) : null}
         </>
       )}
 
