@@ -131,6 +131,11 @@ function AdminUtilisateurs() {
             </button>
           </form>
 
+          <p className={styles.summaryText}>
+            <strong className={styles.summaryStrong}>{filteredUsers.length}</strong>{' '}
+            utilisateur{filteredUsers.length > 1 ? 's' : ''}
+          </p>
+
           <div className={styles.sectionTitle}>
             <h3>Liste des utilisateurs</h3>
           </div>
