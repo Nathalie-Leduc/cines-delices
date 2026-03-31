@@ -113,7 +113,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     },
     {
       to: '/admin/utilisateurs',
-      icon: '/icon/User.svg',
+      icon: '/icon/Group_fill.svg',
       title: 'Gérer les utilisateurs',
       sub: `${counts.users} utilisateur${counts.users > 1 ? 's' : ''}`,
     },
@@ -184,7 +184,9 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
                   <strong>{item.title}</strong>
                   <small className={item.subTone === 'recipe' ? styles.recipeCountTag : undefined}>{item.sub}</small>
                 </span>
-                <span className={styles.arrow} aria-hidden="true">›</span>
+                <span className={styles.arrow} aria-hidden="true">
+                  <img src="/icon/arrow.svg" alt="" />
+                </span>
               </NavLink>
             </li>
           ))}
@@ -225,10 +227,12 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
 
       <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
         <span className={styles.logoutIcon}>
-          <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
+          <img src="/icon/On_button_fill.svg" alt="" aria-hidden="true" />
         </span>
         Se déconnecter
-        <span className={styles.arrow} aria-hidden="true">›</span>
+        <span className={styles.arrow} aria-hidden="true">
+          <img src="/icon/arrow.svg" alt="" />
+        </span>
       </button>
     </aside>
   );

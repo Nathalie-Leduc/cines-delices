@@ -107,10 +107,16 @@
 }
 
 .arrow {
-  color: rgba(246, 241, 232, 0.92);
-  font-size: 2rem;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+
+  img {
+    width: 0.72rem;
+    height: auto;
+    display: block;
+  }
 }
 
 .notificationsBox {
@@ -263,9 +269,9 @@
   color: #f6f1e8;
   padding: 1rem 1rem;
   cursor: pointer;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-family: var(--font-body), 'Inter', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 600;
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 
   &:hover {
@@ -281,8 +287,8 @@
   justify-content: center;
 
   img {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     display: block;
   }
 }
@@ -344,14 +350,16 @@
   }
 
   .arrow {
-    font-size: 1.45rem;
+    img {
+      width: 0.62rem;
+    }
   }
 
   .logoutBtn {
     border-radius: 12px;
     margin-top: 0.1rem;
     padding: 0.82rem 0.9rem;
-    font-size: clamp(1.05rem, 3.8vw, 1.2rem);
+    font-size: 0.95rem;
   }
 
   .notificationsBox {
@@ -363,8 +371,8 @@
   }
 
   .logoutIcon img {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 }
 
