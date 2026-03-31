@@ -117,9 +117,9 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
 
   // Le lien "Mon compte" pointe vers /admin si admin, /membre/profil sinon
   const accountPath = isAdmin ? "/admin" : "/membre/profil";
-  const navItems = NAVBAR_VARIANTS[resolvedVariant]?.items ?? NAVBAR_VARIANTS.public.items;
+  const desktopNavItems = NAVBAR_VARIANTS.public.items;
+  const mobileNavItems = NAVBAR_VARIANTS[resolvedVariant]?.items ?? NAVBAR_VARIANTS.public.items;
   const roleLabel = NAVBAR_VARIANTS[resolvedVariant]?.roleLabel ?? "";
-  const showHeaderRoleBadge = Boolean(roleLabel) && resolvedVariant !== "admin";
   const shouldShowSearch = resolvedVariant === "public";
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -343,16 +343,11 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
             <ul
               className={styles.desktopLinks}
               style={{
-                "--desktop-nav-columns": String(navItems.length),
-                "--desktop-nav-max-width":
-                  resolvedVariant === "admin"
-                    ? "44rem"
-                    : resolvedVariant === "member"
-                      ? "36rem"
-                      : "28rem",
+                "--desktop-nav-columns": String(desktopNavItems.length),
+                "--desktop-nav-max-width": "28rem",
               }}
             >
-              {navItems.map((item) => (
+              {desktopNavItems.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
@@ -369,54 +364,52 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
           </nav>
 
           <div className={styles.rightZone}>
-            {shouldShowSearch && (
-              <div ref={desktopSearchRef} className={styles.searchWrapper}>
-                <form className={styles.searchForm} role="search" onSubmit={handleSearchSubmit}>
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={handleSearch}
-                    placeholder="Rechercher..."
-                    className={styles.searchInput}
+            <div ref={desktopSearchRef} className={styles.searchWrapper}>
+              <form className={styles.searchForm} role="search" onSubmit={handleSearchSubmit}>
+                <input
+                  type="search"
+                  value={search}
+                  onChange={handleSearch}
+                  placeholder="Rechercher..."
+                  className={styles.searchInput}
+                />
+                <button
+                  type="submit"
+                  className={styles.searchButton}
+                  aria-label="Rechercher"
+                >
+                  <img
+                    src="/icon/Search.svg"
+                    alt=""
+                    className={styles.searchIcon}
                   />
-                  <button
-                    type="submit"
-                    className={styles.searchButton}
-                    aria-label="Rechercher"
-                  >
-                    <img
-                      src="/icon/Search.svg"
-                      alt=""
-                      className={styles.searchIcon}
-                    />
-                  </button>
-                  {results.length > 0 && (
-                    <ul className={styles.searchResults}>
-                      {results.map((recipe) => (
-                        <li key={recipe.id} className={styles.searchResultItem}>
-                          <NavLink
-                            to={`/recipes/${recipe.slug || recipe.id}`}
-                            onClick={handleResultClick}
-                          >
-                            <img
-                              src={recipe.image}
-                              alt={recipe.title}
-                              className={styles.searchResultThumb}
-                            />
-                            <span className={styles.searchResultCopy}>
-                              <span>{recipe.title}</span>
-                              {recipe.mediaTitle && (
-                                <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
-                              )}
-                            </span>
-                          </NavLink>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </form>
-              </div>
-            )}
+                </button>
+                {results.length > 0 && (
+                  <ul className={styles.searchResults}>
+                    {results.map((recipe) => (
+                      <li key={recipe.id} className={styles.searchResultItem}>
+                        <NavLink
+                          to={`/recipes/${recipe.slug || recipe.id}`}
+                          onClick={handleResultClick}
+                        >
+                          <img
+                            src={recipe.image}
+                            alt={recipe.title}
+                            className={styles.searchResultThumb}
+                          />
+                          <span className={styles.searchResultCopy}>
+                            <span>{recipe.title}</span>
+                            {recipe.mediaTitle && (
+                              <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                            )}
+                          </span>
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </form>
+            </div>
 
             {/* ────────────────────────────────────────────────────────────
                 🔹 Tâche f-05 : le rendu conditionnel utilise isAuthenticated
@@ -427,7 +420,6 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
               <div className={styles.userBlock}>
                 <NavLink to={accountPath} className={styles.userTextLink}>
                   <span className={styles.userText}>
-                    {showHeaderRoleBadge ? <span className={styles.userRoleBadge}>{roleLabel}</span> : null}
                     <span className={styles.userGreeting}>Bonjour,</span>
                   </span>
                   <span className={styles.userName}>{userName}</span>
@@ -574,7 +566,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
 
                 <nav className={styles.mobileNav} aria-label="Navigation mobile">
                   <ul className={styles.mobileLinks}>
-                    {navItems.map((item) => (
+                    {mobileNavItems.map((item) => (
                       <li key={item.to}>
                         <NavLink
                           to={item.to}
