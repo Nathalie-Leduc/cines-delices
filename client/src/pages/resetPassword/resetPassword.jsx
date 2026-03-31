@@ -13,6 +13,7 @@ export default function ResetPassword() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,44 +35,74 @@ export default function ResetPassword() {
   if (!token) return <p className={styles.formAlert}>Lien invalide.</p>;
 
   return (
-    <div className={styles.resetPasswordPage}>
-      <div className={styles.container}>
-        <h1 className={styles.title}>Nouveau mot de passe</h1>
-        {success ? (
-          <p className={styles.successMsg}>Mot de passe mis à jour ! Redirection...</p>
-        ) : (
-          <form className={styles.form} onSubmit={handleSubmit} autoComplete='off'>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label} htmlFor="password">Nouveau mot de passe</label>
-              <input
-                className={styles.input}
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Nouveau mot de passe"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete='new-password'
-              />
-              
-            </div>
-            <div className={styles.fieldGroup}>
-              <label className={styles.label} htmlFor="confirm">Confirmer le mot de passe</label>
-              <input
-                className={styles.input}
-                id="confirm"
-                type="password"
-                placeholder="Confirmer le mot de passe"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-              />
-            </div>
-            {error && <p className={styles.formAlert}>{error}</p>}
-            <button className={styles.submitButton} type="submit">Valider</button>
-          </form>
-        )}
+    <>
+      <div className={styles.resetPasswordPage}>
+        <div className={styles.container}>
+          <h1 className={styles.title}>Nouveau mot de passe</h1>
+          {success ? (
+            <p className={styles.successMsg}>Mot de passe mis à jour ! Redirection...</p>
+          ) : (
+            <form className={styles.form} onSubmit={handleSubmit} autoComplete='off'>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label} htmlFor="password">Nouveau mot de passe</label>
+                <div className={styles.inputWrapper}>
+                  <input
+                    className={styles.input}
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Nouveau mot de passe"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete='new-password'
+                    style={{ paddingRight: '2.8rem' }}
+                  />
+                  <button
+                    type="button"
+                    className={styles.togglePassword}
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    aria-pressed={showPassword}
+                    tabIndex={0}
+                    style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}
+                  >
+                    👁️
+                  </button>
+                </div>
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.label} htmlFor="confirm">Confirmer le mot de passe</label>
+                <div className={styles.inputWrapper}>
+                  <input
+                    className={styles.input}
+                    id="confirm"
+                    type={showConfirm ? 'text' : 'password'}
+                    placeholder="Confirmer le mot de passe"
+                    value={confirm}
+                    onChange={(e) => setConfirm(e.target.value)}
+                    required
+                    autoComplete='new-password'
+                    style={{ paddingRight: '2.8rem' }}
+                  />
+                  <button
+                    type="button"
+                    className={styles.togglePassword}
+                    onClick={() => setShowConfirm((v) => !v)}
+                    aria-label={showConfirm ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    aria-pressed={showConfirm}
+                    tabIndex={0}
+                    style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)' }}
+                  >
+                    👁️
+                  </button>
+                </div>
+              </div>
+              {error && <p className={styles.formAlert}>{error}</p>}
+              <button className={styles.submitButton} type="submit">Valider</button>
+            </form>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

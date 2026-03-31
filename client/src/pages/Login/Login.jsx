@@ -17,10 +17,11 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [emailForReset, setEmailForReset] = useState('');
-  
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetError, setResetError] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError('');
     setIsSubmitting(true);
 
@@ -28,7 +29,6 @@ export default function Login() {
       const payload = await loginUser({ email, password });
       login({ token: payload?.token, user: payload?.user ?? null });
 
-      // Déterminer la redirection selon le rôle
       let redirectPath = location.state?.from?.pathname || '/membre';
       if (payload?.user?.role === 'ADMIN') {
         redirectPath = '/admin';
@@ -42,135 +42,134 @@ export default function Login() {
   };
 
   const handleForgotPassword = async () => {
+    setResetMessage('');
+    setResetError('');
     if (!emailForReset) {
-      alert("Veuillez entrer votre email.");
+      setResetError("Veuillez entrer votre email.");
       return;
     }
-   try {
-    // Appel de la fonction API avec l'email saisi
-    const res = await forgotPassword(emailForReset);
-     console.log("SUCCESS :", res);
-    // Message pour l'utilisateur
-    alert("Email envoyé si le compte existe !");
-
-    // Ferme la modal
-    setShowModal(false);
-
-  } catch (err) {
-    console.error(err);
-
-    // Message en cas d'erreur
-    alert(err?.response?.data?.message || "Erreur lors de l'envoi du mail");
-  }
-};
+    try {
+      await forgotPassword(emailForReset);
+      setResetMessage("Email envoyé si le compte existe !");
+      setResetError('');
+    } catch (err) {
+      setResetError(err?.response?.data?.message || "Erreur lors de l'envoi du mail");
+      setResetMessage('');
+    }
+  };
 
   return (
-  <AuthShell title="Bienvenue" subtitle="Connectez-vous à votre compte">
-    <form className={styles.form} onSubmit={handleSubmit}>
-      
-      {/* EMAIL */}
-      <div className={styles.fieldGroup}>
-        <label htmlFor="email" className={styles.label}>
-          Adresse e-mail
-        </label>
-        <div className={styles.inputWrapper}>
-          <span className={`${styles.leadingIcon} ${styles.emailIcon}`} aria-hidden="true" />
-          <input
-            id="email"
-            type="email"
-            className={styles.input}
-            placeholder="Entrez votre e-mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-            required
-          />
-        </div>
-      </div>
-
-      {/* PASSWORD */}
-      <div className={styles.fieldGroup}>
-        <label htmlFor="password" className={styles.label}>
-          Mot de passe
-        </label>
-        <div className={styles.inputWrapper}>
-          <span className={`${styles.leadingIcon} ${styles.lockIcon}`} aria-hidden="true" />
-          <input
-            id="password"
-            type={showPassword ? 'text' : 'password'}
-            className={styles.input}
-            placeholder="Entrez votre mot de passe"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-            required
-          />
-          <button
-            type="button"
-            className={styles.togglePassword}
-            onClick={() => setShowPassword((prev) => !prev)}
-            aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-            aria-pressed={showPassword}
-          >
-            {showPassword ? '🙈' : '👁️'}
-          </button>
-        </div>
-
-        {/* Forgot Password */}
-        <NavLink
-          to="#"
-          className={styles.forgotPassword}
-          // empêche la navigation réelle et ouvre la modal
-          onClick={(e) => { e.preventDefault(); setShowModal(true); }}
-        >
-          Mot de passe oublié
-        </NavLink>
-      </div>
-
-      {/* SUBMIT BUTTON */}
-      <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-        {isSubmitting ? 'Connexion...' : 'Se connecter'}
-      </button>
-
-      {/* MODAL MOT DE PASSE OUBLIÉ */}
-      {showModal && (
-        <div className={styles.overlay}>
-          <div className={styles.modal}>
-            <h2>Mot de passe oublié</h2>
+    <AuthShell
+      title="Bienvenue"
+      subtitle="Connectez-vous à votre compte"
+    >
+      <form className={styles.form} onSubmit={handleSubmit}>
+        {/* EMAIL */}
+        <div className={styles.fieldGroup}>
+          <label htmlFor="email" className={styles.label}>
+            Adresse e-mail
+          </label>
+          <div className={styles.inputWrapper}>
             <input
+              id="email"
               type="email"
-              placeholder="Votre email"
-              value={emailForReset}
-              onChange={(e) => setEmailForReset(e.target.value)}
+              className={styles.input}
+              placeholder="Entrez votre e-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
             />
-            <div className={styles.modalButtons}>
-              <button type="button" className={styles.submitButtonMDP} onClick={handleForgotPassword}>
-                Envoyer
-              </button>
-              <button type="button" className={styles.submitButtonMDP} onClick={() => setShowModal(false)}>
-                Fermer
-              </button>
-            </div>
           </div>
         </div>
-      )}
 
-      {/* INSCRIPTION */}
-      <p className={styles.noAccount}>
-        Nouveau sur notre site ?{' '}
-        <NavLink to="/signup" className={styles.link}>
-          Créer un compte
-        </NavLink>
-      </p>
+        {/* PASSWORD */}
+        <div className={styles.fieldGroup}>
+          <label htmlFor="password" className={styles.label}>
+            Mot de passe
+          </label>
+          <div className={styles.inputWrapper}>
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              className={styles.input}
+              placeholder="Entrez votre mot de passe"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+            />
+            <button
+              type="button"
+              className={styles.togglePassword}
+              onClick={() => setShowPassword((prev) => !prev)}
+              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              aria-pressed={showPassword}
+            >
+              👁️
+            </button>
+          </div>
 
-      {/* ALERT */}
-      <Alert
-        type="error"
-        message={error}
-        onClose={() => setError('')}
-        className={styles.formAlert}
-      />
-    </form>
-  </AuthShell>
+          {/* Forgot Password */}
+          <NavLink
+            to="#"
+            className={styles.forgotPassword}
+            onClick={(e) => { e.preventDefault(); setShowModal(true); }}
+          >
+            Mot de passe oublié
+          </NavLink>
+        </div>
+
+        {/* SUBMIT BUTTON */}
+        <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+          {isSubmitting ? 'Connexion...' : 'Se connecter'}
+        </button>
+
+        {/* MODAL MOT DE PASSE OUBLIÉ */}
+        {showModal && (
+          <div className={styles.overlay}>
+            <div className={styles.modal}>
+              <h2>Mot de passe oublié</h2>
+              <input
+                type="email"
+                placeholder="Votre email"
+                value={emailForReset}
+                onChange={(e) => setEmailForReset(e.target.value)}
+              />
+              {resetMessage && (
+                <div className={styles.successMsg}>{resetMessage}</div>
+              )}
+              {resetError && (
+                <div className={styles.formAlert}>{resetError}</div>
+              )}
+              <div className={styles.modalButtons}>
+                <button type="button" className={styles.submitButtonMDP} onClick={handleForgotPassword}>
+                  Envoyer
+                </button>
+                <button type="button" className={styles.submitButtonMDP} onClick={() => setShowModal(false)}>
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* INSCRIPTION */}
+        <p className={styles.noAccount}>
+          Nouveau sur notre site ?{' '}
+          <NavLink to="/signup" className={styles.link}>
+            Créer un compte
+          </NavLink>
+        </p>
+
+        {/* ALERT */}
+        <Alert
+          type="error"
+          message={error}
+          onClose={() => setError('')}
+          className={styles.formAlert}
+        />
+      </form>
+    </AuthShell>
   );
 }

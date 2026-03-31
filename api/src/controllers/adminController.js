@@ -675,17 +675,14 @@ export async function updateAdminRecipe(req, res) {
         new Map(resolvedIngredients.map((entry) => [entry.ingredientId, entry])).values(),
       );
 
-      data.ingredients = {
-        deleteMany: {},
-        ...(deduped.length > 0
-          ? {
-              create: deduped.map((entry) => ({
-                ingredientId: entry.ingredientId,
-                quantity: entry.quantity,
-                unit: entry.unit,
-              })),
-            }
-          : {}),
+      // Correctif : toujours inclure create, même avec un tableau vide
+     data.ingredients = {
+       deleteMany: {},
+        create: deduped.map((entry) => ({
+          ingredientId: entry.ingredientId,
+          quantity: entry.quantity,
+          unit: entry.unit,
+        })),
       };
     }
 
@@ -948,9 +945,11 @@ export async function deleteCategory(req, res) {
       return res.status(404).json({ message: 'Catégorie introuvable.' });
     }
 
-    if ((category._count?.recipes || 0) > 0) {
+    const recipesCount = category._count?.recipes || 0;
+
+    if (recipesCount > 0) {
       return res.status(409).json({
-        message: 'Impossible de supprimer une catégorie déjà utilisée par des recettes.',
+        message: `Impossible de supprimer cette catégorie : ${recipesCount} recette${recipesCount > 1 ? 's y sont associées' : ' y est associée'}.`,
       });
     }
 
@@ -1107,63 +1106,25 @@ export async function deleteIngredient(req, res) {
     const ingredientId = req.params.id;
     const ingredient = await prisma.ingredient.findUnique({
       where: { id: req.params.id },
-      select: { nom: true },
+      select: {
+        nom: true,
+        _count: {
+          select: { recipes: true },
+        },
+      },
     });
 
     if (!ingredient) {
       return res.status(404).json({ message: 'Ingrédient introuvable.' });
     }
 
-    const linkedRecipes = await prisma.recipeIngredient.findMany({
-      where: { ingredientId },
-      select: {
-        recipe: {
-          select: {
-            id: true,
-            titre: true,
-            status: true,
-            userId: true,
-          },
-        },
-      },
-    });
-
-    const pendingRecipes = linkedRecipes
-      .map((item) => item.recipe)
-      .filter((recipe) => recipe && recipe.status === 'PENDING');
-
-    const pendingRecipeIds = Array.from(new Set(pendingRecipes.map((recipe) => recipe.id)));
-    const rejectionReason = `Ingrédient ${ingredient.nom} refusé, veuillez modifier votre recette.`;
+    if ((ingredient._count?.recipes || 0) > 0) {
+      return res.status(409).json({
+        message: 'Impossible de supprimer un ingrédient déjà utilisé dans une recette.',
+      });
+    }
 
     await prisma.$transaction(async (tx) => {
-      if (pendingRecipeIds.length > 0) {
-        await tx.recipe.updateMany({
-          where: {
-            id: { in: pendingRecipeIds },
-            status: 'PENDING',
-          },
-          data: {
-            status: 'DRAFT',
-            rejectionReason,
-          },
-        });
-
-        const notificationsPayload = pendingRecipes
-          .filter((recipe) => recipe.userId)
-          .map((recipe) => ({
-            userId: recipe.userId,
-            recipeId: recipe.id,
-            type: 'RECIPE_SUBMITTED',
-            message: `Ingrédient ${ingredient.nom} refusé, veuillez modifier votre recette "${recipe.titre}".`,
-          }));
-
-        if (notificationsPayload.length > 0) {
-          await tx.notification.createMany({
-            data: notificationsPayload,
-          });
-        }
-      }
-
       await tx.recipeIngredient.deleteMany({ where: { ingredientId } });
       await tx.ingredient.delete({ where: { id: ingredientId } });
       await tx.notification.updateMany({
@@ -1228,12 +1189,114 @@ export async function getValidatedIngredients(req, res) {
   }
 }
 
+export async function getIngredientRecipes(req, res) {
+  try {
+    const ingredient = await prisma.ingredient.findUnique({
+      where: { id: req.params.id },
+      include: {
+        _count: {
+          select: { recipes: true },
+        },
+        recipes: {
+          include: {
+            recipe: {
+              include: {
+                category: true,
+                media: true,
+                user: {
+                  select: {
+                    nom: true,
+                    pseudo: true,
+                  },
+                },
+                ingredients: {
+                  include: {
+                    ingredient: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!ingredient) {
+      return res.status(404).json({ message: 'Ingrédient introuvable.' });
+    }
+
+    const recipes = ingredient.recipes
+      .map((relation) => relation.recipe)
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(formatRecipe);
+
+    return res.json({
+      ingredient: formatIngredient(ingredient),
+      recipes,
+    });
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des recettes liées à l\'ingrédient.');
+  }
+}
+
+export async function getCategoryRecipes(req, res) {
+  try {
+    const category = await prisma.category.findUnique({
+      where: { id: req.params.id },
+      include: {
+        _count: {
+          select: { recipes: true },
+        },
+        recipes: {
+          include: {
+            category: true,
+            media: true,
+            user: {
+              select: {
+                nom: true,
+                pseudo: true,
+              },
+            },
+            ingredients: {
+              include: {
+                ingredient: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Catégorie introuvable.' });
+    }
+
+    const recipes = category.recipes
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(formatRecipe);
+
+    return res.json({
+      category: formatCategory(category),
+      recipes,
+    });
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des recettes liées à la catégorie.');
+  }
+}
+
 // =====================
 // NOTIFICATIONS — ADMIN
 // =====================
 
 export async function getAdminNotifications(req, res) {
   try {
+    const rawLimit = Number.parseInt(String(req.query.limit || '10'), 10);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0
+      ? Math.min(rawLimit, 100)
+      : 10;
+
     await prisma.notification.deleteMany({
       where: {
         userId: req.user.id,
@@ -1273,7 +1336,7 @@ export async function getAdminNotifications(req, res) {
         isRead: false,
       },
       orderBy: { createdAt: 'desc' },
-      take: 10,
+      take: limit,
     });
 
     const unreadCount = await prisma.notification.count({
@@ -1289,5 +1352,30 @@ export async function getAdminNotifications(req, res) {
     });
   } catch (error) {
     return sendError(res, error, 'Erreur lors de la récupération des notifications admin.');
+  }
+}
+
+export async function deleteAdminNotification(req, res) {
+  try {
+    const notificationId = String(req.params.id || '').trim();
+
+    if (!notificationId) {
+      return res.status(400).json({ message: 'Identifiant de notification invalide.' });
+    }
+
+    const deleted = await prisma.notification.deleteMany({
+      where: {
+        id: notificationId,
+        userId: req.user.id,
+      },
+    });
+
+    if (deleted.count === 0) {
+      return res.status(404).json({ message: 'Notification introuvable.' });
+    }
+
+    return res.status(204).send();
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la suppression de la notification admin.');
   }
 }

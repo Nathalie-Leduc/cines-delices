@@ -389,6 +389,21 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
                     className={styles.profileIcon}
                   />
                 </NavLink>
+                <button
+                  type="button"
+                  className={styles.desktopLogoutButton}
+                  onClick={handleLogout}
+                  aria-label="Se déconnecter"
+                >
+                  {/* Icône Logout — même icône que le bouton du compte membre */}
+                  <img
+                    src="/icon/Logout.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className={styles.desktopLogoutIcon}
+                  />
+                  <span>Se déconnecter</span>
+                </button>
               </div>
             ) : (
               <NavLink to="/login" className={styles.desktopLoginLink}>

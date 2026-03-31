@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -41,6 +42,10 @@ export default function AdminIngredients() {
       (ingredient.name || '').toLowerCase().includes(normalizedQuery),
     );
   }, [ingredients, query]);
+
+  function canDeleteIngredient(ingredient) {
+    return (ingredient?.recipesCount || 0) === 0;
+  }
 
   async function handleDeleteIngredient() {
     if (!selectedIngredient) return;
@@ -119,9 +124,13 @@ export default function AdminIngredients() {
                 {ingredient.name}
               </strong>
               {ingredient.recipesCount > 0 && (
-                <span className={styles.submittedByRowTag}>
+                <Link
+                  to={`/admin/ingredients/${ingredient.id}/recettes`}
+                  className={`${styles.submittedByRowTag} ${styles.clickableTag}`}
+                  aria-label={`Voir les ${ingredient.recipesCount} recettes liées à l'ingrédient ${ingredient.name}`}
+                >
                   Utilisé dans {ingredient.recipesCount} recette{ingredient.recipesCount > 1 ? 's' : ''}
-                </span>
+                </Link>
               )}
             </div>
 
@@ -141,8 +150,16 @@ export default function AdminIngredients() {
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundRed}`.trim()}
-                title="Supprimer"
+                disabled={!canDeleteIngredient(ingredient)}
+                title={
+                  canDeleteIngredient(ingredient)
+                    ? 'Supprimer'
+                    : "Suppression impossible tant que l'ingrédient est utilisé dans une recette"
+                }
                 onClick={() => {
+                  if (!canDeleteIngredient(ingredient)) {
+                    return;
+                  }
                   setSelectedIngredient(ingredient);
                   setShowDeleteModal(true);
                 }}

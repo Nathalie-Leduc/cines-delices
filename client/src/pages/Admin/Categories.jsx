@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -13,6 +14,7 @@ import styles from './AdminPages.module.scss';
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isEditingCreateName, setIsEditingCreateName] = useState(false);
   const [creatingWithColor, setCreatingWithColor] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
@@ -23,6 +25,17 @@ function AdminCategories() {
   const [error, setError] = useState('');
   const [deleteModalError, setDeleteModalError] = useState('');
 
+  function resetToListView() {
+    setCreatingWithColor(false);
+    setIsEditingCreateName(false);
+    setEditingCategory(null);
+    setEditingCategoryName('');
+    setShowDeleteModal(false);
+    setShowEditModal(false);
+    setDeleteModalError('');
+    setError('');
+  }
+
   useEffect(() => {
     setIsLoading(true);
     getAdminCategories()
@@ -32,6 +45,22 @@ function AdminCategories() {
       })
       .catch((err) => setError(err.message || 'Impossible de charger les catégories.'))
       .finally(() => setIsLoading(false));
+  }, []);
+
+  function canDeleteCategory(category) {
+    return (category?.recipesCount || 0) === 0;
+  }
+
+  useEffect(() => {
+    function handleCategoriesReset() {
+      resetToListView();
+    }
+
+    window.addEventListener('admin-categories-reset', handleCategoriesReset);
+
+    return () => {
+      window.removeEventListener('admin-categories-reset', handleCategoriesReset);
+    };
   }, []);
 
   async function handleCreateCategory() {
@@ -54,16 +83,33 @@ function AdminCategories() {
     // Ouvrir la roue chromatique au lieu de créer directement
     setSelectedColor('#CC9A5C');
     setError('');
+    setIsEditingCreateName(false);
     setCreatingWithColor(true);
   }
 
   async function handleConfirmCreate() {
     const name = newCategoryName.trim();
+
+    const alreadyExists = categories.some(
+      (category) => category.name.trim().toLowerCase() === name.toLowerCase(),
+    );
+
+    if (!name) {
+      setError('Le nom de la catégorie est obligatoire.');
+      return;
+    }
+
+    if (alreadyExists) {
+      setError('Cette catégorie existe déjà.');
+      return;
+    }
+
     try {
       const created = await createAdminCategory({ name, color: selectedColor });
       setCategories((previous) => [created, ...previous]);
       setNewCategoryName('');
       setSelectedColor('#CC9A5C');
+      setIsEditingCreateName(false);
       setCreatingWithColor(false);
       setError('');
     } catch (createError) {
@@ -110,8 +156,12 @@ function AdminCategories() {
       return;
     }
 
-    if ((editingCategory.recipesCount || 0) > 0) {
-      setDeleteModalError('Impossible de supprimer cette catégorie car elle est encore utilisée par des recettes.');
+    const recipesCount = editingCategory.recipesCount || 0;
+
+    if (recipesCount > 0) {
+      setDeleteModalError(
+        `Impossible de supprimer cette catégorie : ${recipesCount} recette${recipesCount > 1 ? 's utilisent encore' : ' utilise encore'} cette catégorie.`,
+      );
       return;
     }
 
@@ -183,9 +233,20 @@ function AdminCategories() {
           <div className={styles.list}>
             {categories.map((category) => (
               <div key={category.id} className={styles.categoryRow}>
-                <span className={styles.categoryDot} style={{ background: category.color }}>
-                  {category.name}
-                </span>
+                <div className={styles.ingredientIdentity}>
+                  <span className={styles.categoryDot} style={{ background: category.color }}>
+                    {category.name}
+                  </span>
+                  {category.recipesCount > 0 ? (
+                    <Link
+                      to={`/admin/categories/${category.id}/recettes`}
+                      className={`${styles.submittedByRowTag} ${styles.clickableTag}`}
+                      aria-label={`Voir les ${category.recipesCount} recettes liées à la catégorie ${category.name}`}
+                    >
+                      Utilisée dans {category.recipesCount} recette{category.recipesCount > 1 ? 's' : ''}
+                    </Link>
+                  ) : null}
+                </div>
                 <span className={styles.inlineTools}>
                   <button
                     type="button"
@@ -202,8 +263,17 @@ function AdminCategories() {
                   </button>
                   <button
                     type="button"
-                    className={styles.roundIconBtn}
+                    className={`${styles.roundIconBtn} ${styles.roundRed}`.trim()}
+                    disabled={!canDeleteCategory(category)}
+                    title={
+                      canDeleteCategory(category)
+                        ? 'Supprimer'
+                        : `Suppression impossible : ${category.recipesCount} recette${category.recipesCount > 1 ? 's utilisent' : ' utilise'} cette catégorie`
+                    }
                     onClick={() => {
+                      if (!canDeleteCategory(category)) {
+                        return;
+                      }
                       setEditingCategory(category);
                       setEditingCategoryName(category.name);
                       setDeleteModalError('');
@@ -233,8 +303,34 @@ function AdminCategories() {
       {creatingWithColor && (
         <div className={styles.colorEditor}>
           <div className={styles.categoryCreateHeading}>
-            {newCategoryName.trim()}
+            <span>{newCategoryName.trim()}</span>
+            <button
+              type="button"
+              className={styles.roundIconBtn}
+              aria-label="Modifier le nom de la catégorie"
+              title="Modifier le nom"
+              onClick={() => setIsEditingCreateName((previous) => !previous)}
+            >
+              <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+            </button>
           </div>
+
+          {isEditingCreateName && (
+            <label className={styles.categoryNameLabel}>
+              Nom de la catégorie
+              <input
+                type="text"
+                className={styles.categoryNameField}
+                value={newCategoryName}
+                onChange={(event) => {
+                  setNewCategoryName(event.target.value);
+                  if (error) {
+                    setError('');
+                  }
+                }}
+              />
+            </label>
+          )}
 
           <p className={styles.colorLabel}>Choisir une couleur de fond</p>
 
@@ -324,6 +420,12 @@ function AdminCategories() {
           onConfirm={handleDeleteCategory}
         >
           Êtes-vous sûr de vouloir supprimer cette catégorie ?
+          {editingCategory?.recipesCount > 0 && (
+            <p style={{ marginTop: '0.5rem', color: '#f4a555', fontSize: '0.9rem' }}>
+              Attention : cette catégorie est utilisée dans {editingCategory.recipesCount} recette
+              {editingCategory.recipesCount > 1 ? 's' : ''}.
+            </p>
+          )}
           {deleteModalError ? <div className={styles.modalDeleteError}>{deleteModalError}</div> : null}
         </AdminModal>
       )}

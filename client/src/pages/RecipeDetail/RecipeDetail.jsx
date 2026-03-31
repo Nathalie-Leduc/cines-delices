@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RecipeCard from "../../components/RecipeCard";
 import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
@@ -15,6 +16,20 @@ const DEFAULT_STEPS = [
   "Dresse soigneusement puis sers immédiatement pour profiter de toutes les saveurs.",
 ];
 const RECIPE_IMAGE_FALLBACK = "/img/hero-home.png";
+
+// ✅ formatMinutes — affiche un temps en minutes de façon lisible
+// < 60 min  → "30 min"
+// >= 60 min → "1h20" ou "2h" (sans "0min" si pile)
+// Analogie : comme une horloge de cuisine qui bascule en heures
+// dès qu'on dépasse 59 minutes.
+function formatMinutes(totalMinutes) {
+  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return null;
+  const mins = Math.round(totalMinutes);
+  if (mins < 60) return `${mins} min`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m === 0 ? `${h}h` : `${h}h${m}min`;
+}
 
 function normalizeCategory(category) {
   return category?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
@@ -53,10 +68,27 @@ function normalizeApiRecipe(apiRecipe) {
 
   const ingredients = (apiRecipe.ingredients || []).map((ingredient) => {
     if (typeof ingredient === 'string') return ingredient;
+
+    const rawName = ingredient.name || ingredient.nom || ingredient.ingredient?.nom || '';
+    const quantity = ingredient.quantity || ingredient.quantite || '';
+    const unit = ingredient.unit || ingredient.unite || '';
+
+    // Pluriel automatique : si la quantité est un nombre > 1 et que le nom
+    // ne se termine pas déjà par 's', on ajoute un 's'.
+    // Analogie : 1 tomate → "tomate", 3 tomates → "tomates"
+    const numericQty = parseFloat(String(quantity).replace(',', '.'));
+    const shouldPluralize = Number.isFinite(numericQty)
+      && numericQty > 1
+      && rawName.length > 0
+      && !rawName.trim().endsWith('s')
+      && !rawName.trim().endsWith('x')
+      && !rawName.trim().endsWith('z');
+    const displayName = shouldPluralize ? `${rawName}s` : rawName;
+
     const parts = [];
-    if (ingredient.quantity || ingredient.quantite) parts.push(ingredient.quantity || ingredient.quantite);
-    if (ingredient.unit || ingredient.unite) parts.push(ingredient.unit || ingredient.unite);
-    parts.push(ingredient.name || ingredient.nom || ingredient.ingredient?.nom || '');
+    if (quantity) parts.push(quantity);
+    if (unit) parts.push(unit);
+    parts.push(displayName);
     return parts.join(' ').trim();
   });
 
@@ -113,6 +145,7 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { slug } = useParams();
+  const { isAdmin } = useAuth();
   const isHeroVisible = useHeroReveal();
   const [recipes, setRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -307,11 +340,20 @@ export default function RecipeDetail() {
   const recipeGenre = genre ?? "Cuisine fiction";
   const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;
   const canEditFromMemberSpace = Boolean(state?.fromMemberRecipes);
+  const canEditFromAdminSpace = Boolean(isAdmin && recipe?.id);
 
   function handleOpenMemberEditForm() {
     const targetRecipeId = state?.openEditRecipeId || recipe?.id;
 
     navigate("/membre/mes-recettes", {
+      state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
+    });
+  }
+
+  function handleOpenAdminEditForm() {
+    const targetRecipeId = state?.openEditRecipeId || recipe?.id;
+
+    navigate("/admin/recettes", {
       state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
     });
   }
@@ -348,6 +390,17 @@ export default function RecipeDetail() {
             </button>
           )}
 
+          {!canEditFromMemberSpace && canEditFromAdminSpace && (
+            <button
+              type="button"
+              className={`${styles.editFromDetailButton} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              onClick={handleOpenAdminEditForm}
+              title="Modifier cette recette dans l'administration"
+            >
+              Modifier la recette
+            </button>
+          )}
+
           <div className={styles.heroContent}>
             <h1 className={`${styles.title} ${styles.heroReveal} ${styles.heroRevealDelay2} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>{title}</h1>
             <p className={`${styles.heroBadge} ${styles.heroReveal} ${styles.heroRevealDelay3} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}>
@@ -363,17 +416,17 @@ export default function RecipeDetail() {
           <div className={styles.metaGrid}>
             <div className={styles.metaItem}>
               <span className={`${styles.metaIcon} ${styles.knifeIcon}`} aria-hidden="true" />
-              <span>{recipePrepTime} min</span>
+              <span>{formatMinutes(recipePrepTime) || '—'}</span>
             </div>
             <div className={styles.metaDivider} />
             <div className={styles.metaItem}>
               <span className={`${styles.metaIcon} ${styles.cookingIcon}`} aria-hidden="true" />
-              <span>{recipeCookTime} min</span>
+              <span>{formatMinutes(recipeCookTime) || '—'}</span>
             </div>
             <div className={styles.metaDivider} />
             <div className={styles.metaItem}>
               <span className={`${styles.metaIcon} ${styles.timeIcon}`} aria-hidden="true" />
-              <span>{recipeTotalTime} min</span>
+              <span>{formatMinutes(recipeTotalTime) || '—'}</span>
             </div>
             <div className={styles.metaDivider} />
             <div className={styles.metaItem}>

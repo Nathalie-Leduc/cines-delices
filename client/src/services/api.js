@@ -119,6 +119,9 @@ export const updateMyPassword = (data) =>
  */
 export const deleteMe = () =>
   request('/api/auth/me', { method: 'DELETE' });
+
+export const submitContactMessage = (data) =>
+  request('/api/contact', { method: 'POST', body: data });
  
 // ─────────────────────────────────────────────────────────────────────────────
 // USERS — /api/users
