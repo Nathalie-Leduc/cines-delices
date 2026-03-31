@@ -184,7 +184,7 @@
   background: transparent;
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1023px) {
   .adminGrid {
     grid-template-columns: 1fr;
     gap: 1.35rem;
@@ -202,17 +202,18 @@
     display: none;
   }
 
-  .mobileWelcome,
-  .mobileSidebarOnly {
-    display: block;
-  }
-
   .mobileWelcome {
+    display: block;
     margin: 0 0 1.1rem;
   }
 
   .mobileSidebarOnly {
-    margin-top: 1.15rem;
+    display: none;
+  }
+
+  .mobileSidebarDrawer {
+    display: block;
+    padding-inline: 0.85rem;
   }
 }
 
@@ -233,18 +234,5 @@
   .pageHeader h1 {
     font-size: 2rem;
     text-align: left;
-  }
-
-  .desktopSidebar {
-    display: none;
-  }
-
-  .mobileSidebarOnly {
-    display: none;
-  }
-
-  .mobileSidebarDrawer {
-    display: block;
-    padding-inline: 0.85rem;
   }
 }
