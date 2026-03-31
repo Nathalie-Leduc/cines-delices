@@ -200,6 +200,11 @@ function AdminCategories() {
             <span className={styles.categoryCreatePromptText}>Ajouter une catégorie</span>
           </button>
 
+          <p className={styles.summaryText}>
+            <strong className={styles.summaryStrong}>{filteredCategories.length}</strong>{' '}
+            catégorie{filteredCategories.length > 1 ? 's' : ''} trouvée{filteredCategories.length > 1 ? 's' : ''}.
+          </p>
+
           <Alert
             type="error"
             message={error}
