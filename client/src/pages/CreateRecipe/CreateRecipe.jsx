@@ -983,6 +983,7 @@ export default function CreerRecette() {
             || ingredientSearchError
             || (ingredientDraft.nom.trim().length >= 2
               && !ingredientSearchLoading
+              && !ingredientDraft.ingredientId
               && ingredientSearchResults.length === 0)) && (
             <div className={styles.ingredientSearchBox}>
               {ingredientSearchLoading && (
@@ -1014,6 +1015,7 @@ export default function CreerRecette() {
                 && !ingredientSearchError
                 && ingredientDraft.nom.trim().length >= 2
                 && !ingredientAlreadyExists
+                && !ingredientDraft.ingredientId
                 && ingredientSearchResults.length === 0 && (
                   <button
                     type="button"

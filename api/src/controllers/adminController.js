@@ -675,17 +675,14 @@ export async function updateAdminRecipe(req, res) {
         new Map(resolvedIngredients.map((entry) => [entry.ingredientId, entry])).values(),
       );
 
-      data.ingredients = {
-        deleteMany: {},
-        ...(deduped.length > 0
-          ? {
-              create: deduped.map((entry) => ({
-                ingredientId: entry.ingredientId,
-                quantity: entry.quantity,
-                unit: entry.unit,
-              })),
-            }
-          : {}),
+      // Correctif : toujours inclure create, même avec un tableau vide
+     data.ingredients = {
+       deleteMany: {},
+        create: deduped.map((entry) => ({
+          ingredientId: entry.ingredientId,
+          quantity: entry.quantity,
+          unit: entry.unit,
+        })),
       };
     }
 
