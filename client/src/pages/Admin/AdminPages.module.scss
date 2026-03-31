@@ -1045,6 +1045,10 @@
     height: 1px;
     background: rgba(232, 220, 200, 0.36);
   }
+
+  .roundIconBtn {
+    flex-shrink: 0;
+  }
 }
 
 .categoryNameLabel {
