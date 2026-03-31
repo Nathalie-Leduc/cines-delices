@@ -1,53 +1,71 @@
+@use "../../styles/visitor-mixins" as ui;
+
 .adminSection {
   min-height: calc(100vh - 160px);
-  padding: 1.35rem 1rem 3rem;
+  padding: 2rem 1rem 3.4rem;
   background-image: linear-gradient(rgba(31, 29, 30, 0.9), rgba(31, 29, 30, 0.9)), url('/img/rocky-wall.png');
   background-size: cover;
   background-position: center;
 }
 
 .adminContainer {
-  width: min(100%, 1180px);
+  width: min(100%, 1220px);
   margin: 0 auto;
   min-width: 0;
 }
 
 .pageHeader {
+  @include ui.section-heading-line(
+    $heading-color: #c9a45c,
+    $line-color: rgba(232, 220, 200, 0.34),
+    $font-size: clamp(3rem, 5vw, 4.4rem),
+    $margin: 0 0 1.7rem
+  );
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 0.75rem;
+}
+
+.pageHeading {
+  display: grid;
+  gap: 15px;
 
   h1 {
     color: #c9a45c;
     font-family: 'Playfair Display', serif;
-    font-size: 3rem;
+    font-size: clamp(3.25rem, 5vw, 4.8rem);
     font-weight: 700;
-    line-height: 1;
+    line-height: 0.96;
     letter-spacing: 0.02em;
+    margin: 0;
   }
 }
 
-.welcomeText {
-  margin: 0 0 1.8rem;
-  color: #f6f1e8;
+.roleBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.85rem;
+  padding: 0.22rem 0.72rem;
+  border: 1px solid rgba(201, 164, 92, 0.38);
+  border-radius: 999px;
+  background: rgba(201, 164, 92, 0.14);
+  color: #fbdca6;
   font-family: 'Inter', sans-serif;
-  font-size: 0.98rem;
-  text-align: center;
-  line-height: 1.6;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 
-  strong {
-    color: #c9a45c;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.35rem;
-    font-weight: 700;
-  }
+.leftRail {
+  min-width: 0;
 }
 
 .adminGrid {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 2rem;
   align-items: start;
 }
 
@@ -57,6 +75,8 @@
 
 .adminMain {
   min-width: 0;
+  padding-top: 0.15rem;
+  background: transparent;
 }
 
 .mobileSidebarOverlay {
@@ -102,14 +122,6 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.8rem;
-
-  h2 {
-    margin: 0;
-    color: #c9a45c;
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    font-weight: 700;
-  }
 }
 
 .mobileSidebarClose {
@@ -128,20 +140,73 @@
   }
 }
 
-.mobileSidebarWelcome {
-  margin: 0 0 1rem;
-  color: #f6f1e8;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.98rem;
-  line-height: 1.45;
-  text-align: center;
+.mobileSidebarHeading {
+  display: grid;
+  gap: 0.2rem;
 
-  strong {
+  h2 {
+    margin: 0;
     color: #c9a45c;
     font-family: 'Playfair Display', serif;
-    font-size: 1.3rem;
+    font-size: 2rem;
     font-weight: 700;
   }
+}
+
+.mobileSiteNav {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mobileSiteNavLabel {
+  margin: 0;
+  color: rgba(246, 241, 232, 0.62);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mobileSiteNavList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.mobileSiteLink,
+.mobileSiteLinkActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid rgba(232, 220, 200, 0.3);
+  border-radius: 999px;
+  background: rgba(246, 241, 232, 0.04);
+  color: #f6f1e8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.mobileSiteLink:hover {
+  transform: translateY(-1px);
+  border-color: rgba(251, 220, 166, 0.46);
+  color: #fbdca6;
+}
+
+.mobileSiteLinkActive {
+  border-color: rgba(251, 220, 166, 0.72);
+  background: rgba(251, 220, 166, 0.08);
+  color: #fbdca6;
 }
 
 .mobileSidebarPanel {
@@ -150,45 +215,28 @@
   background: transparent;
 }
 
-@media (max-width: 1120px) {
+@media (max-width: 1023px) {
   .adminGrid {
     grid-template-columns: 1fr;
-  }
-
-  .pageHeader h1 {
-    font-size: 2.6rem;
+    gap: 1.35rem;
   }
 
   .pageHeader {
-    margin-bottom: 0.95rem;
-  }
-}
-
-@media (max-width: 767px) {
-  .adminSection {
-    padding: 1.15rem 0.85rem 2.5rem;
+    display: none;
   }
 
-  .welcomeText {
-    margin-bottom: 1.2rem;
-    font-size: 0.92rem;
-
-    strong {
-      font-size: 1.2rem;
-    }
-  }
-
-  .pageHeader h1 {
-    font-size: 2rem;
-    text-align: center;
-  }
-
-  .desktopSidebar {
+  .leftRail {
     display: none;
   }
 
   .mobileSidebarDrawer {
     display: block;
     padding-inline: 0.85rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .adminSection {
+    padding: 1.3rem 0.85rem 2.5rem;
   }
 }

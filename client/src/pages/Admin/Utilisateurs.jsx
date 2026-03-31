@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import { LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 import { deleteAdminUser, getAdminUsers, updateAdminUserRole } from '../../services/adminService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './AdminPages.module.scss';
@@ -11,11 +12,20 @@ function getRoleLabel(role) {
   return role === 'ADMIN' ? 'Administrateur' : 'Membre';
 }
 
+function getUserIdentityLabel(user) {
+  return [user?.nom, user?.displayName || user?.prenom]
+    .filter(Boolean)
+    .join(' ')
+    .trim() || 'Utilisateur';
+}
+
 function AdminUtilisateurs() {
   const { user: currentUser } = useAuth();
   const location = useLocation();
   const [users, setUsers] = useState([]);
-  const [query, setQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,14 +61,28 @@ function AdminUtilisateurs() {
   }, []);
 
   const filteredUsers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+    const normalizedQuery = searchInput.trim().toLowerCase();
     if (!normalizedQuery) {
       return usersWithTotals;
     }
     return usersWithTotals.filter((user) => {
       return `${user.nom} ${user.displayName || user.prenom || ''} ${user.email}`.toLowerCase().includes(normalizedQuery);
     });
-  }, [query, usersWithTotals]);
+  }, [searchInput, usersWithTotals]);
+  const totalUsers = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalUsers / currentLimit));
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredUsers.slice(startIndex, startIndex + currentLimit);
+  }, [filteredUsers, currentLimit, currentPage]);
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   async function handleDeleteUser() {
     if (!selectedUser) return;
@@ -108,19 +132,84 @@ function AdminUtilisateurs() {
 
       {!selectedUser && (
         <>
-          <div className={styles.usersSearchRow}>
-            <input
-              className={styles.usersSearchInput}
-              type="text"
-              placeholder="Rechercher un utilisateur"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            <img src="/icon/Search.svg" alt="" aria-hidden="true" />
+          <form
+            className={styles.usersSearchRow}
+            onSubmit={(event) => {
+              event.preventDefault();
+              setCurrentPage(1);
+            }}
+          >
+            <div className={styles.usersSearchField}>
+              <input
+                className={styles.usersSearchInput}
+                type="search"
+                placeholder="Rechercher un utilisateur"
+                value={searchInput}
+                onChange={(event) => {
+                  setSearchInput(event.target.value);
+                  setCurrentPage(1);
+                }}
+                aria-label="Rechercher un utilisateur"
+              />
+            </div>
+
+            <button type="submit" className={styles.usersSearchButton}>
+              Rechercher
+            </button>
+          </form>
+
+          <div className={styles.recipeSummaryRow}>
+            <p className={styles.recipeSummaryText}>
+              <strong className={styles.summaryStrong}>{totalUsers}</strong>{' '}
+              utilisateur{totalUsers > 1 ? 's' : ''} trouvé{totalUsers > 1 ? 's' : ''}.
+            </p>
+
+            <div className={styles.recipeSummaryMeta}>
+              <label className={styles.limitControl}>
+                <span>Par page</span>
+                <select
+                  value={currentLimit}
+                  onChange={(event) => {
+                    setCurrentLimit(Number(event.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className={styles.limitSelect}
+                >
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>
+                      {limit}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className={styles.mobileLimitControl} aria-label="Nombre d’utilisateurs par page">
+                <div className={styles.mobileLimitPills}>
+                  {LIMIT_OPTIONS.map((limit) => {
+                    const isActive = currentLimit === limit;
+
+                    return (
+                      <button
+                        key={limit}
+                        type="button"
+                        className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ''}`.trim()}
+                        onClick={() => {
+                          setCurrentLimit(limit);
+                          setCurrentPage(1);
+                        }}
+                        aria-pressed={isActive}
+                      >
+                        {limit}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className={styles.sectionTitle}>
-            <h3>Listes des utilisateurs</h3>
+            <h3>Liste des utilisateurs</h3>
           </div>
 
           {isLoading ? (
@@ -133,18 +222,29 @@ function AdminUtilisateurs() {
           <Alert type="error" message={error} onClose={() => setError('')} className={styles.pageState} />
 
           <div className={styles.list}>
-            {filteredUsers.map((user) => (
+            {paginatedUsers.map((user) => (
               <button key={user.id} type="button" className={styles.rowCard} onClick={() => setSelectedUser(user)}>
                 <span className={styles.userAvatar}>
                   <img src="/icon/User.svg" alt="" aria-hidden="true" />
                 </span>
                 <span className={styles.rowText}>
-                  <strong>{[user.prenom, user.nom].filter(Boolean).join(' ') || user.email}</strong>
-                  <small>{user.email}</small>
+                  <strong>{getUserIdentityLabel(user)}</strong>
+                  <span className={styles.rowMeta}>
+                    <small>{user.email}</small>
+                    <span className={`${styles.statusPill} ${user.role === 'ADMIN' ? styles.statusAdmin : styles.statusMember}`.trim()}>
+                      {getRoleLabel(user.role)}
+                    </span>
+                  </span>
                 </span>
-                <span className={styles.recipesBadgeCentered}>
-                  {user.totalRecipes} recette{user.totalRecipes > 1 ? 's' : ''}
-                </span>
+                {user.role === 'ADMIN' ? (
+                  <span className={styles.adminCrownBadge} aria-label="Administrateur" title="Administrateur">
+                    <img src="/icon/Crown.svg" alt="" aria-hidden="true" />
+                  </span>
+                ) : (
+                  <span className={styles.recipesBadgeCentered}>
+                    {user.totalRecipes} recette{user.totalRecipes > 1 ? 's' : ''}
+                  </span>
+                )}
                 <span className={styles.rowArrow}>›</span>
               </button>
             ))}
@@ -152,14 +252,40 @@ function AdminUtilisateurs() {
             {!isLoading && !error && filteredUsers.length === 0 ? (
               <StatusBlock
                 variant="empty"
-                title={query.trim() ? 'Aucun utilisateur trouvé' : 'Aucun utilisateur disponible'}
-                message={query.trim()
+                title={searchInput.trim() ? 'Aucun utilisateur trouvé' : 'Aucun utilisateur disponible'}
+                message={searchInput.trim()
                   ? 'Essaie une autre recherche pour retrouver un membre ou un administrateur.'
                   : 'La liste des utilisateurs apparaîtra ici dès qu’un compte sera disponible.'}
                 className={styles.pageState}
               />
             ) : null}
           </div>
+
+          {!isLoading && !error && totalPages > 1 ? (
+            <nav className={styles.pagination} aria-label="Pagination des utilisateurs">
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+                disabled={!hasPreviousPage}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.paginationStatus}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+                disabled={!hasNextPage}
+              >
+                Suivant
+              </button>
+            </nav>
+          ) : null}
         </>
       )}
 
@@ -183,7 +309,11 @@ function AdminUtilisateurs() {
             </div>
             <div className={styles.field}>
               <label>Rôle</label>
-              <p>{getRoleLabel(selectedUser.role)}</p>
+              <p>
+                <span className={`${styles.statusPill} ${selectedUser.role === 'ADMIN' ? styles.statusAdmin : styles.statusMember}`.trim()}>
+                  {getRoleLabel(selectedUser.role)}
+                </span>
+              </p>
             </div>
 
             <div className={styles.recipesBlock}>
@@ -228,7 +358,12 @@ function AdminUtilisateurs() {
       )}
 
       {showDeleteModal && (
-        <AdminModal onCancel={() => setShowDeleteModal(false)} onConfirm={handleDeleteUser}>
+        <AdminModal
+          title="Supprimer l’utilisateur"
+          confirmLabel="Supprimer"
+          onCancel={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteUser}
+        >
           Êtes-vous sûr de vouloir supprimer cet utilisateur ?
         </AdminModal>
       )}

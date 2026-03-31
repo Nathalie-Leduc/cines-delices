@@ -11,8 +11,8 @@ export default function AdminModal({
 }) {
   return (
     <div className={styles.backdrop} role="presentation" onClick={onCancel}>
-      <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title} onClick={(e) => e.stopPropagation()}>
-        {title ? <p className={styles.kicker}>{title}</p> : null}
+      <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title} onClick={(event) => event.stopPropagation()}>
+        {title ? <h2 className={styles.title}>{title}</h2> : null}
 
         <div className={styles.content}>
           {children}

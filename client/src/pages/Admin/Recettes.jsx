@@ -10,6 +10,11 @@ import {
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
 import {
+  FILTERS,
+  LIMIT_OPTIONS,
+  normalizeCategoryLabel,
+} from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
+import {
   deleteAdminRecipe,
   getAdminCategories,
   getAdminIngredients,
@@ -70,7 +75,7 @@ function getDurationMinutes(duration) {
 }
 
 function countClass(label) {
-  const key = label.toLowerCase();
+  const key = String(label || '').toLowerCase();
   if (key === 'entrée') return styles.countEntree;
   if (key === 'plat') return styles.countPlat;
   if (key === 'dessert') return styles.countDessert;
@@ -78,12 +83,23 @@ function countClass(label) {
   return '';
 }
 
+function filterToneClass(key) {
+  if (key === 'tous') return styles.recipePillTous;
+  if (key === 'entree') return styles.recipePillEntree;
+  if (key === 'plat') return styles.recipePillPlat;
+  if (key === 'dessert') return styles.recipePillDessert;
+  if (key === 'boisson') return styles.recipePillBoisson;
+  return '';
+}
+
 function AdminRecettes() {
   const location = useLocation();
   const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
-  const [query, setQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('Entrée');
+  const [searchInput, setSearchInput] = useState('');
+  const [activeFilter, setActiveFilter] = useState('Tous');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
   const [modalState, setModalState] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
@@ -151,28 +167,44 @@ function AdminRecettes() {
   }, [location.state, recipes, navigate]);
 
   const filteredRecipes = useMemo(() => {
+    const normalizedQuery = searchInput.trim().toLowerCase();
+
     return recipes.filter((item) => {
-      const matchesFilter = activeFilter === 'Tous' || item.category === activeFilter;
-      const matchesQuery = item.title.toLowerCase().includes(query.trim().toLowerCase());
+      const categoryLabel = normalizeCategoryLabel(item.category);
+      const matchesFilter = activeFilter === 'Tous' || categoryLabel === activeFilter;
+      const matchesQuery = String(item.title || '').toLowerCase().includes(normalizedQuery);
       return matchesFilter && matchesQuery;
     });
-  }, [recipes, query, activeFilter]);
+  }, [recipes, searchInput, activeFilter]);
 
   const filters = useMemo(() => {
     const counts = recipes.reduce((accumulator, item) => {
-      const key = item.category || 'Autre';
+      const key = normalizeCategoryLabel(item.category);
       accumulator[key] = (accumulator[key] || 0) + 1;
       return accumulator;
     }, {});
 
-    return [
-      { label: 'Tous', count: recipes.length },
-      { label: 'Entrée', count: counts['Entrée'] || 0 },
-      { label: 'Plat', count: counts.Plat || 0 },
-      { label: 'Dessert', count: counts.Dessert || 0 },
-      { label: 'Boisson', count: counts.Boisson || 0 },
-    ];
+    return FILTERS.map((filter) => ({
+      ...filter,
+      count: filter.value === 'Tous' ? recipes.length : (counts[filter.value] || 0),
+    }));
   }, [recipes]);
+
+  const totalRecipes = filteredRecipes.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecipes / currentLimit));
+  const paginatedRecipes = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredRecipes.slice(startIndex, startIndex + currentLimit);
+  }, [filteredRecipes, currentLimit, currentPage]);
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+  const summarySuffix = ` recette${totalRecipes > 1 ? 's' : ''} trouvée${totalRecipes > 1 ? 's' : ''}${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   async function handleDeleteRecipe() {
     if (!modalState?.recipeId) {
@@ -542,25 +574,44 @@ function AdminRecettes() {
       </div>
 
       <section className={styles.recipesPanelFrame}>
-        <div className={styles.recipeSearchRow}>
-          <input
-            className={styles.recipeSearchInput}
-            type="text"
-            placeholder="Entrer son nom"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-          <img src="/icon/Search.svg" alt="" aria-hidden="true" />
-        </div>
+        <form
+          className={styles.recipeSearchRow}
+          onSubmit={(event) => {
+            event.preventDefault();
+            setCurrentPage(1);
+          }}
+        >
+          <div className={styles.recipeSearchField}>
+            <input
+              className={styles.recipeSearchInput}
+              type="search"
+              placeholder="Rechercher une recette"
+              value={searchInput}
+              onChange={(event) => {
+                setSearchInput(event.target.value);
+                setCurrentPage(1);
+              }}
+              aria-label="Rechercher une recette"
+            />
+          </div>
 
-        <div className={styles.recipeFiltersRow}>
+          <button type="submit" className={styles.recipeSearchButton}>
+            Rechercher
+          </button>
+        </form>
+
+        <div className={styles.recipeFiltersRow} aria-label="Filtrer les recettes par catégorie">
           {filters.map((filter) => (
             <div key={filter.label} className={styles.filterGroup}>
               <span className={`${styles.count} ${countClass(filter.label)}`}>{filter.count}</span>
               <button
                 type="button"
-                className={`${styles.recipePill} ${activeFilter === filter.label ? styles.recipePillActive : ''}`.trim()}
-                onClick={() => setActiveFilter(filter.label)}
+                className={`${styles.recipePill} ${filterToneClass(filter.key)} ${activeFilter === filter.value ? styles.recipePillActive : ''}`.trim()}
+                onClick={() => {
+                  setActiveFilter(filter.value);
+                  setCurrentPage(1);
+                }}
+                aria-pressed={activeFilter === filter.value}
               >
                 {filter.label}
               </button>
@@ -568,8 +619,57 @@ function AdminRecettes() {
           ))}
         </div>
 
+        <div className={styles.recipeSummaryRow}>
+          <p className={styles.recipeSummaryText}>
+            <strong className={styles.summaryStrong}>{totalRecipes}</strong>
+            {summarySuffix}
+          </p>
+          <div className={styles.recipeSummaryMeta}>
+            <label className={styles.limitControl}>
+              <span>Par page</span>
+              <select
+                value={currentLimit}
+                onChange={(event) => {
+                  setCurrentLimit(Number(event.target.value));
+                  setCurrentPage(1);
+                }}
+                className={styles.limitSelect}
+              >
+                {LIMIT_OPTIONS.map((limit) => (
+                  <option key={limit} value={limit}>
+                    {limit}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className={styles.mobileLimitControl} aria-label="Nombre de recettes par page">
+              <div className={styles.mobileLimitPills}>
+                {LIMIT_OPTIONS.map((limit) => {
+                  const isActive = currentLimit === limit;
+
+                  return (
+                    <button
+                      key={limit}
+                      type="button"
+                      className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ''}`.trim()}
+                      onClick={() => {
+                        setCurrentLimit(limit);
+                        setCurrentPage(1);
+                      }}
+                      aria-pressed={isActive}
+                    >
+                      {limit}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className={styles.sectionTitle}>
-          <h3>{activeFilter === 'Tous' ? 'Recettes' : `${activeFilter}s`}</h3>
+          <h3>{activeFilter === 'Tous' ? 'Liste des recettes' : `${activeFilter}s`}</h3>
         </div>
 
         {isLoading ? (
@@ -586,11 +686,11 @@ function AdminRecettes() {
           className={styles.pageState}
         />
 
-        {!isLoading && !error && filteredRecipes.length === 0 ? (
+        {!isLoading && !error && totalRecipes === 0 ? (
           <StatusBlock
             variant="empty"
             title="Aucune recette à afficher"
-            message={query.trim()
+            message={searchInput.trim()
               ? "Aucune recette ne correspond à cette recherche. Essaie un autre titre."
               : "Aucune recette n'est disponible pour ce filtre pour le moment."}
             className={styles.pageState}
@@ -598,7 +698,7 @@ function AdminRecettes() {
         ) : null}
 
         <div className={styles.recipesGridExact}>
-          {filteredRecipes.map((recipe) => {
+          {paginatedRecipes.map((recipe) => {
             const slug = recipe.slug || toSlug(recipe.title);
             const recipeForCatalogCard = {
               id: recipe.id,
@@ -624,17 +724,7 @@ function AdminRecettes() {
                 <div className={styles.cardActionsExact}>
                   <button
                     type="button"
-                    aria-label="Modifier la recette"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      openEditModal(recipe);
-                    }}
-                  >
-                    <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
+                    className={`${styles.cardActionButton} ${styles.cardActionDelete}`.trim()}
                     aria-label="Supprimer la recette"
                     onClick={(event) => {
                       event.preventDefault();
@@ -642,18 +732,57 @@ function AdminRecettes() {
                       setModalState({ type: 'delete', recipeId: recipe.id, recipeTitle: recipe.title });
                     }}
                   >
-                    <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                    <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.cardActionButton} ${styles.cardActionEdit}`.trim()}
+                    aria-label="Modifier la recette"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openEditModal(recipe);
+                    }}
+                  >
+                    <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
                   </button>
                 </div>
               </div>
             );
           })}
         </div>
+
+        {!isLoading && !error && totalPages > 1 ? (
+          <nav className={styles.pagination} aria-label="Pagination des recettes administrateur">
+            <button
+              type="button"
+              className={styles.paginationButton}
+              onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+              disabled={!hasPreviousPage}
+            >
+              Précédent
+            </button>
+
+            <span className={styles.paginationStatus}>
+              Page {currentPage} / {totalPages}
+            </span>
+
+            <button
+              type="button"
+              className={styles.paginationButton}
+              onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+              disabled={!hasNextPage}
+            >
+              Suivant
+            </button>
+          </nav>
+        ) : null}
       </section>
 
       {modalState?.type === 'delete' && (
         <AdminModal
-          confirmLabel="valider"
+          title="Supprimer la recette"
+          confirmLabel="Supprimer"
           onCancel={() => setModalState(null)}
           onConfirm={handleDeleteRecipe}
         >
