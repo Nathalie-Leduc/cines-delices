@@ -198,7 +198,7 @@ function AdminRecettes() {
   }, [filteredRecipes, currentLimit, currentPage]);
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = currentPage < totalPages;
-  const summaryText = `${totalRecipes} recette${totalRecipes > 1 ? 's' : ''} trouvée${totalRecipes > 1 ? 's' : ''}${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
+  const summarySuffix = ` recette${totalRecipes > 1 ? 's' : ''} trouvée${totalRecipes > 1 ? 's' : ''}${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -620,7 +620,10 @@ function AdminRecettes() {
         </div>
 
         <div className={styles.recipeSummaryRow}>
-          <p className={styles.recipeSummaryText}>{summaryText}</p>
+          <p className={styles.recipeSummaryText}>
+            <strong className={styles.summaryStrong}>{totalRecipes}</strong>
+            {summarySuffix}
+          </p>
           <div className={styles.recipeSummaryMeta}>
             <label className={styles.limitControl}>
               <span>Par page</span>
