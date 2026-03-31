@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -45,6 +46,10 @@ function AdminCategories() {
       .catch((err) => setError(err.message || 'Impossible de charger les catégories.'))
       .finally(() => setIsLoading(false));
   }, []);
+
+  function canDeleteCategory(category) {
+    return (category?.recipesCount || 0) === 0;
+  }
 
   useEffect(() => {
     function handleCategoriesReset() {
@@ -151,8 +156,12 @@ function AdminCategories() {
       return;
     }
 
-    if ((editingCategory.recipesCount || 0) > 0) {
-      setDeleteModalError('Impossible de supprimer cette catégorie car elle est encore utilisée par des recettes.');
+    const recipesCount = editingCategory.recipesCount || 0;
+
+    if (recipesCount > 0) {
+      setDeleteModalError(
+        `Impossible de supprimer cette catégorie : ${recipesCount} recette${recipesCount > 1 ? 's utilisent encore' : ' utilise encore'} cette catégorie.`,
+      );
       return;
     }
 
@@ -224,9 +233,20 @@ function AdminCategories() {
           <div className={styles.list}>
             {categories.map((category) => (
               <div key={category.id} className={styles.categoryRow}>
-                <span className={styles.categoryDot} style={{ background: category.color }}>
-                  {category.name}
-                </span>
+                <div className={styles.ingredientIdentity}>
+                  <span className={styles.categoryDot} style={{ background: category.color }}>
+                    {category.name}
+                  </span>
+                  {category.recipesCount > 0 ? (
+                    <Link
+                      to={`/admin/categories/${category.id}/recettes`}
+                      className={`${styles.submittedByRowTag} ${styles.clickableTag}`}
+                      aria-label={`Voir les ${category.recipesCount} recettes liées à la catégorie ${category.name}`}
+                    >
+                      Utilisée dans {category.recipesCount} recette{category.recipesCount > 1 ? 's' : ''}
+                    </Link>
+                  ) : null}
+                </div>
                 <span className={styles.inlineTools}>
                   <button
                     type="button"
@@ -243,8 +263,17 @@ function AdminCategories() {
                   </button>
                   <button
                     type="button"
-                    className={styles.roundIconBtn}
+                    className={`${styles.roundIconBtn} ${styles.roundRed}`.trim()}
+                    disabled={!canDeleteCategory(category)}
+                    title={
+                      canDeleteCategory(category)
+                        ? 'Supprimer'
+                        : `Suppression impossible : ${category.recipesCount} recette${category.recipesCount > 1 ? 's utilisent' : ' utilise'} cette catégorie`
+                    }
                     onClick={() => {
+                      if (!canDeleteCategory(category)) {
+                        return;
+                      }
                       setEditingCategory(category);
                       setEditingCategoryName(category.name);
                       setDeleteModalError('');
@@ -391,6 +420,12 @@ function AdminCategories() {
           onConfirm={handleDeleteCategory}
         >
           Êtes-vous sûr de vouloir supprimer cette catégorie ?
+          {editingCategory?.recipesCount > 0 && (
+            <p style={{ marginTop: '0.5rem', color: '#f4a555', fontSize: '0.9rem' }}>
+              Attention : cette catégorie est utilisée dans {editingCategory.recipesCount} recette
+              {editingCategory.recipesCount > 1 ? 's' : ''}.
+            </p>
+          )}
           {deleteModalError ? <div className={styles.modalDeleteError}>{deleteModalError}</div> : null}
         </AdminModal>
       )}

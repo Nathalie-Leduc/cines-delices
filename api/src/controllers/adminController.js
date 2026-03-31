@@ -945,9 +945,11 @@ export async function deleteCategory(req, res) {
       return res.status(404).json({ message: 'Catégorie introuvable.' });
     }
 
-    if ((category._count?.recipes || 0) > 0) {
+    const recipesCount = category._count?.recipes || 0;
+
+    if (recipesCount > 0) {
       return res.status(409).json({
-        message: 'Impossible de supprimer une catégorie déjà utilisée par des recettes.',
+        message: `Impossible de supprimer cette catégorie : ${recipesCount} recette${recipesCount > 1 ? 's y sont associées' : ' y est associée'}.`,
       });
     }
 
@@ -1235,6 +1237,52 @@ export async function getIngredientRecipes(req, res) {
     });
   } catch (error) {
     return sendError(res, error, 'Erreur lors de la récupération des recettes liées à l\'ingrédient.');
+  }
+}
+
+export async function getCategoryRecipes(req, res) {
+  try {
+    const category = await prisma.category.findUnique({
+      where: { id: req.params.id },
+      include: {
+        _count: {
+          select: { recipes: true },
+        },
+        recipes: {
+          include: {
+            category: true,
+            media: true,
+            user: {
+              select: {
+                nom: true,
+                pseudo: true,
+              },
+            },
+            ingredients: {
+              include: {
+                ingredient: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: 'Catégorie introuvable.' });
+    }
+
+    const recipes = category.recipes
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(formatRecipe);
+
+    return res.json({
+      category: formatCategory(category),
+      recipes,
+    });
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des recettes liées à la catégorie.');
   }
 }
 
