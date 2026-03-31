@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import { LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 import {
   createAdminCategory,
   deleteAdminCategory,
@@ -15,6 +16,8 @@ const DEFAULT_CATEGORY_COLOR = '#CC9A5C';
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
   const [searchInput, setSearchInput] = useState('');
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [categoryFormName, setCategoryFormName] = useState('');
@@ -47,6 +50,20 @@ function AdminCategories() {
       String(category.name || '').toLowerCase().includes(normalizedQuery)
     ));
   }, [categories, searchInput]);
+  const totalCategories = filteredCategories.length;
+  const totalPages = Math.max(1, Math.ceil(totalCategories / currentLimit));
+  const paginatedCategories = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredCategories.slice(startIndex, startIndex + currentLimit);
+  }, [filteredCategories, currentLimit, currentPage]);
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   function resetCategoryEditor() {
     setIsCreatingCategory(false);
@@ -166,6 +183,7 @@ function AdminCategories() {
             className={styles.categoriesSearchRow}
             onSubmit={(event) => {
               event.preventDefault();
+              setCurrentPage(1);
             }}
           >
             <div className={styles.categoriesSearchField}>
@@ -176,6 +194,7 @@ function AdminCategories() {
                 value={searchInput}
                 onChange={(event) => {
                   setSearchInput(event.target.value);
+                  setCurrentPage(1);
                   if (error) {
                     setError('');
                   }
@@ -200,10 +219,55 @@ function AdminCategories() {
             <span className={styles.categoryCreatePromptText}>Ajouter une catégorie</span>
           </button>
 
-          <p className={styles.summaryText}>
-            <strong className={styles.summaryStrong}>{filteredCategories.length}</strong>{' '}
-            catégorie{filteredCategories.length > 1 ? 's' : ''} trouvée{filteredCategories.length > 1 ? 's' : ''}.
-          </p>
+          <div className={styles.recipeSummaryRow}>
+            <p className={styles.recipeSummaryText}>
+              <strong className={styles.summaryStrong}>{totalCategories}</strong>{' '}
+              catégorie{totalCategories > 1 ? 's' : ''} trouvée{totalCategories > 1 ? 's' : ''}.
+            </p>
+
+            <div className={styles.recipeSummaryMeta}>
+              <label className={styles.limitControl}>
+                <span>Par page</span>
+                <select
+                  value={currentLimit}
+                  onChange={(event) => {
+                    setCurrentLimit(Number(event.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className={styles.limitSelect}
+                >
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>
+                      {limit}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className={styles.mobileLimitControl} aria-label="Nombre de catégories par page">
+                <div className={styles.mobileLimitPills}>
+                  {LIMIT_OPTIONS.map((limit) => {
+                    const isActive = currentLimit === limit;
+
+                    return (
+                      <button
+                        key={limit}
+                        type="button"
+                        className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ''}`.trim()}
+                        onClick={() => {
+                          setCurrentLimit(limit);
+                          setCurrentPage(1);
+                        }}
+                        aria-pressed={isActive}
+                      >
+                        {limit}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <Alert
             type="error"
@@ -217,7 +281,7 @@ function AdminCategories() {
           </div>
 
           <div className={styles.list}>
-            {filteredCategories.map((category) => (
+            {paginatedCategories.map((category) => (
               <div key={category.id} className={styles.categoryRow}>
                 <div className={styles.categoryIdentity}>
                   <span className={styles.categoryDot} style={{ background: category.color }}>
@@ -273,6 +337,32 @@ function AdminCategories() {
               />
             ) : null}
           </div>
+
+          {!isLoading && !error && totalPages > 1 ? (
+            <nav className={styles.pagination} aria-label="Pagination des catégories">
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+                disabled={!hasPreviousPage}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.paginationStatus}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+                disabled={!hasNextPage}
+              >
+                Suivant
+              </button>
+            </nav>
+          ) : null}
         </>
       )}
 
