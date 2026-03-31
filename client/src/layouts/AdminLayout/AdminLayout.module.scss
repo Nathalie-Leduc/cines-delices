@@ -38,16 +38,24 @@
     letter-spacing: 0.02em;
     margin: 0;
   }
+}
 
-  h2 {
-    color: rgba(246, 241, 232, 0.82);
-    font-family: 'Inter', sans-serif;
-    font-size: clamp(1rem, 1.55vw, 1.2rem);
-    font-weight: 600;
-    letter-spacing: 0.01em;
-    text-transform: uppercase;
-    margin: 0;
-  }
+.roleBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.85rem;
+  padding: 0.22rem 0.72rem;
+  border: 1px solid rgba(201, 164, 92, 0.38);
+  border-radius: 999px;
+  background: rgba(201, 164, 92, 0.14);
+  color: #fbdca6;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .leftRail {
@@ -142,16 +150,6 @@
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
     font-weight: 700;
-  }
-
-  p {
-    margin: 0;
-    color: rgba(246, 241, 232, 0.82);
-    font-family: 'Inter', sans-serif;
-    font-size: 0.88rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 }
 

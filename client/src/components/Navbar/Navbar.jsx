@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
 import { getRecipesCatalog } from "../../services/recipesService";
 import { useAuth } from "../../contexts/AuthContext.jsx"
+import AdminSidebar from "../AdminSidebar";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tâche f-05 : Navbar branchée sur AuthContext
@@ -58,7 +59,45 @@ function getDisplayName(user) {
   return "Membre";
 }
 
-export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
+const NAVBAR_VARIANTS = {
+  public: {
+    roleLabel: "",
+    items: [
+      { label: "Accueil", to: "/", end: true },
+      { label: "Recettes", to: "/recipes" },
+      { label: "Film", to: "/films" },
+      { label: "Série", to: "/series" },
+    ],
+  },
+  member: {
+    roleLabel: "Espace membre",
+    items: [
+      { label: "Mon espace", to: "/membre", end: true },
+      { label: "Mes recettes", to: "/membre/mes-recettes" },
+      { label: "Créer une recette", to: "/membre/creer-recette" },
+      { label: "Profil", to: "/membre/profil" },
+    ],
+  },
+  admin: {
+    roleLabel: "Espace admin",
+    items: [
+      { label: "Dashboard", to: "/admin", end: true },
+      { label: "Recettes", to: "/admin/recettes" },
+      { label: "Utilisateurs", to: "/admin/utilisateurs" },
+      { label: "Catégories", to: "/admin/categories" },
+      { label: "Validation", to: "/admin/validation-recettes" },
+    ],
+  },
+};
+
+const SITE_EXPLORATION_ITEMS = [
+  { label: "Accueil", to: "/" },
+  { label: "Recettes", to: "/recipes" },
+  { label: "Film", to: "/films" },
+  { label: "Série", to: "/series" },
+];
+
+export default function Navbar({ mobileMenuMode = "default", onBurgerClick, variant = "auto" }) {
   const navigate = useNavigate();
 
   // ──────────────────────────────────────────────────────────────────────
@@ -69,11 +108,19 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
   // ──────────────────────────────────────────────────────────────────────
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
 
+  const resolvedVariant = variant === "auto"
+    ? (isAuthenticated ? (isAdmin ? "admin" : "member") : "public")
+    : variant;
+
   // Le nom affiché dans la Navbar (ex: "Bonjour, Nathalie")
   const userName = isAuthenticated ? getDisplayName(user) : "";
 
   // Le lien "Mon compte" pointe vers /admin si admin, /membre/profil sinon
   const accountPath = isAdmin ? "/admin" : "/membre/profil";
+  const navItems = NAVBAR_VARIANTS[resolvedVariant]?.items ?? NAVBAR_VARIANTS.public.items;
+  const roleLabel = NAVBAR_VARIANTS[resolvedVariant]?.roleLabel ?? "";
+  const showHeaderRoleBadge = Boolean(roleLabel) && resolvedVariant !== "admin";
+  const shouldShowSearch = resolvedVariant === "public";
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
@@ -264,13 +311,6 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
     navigate("/login");
   };
 
-  const navItems = [
-    { label: "Accueil", to: "/" },
-    { label: "Recettes", to: "/recipes" },
-    { label: "Film", to: "/films" },
-    { label: "Série", to: "/series" },
-  ];
-
   return (
     <>
       <header className={styles.navbar}>
@@ -300,11 +340,23 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
           </NavLink>
 
           <nav className={styles.desktopNav} aria-label="Navigation principale">
-            <ul className={styles.desktopLinks}>
+            <ul
+              className={styles.desktopLinks}
+              style={{
+                "--desktop-nav-columns": String(navItems.length),
+                "--desktop-nav-max-width":
+                  resolvedVariant === "admin"
+                    ? "44rem"
+                    : resolvedVariant === "member"
+                      ? "36rem"
+                      : "28rem",
+              }}
+            >
               {navItems.map((item) => (
                 <li key={item.to}>
                   <NavLink
                     to={item.to}
+                    end={item.end}
                     className={({ isActive }) =>
                       isActive ? styles.activeLink : styles.link
                     }
@@ -317,55 +369,54 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
           </nav>
 
           <div className={styles.rightZone}>
-            {/* Wrapper relatif pour positionner la liste sous l'input */}
-            <div ref={desktopSearchRef} className={styles.searchWrapper}>
-              {/* Formulaire de recherche */}
-              <form className={styles.searchForm} role="search" onSubmit={handleSearchSubmit}>
-                <input
-                  type="search"
-                  value={search}  // Valeur contrôlée par le state
-                  onChange={handleSearch}  // Déclenché à chaque frappe
-                  placeholder="Rechercher..."
-                  className={styles.searchInput}
-                />
-                <button
-                  type="submit"
-                  className={styles.searchButton}
-                  aria-label="Rechercher"
-                >
-                  <img
-                    src="/icon/Search.svg"
-                    alt=""
-                    className={styles.searchIcon}
+            {shouldShowSearch && (
+              <div ref={desktopSearchRef} className={styles.searchWrapper}>
+                <form className={styles.searchForm} role="search" onSubmit={handleSearchSubmit}>
+                  <input
+                    type="search"
+                    value={search}
+                    onChange={handleSearch}
+                    placeholder="Rechercher..."
+                    className={styles.searchInput}
                   />
-                </button>
-                {/* Liste des résultats recettes — visible uniquement si résultats */}
-                {results.length > 0 && (
-                  <ul className={styles.searchResults}>
-                    {results.map((recipe) => (
-                      <li key={recipe.id} className={styles.searchResultItem}>
-                        <NavLink
-                          to={`/recipes/${recipe.slug || recipe.id}`}
-                          onClick={handleResultClick}
-                        >
-                          <img
-                            src={recipe.image}
-                            alt={recipe.title}
-                            className={styles.searchResultThumb}
-                          />
-                          <span className={styles.searchResultCopy}>
-                            <span>{recipe.title}</span>
-                            {recipe.mediaTitle && (
-                              <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
-                            )}
-                          </span>
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </form>
-            </div>
+                  <button
+                    type="submit"
+                    className={styles.searchButton}
+                    aria-label="Rechercher"
+                  >
+                    <img
+                      src="/icon/Search.svg"
+                      alt=""
+                      className={styles.searchIcon}
+                    />
+                  </button>
+                  {results.length > 0 && (
+                    <ul className={styles.searchResults}>
+                      {results.map((recipe) => (
+                        <li key={recipe.id} className={styles.searchResultItem}>
+                          <NavLink
+                            to={`/recipes/${recipe.slug || recipe.id}`}
+                            onClick={handleResultClick}
+                          >
+                            <img
+                              src={recipe.image}
+                              alt={recipe.title}
+                              className={styles.searchResultThumb}
+                            />
+                            <span className={styles.searchResultCopy}>
+                              <span>{recipe.title}</span>
+                              {recipe.mediaTitle && (
+                                <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                              )}
+                            </span>
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </form>
+              </div>
+            )}
 
             {/* ────────────────────────────────────────────────────────────
                 🔹 Tâche f-05 : le rendu conditionnel utilise isAuthenticated
@@ -375,7 +426,10 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
             {isAuthenticated ? (
               <div className={styles.userBlock}>
                 <NavLink to={accountPath} className={styles.userTextLink}>
-                  <span className={styles.userGreeting}>Bonjour,</span>
+                  <span className={styles.userText}>
+                    {showHeaderRoleBadge ? <span className={styles.userRoleBadge}>{roleLabel}</span> : null}
+                    <span className={styles.userGreeting}>Bonjour,</span>
+                  </span>
                   <span className={styles.userName}>{userName}</span>
                 </NavLink>
                 <NavLink
@@ -403,19 +457,21 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
             )}
           </div>
 
-          <button
-            type="button"
-            className={styles.mobileSearch}
-            aria-label="Rechercher"
-            aria-expanded={isMobileSearchOpen}
-            onClick={openMobileSearch}
-          >
-            <img
-              src="/icon/Search.svg"
-              alt="Recherche"
-              className={styles.searchIcon}
-            />
-          </button>
+          {shouldShowSearch && (
+            <button
+              type="button"
+              className={styles.mobileSearch}
+              aria-label="Rechercher"
+              aria-expanded={isMobileSearchOpen}
+              onClick={openMobileSearch}
+            >
+              <img
+                src="/icon/Search.svg"
+                alt="Recherche"
+                className={styles.searchIcon}
+              />
+            </button>
+          )}
         </div>
       </header>
 
@@ -428,187 +484,237 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
           />
 
           <aside
-            className={`${styles.mobilePanel} ${isMenuOpen ? styles.mobilePanelOpen : ""}`}
+            className={`${styles.mobilePanel} ${resolvedVariant === "admin" ? styles.mobilePanelAdmin : ""} ${isMenuOpen ? styles.mobilePanelOpen : ""}`.trim()}
             aria-hidden={!isMenuOpen}
           >
-            <div className={styles.mobilePanelHeader}>
-              {isAuthenticated ? (
-                <div className={styles.mobileUser}>
-                  <NavLink
-                    to={accountPath}
-                    onClick={closeMenu}
-                    className={styles.mobileAvatar}
-                    aria-label="Mon profil"
-                  >
-                    <img
-                      src="/icon/Profil.svg"
-                      alt="Profil"
-                      className={styles.profileIcon}
-                    />
-                  </NavLink>
-                  <div className={styles.mobileUserText}>
-                    <span>Bonjour,</span>
-                    <NavLink
-                      to={accountPath}
-                      onClick={closeMenu}
-                      className={styles.mobileUserLink}
-                    >
-                      <strong>{userName}</strong>
-                    </NavLink>
-                  </div>
-                </div>
-              ) : (
-                <div />
-              )}
+            {resolvedVariant === "admin" ? (
+              isMenuOpen ? (
+                <>
+                  <div className={styles.adminMobileHeader}>
+                    <div className={styles.adminMobileHeading}>
+                      <h2>Tableau de bord</h2>
+                      <span className={styles.adminMobileBadge}>Espace admin</span>
+                    </div>
 
+                    <button
+                      type="button"
+                      className={styles.closeButton}
+                      aria-label="Fermer le menu admin"
+                      onClick={closeMenu}
+                    >
+                      <img src="/icon/close_menu.svg" alt="Fermer" />
+                    </button>
+                  </div>
+
+                  <nav className={styles.adminMobileSiteNav} aria-label="Explorer le site">
+                    <p className={styles.adminMobileSiteNavLabel}>Explorer le site</p>
+
+                    <ul className={styles.adminMobileSiteNavList}>
+                      {SITE_EXPLORATION_ITEMS.map((item) => (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            onClick={closeMenu}
+                            className={({ isActive }) =>
+                              `${styles.adminMobileSiteLink} ${isActive ? styles.adminMobileSiteLinkActive : ""}`.trim()
+                            }
+                          >
+                            {item.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+
+                  <AdminSidebar mobile className={styles.adminMobileSidebar} onNavigate={closeMenu} />
+                </>
+              ) : null
+            ) : (
+              <>
+                <div className={styles.mobilePanelHeader}>
+                  {isAuthenticated ? (
+                    <div className={styles.mobileUser}>
+                      <NavLink
+                        to={accountPath}
+                        onClick={closeMenu}
+                        className={styles.mobileAvatar}
+                        aria-label="Mon profil"
+                      >
+                        <img
+                          src="/icon/Profil.svg"
+                          alt="Profil"
+                          className={styles.profileIcon}
+                        />
+                      </NavLink>
+                      <div className={styles.mobileUserText}>
+                        {roleLabel ? <span className={styles.mobileRoleBadge}>{roleLabel}</span> : null}
+                        <span>Bonjour,</span>
+                        <NavLink
+                          to={accountPath}
+                          onClick={closeMenu}
+                          className={styles.mobileUserLink}
+                        >
+                          <strong>{userName}</strong>
+                        </NavLink>
+                      </div>
+                    </div>
+                  ) : (
+                    <div />
+                  )}
+
+                  <button
+                    type="button"
+                    className={styles.closeButton}
+                    aria-label="Fermer le menu"
+                    onClick={closeMenu}
+                  >
+                    <img src="/icon/close_menu.svg" alt="Fermer" />
+                  </button>
+                </div>
+
+                <nav className={styles.mobileNav} aria-label="Navigation mobile">
+                  <ul className={styles.mobileLinks}>
+                    {navItems.map((item) => (
+                      <li key={item.to}>
+                        <NavLink
+                          to={item.to}
+                          end={item.end}
+                          onClick={closeMenu}
+                          className={({ isActive }) =>
+                            isActive ? styles.mobileActiveLink : styles.mobileLink
+                          }
+                        >
+                          {item.label}
+                        </NavLink>
+                      </li>
+                    ))}
+
+                    {isAuthenticated && (
+                      <li>
+                        <NavLink
+                          to={accountPath}
+                          onClick={closeMenu}
+                          className={({ isActive }) =>
+                            isActive ? styles.mobileActiveLink : styles.mobileLink
+                          }
+                        >
+                          Mon compte
+                        </NavLink>
+                      </li>
+                    )}
+                  </ul>
+                </nav>
+
+                <div className={styles.mobileBottom}>
+                  <button
+                    type="button"
+                    className={styles.mobileActionButton}
+                    onClick={handleMobileAction}
+                  >
+                    {isAuthenticated ? "Se déconnecter" : "Se connecter"}
+                  </button>
+
+                  <img
+                    src="/img/logo-cine-delices.png"
+                    alt="CinéDélices"
+                    className={styles.mobileBottomLogo}
+                  />
+                </div>
+              </>
+            )}
+          </aside>
+        </>
+      )}
+
+      {shouldShowSearch && (
+        <div
+          className={`${styles.mobileSearchOverlay} ${isMobileSearchOpen ? styles.mobileSearchOverlayVisible : ""}`}
+          aria-hidden={!isMobileSearchOpen}
+        >
+          <button
+            type="button"
+            className={styles.mobileSearchBackdrop}
+            aria-label="Fermer la recherche"
+            onClick={closeMobileSearch}
+          />
+
+          <section
+            className={`${styles.mobileSearchModal} ${isMobileSearchOpen ? styles.mobileSearchModalOpen : ""}`}
+            aria-label="Recherche mobile"
+          >
+            <div className={styles.mobileSearchHeader}>
+              <div className={styles.mobileSearchTitleRow}>
+                <p className={styles.mobileSearchEyebrow}>Recherche rapide</p>
+                <span className={styles.mobileSearchTitleLine} />
+              </div>
               <button
                 type="button"
                 className={styles.closeButton}
-                aria-label="Fermer le menu"
-                onClick={closeMenu}
+                aria-label="Fermer la recherche"
+                onClick={closeMobileSearch}
               >
                 <img src="/icon/close_menu.svg" alt="Fermer" />
               </button>
             </div>
 
-            <nav className={styles.mobileNav} aria-label="Navigation mobile">
-              <ul className={styles.mobileLinks}>
-                {navItems.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      onClick={closeMenu}
-                      className={({ isActive }) =>
-                        isActive ? styles.mobileActiveLink : styles.mobileLink
-                      }
+            <div ref={mobileSearchRef} className={styles.mobileSearchContent}>
+              <form className={styles.mobileSearchForm} role="search" onSubmit={handleSearchSubmit}>
+                <div className={styles.mobileSearchField}>
+                  <img
+                    src="/icon/Search.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className={styles.searchIcon}
+                  />
+                  <input
+                    ref={mobileSearchInputRef}
+                    type="search"
+                    value={search}
+                    onChange={handleSearch}
+                    placeholder="Rechercher une recette, un film, une serie"
+                    className={styles.mobileSearchInput}
+                  />
+                  {search && (
+                    <button
+                      type="button"
+                      className={styles.clearSearchButton}
+                      onClick={clearSearch}
+                      aria-label="Effacer la recherche"
                     >
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
+                      ×
+                    </button>
+                  )}
+                </div>
 
-                {isAuthenticated && (
-                  <li>
-                    <NavLink
-                      to={accountPath}
-                      onClick={closeMenu}
-                      className={({ isActive }) =>
-                        isActive ? styles.mobileActiveLink : styles.mobileLink
-                      }
-                    >
-                      Mon compte
-                    </NavLink>
-                  </li>
+                {results.length > 0 && (
+                  <ul className={styles.mobileSearchResults}>
+                    {results.map((recipe) => (
+                      <li key={recipe.id} className={styles.searchResultItem}>
+                        <NavLink
+                          to={`/recipes/${recipe.slug || recipe.id}`}
+                          onClick={handleResultClick}
+                        >
+                          <img
+                            src={recipe.image}
+                            alt={recipe.title}
+                            className={styles.searchResultThumb}
+                          />
+                          <span className={styles.searchResultCopy}>
+                            <span>{recipe.title}</span>
+                            {recipe.mediaTitle && (
+                              <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                            )}
+                          </span>
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
                 )}
-              </ul>
-            </nav>
-
-            <div className={styles.mobileBottom}>
-              <button
-                type="button"
-                className={styles.mobileActionButton}
-                onClick={handleMobileAction}
-              >
-                {isAuthenticated ? "Se déconnecter" : "Se connecter"}
-              </button>
-
-              <img
-                src="/img/logo-cine-delices.png"
-                alt="CinéDélices"
-                className={styles.mobileBottomLogo}
-              />
+              </form>
             </div>
-          </aside>
-        </>
+          </section>
+        </div>
       )}
-
-      <div
-        className={`${styles.mobileSearchOverlay} ${isMobileSearchOpen ? styles.mobileSearchOverlayVisible : ""}`}
-        aria-hidden={!isMobileSearchOpen}
-      >
-        <button
-          type="button"
-          className={styles.mobileSearchBackdrop}
-          aria-label="Fermer la recherche"
-          onClick={closeMobileSearch}
-        />
-
-        <section
-          className={`${styles.mobileSearchModal} ${isMobileSearchOpen ? styles.mobileSearchModalOpen : ""}`}
-          aria-label="Recherche mobile"
-        >
-          <div className={styles.mobileSearchHeader}>
-            <div className={styles.mobileSearchTitleRow}>
-              <p className={styles.mobileSearchEyebrow}>Recherche rapide</p>
-              <span className={styles.mobileSearchTitleLine} />
-            </div>
-            <button
-              type="button"
-              className={styles.closeButton}
-              aria-label="Fermer la recherche"
-              onClick={closeMobileSearch}
-            >
-              <img src="/icon/close_menu.svg" alt="Fermer" />
-            </button>
-          </div>
-
-          <div ref={mobileSearchRef} className={styles.mobileSearchContent}>
-            <form className={styles.mobileSearchForm} role="search" onSubmit={handleSearchSubmit}>
-              <div className={styles.mobileSearchField}>
-                <img
-                  src="/icon/Search.svg"
-                  alt=""
-                  aria-hidden="true"
-                  className={styles.searchIcon}
-                />
-                <input
-                  ref={mobileSearchInputRef}
-                  type="search"
-                  value={search}
-                  onChange={handleSearch}
-                  placeholder="Rechercher une recette, un film, une serie"
-                  className={styles.mobileSearchInput}
-                />
-                {search && (
-                  <button
-                    type="button"
-                    className={styles.clearSearchButton}
-                    onClick={clearSearch}
-                    aria-label="Effacer la recherche"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-
-              {results.length > 0 && (
-                <ul className={styles.mobileSearchResults}>
-                  {results.map((recipe) => (
-                    <li key={recipe.id} className={styles.searchResultItem}>
-                      <NavLink
-                        to={`/recipes/${recipe.slug || recipe.id}`}
-                        onClick={handleResultClick}
-                      >
-                        <img
-                          src={recipe.image}
-                          alt={recipe.title}
-                          className={styles.searchResultThumb}
-                        />
-                        <span className={styles.searchResultCopy}>
-                          <span>{recipe.title}</span>
-                          {recipe.mediaTitle && (
-                            <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
-                          )}
-                        </span>
-                      </NavLink>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </form>
-          </div>
-        </section>
-      </div>
     </>
   );
 }
