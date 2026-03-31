@@ -178,7 +178,7 @@ function AdminDashboard() {
   }, [filteredPendingRecipes, currentLimit, currentPage]);
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = currentPage < totalPages;
-  const summaryText = `Vous avez ${totalPendingRecipes} recette${totalPendingRecipes > 1 ? 's' : ''} à valider${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
+  const summarySuffix = ` recette${totalPendingRecipes > 1 ? 's' : ''} à valider${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -294,7 +294,9 @@ function AdminDashboard() {
           </div>
 
           <div className={styles.recipeSummaryRow}>
-            <p className={styles.recipeSummaryText}>{summaryText}</p>
+            <p className={styles.recipeSummaryText}>
+              Vous avez <strong className={styles.summaryStrong}>{totalPendingRecipes}</strong>{summarySuffix}
+            </p>
             <div className={styles.recipeSummaryMeta}>
               <label className={styles.limitControl}>
                 <span>Par page</span>
