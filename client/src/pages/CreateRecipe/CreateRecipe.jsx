@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './CreateRecipe.module.scss';
 import Alert from '../../components/Alert/Alert.jsx';
 import {
@@ -48,6 +48,7 @@ const INITIAL_INGREDIENT_DRAFT = {
 
 export default function CreerRecette() {
   const location = useLocation();
+  const navigate = useNavigate();
   const initialTitleFromNavigation = typeof location.state?.initialTitle === 'string'
     ? location.state.initialTitle.trim()
     : '';
@@ -657,6 +658,7 @@ export default function CreerRecette() {
       setIngredientSearchError('');
       setCreatingIngredient(false);
       setForm(INITIAL_FORM);
+      navigate('/membre/mes-recettes/recettes-en-validation', { replace: true });
     } catch {
       setShowSubmitModal(false);
       showAlertAtTop('error', 'Impossible de joindre le serveur. Réessaie dans quelques instants.');

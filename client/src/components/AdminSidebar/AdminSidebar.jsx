@@ -153,6 +153,14 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     navigate('/');
   }
 
+  function handleItemClick(item) {
+    if (item.to === '/admin/categories') {
+      window.dispatchEvent(new Event('admin-categories-reset'));
+    }
+
+    onNavigate?.();
+  }
+
   function handleOpenNotification(notification) {
     const message = String(notification?.message || '').toLowerCase();
     const isIngredientNotification = message.includes('nouvel ingrédient soumis');
@@ -184,7 +192,7 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
             <li key={item.to}>
               <NavLink
                 to={item.to}
-                onClick={onNavigate}
+                onClick={() => handleItemClick(item)}
                 className={({ isActive }) => `${styles.link} ${isActive ? styles.linkActive : ''}`.trim()}
               >
                 <span className={styles.icon}>

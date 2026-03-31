@@ -1029,6 +1029,7 @@
 .categoryCreateHeading {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.8rem;
   margin: 0.5rem auto 1.4rem;
   color: #c9a45c;
@@ -1043,6 +1044,10 @@
     flex: 1;
     height: 1px;
     background: rgba(232, 220, 200, 0.36);
+  }
+
+  .roundIconBtn {
+    flex-shrink: 0;
   }
 }
 

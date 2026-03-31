@@ -143,7 +143,7 @@ function AdminUtilisateurs() {
                   <small>{user.email}</small>
                 </span>
                 <span className={styles.recipesBadgeCentered}>
-                  {user.totalRecipes} recettes
+                  {user.totalRecipes} recette{user.totalRecipes > 1 ? 's' : ''}
                 </span>
                 <span className={styles.rowArrow}>›</span>
               </button>

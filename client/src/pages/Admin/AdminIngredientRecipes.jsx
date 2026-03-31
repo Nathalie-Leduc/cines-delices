@@ -79,17 +79,13 @@ export default function AdminIngredientRecipes() {
 
   return (
     <div className={styles.page}>
-      <Link to="/admin/ingredients" className={styles.backLink}>
-        Retour aux ingrédients
-      </Link>
-
       <div className={styles.headerLine}>
         <h2>{heading}</h2>
       </div>
 
       <p className={styles.pageIntro}>
         {ingredient?.recipesCount
-          ? `${ingredient.recipesCount} recette${ingredient.recipesCount > 1 ? 's' : ''} utilisent cet ingrédient.`
+          ? `${ingredient.recipesCount} recette${ingredient.recipesCount > 1 ? 's' : ''} ${ingredient.recipesCount > 1 ? 'utilisent' : 'utilise'} cet ingrédient.`
           : 'Retrouve ici toutes les recettes associées à cet ingrédient.'}
       </p>
 

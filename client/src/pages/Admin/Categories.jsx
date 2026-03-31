@@ -13,6 +13,7 @@ import styles from './AdminPages.module.scss';
 function AdminCategories() {
   const [categories, setCategories] = useState([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isEditingCreateName, setIsEditingCreateName] = useState(false);
   const [creatingWithColor, setCreatingWithColor] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [editingCategoryName, setEditingCategoryName] = useState('');
@@ -23,6 +24,17 @@ function AdminCategories() {
   const [error, setError] = useState('');
   const [deleteModalError, setDeleteModalError] = useState('');
 
+  function resetToListView() {
+    setCreatingWithColor(false);
+    setIsEditingCreateName(false);
+    setEditingCategory(null);
+    setEditingCategoryName('');
+    setShowDeleteModal(false);
+    setShowEditModal(false);
+    setDeleteModalError('');
+    setError('');
+  }
+
   useEffect(() => {
     setIsLoading(true);
     getAdminCategories()
@@ -32,6 +44,18 @@ function AdminCategories() {
       })
       .catch((err) => setError(err.message || 'Impossible de charger les catégories.'))
       .finally(() => setIsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    function handleCategoriesReset() {
+      resetToListView();
+    }
+
+    window.addEventListener('admin-categories-reset', handleCategoriesReset);
+
+    return () => {
+      window.removeEventListener('admin-categories-reset', handleCategoriesReset);
+    };
   }, []);
 
   async function handleCreateCategory() {
@@ -54,16 +78,33 @@ function AdminCategories() {
     // Ouvrir la roue chromatique au lieu de créer directement
     setSelectedColor('#CC9A5C');
     setError('');
+    setIsEditingCreateName(false);
     setCreatingWithColor(true);
   }
 
   async function handleConfirmCreate() {
     const name = newCategoryName.trim();
+
+    const alreadyExists = categories.some(
+      (category) => category.name.trim().toLowerCase() === name.toLowerCase(),
+    );
+
+    if (!name) {
+      setError('Le nom de la catégorie est obligatoire.');
+      return;
+    }
+
+    if (alreadyExists) {
+      setError('Cette catégorie existe déjà.');
+      return;
+    }
+
     try {
       const created = await createAdminCategory({ name, color: selectedColor });
       setCategories((previous) => [created, ...previous]);
       setNewCategoryName('');
       setSelectedColor('#CC9A5C');
+      setIsEditingCreateName(false);
       setCreatingWithColor(false);
       setError('');
     } catch (createError) {
@@ -233,8 +274,34 @@ function AdminCategories() {
       {creatingWithColor && (
         <div className={styles.colorEditor}>
           <div className={styles.categoryCreateHeading}>
-            {newCategoryName.trim()}
+            <span>{newCategoryName.trim()}</span>
+            <button
+              type="button"
+              className={styles.roundIconBtn}
+              aria-label="Modifier le nom de la catégorie"
+              title="Modifier le nom"
+              onClick={() => setIsEditingCreateName((previous) => !previous)}
+            >
+              <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+            </button>
           </div>
+
+          {isEditingCreateName && (
+            <label className={styles.categoryNameLabel}>
+              Nom de la catégorie
+              <input
+                type="text"
+                className={styles.categoryNameField}
+                value={newCategoryName}
+                onChange={(event) => {
+                  setNewCategoryName(event.target.value);
+                  if (error) {
+                    setError('');
+                  }
+                }}
+              />
+            </label>
+          )}
 
           <p className={styles.colorLabel}>Choisir une couleur de fond</p>
 
