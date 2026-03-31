@@ -27,7 +27,7 @@ function getSubmittedByLabel(item) {
 export default function IngredientsValidation() {
   const [ingredients, setIngredients] = useState([]);
   const [query, setQuery] = useState('');
-  const [currentLimit, setCurrentLimit] = useState(15);
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [showValidateModal, setShowValidateModal] = useState(false);

@@ -126,7 +126,7 @@ function AdminDashboard() {
   const [searchInput, setSearchInput] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[LIMIT_OPTIONS.length - 1]);
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [showValidateModal, setShowValidateModal] = useState(false);
   const [showRefuseModal, setShowRefuseModal] = useState(false);
