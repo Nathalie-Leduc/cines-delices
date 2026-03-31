@@ -19,6 +19,7 @@ export default function Login() {
   const [emailForReset, setEmailForReset] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -43,6 +44,12 @@ export default function Login() {
   const handleForgotPassword = async () => {
     setResetMessage('');
     setResetError('');
+
+    if (!emailForReset.trim()) {
+      setResetError('Veuillez entrer votre email.');
+      return;
+    }
+
     try {
       await forgotPassword(emailForReset);
       setResetMessage('Email envoyé si le compte existe !');
@@ -63,8 +70,6 @@ export default function Login() {
   return (
     <AuthShell title="Bienvenue" subtitle="Connectez-vous à votre compte">
       <form className={styles.form} onSubmit={handleSubmit}>
-
-        {/* EMAIL */}
         <div className={styles.fieldGroup}>
           <label htmlFor="email" className={styles.label}>
             Adresse e-mail
@@ -87,7 +92,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* MOT DE PASSE */}
         <div className={styles.fieldGroup}>
           <label htmlFor="password" className={styles.label}>
             Mot de passe
@@ -119,21 +123,9 @@ export default function Login() {
                 className={`${styles.eyeIcon} ${showPassword ? styles.eyeVisible : styles.eyeHidden}`}
                 aria-hidden="true"
               />
-              <button
-                type="button"
-                className={styles.togglePassword}
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              >
-                👁️
-              </button>
-            </div>
-            <NavLink to="#" className={styles.forgotPassword} onClick={() => setShowModal(true)}>
-              mot de passe oublié
-            </NavLink>
+            </button>
           </div>
 
-          {/* ✅ Un seul lien mot de passe oublié */}
           <button
             type="button"
             className={styles.forgotPassword}
@@ -143,7 +135,6 @@ export default function Login() {
           </button>
         </div>
 
-        {/* SUBMIT */}
         <button
           type="submit"
           className={styles.submitButton}
@@ -152,7 +143,6 @@ export default function Login() {
           {isSubmitting ? 'Connexion...' : 'Se connecter'}
         </button>
 
-        {/* ALERT ERREUR */}
         <Alert
           type="error"
           message={error}
@@ -160,7 +150,6 @@ export default function Login() {
           className={styles.formAlert}
         />
 
-        {/* LIEN INSCRIPTION */}
         <p className={styles.noAccount}>
           Nouveau sur notre site ?{' '}
           <NavLink to="/signup" className={styles.link}>
@@ -209,7 +198,6 @@ export default function Login() {
           </div>
         </div>
       )}
-
     </AuthShell>
   );
 }
