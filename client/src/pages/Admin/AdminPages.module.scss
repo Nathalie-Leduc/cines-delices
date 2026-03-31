@@ -75,6 +75,7 @@
     $font-weight: 700
   );
   @include ui.badge-gradient-recipe;
+  @include ui.badge-orbit-glow;
   white-space: nowrap;
   margin-left: auto;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
@@ -90,6 +91,7 @@
     $font-weight: 700
   );
   @include ui.badge-gradient-recipe;
+  @include ui.badge-orbit-glow;
   white-space: nowrap;
   margin: 0 auto;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.16);
