@@ -178,7 +178,7 @@ function AdminDashboard() {
   }, [filteredPendingRecipes, currentLimit, currentPage]);
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = currentPage < totalPages;
-  const summaryText = `${totalPendingRecipes} recette${totalPendingRecipes > 1 ? 's' : ''} à valider${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
+  const summaryText = `Vous avez ${totalPendingRecipes} recette${totalPendingRecipes > 1 ? 's' : ''} à valider${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -248,10 +248,6 @@ function AdminDashboard() {
 
       {!selectedRecipe && (
         <>
-          <p className={`${styles.summaryText} ${styles.summaryTextCentered}`.trim()}>
-            Vous avez <strong className={styles.summaryStrong}>{pendingRecipes.length}</strong> recettes à valider
-          </p>
-
           <form
             className={styles.recipeSearchRow}
             onSubmit={(event) => {
@@ -278,7 +274,7 @@ function AdminDashboard() {
             </button>
           </form>
 
-          <div className={styles.recipeFiltersRow}>
+          <div className={styles.recipeFiltersRow} aria-label="Filtrer les recettes par catégorie">
             {filters.map((filter) => (
               <div key={filter.label} className={styles.filterGroup}>
                 <span className={`${styles.count} ${countClass(filter.label)}`.trim()}>{filter.count}</span>
