@@ -103,6 +103,7 @@ function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
   const [pendingRecipes, setPendingRecipes] = useState([]);
+  const [searchInput, setSearchInput] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [currentPage, setCurrentPage] = useState(1);
   const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[LIMIT_OPTIONS.length - 1]);
@@ -150,12 +151,17 @@ function AdminDashboard() {
   }, [pendingRecipes]);
 
   const filteredPendingRecipes = useMemo(() => {
+    const normalizedQuery = searchInput.trim().toLowerCase();
+
     if (activeFilter === 'Tous') {
-      return pendingRecipes;
+      return pendingRecipes.filter((recipe) => String(recipe.title || '').toLowerCase().includes(normalizedQuery));
     }
 
-    return pendingRecipes.filter((recipe) => normalizeCategoryLabel(recipe.category) === activeFilter);
-  }, [pendingRecipes, activeFilter]);
+    return pendingRecipes.filter((recipe) => (
+      normalizeCategoryLabel(recipe.category) === activeFilter
+      && String(recipe.title || '').toLowerCase().includes(normalizedQuery)
+    ));
+  }, [pendingRecipes, activeFilter, searchInput]);
 
   const filters = useMemo(() => (
     FILTERS.map((filter) => ({
@@ -172,7 +178,7 @@ function AdminDashboard() {
   }, [filteredPendingRecipes, currentLimit, currentPage]);
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = currentPage < totalPages;
-  const summaryText = `${totalPendingRecipes} recette${totalPendingRecipes > 1 ? 's' : ''} à valider${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}.`;
+  const summaryText = `${totalPendingRecipes} recette${totalPendingRecipes > 1 ? 's' : ''} à valider${activeFilter !== 'Tous' ? ` en ${activeFilter}` : ''}${searchInput.trim() ? ` pour "${searchInput.trim()}"` : ''}.`;
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -245,6 +251,32 @@ function AdminDashboard() {
           <p className={`${styles.summaryText} ${styles.summaryTextCentered}`.trim()}>
             Vous avez <strong className={styles.summaryStrong}>{pendingRecipes.length}</strong> recettes à valider
           </p>
+
+          <form
+            className={styles.recipeSearchRow}
+            onSubmit={(event) => {
+              event.preventDefault();
+              setCurrentPage(1);
+            }}
+          >
+            <div className={styles.recipeSearchField}>
+              <input
+                className={styles.recipeSearchInput}
+                type="search"
+                placeholder="Rechercher une recette"
+                value={searchInput}
+                onChange={(event) => {
+                  setSearchInput(event.target.value);
+                  setCurrentPage(1);
+                }}
+                aria-label="Rechercher une recette à valider"
+              />
+            </div>
+
+            <button type="submit" className={styles.recipeSearchButton}>
+              Rechercher
+            </button>
+          </form>
 
           <div className={styles.recipeFiltersRow}>
             {filters.map((filter) => (
@@ -334,9 +366,11 @@ function AdminDashboard() {
             <StatusBlock
               variant="empty"
               title="Aucune recette en attente"
-              message={activeFilter === 'Tous'
-                ? "Les nouvelles recettes soumises apparaîtront ici pour validation."
-                : `Aucune recette ${activeFilter.toLowerCase()} n’attend de validation pour le moment.`}
+              message={searchInput.trim()
+                ? "Aucune recette ne correspond à cette recherche. Essaie un autre titre."
+                : activeFilter === 'Tous'
+                  ? "Les nouvelles recettes soumises apparaîtront ici pour validation."
+                  : `Aucune recette ${activeFilter.toLowerCase()} n’attend de validation pour le moment.`}
               className={styles.pageState}
             />
           ) : null}
