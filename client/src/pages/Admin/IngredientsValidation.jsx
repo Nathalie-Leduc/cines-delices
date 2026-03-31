@@ -230,7 +230,7 @@ export default function IngredientsValidation() {
             <span className={styles.inlineTools}>
               <button
                 type="button"
-                className={`${styles.roundIconBtn} ${styles.roundBlue}`.trim()}
+                className={`${styles.roundIconBtn} ${styles.roundIconBtnEdit}`.trim()}
                 aria-label={`Modifier l'ingrédient ${ingredient.name}`}
                 onClick={() => {
                   setSelectedIngredient(ingredient);
@@ -238,18 +238,18 @@ export default function IngredientsValidation() {
                   setShowEditModal(true);
                 }}
               >
-                <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+                <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
               </button>
               <button
                 type="button"
-                className={`${styles.roundIconBtn} ${styles.roundRed}`.trim()}
+                className={`${styles.roundIconBtn} ${styles.roundIconBtnDelete}`.trim()}
                 aria-label={`Supprimer l'ingrédient ${ingredient.name}`}
                 onClick={() => {
                   setSelectedIngredient(ingredient);
                   setShowDeleteModal(true);
                 }}
               >
-                <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
               </button>
               <button
                 type="button"
