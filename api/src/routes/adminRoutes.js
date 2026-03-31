@@ -2,6 +2,7 @@ import express from "express";
 import {
 	approveIngredient,
 	createCategory,
+	deleteAdminNotification,
 	getCategoryRecipes,
 	deleteCategory,
 	deleteIngredient,
@@ -42,6 +43,7 @@ router.delete('/recipes/:id', deleteRecipe);
 
 router.get('/users', getAdminUsers);
 router.get('/notifications', getAdminNotifications);
+router.delete('/notifications/:id', deleteAdminNotification);
 router.patch('/users/:id/role', updateUserRole);
 router.delete('/users/:id', deleteUser);
 
