@@ -1197,7 +1197,7 @@
 .categoryIdentity {
   display: inline-flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.42rem;
   min-width: 0;
 }
@@ -1205,6 +1205,8 @@
 .categoryMeta {
   color: rgba(246, 241, 232, 0.6);
   font-size: 0.84rem;
+  width: 100%;
+  text-align: center;
 }
 
 .actionButtons {
@@ -1298,9 +1300,10 @@
 
 .ingredientIdentity {
   display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.4rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.65rem;
   min-width: 0;
 }
 
@@ -1365,6 +1368,8 @@
   display: inline-flex;
   gap: 0.6rem;
   align-items: center;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
 }
 
 .summaryText {
@@ -1651,7 +1656,15 @@
   }
 
   .categoryRow {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+  }
+
+  .ingredientIdentity {
+    flex: 1 1 auto;
+  }
+
+  .categoryIdentity {
+    flex: 0 1 auto;
   }
 
   .rowCard {
@@ -1836,7 +1849,8 @@
   }
 
   .inlineTools {
-    width: 100%;
+    width: auto;
+    margin-left: auto;
     justify-content: flex-end;
   }
 
