@@ -42,6 +42,10 @@ export default function Login() {
   };
 
   const handleForgotPassword = async () => {
+    if (!emailForReset) {
+      alert("Veuillez entrer votre email.");
+      return;
+    }
    try {
     // Appel de la fonction API avec l'email saisi
     const res = await forgotPassword(emailForReset);
@@ -56,127 +60,117 @@ export default function Login() {
     console.error(err);
 
     // Message en cas d'erreur
-    alert("Erreur, réessaie");
+    alert(err?.response?.data?.message || "Erreur lors de l'envoi du mail");
   }
 };
 
   return (
-    <AuthShell title="Bienvenue" subtitle="Connectez-vous à votre compte">
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <div className={styles.fieldGroup}>
-          <label htmlFor="email" className={styles.label}>
-            Adresse e-mail
-          </label>
-          <div className={styles.inputWrapper}>
-            <span
-              className={`${styles.leadingIcon} ${styles.emailIcon}`}
-              aria-hidden="true"
-            />
+  <AuthShell title="Bienvenue" subtitle="Connectez-vous à votre compte">
+    <form className={styles.form} onSubmit={handleSubmit}>
+      
+      {/* EMAIL */}
+      <div className={styles.fieldGroup}>
+        <label htmlFor="email" className={styles.label}>
+          Adresse e-mail
+        </label>
+        <div className={styles.inputWrapper}>
+          <span className={`${styles.leadingIcon} ${styles.emailIcon}`} aria-hidden="true" />
+          <input
+            id="email"
+            type="email"
+            className={styles.input}
+            placeholder="Entrez votre e-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
+          />
+        </div>
+      </div>
+
+      {/* PASSWORD */}
+      <div className={styles.fieldGroup}>
+        <label htmlFor="password" className={styles.label}>
+          Mot de passe
+        </label>
+        <div className={styles.inputWrapper}>
+          <span className={`${styles.leadingIcon} ${styles.lockIcon}`} aria-hidden="true" />
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            className={styles.input}
+            placeholder="Entrez votre mot de passe"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
+          />
+          <button
+            type="button"
+            className={styles.togglePassword}
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+            aria-pressed={showPassword}
+          >
+            {showPassword ? '🙈' : '👁️'}
+          </button>
+        </div>
+
+        {/* Forgot Password */}
+        <NavLink
+          to="#"
+          className={styles.forgotPassword}
+          // empêche la navigation réelle et ouvre la modal
+          onClick={(e) => { e.preventDefault(); setShowModal(true); }}
+        >
+          Mot de passe oublié
+        </NavLink>
+      </div>
+
+      {/* SUBMIT BUTTON */}
+      <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+        {isSubmitting ? 'Connexion...' : 'Se connecter'}
+      </button>
+
+      {/* MODAL MOT DE PASSE OUBLIÉ */}
+      {showModal && (
+        <div className={styles.overlay}>
+          <div className={styles.modal}>
+            <h2>Mot de passe oublié</h2>
             <input
-              id="email"
               type="email"
-              className={styles.input}
-              placeholder="Entrez votre e-mail"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              required
+              placeholder="Votre email"
+              value={emailForReset}
+              onChange={(e) => setEmailForReset(e.target.value)}
             />
-          </div>
-        </div>
-
-        <div className={styles.fieldGroup}>
-          <label htmlFor="password" className={styles.label}>
-            Mot de passe
-          </label>
-          <div className={styles.inputWrapper}>
-            <span className={`${styles.leadingIcon} ${styles.lockIcon}`} aria-hidden="true" />
-            <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              className={styles.input}
-              placeholder="Entrez votre mot de passe"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              required
-            />
-            <button
-              type="button"
-              className={styles.togglePassword}
-              onClick={() => setShowPassword((currentValue) => !currentValue)}
-              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              aria-pressed={showPassword}
-            >
-              <span
-                className={`${styles.eyeIcon} ${showPassword ? styles.eyeVisible : styles.eyeHidden}`}
-                aria-hidden="true"
-              />
-              <button
-                type="button"
-                className={styles.togglePassword}
-                onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              >
-                👁️
-              </button>
-            </div>
-            <NavLink to="#" className={styles.forgotPassword} onClick={() => setShowModal(true)}>
-              mot de passe oublié
-            </NavLink>
-          </div>
-          <NavLink to="#" className={styles.forgotPassword}>
-            mot de passe oublié
-          </NavLink>
-        </div>
-
-        <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
-          {isSubmitting ? 'Connexion...' : 'Se connecter'}
-        </button>
-
-        {showModal && (
-          <div className={styles.overlay}>
-            <div className={styles.modal}>
-              <h2>Mot de passe oublié</h2>
-
-              <input
-                type="email"
-                placeholder="Votre email"
-                value={emailForReset}
-                onChange={(e) => setEmailForReset(e.target.value)}
-              />
-
-              <button className={styles.submitButtonMDP} onClick={handleForgotPassword}>
+            <div className={styles.modalButtons}>
+              <button type="button" className={styles.submitButtonMDP} onClick={handleForgotPassword}>
                 Envoyer
               </button>
-
-              <button className={styles.submitButtonMDP} onClick={() => setShowModal(false)}>
+              <button type="button" className={styles.submitButtonMDP} onClick={() => setShowModal(false)}>
                 Fermer
               </button>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        <p className={styles.noAccount}>
-          Nouveau sur notre site ?{' '}
-          <NavLink to="/signup" className={styles.link}>
-            Créer un compte
-          </NavLink>
-        </p>
-        <Alert
-          type="error"
-          message={error}
-          onClose={() => setError('')}
-          className={styles.formAlert}
-        />
-      </form>
-
+      {/* INSCRIPTION */}
       <p className={styles.noAccount}>
         Nouveau sur notre site ?{' '}
         <NavLink to="/signup" className={styles.link}>
           Créer un compte
         </NavLink>
       </p>
-    </AuthShell>
+
+      {/* ALERT */}
+      <Alert
+        type="error"
+        message={error}
+        onClose={() => setError('')}
+        className={styles.formAlert}
+      />
+    </form>
+  </AuthShell>
   );
 }

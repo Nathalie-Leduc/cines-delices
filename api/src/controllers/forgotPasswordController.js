@@ -31,7 +31,7 @@ export const forgotPassword = async (req, res) => {
   }
 
   // Génération d'un token aléatoire sécurisé (32 bytes)
-  const resetToken = (await crypto.randomBytes(32)).toString('hex');
+  const resetToken = crypto.randomBytes(32).toString('hex');
   console.log("TOKEN RESET :", resetToken); 
   // Définition d'une date d'expiration (15 minutes)
   const expires = new Date(Date.now() + 15 * 60 * 1000);

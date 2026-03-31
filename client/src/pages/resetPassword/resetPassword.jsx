@@ -12,6 +12,7 @@ export default function ResetPassword() {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -39,18 +40,20 @@ export default function ResetPassword() {
         {success ? (
           <p className={styles.successMsg}>Mot de passe mis à jour ! Redirection...</p>
         ) : (
-          <form className={styles.form} onSubmit={handleSubmit}>
+          <form className={styles.form} onSubmit={handleSubmit} autoComplete='off'>
             <div className={styles.fieldGroup}>
               <label className={styles.label} htmlFor="password">Nouveau mot de passe</label>
               <input
                 className={styles.input}
                 id="password"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Nouveau mot de passe"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete='new-password'
               />
+              
             </div>
             <div className={styles.fieldGroup}>
               <label className={styles.label} htmlFor="confirm">Confirmer le mot de passe</label>

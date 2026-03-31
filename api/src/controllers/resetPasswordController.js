@@ -12,6 +12,11 @@ export const resetPassword = async (req, res) => {
     return res.status(400).json({ message: "Token et mot de passe requis" });
   }
 
+  // ✅ Vérification de la longueur minimale du mot de passe
+  if (password.length < 8) {
+    return res.status(400).json({ message: "Le mot de passe doit faire au moins 8 caractères" });
+  }
+
   // Recherche d'un utilisateur avec :
   // - le bon token
   // - un token encore valide (non expiré)
@@ -39,7 +44,7 @@ export const resetPassword = async (req, res) => {
     where: { id: user.id },
     data: {
       passwordHash: hashedPassword, // nouveau mot de passe sécurisé
-      resetToken: null,         // suppression du token
+      resetToken: null,         // suppression du token, empêche les réutilisations du token
       resetTokenExpires: null   // suppression de l'expiration
     }
   });
