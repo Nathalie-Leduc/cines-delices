@@ -44,18 +44,9 @@ const recipeRelationsInclude = {
 // ─────────────────────────────────────────────────────────
 // resolveMediaFromTmdb — Résout ou crée un média depuis TMDB
 // ─────────────────────────────────────────────────────────
-//  Quand un membre crée ou modifie une recette, cette fonction :
-//   1. Vérifie si le média existe déjà en BDD (contrainte composite tmdbId + type)
-//   2. Si non, appelle l'API TMDB pour récupérer les détails complets
-//   3. Télécharge le poster et le convertit en WebP local (via posterService)
-//   4. Crée le média en BDD avec poster local, synopsis et réalisateur
-//
-// C'est la même logique que resolveAdminMediaId dans adminController,
-// mais factorisée ici pour être utilisée dans createRecipe et updateRecipe.
 async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
   const tmdbType = mediaType === 'SERIES' ? 'tv' : 'movie';
 
-  // 1. Le média existe déjà en BDD ?
   const existingMedia = await prisma.media.findUnique({
     where: {
       tmdbId_type: {
@@ -69,8 +60,6 @@ async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
     return existingMedia.id;
   }
 
-  // 2. Appeler TMDB pour récupérer les détails complets
-  //    append_to_response=credits → récupère le réalisateur en un seul appel
   let tmdbData = null;
   try {
     const tmdbUrl = `${process.env.TMDB_BASE_URL}/${tmdbType}/${tmdbId}?api_key=${process.env.TMDB_API_KEY}&language=fr-FR&append_to_response=credits`;
@@ -85,11 +74,9 @@ async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
     console.warn('[TMDB] Erreur appel API :', error.message);
   }
 
-  // 3. Extraire les infos du média
   const finalTitle = title || tmdbData?.title || tmdbData?.name || 'Sans titre';
   const synopsis = tmdbData?.overview || null;
 
-  // Extraire le réalisateur (film = Director dans crew, série = created_by)
   let realisateur = null;
   if (tmdbData) {
     const people = mediaType === 'MOVIE'
@@ -103,13 +90,11 @@ async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
     realisateur = people.length > 0 ? people.join(', ') : null;
   }
 
-  // Extraire l'année de sortie
   const releaseYear = Number.parseInt(
     String(tmdbData?.release_date || tmdbData?.first_air_date || '').slice(0, 4),
     10,
   );
 
-  // 4. Télécharger et convertir le poster en WebP local
   const tmdbPosterUrl = tmdbData?.poster_path
     ? `https://image.tmdb.org/t/p/w500${tmdbData.poster_path}`
     : null;
@@ -117,7 +102,6 @@ async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
     ? await downloadAndConvertPoster(tmdbPosterUrl)
     : null;
 
-  // 5. Créer le média en BDD
   const mediaSlug = await generateUniqueSlug(
     `${finalTitle}-${Number.isInteger(releaseYear) ? releaseYear : new Date().getFullYear()}`,
     (s) => prisma.media.findUnique({ where: { slug: s } }),
@@ -129,7 +113,7 @@ async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
       titre: finalTitle,
       slug: mediaSlug,
       type: mediaType,
-      posterUrl: localPosterUrl || tmdbPosterUrl, // WebP local en priorité, TMDB en fallback
+      posterUrl: localPosterUrl || tmdbPosterUrl,
       synopsis,
       annee: Number.isInteger(releaseYear) ? releaseYear : null,
       realisateur,
@@ -175,7 +159,6 @@ export const createRecipe = async (req, res) => {
 
     let categoryId = rawCategoryId;
 
-    // Vérifier/résoudre la catégorie
     let category = null;
     if (categoryId) {
       category = await prisma.category.findUnique({ where: { id: categoryId } });
@@ -208,14 +191,12 @@ export const createRecipe = async (req, res) => {
 
     let mediaId = rawMediaId;
 
-    // Vérifier/résoudre le média
     if (mediaId) {
       const existingMedia = await prisma.media.findUnique({ where: { id: mediaId } });
       if (!existingMedia) {
         return res.status(404).json({ message: 'Média introuvable' });
       }
     } else {
-      // Nouveau média depuis TMDB
       const tmdbId = Number(filmId);
       if (!Number.isInteger(tmdbId) || tmdbId <= 0) {
         return res.status(400).json({ message: 'Média invalide. Sélectionne un film/série depuis la recherche.' });
@@ -231,7 +212,6 @@ export const createRecipe = async (req, res) => {
         ? 'SERIES'
         : 'MOVIE';
 
-      // Appel TMDB + téléchargement poster WebP + création en BDD
       mediaId = await resolveMediaFromTmdb({
         tmdbId,
         title: normalizedTitle,
@@ -245,7 +225,6 @@ export const createRecipe = async (req, res) => {
 
     const normalizedNombrePersonnes = nombrePersonnes ?? nbPersonnes;
 
-    // Créer la recette
     const recipeSlug = await generateUniqueSlug(
       titre,
       (s) => prisma.recipe.findUnique({ where: { slug: s } }),
@@ -263,17 +242,15 @@ export const createRecipe = async (req, res) => {
         nombrePersonnes: normalizedNombrePersonnes,
         tempsPreparation,
         tempsCuisson,
-        status: 'PENDING', // Les recettes doivent être approuvées par un admin
+        status: 'PENDING',
       },
       include: recipeRelationsInclude,
     });
 
-    // Ajouter les ingrédients si fournis
     const newlyCreatedIngredientNames = new Set();
 
     if (ingredients && ingredients.length > 0) {
       for (const ing of ingredients) {
-        // Chercher ou créer l'ingrédient
         const ingredientName = String(ing.nom || '').toLowerCase().trim();
         const quantity = ing.quantity ?? ing.quantite ?? null;
         const unit = ing.unit ?? ing.unite ?? null;
@@ -289,7 +266,6 @@ export const createRecipe = async (req, res) => {
           newlyCreatedIngredientNames.add(ingredient.nom);
         }
 
-        // Ajouter à la recette
         await prisma.recipeIngredient.create({
           data: {
             recipeId: recipe.id,
@@ -301,7 +277,6 @@ export const createRecipe = async (req, res) => {
       }
     }
 
-    // Notifier tous les admins de la nouvelle recette en attente
     const adminUsers = await prisma.user.findMany({
       where: { role: 'ADMIN' },
       select: { id: true },
@@ -394,6 +369,20 @@ export const getMyRecipes = asyncHandler(async (req, res) => {
 /**
  * Met à jour une recette
  * PATCH /api/recipes/:id
+ *
+ * CORRECTIF NOTIFICATION :
+ * Avant : shouldNotifyAdminsAboutResubmission = shouldResubmit && status !== 'PENDING'
+ *   → Si la recette est déjà PENDING (après une 1ère modif), la 2ème modif
+ *     ne déclenche AUCUNE notification. L'admin ne sait pas que ça a changé.
+ *
+ * Après : on notifie à chaque modification d'une recette PENDING ou re-soumise,
+ *   en faisant un UPSERT pour éviter les doublons :
+ *   - Si une notif non lue existe déjà pour ce couple (admin, recette) → on la MET À JOUR
+ *   - Sinon → on la CRÉE
+ *
+ * Analogie : au lieu d'empiler des post-its sur le bureau de l'admin,
+ * on efface l'ancien et on en colle un nouveau à la même place,
+ * avec la date et le message les plus récents.
  */
 export const updateRecipe = async (req, res) => {
   try {
@@ -432,12 +421,20 @@ export const updateRecipe = async (req, res) => {
     }
 
     const isAdminEditing = user.role === 'ADMIN';
+
+    // La recette doit repasser en modération si un membre modifie une recette
+    // qui est PUBLISHED, PENDING, ou qui a un motif de rejet.
     const shouldResubmitForModeration = !isAdminEditing && (
       recipe.status === 'PUBLISHED'
       || recipe.status === 'PENDING'
       || Boolean(recipe.rejectionReason)
     );
-    const shouldNotifyAdminsAboutResubmission = shouldResubmitForModeration && recipe.status !== 'PENDING';
+
+    // ✅ CORRECTIF — on notifie si la recette doit repasser en modération,
+    // QUE la recette soit déjà PENDING ou non.
+    // AVANT : && recipe.status !== 'PENDING'  → bloquait la 2ème notification
+    // APRÈS : on notifie dans tous les cas où shouldResubmitForModeration est vrai
+    const shouldNotifyAdminsAboutResubmission = shouldResubmitForModeration;
 
     const mergedSteps = Array.isArray(etapes)
       ? etapes.map((step) => String(step || '').trim()).filter(Boolean)
@@ -504,7 +501,6 @@ export const updateRecipe = async (req, res) => {
         ? 'SERIES'
         : 'MOVIE';
 
-      // Appel TMDB + téléchargement poster WebP + création en BDD
       mediaId = await resolveMediaFromTmdb({
         tmdbId,
         title: normalizedTitle,
@@ -512,7 +508,6 @@ export const updateRecipe = async (req, res) => {
       });
     }
 
-    // Mettre à jour la recette
     const data = {};
     if (titre !== undefined) data.titre = titre;
     if (instructions !== undefined || Array.isArray(etapes)) data.instructions = normalizedInstructions;
@@ -527,11 +522,11 @@ export const updateRecipe = async (req, res) => {
       data.rejectionReason = null;
     }
 
-    // Mettre à jour les ingrédients si fournis
     const newlyCreatedIngredientNames = new Set();
-    let adminUsers = [];
 
-    if (shouldResubmitForModeration) {
+    // Récupérer les admins avant la transaction (nécessaire pour l'upsert notif)
+    let adminUsers = [];
+    if (shouldNotifyAdminsAboutResubmission) {
       adminUsers = await prisma.user.findMany({
         where: { role: 'ADMIN' },
         select: { id: true },
@@ -579,18 +574,46 @@ export const updateRecipe = async (req, res) => {
         }
       }
 
+      // ✅ CORRECTIF NOTIFICATION — upsert pour chaque admin :
+      // Si une notif non lue existe déjà → mise à jour du message + date
+      // Sinon → création d'une nouvelle notif
+      // Résultat : l'admin ne voit jamais qu'une seule notif par recette,
+      // toujours à jour avec la dernière modification.
       if (shouldNotifyAdminsAboutResubmission && adminUsers.length > 0) {
-        await tx.notification.createMany({
-          data: adminUsers.map((admin) => ({
-            type: 'RECIPE_SUBMITTED',
-            message: `Recette modifiée à valider de nouveau : ${titre ?? recipe.titre}`,
-            userId: admin.id,
-            recipeId: recipe.id,
-          })),
-        });
+        const notifMessage = `Recette modifiée à valider de nouveau : ${titre ?? recipe.titre}`;
+
+        for (const admin of adminUsers) {
+          const existing = await tx.notification.findFirst({
+            where: {
+              userId: admin.id,
+              recipeId: recipe.id,
+              type: 'RECIPE_SUBMITTED',
+              isRead: false,
+            },
+          });
+
+          if (existing) {
+            // Mettre à jour la notif existante avec le nouveau message
+            await tx.notification.update({
+              where: { id: existing.id },
+              data: { message: notifMessage },
+            });
+          } else {
+            // Pas de notif non lue → en créer une nouvelle
+            await tx.notification.create({
+              data: {
+                type: 'RECIPE_SUBMITTED',
+                message: notifMessage,
+                userId: admin.id,
+                recipeId: recipe.id,
+              },
+            });
+          }
+        }
       }
     });
 
+    // Notifier les admins des nouveaux ingrédients créés à la volée
     if (newlyCreatedIngredientNames.size > 0) {
       if (adminUsers.length === 0) {
         adminUsers = await prisma.user.findMany({
@@ -723,7 +746,6 @@ export const deleteRecipe = async (req, res) => {
       return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à supprimer cette recette' });
     }
 
-    // Supprimer la recette (Prisma supprimera les ingrédients à cause de onDelete: Cascade)
     await prisma.recipe.delete({ where: { id: recipe.id } });
 
     return res.json({ message: 'Recette supprimée' });
@@ -734,8 +756,8 @@ export const deleteRecipe = async (req, res) => {
 };
 
 /**
- * Récupère toutes les recettes publiées (pour les membres)
- * GET /api/recipes?published=true
+ * Récupère toutes les recettes publiées
+ * GET /api/recipes
  */
 export const getAllPublishedRecipes = asyncHandler(async (req, res) => {
   const page = Number(req.query.page || 1);
