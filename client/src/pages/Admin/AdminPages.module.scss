@@ -1606,6 +1606,14 @@
   }
 }
 
+@media (max-width: 1023px) {
+  .recipesGridExact {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+  }
+}
+
 @media (max-width: 767px) {
   .headerLine {
     margin-bottom: 0.95rem;
@@ -1773,7 +1781,7 @@
 
   .recipeFiltersRow {
     gap: 0.55rem;
-    justify-content: flex-start;
+    justify-content: center;
     padding-left: 0;
   }
 
@@ -1847,6 +1855,25 @@
   .recipePageStatus {
     width: 100%;
     text-align: center;
+  }
+}
+
+@media (max-width: 423px) {
+  .recipeFiltersRow {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-right: 0.35rem;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .filterGroup {
+      flex: 0 0 auto;
+    }
   }
 }
 
