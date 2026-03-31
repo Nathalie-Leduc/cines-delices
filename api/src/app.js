@@ -14,6 +14,8 @@ import { sendResetPasswordMail } from './lib/mailer.js';
 
 import { sendResetPasswordMail } from './lib/mailer.js';
 
+import { sendResetPasswordMail } from './lib/mailer.js';
+
 const app = express();
 // AJOUT À FAIRE DANS app.js — trust proxy
 // ============================================================
