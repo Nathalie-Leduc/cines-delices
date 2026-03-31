@@ -13,6 +13,7 @@ import {
   deleteAdminRecipe,
   getAdminCategories,
   getAdminIngredients,
+  getValidatedAdminIngredients,
   getAdminRecipes,
   updateAdminRecipe,
 } from '../../services/adminService.js';
@@ -75,7 +76,7 @@ function AdminRecettes() {
     movie: '',
     media: 'F',
     nbPersonnes: '',
-    ingredients: [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
+    ingredients: [],
     tempsPreparation: '',
     tempsCuisson: '',
     etapes: [''],
@@ -175,19 +176,28 @@ function AdminRecettes() {
       movie: recipe.movie || '',
       media: recipe.media || 'F',
       nbPersonnes: recipe.nbPersonnes ?? recipe.people ?? '',
-      ingredients: Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0
+
+      // ✅ CORRECTIF 1 — ne plus forcer une ligne vide si la liste est vide.
+      // ✅ CORRECTIF 1b — mapper "id" → "ingredientId" et "name" → "nom".
+      // Le back (formatRecipe) renvoie { id, name, quantity, unit }.
+      // Sans ce mapping, ingredientId vaut null et le back fait un upsert
+      // par nom au lieu d'utiliser l'id existant.
+      // Analogie : le vestiaire reçoit le numéro de ticket sous le nom "id"
+      // mais cherche "ingredientId" — sans traduction, il ne trouve rien.
+      ingredients: Array.isArray(recipe.ingredients)
         ? recipe.ingredients.map(item => ({
-            ingredientId: item?.ingredientId || item?.id || null,
-            nom: typeof item === 'string' ? item : (item?.nom ?? item?.name ?? ''),
-            quantite: typeof item === 'string' ? '' : (item?.quantite ?? item?.quantity ?? ''),
-            unite: typeof item === 'string' ? '' : (item?.unite ?? item?.unit ?? ''),
+            ingredientId: item?.ingredientId ?? item?.id ?? null,
+            nom: typeof item === 'string' ? item : (item?.name ?? item?.nom ?? ''),
+            quantite: typeof item === 'string' ? '' : (item?.quantity ?? item?.quantite ?? ''),
+            unite: typeof item === 'string' ? '' : (item?.unit ?? item?.unite ?? ''),
           }))
-        : [{ ingredientId: null, nom: '', quantite: '', unite: '' }],
+        : [],
+
       tempsPreparation: recipe.tempsPreparation ?? recipe.preparationTime ?? '',
       tempsCuisson: recipe.tempsCuisson ?? recipe.cookingTime ?? '',
-      etapes: Array.isArray(recipe.etapes) && recipe.etapes.length > 0 
-        ? recipe.etapes 
-        : (recipe.instructions?.split('\n') || [''] ),
+      etapes: Array.isArray(recipe.etapes) && recipe.etapes.length > 0
+        ? recipe.etapes
+        : (recipe.instructions?.split('\n') || ['']),
       image: recipe.image || '',
       imageFile: null,
     });
@@ -293,7 +303,12 @@ function AdminRecettes() {
     setEditIngredientSearchLoading(prev => ({ ...prev, [index]: true }));
     setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
     try {
-      const payload = await getAdminIngredients(trimmed);
+      // ✅ CORRECTIF — utiliser getValidatedAdminIngredients au lieu de getAdminIngredients.
+      // getAdminIngredients → /api/admin/ingredients → approved: false (en attente)
+      // getValidatedAdminIngredients → /api/admin/ingredients/validated → approved: true
+      // Analogie : on cherchait dans la liste d'attente à l'entrée du cinéma
+      // au lieu du registre des billets déjà validés.
+      const payload = await getValidatedAdminIngredients(trimmed);
       const rawList = Array.isArray(payload) ? payload : payload.data || [];
       const normalized = rawList
         .map(item => ({ id: item.id, name: item.name || item.nom || '' }))
@@ -366,6 +381,10 @@ function AdminRecettes() {
   }
 
   function removeIngredient(index) {
+    // ✅ CORRECTIF 3 — pas de garde "length > 1" ici.
+    // On laisse l'admin supprimer jusqu'au dernier ingrédient.
+    // Le filtre du correctif 2 dans handleSaveConfirmed s'occupe
+    // de ne pas envoyer de lignes vides au back.
     setEditDraft(prev => ({
       ...prev,
       ingredients: prev.ingredients.filter((_, i) => i !== index),
@@ -422,7 +441,15 @@ function AdminRecettes() {
     setShowEditConfirmModal(false);
     setError('');
 
-    // Appel API pour sauvegarder les modifications
+    // ✅ CORRECTIF 2 — filtrer les lignes vides avant l'envoi au back.
+    // Analogie : on n'envoie pas les post-its blancs à la cuisine,
+    // seulement ceux sur lesquels il y a écrit quelque chose.
+    // AVANT : ingredients: editDraft.ingredients  (envoyait les lignes vides)
+    // APRÈS : on filtre les entrées sans nom → le back reçoit [] si tout est supprimé
+    const cleanIngredients = editDraft.ingredients.filter(
+      ing => String(ing.nom || '').trim() !== ''
+    );
+
     const payload = {
       titre: editDraft.title,
       instructions: editDraft.etapes.filter(Boolean).join('\n'),
@@ -432,7 +459,7 @@ function AdminRecettes() {
       categoryId: editDraft.categoryId,
       categoryName: editDraft.category,
       imageUrl: String(editDraft.image || '').trim() || undefined,
-      ingredients: editDraft.ingredients,
+      ingredients: cleanIngredients, // ← liste propre, peut être []
       ...(editDraft.selectedTmdbId
         ? {
             tmdbId: editDraft.selectedTmdbId,
@@ -450,7 +477,7 @@ function AdminRecettes() {
       formData.append('instructions', payload.instructions);
       formData.append('categoryId', String(payload.categoryId || ''));
       formData.append('categoryName', String(payload.categoryName || ''));
-      formData.append('ingredients', JSON.stringify(payload.ingredients || []));
+      formData.append('ingredients', JSON.stringify(cleanIngredients)); // ← idem ici
       formData.append('image', editDraft.imageFile);
 
       if (payload.nombrePersonnes) formData.append('nombrePersonnes', String(payload.nombrePersonnes));
@@ -466,12 +493,10 @@ function AdminRecettes() {
 
     updateAdminRecipe(editDraft.id, requestBody)
       .then((updatedRecipe) => {
-        // Mettre à jour la recette dans la liste avec tous les champs
         setRecipes(prev => prev.map(recipe =>
           recipe.id === updatedRecipe.id
             ? {
                 ...updatedRecipe,
-                // Ajouter les alias pour la compatibilité
                 nbPersonnes: updatedRecipe.people,
                 tempsPreparation: updatedRecipe.preparationTime,
                 tempsCuisson: updatedRecipe.cookingTime,
@@ -543,7 +568,7 @@ function AdminRecettes() {
             title="Aucune recette à afficher"
             message={query.trim()
               ? "Aucune recette ne correspond à cette recherche. Essaie un autre titre."
-              : "Aucune recette n’est disponible pour ce filtre pour le moment."}
+              : "Aucune recette n'est disponible pour ce filtre pour le moment."}
             className={styles.pageState}
           />
         ) : null}
@@ -786,15 +811,19 @@ function AdminRecettes() {
                           <option key={unite} value={unite}>{unite}</option>
                         ))}
                       </select>
-                      {editDraft.ingredients.length > 1 && (
-                        <button
-                          type="button"
-                          className={styles.adminRemoveSmallBtn}
-                          onClick={() => removeIngredient(index)}
-                        >
-                          −
-                        </button>
-                      )}
+
+                      {/* ✅ CORRECTIF 3 — le bouton − est toujours visible.
+                          On peut supprimer jusqu'au dernier ingrédient.
+                          AVANT : {editDraft.ingredients.length > 1 && <button>}
+                          APRÈS : toujours affiché, la liste peut être vide */}
+                      <button
+                        type="button"
+                        className={styles.adminRemoveSmallBtn}
+                        aria-label={`Supprimer l'ingrédient ${index + 1}`}
+                        onClick={() => removeIngredient(index)}
+                      >
+                        −
+                      </button>
                     </div>
                   </div>
                 ))}
