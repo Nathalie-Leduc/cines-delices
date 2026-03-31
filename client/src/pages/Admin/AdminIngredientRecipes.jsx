@@ -79,6 +79,9 @@ export default function AdminIngredientRecipes() {
 
   return (
     <div className={styles.page}>
+      <Link to="/admin/ingredients" className={styles.backLink}>
+        Retour aux ingrédients
+      </Link>
       <div className={styles.headerLine}>
         <h2>{heading}</h2>
       </div>

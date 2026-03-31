@@ -33,6 +33,7 @@ export default function Login() {
       if (payload?.user?.role === 'ADMIN') {
         redirectPath = '/admin';
       }
+
       navigate(redirectPath, { replace: true });
     } catch (requestError) {
       setError(requestError.message || 'Connexion impossible');
@@ -44,7 +45,6 @@ export default function Login() {
   const handleForgotPassword = async () => {
     setResetMessage('');
     setResetError('');
-
     if (!emailForReset.trim()) {
       setResetError('Veuillez entrer votre email.');
       return;
@@ -59,7 +59,6 @@ export default function Login() {
       setResetError('Une erreur est survenue, réessaie.');
     }
   };
-
   const handleCloseModal = () => {
     setShowModal(false);
     setEmailForReset('');
@@ -111,7 +110,6 @@ export default function Login() {
               autoComplete="current-password"
               required
             />
-            {/* ✅ Un seul bouton toggle */}
             <button
               type="button"
               className={styles.togglePassword}
@@ -156,10 +154,8 @@ export default function Login() {
             Créer un compte
           </NavLink>
         </p>
-
       </form>
 
-      {/* MODALE MOT DE PASSE OUBLIÉ */}
       {showModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
@@ -171,8 +167,6 @@ export default function Login() {
               value={emailForReset}
               onChange={(e) => setEmailForReset(e.target.value)}
             />
-
-            {/* ✅ Messages dans la modale au lieu de alert() */}
             {resetMessage && (
               <p className={styles.resetSuccess}>{resetMessage}</p>
             )}
