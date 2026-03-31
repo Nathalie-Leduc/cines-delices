@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import AuthShell from '../../components/AuthShell/AuthShell.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { getMe } from '../../services/api.js';
+import { getMe, submitContactMessage } from '../../services/api.js';
 import styles from './Contact.module.scss';
 
 const EMPTY_IDENTITY = {
@@ -140,14 +140,15 @@ export default function Contact() {
     setIsSubmitting(true);
 
     try {
-      // Simulation d'un délai réseau
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await submitContactMessage({
+        nom: form.nom.trim(),
+        prenom: form.prenom.trim(),
+        email: form.email.trim(),
+        demande: form.demande.trim(),
+      });
 
-      // Le message est validé et prêt à être envoyé
-      // Affiche le modal de succès
       setShowSuccessModal(true);
 
-      // Réinitialise le formulaire
       setForm({
         nom: prefilledIdentity.nom,
         prenom: prefilledIdentity.prenom,

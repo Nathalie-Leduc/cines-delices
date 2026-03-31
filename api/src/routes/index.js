@@ -8,6 +8,7 @@ import categoriesRoutes from "./categoriesRoutes.js";
 import recipesRoutes from "./recipesRoutes.js";
 import ingredientsRoutes from "./ingredientsRoutes.js";
 import mediaRoutes from "./mediaRoutes.js";
+import contactRoutes from "./contactRoutes.js";
 
 const router = express.Router()
 
@@ -20,5 +21,6 @@ router.use('/categories', categoriesRoutes);
 router.use('/recipes', recipesRoutes);
 router.use('/ingredients', ingredientsRoutes);
 router.use('/media', mediaRoutes);
+router.use('/contact', contactRoutes);
 
 export default router;

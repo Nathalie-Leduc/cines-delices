@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import {
+  deleteAdminNotification,
   getAdminCategories,
   getAdminIngredients,
   getAdminNotifications,
@@ -166,6 +167,8 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     const isIngredientNotification = message.includes('nouvel ingrédient soumis');
 
     if (!notification?.recipeId && !isIngredientNotification) {
+      onNavigate?.();
+      navigate('/admin/notifications');
       return;
     }
 
@@ -179,6 +182,22 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
     navigate('/admin/validation-recettes', {
       state: { openRecipeId: notification.recipeId },
     });
+  }
+
+  async function handleDeleteNotification(event, notificationId) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    try {
+      await deleteAdminNotification(notificationId);
+      setRecentNotifications((previous) => previous.filter((notification) => notification.id !== notificationId));
+      setCounts((previous) => ({
+        ...previous,
+        unreadNotifications: Math.max(0, previous.unreadNotifications - 1),
+      }));
+    } catch {
+      // On laisse le polling remettre l'état si besoin.
+    }
   }
 
   const hasUnreadNotifications = counts.unreadNotifications > 0;
@@ -214,7 +233,16 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
         aria-label="Notifications admin"
       >
         <div className={styles.notificationsHeader}>
-          <strong>Notification(s)</strong>
+          <button
+            type="button"
+            className={styles.notificationsHeadingButton}
+            onClick={() => {
+              onNavigate?.();
+              navigate('/admin/notifications');
+            }}
+          >
+            Notification(s)
+          </button>
           <span className={hasUnreadNotifications ? styles.notificationsCountUnread : styles.notificationsCount}>
             {hasUnreadNotifications ? <span className={styles.notificationsUnreadDot} aria-hidden="true" /> : null}
             {counts.unreadNotifications} non lue{counts.unreadNotifications > 1 ? 's' : ''}
@@ -234,6 +262,15 @@ export default function AdminSidebar({ className = '', onNavigate, mobile = fals
                 >
                   <p>{notification.message}</p>
                   <small>{formatNotificationDate(notification.createdAt)}</small>
+                </button>
+                <button
+                  type="button"
+                  className={styles.notificationDeleteButton}
+                  aria-label="Supprimer cette notification"
+                  title="Supprimer"
+                  onClick={(event) => handleDeleteNotification(event, notification.id)}
+                >
+                  <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
                 </button>
               </li>
             ))}

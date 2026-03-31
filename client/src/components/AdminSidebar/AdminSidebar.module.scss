@@ -145,6 +145,19 @@
   }
 }
 
+.notificationsHeadingButton {
+  all: unset;
+  cursor: pointer;
+  color: #e8dcc8;
+  font-size: 0.86rem;
+  font-weight: 700;
+
+  &:hover,
+  &:focus-visible {
+    color: #c9a45c;
+  }
+}
+
 .notificationsCount {
   color: rgba(246, 241, 232, 0.68);
 }
@@ -210,6 +223,9 @@
   border-radius: 8px;
   background: rgba(246, 241, 232, 0.06);
   padding: 0.45rem 0.5rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
 
   p {
     margin: 0;
@@ -230,11 +246,36 @@
   all: unset;
   cursor: pointer;
   display: block;
-  width: 100%;
+  flex: 1;
   border-radius: 6px;
 
   &:hover {
     background: rgba(246, 241, 232, 0.08);
+  }
+}
+
+.notificationDeleteButton {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid rgba(246, 241, 232, 0.34);
+  border-radius: 999px;
+  background: rgba(246, 241, 232, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: 0.15rem;
+
+  img {
+    width: 10px;
+    height: 10px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(168, 42, 58, 0.32);
+    border-color: rgba(244, 165, 85, 0.7);
   }
 }
 

@@ -54,8 +54,11 @@ export const updateAdminUserRole = (id, role) =>
   request(`${ADMIN_API_BASE}/users/${id}/role`, { method: 'PATCH', body: { role } });
 
 // Récupère les notifications admin
-export const getAdminNotifications = () =>
-  request(`${ADMIN_API_BASE}/notifications`);
+export const getAdminNotifications = (limit) =>
+  request(`${ADMIN_API_BASE}/notifications${limit ? `?limit=${encodeURIComponent(limit)}` : ''}`);
+
+export const deleteAdminNotification = (id) =>
+  request(`${ADMIN_API_BASE}/notifications/${id}`, { method: 'DELETE' });
 
 // ---------------------------
 // CATEGORIES
