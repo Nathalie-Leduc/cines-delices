@@ -393,8 +393,16 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick }) {
                   type="button"
                   className={styles.desktopLogoutButton}
                   onClick={handleLogout}
+                  aria-label="Se déconnecter"
                 >
-                  Se déconnecter
+                  {/* Icône Logout — même icône que le bouton du compte membre */}
+                  <img
+                    src="/icon/Logout.svg"
+                    alt=""
+                    aria-hidden="true"
+                    className={styles.desktopLogoutIcon}
+                  />
+                  <span>Se déconnecter</span>
                 </button>
               </div>
             ) : (
