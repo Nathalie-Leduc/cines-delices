@@ -54,23 +54,6 @@
   min-width: 0;
 }
 
-.welcomeText {
-  margin: 0 0 1.35rem;
-  color: #f6f1e8;
-  font-family: 'Inter', sans-serif;
-  font-size: 1.06rem;
-  text-align: center;
-  line-height: 1.45;
-
-  strong {
-    color: #fbdca6;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.9rem;
-    font-weight: 700;
-    line-height: 1.1;
-  }
-}
-
 .adminGrid {
   display: grid;
   grid-template-columns: 360px minmax(0, 1fr);
@@ -80,11 +63,6 @@
 
 .desktopSidebar {
   display: block;
-}
-
-.mobileWelcome,
-.mobileSidebarOnly {
-  display: none;
 }
 
 .adminMain {
@@ -136,14 +114,6 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 0.8rem;
-
-  h2 {
-    margin: 0;
-    color: #c9a45c;
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    font-weight: 700;
-  }
 }
 
 .mobileSidebarClose {
@@ -162,20 +132,83 @@
   }
 }
 
-.mobileSidebarWelcome {
-  margin: 0 0 1rem;
-  color: #f6f1e8;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.98rem;
-  line-height: 1.45;
-  text-align: center;
+.mobileSidebarHeading {
+  display: grid;
+  gap: 0.2rem;
 
-  strong {
+  h2 {
+    margin: 0;
     color: #c9a45c;
     font-family: 'Playfair Display', serif;
-    font-size: 1.3rem;
+    font-size: 2rem;
     font-weight: 700;
   }
+
+  p {
+    margin: 0;
+    color: rgba(246, 241, 232, 0.82);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+}
+
+.mobileSiteNav {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.mobileSiteNavLabel {
+  margin: 0;
+  color: rgba(246, 241, 232, 0.62);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.mobileSiteNavList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.mobileSiteLink,
+.mobileSiteLinkActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid rgba(232, 220, 200, 0.3);
+  border-radius: 999px;
+  background: rgba(246, 241, 232, 0.04);
+  color: #f6f1e8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.mobileSiteLink:hover {
+  transform: translateY(-1px);
+  border-color: rgba(251, 220, 166, 0.46);
+  color: #fbdca6;
+}
+
+.mobileSiteLinkActive {
+  border-color: rgba(251, 220, 166, 0.72);
+  background: rgba(251, 220, 166, 0.08);
+  color: #fbdca6;
 }
 
 .mobileSidebarPanel {
@@ -190,24 +223,11 @@
     gap: 1.35rem;
   }
 
-  .pageHeader h1 {
-    font-size: 2.6rem;
-  }
-
   .pageHeader {
-    margin-bottom: 0.95rem;
-  }
-
-  .leftRail {
     display: none;
   }
 
-  .mobileWelcome {
-    display: block;
-    margin: 0 0 1.1rem;
-  }
-
-  .mobileSidebarOnly {
+  .leftRail {
     display: none;
   }
 
@@ -220,19 +240,5 @@
 @media (max-width: 767px) {
   .adminSection {
     padding: 1.3rem 0.85rem 2.5rem;
-  }
-
-  .welcomeText {
-    margin-bottom: 1.1rem;
-    font-size: 0.92rem;
-
-    strong {
-      font-size: 1.42rem;
-    }
-  }
-
-  .pageHeader h1 {
-    font-size: 2rem;
-    text-align: left;
   }
 }

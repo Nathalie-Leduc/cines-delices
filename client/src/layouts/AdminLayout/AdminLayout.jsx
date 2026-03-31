@@ -1,110 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import AdminSidebar from '../../components/AdminSidebar';
 import styles from './AdminLayout.module.scss';
 
-function parseJwtPayload(rawToken) {
-  if (!rawToken || typeof rawToken !== 'string') {
-    return null;
-  }
-
-  const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
-  const parts = token.split('.');
-
-  if (parts.length !== 3) {
-    return null;
-  }
-
-  try {
-    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
-    const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, '=');
-    return JSON.parse(atob(padded));
-  } catch {
-    return null;
-  }
-}
-
-function toTitleCase(value) {
-  if (!value || typeof value !== 'string') {
-    return '';
-  }
-
-  return value
-    .trim()
-    .toLowerCase()
-    .split(/[\s_-]+/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
-
-function getRoleLabel(payload) {
-  const role = String(payload?.role || '').trim().toLowerCase();
-
-  if (!role) {
-    return 'Admin';
-  }
-
-  if (role.includes('super') && role.includes('admin')) {
-    return 'Super Admin';
-  }
-
-  if (role === 'admin') {
-    return 'Admin';
-  }
-
-  return toTitleCase(role);
-}
-
-function getDisplayName(payload) {
-  if (typeof payload?.prenom === 'string' && payload.prenom.trim()) {
-    return toTitleCase(payload.prenom);
-  }
-
-  if (typeof payload?.pseudo === 'string' && payload.pseudo.trim()) {
-    return toTitleCase(payload.pseudo);
-  }
-
-  const savedDisplayName = localStorage.getItem('displayName');
-  if (savedDisplayName?.trim()) {
-    return savedDisplayName.trim();
-  }
-
-  if (typeof payload?.name === 'string' && payload.name.trim()) {
-    return payload.name.trim();
-  }
-
-  if (typeof payload?.email === 'string' && payload.email.includes('@')) {
-    return payload.email.split('@')[0].trim();
-  }
-
-  return 'toi';
-}
-
 export default function AdminLayout() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [displayName, setDisplayName] = useState('toi');
-  const [roleLabel, setRoleLabel] = useState('Admin');
 
-  useEffect(() => {
-    const refreshIdentity = () => {
-      const token = localStorage.getItem('token');
-      const payload = parseJwtPayload(token);
-      setDisplayName(getDisplayName(payload));
-      setRoleLabel(getRoleLabel(payload));
-    };
+  const siteNavItems = [
+    { label: 'Accueil', to: '/' },
+    { label: 'Recettes', to: '/recipes' },
+    { label: 'Film', to: '/films' },
+    { label: 'Série', to: '/series' },
+  ];
 
-    refreshIdentity();
-    window.addEventListener('user-display-name-updated', refreshIdentity);
-    window.addEventListener('storage', refreshIdentity);
-
-    return () => {
-      window.removeEventListener('user-display-name-updated', refreshIdentity);
-      window.removeEventListener('storage', refreshIdentity);
-    };
-  }, []);
+  function closeMobileSidebar() {
+    setIsMobileSidebarOpen(false);
+  }
 
   useEffect(() => {
     if (!isMobileSidebarOpen) {
@@ -134,22 +47,38 @@ export default function AdminLayout() {
         aria-hidden={!isMobileSidebarOpen}
       >
         <div className={styles.mobileSidebarHeader}>
-          <h2>{roleLabel}</h2>
+          <div className={styles.mobileSidebarHeading}>
+            <h2>Tableau de bord</h2>
+            <p>Administrateur</p>
+          </div>
           <button
             type="button"
             className={styles.mobileSidebarClose}
             aria-label="Fermer le menu admin"
-            onClick={() => setIsMobileSidebarOpen(false)}
+            onClick={closeMobileSidebar}
           >
             <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
           </button>
         </div>
 
-        <p className={styles.mobileSidebarWelcome}>
-          Bonjour <strong>{displayName}</strong>, bienvenue dans ton royaume !
-        </p>
+        <nav className={styles.mobileSiteNav} aria-label="Explorer le site">
+          <p className={styles.mobileSiteNavLabel}>Explorer le site</p>
+          <ul className={styles.mobileSiteNavList}>
+            {siteNavItems.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  onClick={closeMobileSidebar}
+                  className={({ isActive }) => `${styles.mobileSiteLink} ${isActive ? styles.mobileSiteLinkActive : ''}`.trim()}
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
-        <AdminSidebar mobile className={styles.mobileSidebarPanel} onNavigate={() => setIsMobileSidebarOpen(false)} />
+        <AdminSidebar mobile className={styles.mobileSidebarPanel} onNavigate={closeMobileSidebar} />
       </aside>
 
       <section className={styles.adminSection}>
@@ -171,16 +100,6 @@ export default function AdminLayout() {
             <main className={styles.adminMain}>
               <Outlet />
             </main>
-          </div>
-
-          <div className={styles.mobileWelcome}>
-            <p className={styles.welcomeText}>
-              Bonjour <strong>{displayName}</strong>, bienvenue dans ton royaume !
-            </p>
-          </div>
-
-          <div className={styles.mobileSidebarOnly}>
-            <AdminSidebar />
           </div>
         </div>
       </section>
