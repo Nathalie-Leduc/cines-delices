@@ -64,6 +64,9 @@ export const getAdminNotifications = () =>
 // Récupérer toutes les catégories
 export const getAdminCategories = () => request(`${ADMIN_API_BASE}/categories`);
 
+export const getAdminCategoryRecipes = (id) =>
+  request(`${ADMIN_API_BASE}/categories/${id}/recipes`);
+
 // Créer une nouvelle catégorie
 export const createAdminCategory = (payload) =>
   request(`${ADMIN_API_BASE}/categories`, { method: 'POST', body: payload });
