@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
@@ -69,7 +69,6 @@ function filterToneClass(key) {
 }
 
 function AdminRecettes() {
-  const navigate = useNavigate();
   const [recipes, setRecipes] = useState([]);
   const [searchInput, setSearchInput] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tous');
@@ -660,33 +659,7 @@ function AdminRecettes() {
                 <div className={styles.cardActionsExact}>
                   <button
                     type="button"
-                    aria-label="Voir la recette"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-
-                      if (!slug) {
-                        return;
-                      }
-
-                      navigate(`/recipes/${slug}`, { state: { recipe } });
-                    }}
-                  >
-                    <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Modifier la recette"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      openEditModal(recipe);
-                    }}
-                  >
-                    <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
+                    className={`${styles.cardActionButton} ${styles.cardActionDelete}`.trim()}
                     aria-label="Supprimer la recette"
                     onClick={(event) => {
                       event.preventDefault();
@@ -694,7 +667,19 @@ function AdminRecettes() {
                       setModalState({ type: 'delete', recipeId: recipe.id, recipeTitle: recipe.title });
                     }}
                   >
-                    <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                    <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.cardActionButton} ${styles.cardActionEdit}`.trim()}
+                    aria-label="Modifier la recette"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openEditModal(recipe);
+                    }}
+                  >
+                    <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
                   </button>
                 </div>
               </div>

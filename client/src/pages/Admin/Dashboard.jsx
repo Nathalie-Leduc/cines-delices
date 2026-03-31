@@ -400,15 +400,6 @@ function AdminDashboard() {
                     aria-label={`Voir la recette ${recipe.title}`}
                     onClick={() => setSelectedRecipe(recipe)}
                   />
-                  <div className={styles.cardActionsExact}>
-                    <button
-                      type="button"
-                      aria-label="Voir la recette"
-                      onClick={(event) => { event.preventDefault(); event.stopPropagation(); setSelectedRecipe(recipe); }}
-                    >
-                      <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
-                    </button>
-                  </div>
                 </div>
               );
             })}
