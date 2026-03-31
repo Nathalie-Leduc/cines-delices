@@ -11,6 +11,8 @@ import { errorMiddleware } from './middlewares/errorMiddleware.js';
 import { startInactivityCron } from './jobs/inactivityCheck.js';
 
 
+import { sendResetPasswordMail } from './lib/mailer.js';
+
 const app = express();
 // AJOUT À FAIRE DANS app.js — trust proxy
 // ============================================================

@@ -46,15 +46,23 @@ export default function Login() {
     setResetError('');
     if (!emailForReset) {
       setResetError("Veuillez entrer votre email.");
+      setTimeout(() => setShowModal(false), 2000);
       return;
     }
     try {
       await forgotPassword(emailForReset);
       setResetMessage("Email envoyé si le compte existe !");
       setResetError('');
+      setTimeout(() => {
+        setShowModal(false);
+        setEmailForReset('');
+        setResetMessage('');
+        setResetError('');
+      }, 2000);
     } catch (err) {
       setResetError(err?.response?.data?.message || "Erreur lors de l'envoi du mail");
       setResetMessage('');
+      setTimeout(() => setShowModal(false), 2000);
     }
   };
 
