@@ -526,8 +526,6 @@ function AdminDashboard() {
                     aria-label={`Voir la recette ${recipe.title}`}
                     onClick={() => setSelectedRecipe(recipe)}
                   />
-                  <div className={styles.cardActionsExact}>
-                  </div>
                 </div>
               );
             })}

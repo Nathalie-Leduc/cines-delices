@@ -670,31 +670,47 @@
 
 .cardActionsExact {
   position: absolute;
-  top: 0.65rem;
-  left: 0.65rem;
+  top: 0.9rem;
+  left: 0.9rem;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 0.34rem;
+  gap: 0.48rem;
+}
 
-  button {
-    width: 28px;
-    height: 28px;
-    border: 0;
-    border-radius: 50%;
-    background: rgba(98, 94, 91, 0.86);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    cursor: pointer;
+.cardActionButton {
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(232, 220, 200, 0.78);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(10px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 
-    img {
-      width: 13px;
-      height: 13px;
-      opacity: 0.92;
-    }
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px rgba(0, 0, 0, 0.3);
+    border-color: rgba(232, 220, 200, 0.92);
   }
+
+  img {
+    width: 18px;
+    height: 18px;
+    opacity: 0.96;
+  }
+}
+
+.cardActionEdit {
+  background: rgba(98, 94, 91, 0.92);
+}
+
+.cardActionDelete {
+  background: #8f2130;
 }
 
 .categoryBadgeExact {
