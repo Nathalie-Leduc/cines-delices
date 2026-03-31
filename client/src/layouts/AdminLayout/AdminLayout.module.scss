@@ -16,7 +16,7 @@
 
 .pageHeader {
   @include ui.section-heading-line(
-    $heading-color: #fbdca6,
+    $heading-color: #c9a45c,
     $line-color: rgba(232, 220, 200, 0.34),
     $font-size: clamp(3rem, 5vw, 4.4rem),
     $margin: 0 0 1.7rem
@@ -30,7 +30,7 @@
   gap: 0.2rem;
 
   h1 {
-    color: #fbdca6;
+    color: #c9a45c;
     font-family: 'Playfair Display', serif;
     font-size: clamp(3.25rem, 5vw, 4.8rem);
     font-weight: 700;
