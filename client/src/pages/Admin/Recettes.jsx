@@ -74,7 +74,7 @@ function AdminRecettes() {
   const [searchInput, setSearchInput] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tous');
   const [currentPage, setCurrentPage] = useState(1);
-  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[LIMIT_OPTIONS.length - 1]);
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
   const [modalState, setModalState] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
