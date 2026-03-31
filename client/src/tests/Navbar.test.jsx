@@ -36,16 +36,15 @@ describe('Navbar', () => {
 
     renderNavbar();
 
-    expect(screen.getAllByText('Accueil').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Recettes').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Film').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Série').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Se connecter').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Mon espace')).not.toBeInTheDocument();
-    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Accueil' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Recettes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Film' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Série' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Se connecter' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
   });
 
-  it('bascule sur la navigation membre après connexion', () => {
+  it('conserve la navigation desktop publique pour un membre connecté', () => {
     useAuthMock.mockReturnValue({
       user: { prenom: 'nora', role: 'MEMBER' },
       isAuthenticated: true,
@@ -55,16 +54,16 @@ describe('Navbar', () => {
 
     renderNavbar();
 
-    expect(screen.getAllByText('Mon espace').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Mes recettes').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Créer une recette').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Profil').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Espace membre').length).toBeGreaterThan(0);
-    expect(screen.queryByText('Accueil')).not.toBeInTheDocument();
-    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Accueil' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Recettes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Film' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Série' })).toBeInTheDocument();
+    expect(screen.getAllByText('Bonjour,').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Nora').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
   });
 
-  it('bascule sur la navigation admin pour un administrateur connecté', () => {
+  it('conserve la navigation desktop publique pour un administrateur connecté', () => {
     useAuthMock.mockReturnValue({
       user: { prenom: 'jade', role: 'ADMIN' },
       isAuthenticated: true,
@@ -74,14 +73,12 @@ describe('Navbar', () => {
 
     renderNavbar();
 
-    expect(screen.getAllByText('Dashboard').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Utilisateurs').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Catégories').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Validation').length).toBeGreaterThan(0);
-    expect(screen.getByText('Bonjour,')).toBeInTheDocument();
-    expect(screen.getByText('Jade')).toBeInTheDocument();
-    expect(screen.queryByText('Espace admin')).not.toBeInTheDocument();
-    expect(screen.queryByText('Accueil')).not.toBeInTheDocument();
-    expect(screen.queryByText('Mon espace')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Accueil' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Recettes' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Film' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Série' })).toBeInTheDocument();
+    expect(screen.getAllByText('Bonjour,').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Jade').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
   });
 });
