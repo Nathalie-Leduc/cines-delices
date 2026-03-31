@@ -45,6 +45,7 @@ export default function Login() {
   const handleForgotPassword = async () => {
     setResetMessage('');
     setResetError('');
+
     if (!emailForReset.trim()) {
       setResetError('Veuillez entrer votre email.');
       return;
@@ -54,9 +55,11 @@ export default function Login() {
       await forgotPassword(emailForReset);
       setResetMessage('Email envoyé si le compte existe !');
       setEmailForReset('');
-    } catch (err) {
-      console.error(err);
-      setResetError('Une erreur est survenue, réessaie.');
+    } catch (requestError) {
+      console.error(requestError);
+      setResetError(
+        requestError?.response?.data?.message || 'Une erreur est survenue, réessaie.',
+      );
     }
   };
   const handleCloseModal = () => {
