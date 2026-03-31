@@ -27,6 +27,29 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
   || `${API_BASE_URL}/api/ingredients`;
 const UNITES_OPTIONS = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
+// ✅ parseTimeToMinutes — convertit "1h10", "1:10", "70min", "70" → minutes
+// Même logique que CreateRecipe.jsx
+function parseTimeToMinutes(value) {
+  if (value === '' || value === null || value === undefined) return undefined;
+  const str = String(value).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '.');
+  const hMatch = str.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
+  if (hMatch) {
+    const total = Math.round(parseFloat(hMatch[1]) * 60 + parseInt(hMatch[2] || '0', 10));
+    return total > 0 ? total : undefined;
+  }
+  const colonMatch = str.match(/^(\d+):(\d+)(?::\d+)?$/);
+  if (colonMatch) {
+    const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
+    return total > 0 ? total : undefined;
+  }
+  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+  if (minMatch) {
+    const parsed = Math.round(parseFloat(minMatch[1]));
+    return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
+  }
+  return undefined;
+}
+
 function toSlug(value) {
   return String(value || '')
     .normalize('NFD')
@@ -454,8 +477,9 @@ function AdminRecettes() {
       titre: editDraft.title,
       instructions: editDraft.etapes.filter(Boolean).join('\n'),
       nombrePersonnes: editDraft.nbPersonnes,
-      tempsPreparation: editDraft.tempsPreparation,
-      tempsCuisson: editDraft.tempsCuisson,
+      // ✅ Parsing des temps : "1h10" → 70, "30min" → 30, "45" → 45
+      tempsPreparation: parseTimeToMinutes(editDraft.tempsPreparation),
+      tempsCuisson: parseTimeToMinutes(editDraft.tempsCuisson),
       categoryId: editDraft.categoryId,
       categoryName: editDraft.category,
       imageUrl: String(editDraft.image || '').trim() || undefined,

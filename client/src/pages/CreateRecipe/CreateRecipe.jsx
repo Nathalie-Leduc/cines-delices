@@ -475,6 +475,55 @@ export default function CreerRecette() {
   }
 
   function buildRecipePayload() {
+    // ✅ parseTimeToMinutes — convertit une saisie libre en minutes
+    // Formats acceptés :
+    //   "70"       → 70 min   (nombre seul = minutes)
+    //   "1h10"     → 70 min
+    //   "1h"       → 60 min
+    //   "1h 10"    → 70 min
+    //   "1h10min"  → 70 min
+    //   "1:10"     → 70 min
+    //   "30min"    → 30 min
+    //   "30 min"   → 30 min
+    // Analogie : c'est comme un assistant qui comprend
+    // "1h10", "70 minutes" ou "1:10" et répond toujours en minutes.
+    const parseTimeToMinutes = (value) => {
+      if (value === '' || value === null || value === undefined) {
+        return undefined;
+      }
+
+      const str = String(value).trim().toLowerCase()
+        .replace(/\s+/g, '')      // supprimer les espaces
+        .replace(/,/g, '.');       // virgule → point
+
+      // Format "1h10", "1h10min", "1h 10", "1h"
+      const hMatch = str.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
+      if (hMatch) {
+        const hours = parseFloat(hMatch[1]);
+        const mins  = parseInt(hMatch[2] || '0', 10);
+        const total = Math.round(hours * 60 + mins);
+        return total > 0 ? total : undefined;
+      }
+
+      // Format "1:10" ou "1:10:00"
+      const colonMatch = str.match(/^(\d+):(\d+)(?::\d+)?$/);
+      if (colonMatch) {
+        const hours = parseInt(colonMatch[1], 10);
+        const mins  = parseInt(colonMatch[2], 10);
+        const total = hours * 60 + mins;
+        return total > 0 ? total : undefined;
+      }
+
+      // Format "30min", "30 min", "30m"
+      const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+      if (minMatch) {
+        const parsed = Math.round(parseFloat(minMatch[1]));
+        return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
+      }
+
+      return undefined;
+    };
+
     const parseNullableNumber = (value) => {
       if (value === '' || value === null || value === undefined) {
         return undefined;
@@ -495,8 +544,8 @@ export default function CreerRecette() {
       imageUrl: form.imageUrl.trim(),
       instructions: normalizedSteps.join('\n'),
       etapes: normalizedSteps,
-      tempsPreparation: parseNullableNumber(form.tempsPréparation),
-      tempsCuisson: parseNullableNumber(form.tempsCuisson),
+      tempsPreparation: parseTimeToMinutes(form.tempsPréparation),
+      tempsCuisson: parseTimeToMinutes(form.tempsCuisson),
       nbPersonnes: parseNullableNumber(form.nbPersonnes),
       ingredients: form.ingredients
         .map(item => {
@@ -878,7 +927,7 @@ export default function CreerRecette() {
             className={styles.input}
             type="text"
             aria-label="Temps de préparation"
-            placeholder="15 min"
+            placeholder="ex: 15, 30min, 1h, 1h10"
             value={form.tempsPréparation}
             onChange={e => handleChange('tempsPréparation', e.target.value)}
           />
@@ -893,7 +942,7 @@ export default function CreerRecette() {
             className={styles.input}
             type="text"
             aria-label="Temps de cuisson"
-            placeholder="30 min"
+            placeholder="ex: 30, 1h, 1h30"
             value={form.tempsCuisson}
             onChange={e => handleChange('tempsCuisson', e.target.value)}
           />
