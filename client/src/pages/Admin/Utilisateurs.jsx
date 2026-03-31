@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import { LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 import { deleteAdminUser, getAdminUsers, updateAdminUserRole } from '../../services/adminService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './AdminPages.module.scss';
@@ -23,6 +24,8 @@ function AdminUtilisateurs() {
   const location = useLocation();
   const [users, setUsers] = useState([]);
   const [searchInput, setSearchInput] = useState('');
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +69,20 @@ function AdminUtilisateurs() {
       return `${user.nom} ${user.displayName || user.prenom || ''} ${user.email}`.toLowerCase().includes(normalizedQuery);
     });
   }, [searchInput, usersWithTotals]);
+  const totalUsers = filteredUsers.length;
+  const totalPages = Math.max(1, Math.ceil(totalUsers / currentLimit));
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredUsers.slice(startIndex, startIndex + currentLimit);
+  }, [filteredUsers, currentLimit, currentPage]);
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   async function handleDeleteUser() {
     if (!selectedUser) return;
@@ -119,6 +136,7 @@ function AdminUtilisateurs() {
             className={styles.usersSearchRow}
             onSubmit={(event) => {
               event.preventDefault();
+              setCurrentPage(1);
             }}
           >
             <div className={styles.usersSearchField}>
@@ -127,7 +145,10 @@ function AdminUtilisateurs() {
                 type="search"
                 placeholder="Rechercher un utilisateur"
                 value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
+                onChange={(event) => {
+                  setSearchInput(event.target.value);
+                  setCurrentPage(1);
+                }}
                 aria-label="Rechercher un utilisateur"
               />
             </div>
@@ -137,10 +158,55 @@ function AdminUtilisateurs() {
             </button>
           </form>
 
-          <p className={styles.summaryText}>
-            <strong className={styles.summaryStrong}>{filteredUsers.length}</strong>{' '}
-            utilisateurs trouvé<s className=""></s>{filteredUsers.length > 1 ? 's' : ''}
-          .</p>
+          <div className={styles.recipeSummaryRow}>
+            <p className={styles.recipeSummaryText}>
+              <strong className={styles.summaryStrong}>{totalUsers}</strong>{' '}
+              utilisateur{totalUsers > 1 ? 's' : ''} trouvé{totalUsers > 1 ? 's' : ''}.
+            </p>
+
+            <div className={styles.recipeSummaryMeta}>
+              <label className={styles.limitControl}>
+                <span>Par page</span>
+                <select
+                  value={currentLimit}
+                  onChange={(event) => {
+                    setCurrentLimit(Number(event.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className={styles.limitSelect}
+                >
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>
+                      {limit}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className={styles.mobileLimitControl} aria-label="Nombre d’utilisateurs par page">
+                <div className={styles.mobileLimitPills}>
+                  {LIMIT_OPTIONS.map((limit) => {
+                    const isActive = currentLimit === limit;
+
+                    return (
+                      <button
+                        key={limit}
+                        type="button"
+                        className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ''}`.trim()}
+                        onClick={() => {
+                          setCurrentLimit(limit);
+                          setCurrentPage(1);
+                        }}
+                        aria-pressed={isActive}
+                      >
+                        {limit}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className={styles.sectionTitle}>
             <h3>Liste des utilisateurs</h3>
@@ -156,7 +222,7 @@ function AdminUtilisateurs() {
           <Alert type="error" message={error} onClose={() => setError('')} className={styles.pageState} />
 
           <div className={styles.list}>
-            {filteredUsers.map((user) => (
+            {paginatedUsers.map((user) => (
               <button key={user.id} type="button" className={styles.rowCard} onClick={() => setSelectedUser(user)}>
                 <span className={styles.userAvatar}>
                   <img src="/icon/User.svg" alt="" aria-hidden="true" />
@@ -194,6 +260,32 @@ function AdminUtilisateurs() {
               />
             ) : null}
           </div>
+
+          {!isLoading && !error && totalPages > 1 ? (
+            <nav className={styles.pagination} aria-label="Pagination des utilisateurs">
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+                disabled={!hasPreviousPage}
+              >
+                Précédent
+              </button>
+
+              <span className={styles.paginationStatus}>
+                Page {currentPage} / {totalPages}
+              </span>
+
+              <button
+                type="button"
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+                disabled={!hasNextPage}
+              >
+                Suivant
+              </button>
+            </nav>
+          ) : null}
         </>
       )}
 
