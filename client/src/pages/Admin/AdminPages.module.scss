@@ -11,7 +11,7 @@
 
 .headerLine {
   @include ui.section-heading-line(
-    $heading-color: #c9a45c,
+    $heading-color: #fadba5,
     $line-color: rgba(232, 220, 200, 0.36),
     $font-size: clamp(2rem, 3vw, 2.45rem),
     $margin: 0 0 1.35rem
@@ -580,7 +580,7 @@
 
 .sectionTitle {
   @include ui.section-heading-line(
-    $heading-color: #e8dcc8,
+    $heading-color: #fadba5,
     $line-color: rgba(232, 220, 200, 0.3),
     $font-size: clamp(1.65rem, 2.2vw, 2rem),
     $margin: 1.35rem 0 1.05rem
