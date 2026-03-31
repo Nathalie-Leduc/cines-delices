@@ -49,7 +49,7 @@ export default function AdminLayout() {
         <div className={styles.mobileSidebarHeader}>
           <div className={styles.mobileSidebarHeading}>
             <h2>Tableau de bord</h2>
-            <p>Administrateur</p>
+            <span className={styles.roleBadge}>Espace admin</span>
           </div>
           <button
             type="button"
@@ -86,7 +86,7 @@ export default function AdminLayout() {
           <header className={styles.pageHeader}>
             <div className={styles.pageHeading}>
               <h1>Tableau de bord</h1>
-              <h2>Administrateur</h2>
+              <span className={styles.roleBadge}>Espace admin</span>
             </div>
           </header>
 
