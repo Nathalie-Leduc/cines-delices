@@ -58,6 +58,10 @@ export default function IngredientsValidation() {
     return ingredients.filter((ingredient) => (ingredient.name || '').toLowerCase().includes(normalizedQuery));
   }, [ingredients, query]);
 
+  function canDeleteIngredient(ingredient) {
+    return (ingredient?.recipesCount || 0) === 0;
+  }
+
   async function handleApproveIngredient() {
     if (!selectedIngredient) {
       return;
@@ -166,7 +170,16 @@ export default function IngredientsValidation() {
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundRed}`.trim()}
+                disabled={!canDeleteIngredient(ingredient)}
+                title={
+                  canDeleteIngredient(ingredient)
+                    ? 'Supprimer'
+                    : "Suppression impossible tant que l'ingrédient est utilisé dans une recette"
+                }
                 onClick={() => {
+                  if (!canDeleteIngredient(ingredient)) {
+                    return;
+                  }
                   setSelectedIngredient(ingredient);
                   setShowDeleteModal(true);
                 }}

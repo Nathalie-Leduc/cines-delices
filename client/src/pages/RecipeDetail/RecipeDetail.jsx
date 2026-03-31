@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import RecipeCard from "../../components/RecipeCard";
 import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
+import { useAuth } from "../../contexts/AuthContext.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
@@ -113,6 +114,7 @@ export default function RecipeDetail() {
   const navigate = useNavigate();
   const { state } = useLocation();
   const { slug } = useParams();
+  const { isAdmin } = useAuth();
   const isHeroVisible = useHeroReveal();
   const [recipes, setRecipes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -307,11 +309,20 @@ export default function RecipeDetail() {
   const recipeGenre = genre ?? "Cuisine fiction";
   const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;
   const canEditFromMemberSpace = Boolean(state?.fromMemberRecipes);
+  const canEditFromAdminSpace = Boolean(isAdmin && recipe?.id);
 
   function handleOpenMemberEditForm() {
     const targetRecipeId = state?.openEditRecipeId || recipe?.id;
 
     navigate("/membre/mes-recettes", {
+      state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
+    });
+  }
+
+  function handleOpenAdminEditForm() {
+    const targetRecipeId = state?.openEditRecipeId || recipe?.id;
+
+    navigate("/admin/recettes", {
       state: targetRecipeId ? { openEditRecipeId: targetRecipeId } : null,
     });
   }
@@ -345,6 +356,17 @@ export default function RecipeDetail() {
               title="Ouvrir le formulaire de modification"
             >
               Modifier ma recette
+            </button>
+          )}
+
+          {!canEditFromMemberSpace && canEditFromAdminSpace && (
+            <button
+              type="button"
+              className={`${styles.editFromDetailButton} ${styles.heroReveal} ${styles.heroRevealDelay1} ${isHeroVisible ? styles.heroRevealVisible : ""}`.trim()}
+              onClick={handleOpenAdminEditForm}
+              title="Modifier cette recette dans l'administration"
+            >
+              Modifier la recette
             </button>
           )}
 
