@@ -137,10 +137,11 @@ export default function Login() {
         {showModal && (
           <div className={styles.overlay}>
             <div className={styles.modal}>
-              <h2>Mot de passe oublié</h2>
+              <h2 className={styles.title}>Mot de passe oublié</h2>
               <input
+                className={styles.inputShowModal}
                 type="email"
-                placeholder="Votre email"
+                placeholder="Entrez votre email"
                 value={emailForReset}
                 onChange={(e) => setEmailForReset(e.target.value)}
               />
@@ -151,7 +152,7 @@ export default function Login() {
                 <div className={styles.formAlert}>{resetError}</div>
               )}
               <div className={styles.modalButtons}>
-                <button type="button" className={styles.submitButtonMDP} onClick={handleForgotPassword}>
+                <button type="button" className={styles.submitButtonMDPbrown} onClick={handleForgotPassword}>
                   Envoyer
                 </button>
                 <button type="button" className={styles.submitButtonMDP} onClick={() => setShowModal(false)}>
