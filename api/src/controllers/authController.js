@@ -13,7 +13,8 @@ function signToken(user) {
 
 // Helper : formate un user sans passwordHash
 function safeUser(user) {
-  const { passwordHash, ...rest } = user;
+  const rest = { ...user };
+  delete rest.passwordHash;
   return rest;
 }
 

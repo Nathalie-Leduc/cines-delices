@@ -1,6 +1,5 @@
 import express from "express";
 import { getAllMedias, getMediaById, searchMedia } from "../controllers/index.js";
-import tmdbRateLimiter from "../middlewares/tmdbRateLimiter.js";
 
 const router = express.Router();
 

@@ -37,7 +37,7 @@ export const authMiddleware = async (req, res, next) => {
     req.user = user;
 
     next();
-  } catch (error) {
+  } catch {
     // jwt.verify lance une erreur si :
     // - la signature est invalide (token faslsifié)
     // - le token est expiré
