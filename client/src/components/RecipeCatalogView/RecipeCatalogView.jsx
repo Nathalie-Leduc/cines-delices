@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import RecipeCard from "../RecipeCard";
 import StatusBlock from "../StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 import styles from "../../pages/RecipesPage/RecipesPage.module.scss";
 import {
+  buildCategoryFilters,
   CATEGORY_PARAM_TO_FILTER,
   FILTERS,
   LIMIT_OPTIONS,
@@ -12,6 +13,7 @@ import {
   mixRecipesByCategory,
   parsePositiveInt,
 } from "./recipeCatalog.shared";
+import { getRecipeCategories } from "../../services/recipesService";
 
 function buildDefaultSummaryText({ totalItems, activeFilter, currentQuery }) {
   return `${totalItems} recette${totalItems > 1 ? "s" : ""} trouvée${totalItems > 1 ? "s" : ""}${activeFilter !== "Tous" ? ` en ${activeFilter}` : ""}${currentQuery ? ` pour "${currentQuery}"` : ""}.`;
@@ -37,6 +39,7 @@ export default function RecipeCatalogView({
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [recipes, setRecipes] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -55,10 +58,51 @@ export default function RecipeCatalogView({
   const isHeroVisible = useHeroReveal();
 
   const categoryParam = searchParams.get("category")?.toLowerCase() || "";
-  const activeFilter = CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
   const currentQuery = searchParams.get("q")?.trim() || "";
   const currentPage = parsePositiveInt(searchParams.get("page"), 1);
   const currentLimit = parsePositiveInt(searchParams.get("limit"), 15);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const payload = await getRecipeCategories();
+        if (!isMounted) return;
+
+        const categories = Array.isArray(payload) ? payload : payload?.data ?? [];
+        setAvailableCategories(categories);
+      } catch {
+        if (!isMounted) return;
+        setAvailableCategories([]);
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filters = useMemo(() => {
+    const fallbackCategories = FILTERS
+      .filter((filter) => filter.value !== "Tous")
+      .map((filter) => filter.value);
+
+    return buildCategoryFilters(
+      availableCategories.length ? availableCategories : fallbackCategories,
+    );
+  }, [availableCategories]);
+
+  const activeFilter = useMemo(() => {
+    if (!categoryParam) {
+      return "Tous";
+    }
+
+    const dynamicMatch = filters.find((filter) => filter.key === categoryParam);
+    return dynamicMatch?.value || CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
+  }, [filters, categoryParam]);
 
   useEffect(() => {
     setSearchInput(searchParams.get("q") || "");
@@ -310,7 +354,7 @@ export default function RecipeCatalogView({
       <section className={styles.catalogue}>
         <div className={styles.catalogueInner}>
           <div className={styles.filters} aria-label="Filtrer les recettes par catégorie">
-            {FILTERS.map((filter) => {
+            {filters.map((filter) => {
               const isActive = activeFilter === filter.value;
 
               return (
