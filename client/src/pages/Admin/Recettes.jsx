@@ -734,6 +734,18 @@ function AdminRecettes() {
                 <div className={styles.cardActionsExact}>
                   <button
                     type="button"
+                    className={`${styles.cardActionButton} ${styles.cardActionDelete}`.trim()}
+                    aria-label="Supprimer la recette"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setModalState({ type: 'delete', recipeId: recipe.id, recipeTitle: recipe.title });
+                    }}
+                  >
+                    <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
                     className={`${styles.cardActionButton} ${styles.cardActionEdit}`.trim()}
                     aria-label="Modifier la recette"
                     onClick={(event) => {

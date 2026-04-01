@@ -1,27 +1,28 @@
 import express from "express";
 import {
-	approveIngredient,
-	createCategory,
-	deleteAdminNotification,
-	getCategoryRecipes,
-	deleteCategory,
-	deleteIngredient,
-	deleteRecipe,
-	deleteUser,
-	getAdminCategories,
-	getAdminIngredients,
-	getAdminNotifications,
-	getIngredientRecipes,
-	getAdminRecipes,
-	getAdminUsers,
-	getPendingRecipes,
-	getValidatedIngredients,
-	publishRecipe,
-	rejectRecipe,
-	updateAdminRecipe,
-	updateCategory,
-	updateIngredient,
-	updateUserRole,
+  approveIngredient,
+  createCategory,
+  deleteAdminNotification,
+  getCategoryRecipes,
+  deleteCategory,
+  deleteIngredient,
+  deleteRecipe,
+  deleteUser,
+  getAdminCategories,
+  getAdminIngredients,
+  getAdminNotifications,
+  getIngredientRecipes,
+  getAdminRecipes,
+  getAdminUsers,
+  getPendingRecipes,
+  getValidatedIngredients,
+  mergeIngredients,
+  publishRecipe,
+  rejectRecipe,
+  updateAdminRecipe,
+  updateCategory,
+  updateIngredient,
+  updateUserRole,
 } from "../controllers/adminController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
@@ -55,6 +56,14 @@ router.delete('/categories/:id', deleteCategory);
 
 router.get('/ingredients', getAdminIngredients);
 router.get('/ingredients/validated', getValidatedIngredients);
+
+// ✅ CORRECTIF — route merge déclarée AVANT /:id
+// Analogie : Express lit les routes de haut en bas comme une liste
+// de priorités. Si on mettait POST /ingredients/:id avant cette route,
+// Express intercepterait "merge" comme un id et appellerait le mauvais
+// handler. En déclarant /merge en premier, Express l'attrape en priorité.
+router.post('/ingredients/merge', mergeIngredients);
+
 router.get('/ingredients/:id/recipes', getIngredientRecipes);
 router.patch('/ingredients/:id', updateIngredient);
 router.patch('/ingredients/:id/approve', approveIngredient);

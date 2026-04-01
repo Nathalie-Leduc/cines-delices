@@ -6,12 +6,41 @@ import {
   approveAdminIngredient,
   deleteAdminIngredient,
   getAdminIngredients,
+  getValidatedAdminIngredients,
   updateAdminIngredient,
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
 const LIMIT_OPTIONS = [6, 9, 12, 15];
 
+<<<<<<< feature/seedv-v4
+// ─────────────────────────────────────────────────────────────
+// normalizeIngredientName — force le singulier + minuscule
+// Même fonction que dans CreateRecipe.jsx et recipe.controller.js
+// pour garantir une comparaison cohérente partout.
+// "Citrons" → "citron", "tomates" → "tomate", "riz" → "riz"
+// ─────────────────────────────────────────────────────────────
+function normalizeIngredientName(name) {
+  const str = String(name || '').trim().toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const exceptions = new Set([
+    'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
+    'fois', 'buis', 'tapas', 'papas', 'colis',
+  ]);
+
+  if (exceptions.has(str)) return str;
+
+  if (str.endsWith('s') && str.length > 3) {
+    return str.slice(0, -1);
+  }
+
+  return str;
+}
+
+=======
+>>>>>>> dev
 function getSubmittedByLabel(item) {
   if (item?.submittedByLabel) {
     return item.submittedByLabel;
@@ -36,6 +65,20 @@ export default function IngredientsValidation() {
   const [selectedIngredient, setSelectedIngredient] = useState(null);
   const [editedName, setEditedName] = useState('');
   const [error, setError] = useState('');
+
+  // ──────────────────────────────────────────────────────────
+  // NOUVEAUX ÉTATS — détection de doublon avant validation
+  //
+  // showDuplicateModal : affiche la modale d'avertissement
+  // duplicateIngredient : l'ingrédient validé qui fait doublon
+  //   ex: { id: "abc", name: "citron", recipesCount: 12 }
+  //
+  // Analogie : avant de tamponner "APPROUVÉ" sur le bon de
+  // commande "citrons", le chef vérifie d'abord si "citron"
+  // est déjà dans son carnet. Si oui, il prévient.
+  // ──────────────────────────────────────────────────────────
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateIngredient, setDuplicateIngredient] = useState(null);
 
   useEffect(() => {
     const loadIngredients = async () => {
@@ -79,6 +122,56 @@ export default function IngredientsValidation() {
   function canDeleteIngredient(ingredient) {
     return (ingredient?.recipesCount || 0) === 0;
   }
+<<<<<<< feature/seedv-v4
+
+  // ──────────────────────────────────────────────────────────
+  // openValidateModal — vérifie le doublon AVANT d'ouvrir
+  // la modale de validation.
+  //
+  // Étapes :
+  //   1. Normaliser le nom soumis ("citrons" → "citron")
+  //   2. Chercher parmi les ingrédients déjà validés si ce
+  //      nom normalisé existe déjà
+  //   3. Si doublon trouvé → ouvrir la modale d'avertissement
+  //   4. Sinon → ouvrir la modale de validation normale
+  //
+  // On remplace l'ancien onClick direct sur le bouton ✓
+  // par cet appel async pour intercepter avant la modale.
+  // ──────────────────────────────────────────────────────────
+  async function openValidateModal(ingredient) {
+    setSelectedIngredient(ingredient);
+    setError('');
+
+    try {
+      // Normaliser le nom soumis pour comparer équitablement
+      const normalizedName = normalizeIngredientName(ingredient.name);
+
+      // Chercher parmi les ingrédients déjà validés
+      const validated = await getValidatedAdminIngredients(normalizedName);
+      const validatedList = Array.isArray(validated) ? validated : [];
+
+      // Chercher un ingrédient validé dont le nom normalisé correspond
+      const duplicate = validatedList.find(
+        (v) => normalizeIngredientName(v.name) === normalizedName
+          && v.id !== ingredient.id,
+      );
+
+      if (duplicate) {
+        // ⚠️ Doublon détecté → avertir l'admin
+        setDuplicateIngredient(duplicate);
+        setShowDuplicateModal(true);
+      } else {
+        // ✅ Pas de doublon → validation normale
+        setShowValidateModal(true);
+      }
+    } catch {
+      // En cas d'erreur réseau → laisser passer (validation normale)
+      // On ne bloque pas l'admin sur une erreur de vérification
+      setShowValidateModal(true);
+    }
+  }
+=======
+>>>>>>> dev
 
   async function handleApproveIngredient() {
     if (!selectedIngredient) {
@@ -123,6 +216,16 @@ export default function IngredientsValidation() {
     } catch (updateError) {
       setError(updateError.message || 'Modification impossible.');
     }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // handleDuplicateDismiss — l'admin choisit d'annuler
+  // depuis la modale d'avertissement doublon.
+  // ──────────────────────────────────────────────────────────
+  function handleDuplicateDismiss() {
+    setShowDuplicateModal(false);
+    setDuplicateIngredient(null);
+    setSelectedIngredient(null);
   }
 
   return (
@@ -179,7 +282,11 @@ export default function IngredientsValidation() {
             </select>
           </label>
 
+<<<<<<< feature/seedv-v4
+          <div className={styles.mobileLimitControl} aria-label="Nombre d'ingrédients par page">
+=======
           <div className={styles.mobileLimitControl} aria-label="Nombre d’ingrédients par page">
+>>>>>>> dev
             <div className={styles.mobileLimitPills}>
               {LIMIT_OPTIONS.map((limit) => {
                 const isActive = currentLimit === limit;
@@ -247,13 +354,20 @@ export default function IngredientsValidation() {
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundIconBtnDelete}`.trim()}
+<<<<<<< feature/seedv-v4
+                aria-label={`Supprimer l'ingrédient ${ingredient.name}`}
+=======
+>>>>>>> dev
                 disabled={!canDeleteIngredient(ingredient)}
                 title={
                   canDeleteIngredient(ingredient)
                     ? 'Supprimer'
                     : "Suppression impossible tant que l'ingrédient est utilisé dans une recette"
                 }
+<<<<<<< feature/seedv-v4
+=======
                 aria-label={`Supprimer l'ingrédient ${ingredient.name}`}
+>>>>>>> dev
                 onClick={() => {
                   if (!canDeleteIngredient(ingredient)) {
                     return;
@@ -264,14 +378,23 @@ export default function IngredientsValidation() {
               >
                 <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
               </button>
+
+              {/* ── MODIF : onClick remplacé par openValidateModal(ingredient) ──
+                  Avant : onClick ouvrait directement showValidateModal
+                  Après : openValidateModal vérifie d'abord les doublons,
+                          puis ouvre la bonne modale selon le résultat */}
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundGreen}`.trim()}
                 aria-label={`Valider l'ingrédient ${ingredient.name}`}
+<<<<<<< feature/seedv-v4
+                onClick={() => openValidateModal(ingredient)}
+=======
                 onClick={() => {
                   setSelectedIngredient(ingredient);
                   setShowValidateModal(true);
                 }}
+>>>>>>> dev
               >
                 <img src="/icon/check_ring_round.svg" alt="" aria-hidden="true" />
               </button>
@@ -317,9 +440,16 @@ export default function IngredientsValidation() {
         </nav>
       ) : null}
 
+<<<<<<< feature/seedv-v4
+      {/* MODALE VALIDATION NORMALE — inchangée */}
+      {showValidateModal && (
+        <AdminModal
+          title="Valider l'ingrédient"
+=======
       {showValidateModal && (
         <AdminModal
           title="Valider l’ingrédient"
+>>>>>>> dev
           confirmLabel="Valider"
           confirmVariant="success"
           onCancel={() => setShowValidateModal(false)}
@@ -331,7 +461,11 @@ export default function IngredientsValidation() {
 
       {showDeleteModal && (
         <AdminModal
+<<<<<<< feature/seedv-v4
+          title="Supprimer l'ingrédient"
+=======
           title="Supprimer l’ingrédient"
+>>>>>>> dev
           confirmLabel="Supprimer"
           onCancel={() => setShowDeleteModal(false)}
           onConfirm={handleDeleteIngredient}
@@ -342,7 +476,11 @@ export default function IngredientsValidation() {
 
       {showEditModal && (
         <AdminModal
+<<<<<<< feature/seedv-v4
+          title="Modifier l'ingrédient"
+=======
           title="Modifier l’ingrédient"
+>>>>>>> dev
           confirmLabel="Enregistrer"
           confirmVariant="success"
           onCancel={() => setShowEditModal(false)}
@@ -352,8 +490,49 @@ export default function IngredientsValidation() {
             className={styles.modalInput}
             value={editedName}
             onChange={(event) => setEditedName(event.target.value)}
-            placeholder="Nom de l’ingrédient"
+            placeholder="Nom de l'ingrédient"
           />
+        </AdminModal>
+      )}
+
+      {/* ── NOUVELLE MODALE — avertissement doublon ──────────────────
+          S'affiche quand openValidateModal() détecte qu'un ingrédient
+          validé avec le même nom normalisé existe déjà en BDD.
+          
+          L'admin a deux choix :
+          - "Annuler" → ne rien faire, gérer manuellement
+          - "Valider quand même" → force la validation (cas où
+            les deux ingrédients sont légitimement différents,
+            ex: "pois" vs "pois chiche" — mais ici peu probable)
+
+          NOTE : le merge complet (rattacher les recettes +
+          supprimer le doublon) sera implémenté dans AdminIngredients.jsx
+          (correctif 6). Pour l'instant on bloque la validation
+          silencieuse et on informe l'admin.
+      ────────────────────────────────────────────────────────────── */}
+      {showDuplicateModal && duplicateIngredient && selectedIngredient && (
+        <AdminModal
+          title="⚠️ Doublon détecté"
+          confirmLabel="Valider quand même"
+          confirmVariant="danger"
+          onCancel={handleDuplicateDismiss}
+          onConfirm={async () => {
+            setShowDuplicateModal(false);
+            setDuplicateIngredient(null);
+            await handleApproveIngredient();
+          }}
+        >
+          <p>
+            L'ingrédient <strong>"{selectedIngredient.name}"</strong> ressemble à{' '}
+            <strong>"{duplicateIngredient.name}"</strong> qui existe déjà
+            {duplicateIngredient.recipesCount > 0
+              ? ` et est utilisé dans ${duplicateIngredient.recipesCount} recette${duplicateIngredient.recipesCount > 1 ? 's' : ''}`
+              : ''}.
+          </p>
+          <p style={{ marginTop: '0.75rem' }}>
+            Pour fusionner les deux, rendez-vous dans{' '}
+            <strong>Gérer les ingrédients</strong> après validation.
+          </p>
         </AdminModal>
       )}
     </div>

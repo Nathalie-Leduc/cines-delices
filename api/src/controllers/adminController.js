@@ -21,7 +21,11 @@ import { downloadAndConvertPoster } from '../lib/posterService.js';
 //
 // 5. Suppression du getAllRecipes placeholder (données en dur)
 //
-// 6 . Poster TMDB : téléchargés et convertis en WebP local via sharp
+// 6. Poster TMDB : téléchargés et convertis en WebP local via sharp
+//
+// 7. mergeIngredients : fusionne deux ingrédients en un seul
+//    → rattache toutes les recettes du doublon vers l'ingrédient cible
+//    → supprime le doublon
 // ============================================================
 
 const DEFAULT_CATEGORY_COLORS = {
@@ -798,8 +802,8 @@ export async function updateAdminRecipe(req, res) {
       }
 
       // Correctif : toujours inclure create, même avec un tableau vide
-     data.ingredients = {
-       deleteMany: {},
+      data.ingredients = {
+        deleteMany: {},
         create: deduped.map((entry) => ({
           ingredientId: entry.ingredientId,
           quantity: entry.quantity,
@@ -1370,6 +1374,134 @@ export async function getIngredientRecipes(req, res) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// mergeIngredients — fusionne deux ingrédients en un seul
+// POST /api/admin/ingredients/merge
+//
+// Problème résolu : "citrons" (doublon) coexiste avec "citron"
+// (validé, 12 recettes). Supprimer "citrons" est impossible
+// tant qu'il est utilisé dans des recettes (contrainte FK).
+//
+// Solution en 3 étapes dans une transaction :
+//   1. Récupérer toutes les recettes liées à source ("citrons")
+//   2. Pour chacune : si la recette n'a pas déjà target ("citron")
+//      → UPDATE ingredientId = targetId
+//      → Si la recette a déjà les deux → DELETE la ligne source
+//        (évite les doublons dans recipeIngredient)
+//   3. DELETE source ("citrons") — maintenant sans recettes liées
+//
+// Analogie : on recolle toutes les étiquettes "citrons" sur les
+// bocaux "citron", on jette les doublons, puis on supprime
+// le bocal vide "citrons".
+//
+// Body : { sourceId: string, targetId: string }
+// Retour : l'ingrédient target mis à jour (avec recipesCount)
+// ─────────────────────────────────────────────────────────────
+export async function mergeIngredients(req, res) {
+  try {
+    const sourceId = String(req.body.sourceId || '').trim();
+    const targetId = String(req.body.targetId || '').trim();
+
+    // Validations de base
+    if (!sourceId || !targetId) {
+      return res.status(400).json({ message: 'sourceId et targetId sont requis.' });
+    }
+
+    if (sourceId === targetId) {
+      return res.status(400).json({ message: 'Impossible de fusionner un ingrédient avec lui-même.' });
+    }
+
+    // Vérifier que les deux ingrédients existent
+    const [source, target] = await Promise.all([
+      prisma.ingredient.findUnique({ where: { id: sourceId } }),
+      prisma.ingredient.findUnique({ where: { id: targetId } }),
+    ]);
+
+    if (!source) {
+      return res.status(404).json({ message: 'Ingrédient source introuvable.' });
+    }
+
+    if (!target) {
+      return res.status(404).json({ message: 'Ingrédient cible introuvable.' });
+    }
+
+    const updatedTarget = await prisma.$transaction(async (tx) => {
+      // Récupérer toutes les liaisons recette←→source
+      const sourceLinks = await tx.recipeIngredient.findMany({
+        where: { ingredientId: sourceId },
+        select: { recipeId: true, quantity: true, unit: true },
+      });
+
+      for (const link of sourceLinks) {
+        // Vérifier si cette recette a DÉJÀ l'ingrédient target
+        const existingTargetLink = await tx.recipeIngredient.findFirst({
+          where: {
+            recipeId: link.recipeId,
+            ingredientId: targetId,
+          },
+        });
+
+        if (existingTargetLink) {
+          // La recette a déjà "citron" → on supprime juste la ligne "citrons"
+          await tx.recipeIngredient.deleteMany({
+            where: {
+              recipeId: link.recipeId,
+              ingredientId: sourceId,
+            },
+          });
+        } else {
+          // La recette n'a que "citrons" → on repointe vers "citron"
+          await tx.recipeIngredient.updateMany({
+            where: {
+              recipeId: link.recipeId,
+              ingredientId: sourceId,
+            },
+            data: { ingredientId: targetId },
+          });
+        }
+      }
+
+      // Supprimer les notifications liées à source
+      await tx.notification.updateMany({
+        where: {
+          userId: req.user.id,
+          isRead: false,
+          message: `Nouvel ingrédient soumis: ${source.nom}`,
+        },
+        data: { isRead: true },
+      });
+
+      // Supprimer l'ingrédient source — maintenant sans recettes liées
+      await tx.ingredient.delete({ where: { id: sourceId } });
+
+      // Retourner l'ingrédient target avec son nouveau recipesCount
+      return tx.ingredient.findUnique({
+        where: { id: targetId },
+        include: {
+          _count: { select: { recipes: true } },
+          recipes: {
+            include: {
+              recipe: {
+                select: {
+                  createdAt: true,
+                  user: { select: { nom: true, pseudo: true } },
+                },
+              },
+            },
+          },
+        },
+      });
+    });
+
+    return res.json(formatIngredient(updatedTarget));
+  } catch (error) {
+    if (error.code === 'P2025') {
+      return res.status(404).json({ message: 'Ingrédient introuvable.' });
+    }
+    return sendError(res, error, 'Erreur lors de la fusion des ingrédients.');
+  }
+}
+
 export async function getCategoryRecipes(req, res) {
   try {
     const category = await prisma.category.findUnique({
@@ -1415,6 +1547,7 @@ export async function getCategoryRecipes(req, res) {
     return sendError(res, error, 'Erreur lors de la récupération des recettes liées à la catégorie.');
   }
 }
+
 // =====================
 // NOTIFICATIONS — ADMIN
 // =====================

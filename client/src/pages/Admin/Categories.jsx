@@ -53,6 +53,10 @@ function AdminCategories() {
       String(category.name || '').toLowerCase().includes(normalizedQuery)
     ));
   }, [categories, searchInput]);
+<<<<<<< feature/seedv-v4
+
+=======
+>>>>>>> dev
   const totalCategories = filteredCategories.length;
   const totalPages = Math.max(1, Math.ceil(totalCategories / currentLimit));
   const paginatedCategories = useMemo(() => {
@@ -82,6 +86,11 @@ function AdminCategories() {
     setDeleteModalError('');
   }
 
+<<<<<<< feature/seedv-v4
+  useEffect(() => {
+    function handleCategoriesReset() {
+      resetCategoryEditor();
+=======
   function openCreateCategoryPanel() {
     setIsCreatingCategory(true);
     setEditingCategory(null);
@@ -96,6 +105,7 @@ function AdminCategories() {
       resetCategoryEditor();
       setSearchInput('');
       setError('');
+>>>>>>> dev
     }
 
     window.addEventListener('admin-categories-reset', handleCategoriesReset);
@@ -105,6 +115,18 @@ function AdminCategories() {
     };
   }, []);
 
+<<<<<<< feature/seedv-v4
+  function openCreateCategoryPanel() {
+    setIsCreatingCategory(true);
+    setEditingCategory(null);
+    setCategoryFormName('');
+    setSelectedColor(DEFAULT_CATEGORY_COLOR);
+    setDeleteModalError('');
+    setError('');
+  }
+
+=======
+>>>>>>> dev
   async function handleCreateCategory() {
     const name = categoryFormName.trim();
 
@@ -317,13 +339,27 @@ function AdminCategories() {
 
               return (
                 <div key={category.id} className={styles.categoryRow}>
+<<<<<<< feature/seedv-v4
+                  <div className={styles.categoryIdentity}>
+=======
                   <div className={styles.ingredientIdentity}>
+>>>>>>> dev
                     <span className={styles.categoryDot} style={{ background: category.color }}>
                       {category.name}
                     </span>
                     {recipesCount > 0 ? (
                       <Link
                         to={`/admin/categories/${category.id}/recettes`}
+<<<<<<< feature/seedv-v4
+                        className={`${styles.submittedByRowTag} ${styles.clickableTag}`.trim()}
+                        aria-label={`Voir les ${recipesCount} recettes de la catégorie ${category.name}`}
+                      >
+                        {recipesCount} recette{recipesCount > 1 ? 's' : ''}
+                      </Link>
+                    ) : (
+                      <small className={styles.categoryMeta}>
+                        {recipesCount} recette{recipesCount > 1 ? 's' : ''}
+=======
                         className={`${styles.submittedByRowTag} ${styles.clickableTag}`}
                         aria-label={`Voir les ${recipesCount} recettes liées à la catégorie ${category.name}`}
                       >
@@ -332,6 +368,7 @@ function AdminCategories() {
                     ) : (
                       <small className={styles.categoryMeta}>
                         0 recette
+>>>>>>> dev
                       </small>
                     )}
                   </div>
@@ -427,6 +464,19 @@ function AdminCategories() {
           <div className={styles.headerLine}>
             <h2>{isCreatingCategory ? 'Ajouter une catégorie' : 'Modifier une catégorie'}</h2>
           </div>
+          <p className={styles.categoryEditorLead}>
+            {isCreatingCategory
+              ? 'Choisissez un nom et une couleur pour créer une nouvelle catégorie.'
+              : 'Modifiez le nom et la couleur de la catégorie sélectionnée.'}
+          </p>
+
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.pageState}
+          />
+
           <p className={styles.categoryEditorLead}>
             {isCreatingCategory
               ? 'Choisissez un nom et une couleur pour créer une nouvelle catégorie.'
