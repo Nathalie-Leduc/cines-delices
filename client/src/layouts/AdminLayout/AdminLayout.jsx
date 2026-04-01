@@ -33,7 +33,7 @@ export default function AdminLayout() {
   }, [isMobileSidebarOpen]);
 
   return (
-    <>
+    <div className={styles.adminLayout}>
       <Navbar mobileMenuMode="external" onBurgerClick={() => setIsMobileSidebarOpen(true)} />
 
       <div
@@ -105,6 +105,6 @@ export default function AdminLayout() {
       </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

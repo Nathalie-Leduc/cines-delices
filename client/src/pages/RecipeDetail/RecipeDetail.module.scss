@@ -1,7 +1,7 @@
 @use "../../styles/visitor-mixins" as ui;
 
 .page {
-  min-height: 100vh;
+  min-height: 100%;
   background:
     linear-gradient(rgba(31, 29, 30, 0.96), rgba(31, 29, 30, 0.96)),
     url("/img/rocky-wall.png");
