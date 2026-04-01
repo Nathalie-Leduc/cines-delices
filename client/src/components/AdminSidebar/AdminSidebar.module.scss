@@ -102,7 +102,6 @@
     $font-weight: 700
   );
   @include ui.badge-gradient-recipe;
-  @include ui.badge-orbit-glow;
   align-self: flex-start;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
 }
