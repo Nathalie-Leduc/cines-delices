@@ -221,6 +221,37 @@ function extractDirector(tmdbMedia, prismaType) {
   return people.length > 0 ? people.join(', ') : null;
 }
 
+function parseEditedFieldsSummary(value) {
+  return String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function stringifyEditedFieldsSummary(fields) {
+  return Array.from(new Set(fields))
+    .filter(Boolean)
+    .join(', ');
+}
+
+function buildAdminEditedFieldsSentence(summary) {
+  const fields = parseEditedFieldsSummary(summary);
+
+  if (fields.length === 0) {
+    return null;
+  }
+
+  if (fields.length === 1) {
+    return fields[0];
+  }
+
+  if (fields.length === 2) {
+    return `${fields[0]} et ${fields[1]}`;
+  }
+
+  return `${fields.slice(0, -1).join(', ')} et ${fields.at(-1)}`;
+}
+
 // ─────────────────────────────────────────────────────────
 // resolveAdminMediaId — avec poster WebP local
 // ─────────────────────────────────────────────────────────
@@ -453,6 +484,9 @@ export async function publishRecipe(req, res) {
         data: {
           status: 'PUBLISHED',
           rejectionReason: null,
+          adminEditedSinceSubmission: false,
+          adminEditedIngredientsSinceSubmission: false,
+          adminEditedFieldsSummary: null,
         },
         include: {
           user: {
@@ -472,12 +506,23 @@ export async function publishRecipe(req, res) {
       });
 
       if (recipe.userId) {
+        const editedFieldsSentence = buildAdminEditedFieldsSentence(
+          recipeBeforeApproval.adminEditedFieldsSummary,
+        );
+        const publicationMessage = editedFieldsSentence
+          ? `Votre recette "${recipe.titre}" a ete validee et publiee apres modification par l'admin : ${editedFieldsSentence}.`
+          : recipeBeforeApproval.adminEditedIngredientsSinceSubmission
+            ? `Votre recette "${recipe.titre}" a ete validee et publiee apres modification de ses ingredients par l'admin.`
+            : recipeBeforeApproval.adminEditedSinceSubmission
+              ? `Votre recette "${recipe.titre}" a ete validee et publiee apres modification par l'admin.`
+              : `Votre recette "${recipe.titre}" a ete validee et publiee.`;
+
         await tx.notification.create({
           data: {
             userId: recipe.userId,
             recipeId: recipe.id,
             type: 'RECIPE_SUBMITTED',
-            message: `Votre recette "${recipe.titre}" a ete validee et publiee.`,
+            message: publicationMessage,
           },
         });
       }
@@ -514,6 +559,9 @@ export async function rejectRecipe(req, res) {
         data: {
           status: 'DRAFT',
           rejectionReason,
+          adminEditedSinceSubmission: false,
+          adminEditedIngredientsSinceSubmission: false,
+          adminEditedFieldsSummary: null,
         },
         include: {
           user: {
@@ -598,19 +646,65 @@ export async function updateAdminRecipe(req, res) {
       ingredients,
     } = req.body;
 
+    const existingRecipe = await prisma.recipe.findUnique({
+      where: { id },
+      include: {
+        category: true,
+        media: true,
+        ingredients: {
+          include: {
+            ingredient: true,
+          },
+        },
+      },
+    });
+
+    if (!existingRecipe) {
+      return res.status(404).json({ message: 'Recette introuvable.' });
+    }
+
     const data = {};
+    const editedFields = new Set(parseEditedFieldsSummary(existingRecipe.adminEditedFieldsSummary));
     if (titre !== undefined) {
       data.titre = String(titre).trim();
       data.slug = await generateUniqueSlug(
         data.titre,
         (candidate) => prisma.recipe.findUnique({ where: { slug: candidate } })
       );
+      if (data.titre !== existingRecipe.titre) {
+        editedFields.add('le titre');
+      }
     }
-    if (instructions !== undefined) data.instructions = String(instructions).trim();
-    if (nombrePersonnes !== undefined) data.nombrePersonnes = nombrePersonnes ? parseInt(nombrePersonnes, 10) : null;
-    if (tempsPreparation !== undefined) data.tempsPreparation = tempsPreparation ? parseInt(tempsPreparation, 10) : null;
-    if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson ? parseInt(tempsCuisson, 10) : null;
-    if (imageUrl !== undefined) data.imageURL = String(imageUrl).trim() || null;
+    if (instructions !== undefined) {
+      data.instructions = String(instructions).trim();
+      if (data.instructions !== existingRecipe.instructions) {
+        editedFields.add('les etapes');
+      }
+    }
+    if (nombrePersonnes !== undefined) {
+      data.nombrePersonnes = nombrePersonnes ? parseInt(nombrePersonnes, 10) : null;
+      if (data.nombrePersonnes !== existingRecipe.nombrePersonnes) {
+        editedFields.add('le nombre de personnes');
+      }
+    }
+    if (tempsPreparation !== undefined) {
+      data.tempsPreparation = tempsPreparation ? parseInt(tempsPreparation, 10) : null;
+      if (data.tempsPreparation !== existingRecipe.tempsPreparation) {
+        editedFields.add('le temps de preparation');
+      }
+    }
+    if (tempsCuisson !== undefined) {
+      data.tempsCuisson = tempsCuisson ? parseInt(tempsCuisson, 10) : null;
+      if (data.tempsCuisson !== existingRecipe.tempsCuisson) {
+        editedFields.add('le temps de cuisson');
+      }
+    }
+    if (imageUrl !== undefined) {
+      data.imageURL = String(imageUrl).trim() || null;
+      if (data.imageURL !== existingRecipe.imageURL) {
+        editedFields.add("l'image");
+      }
+    }
 
     if (tmdbId !== undefined || mediaId !== undefined) {
       const resolvedMediaId = await resolveAdminMediaId({
@@ -621,18 +715,33 @@ export async function updateAdminRecipe(req, res) {
       });
 
       if (resolvedMediaId !== undefined) {
-        data.mediaId = resolvedMediaId;
+        data.media = {
+          connect: { id: resolvedMediaId },
+        };
+        if (resolvedMediaId !== existingRecipe.mediaId) {
+          editedFields.add('le film ou la serie');
+        }
       }
     }
 
     if (categoryId !== undefined) {
-      data.categoryId = categoryId;
+      data.category = {
+        connect: { id: categoryId },
+      };
+      if (categoryId !== existingRecipe.categoryId) {
+        editedFields.add('la categorie');
+      }
     } else if (categoryName !== undefined) {
       const category = await prisma.category.findFirst({
         where: { nom: { equals: categoryName, mode: 'insensitive' } },
       });
       if (category) {
-        data.categoryId = category.id;
+        data.category = {
+          connect: { id: category.id },
+        };
+        if (category.id !== existingRecipe.categoryId) {
+          editedFields.add('la categorie');
+        }
       }
     }
 
@@ -675,6 +784,19 @@ export async function updateAdminRecipe(req, res) {
         new Map(resolvedIngredients.map((entry) => [entry.ingredientId, entry])).values(),
       );
 
+      const previousIngredientsSnapshot = existingRecipe.ingredients
+        .map((entry) => `${entry.ingredientId}:${entry.quantity || ''}:${entry.unit || ''}`)
+        .sort()
+        .join('|');
+      const nextIngredientsSnapshot = deduped
+        .map((entry) => `${entry.ingredientId}:${entry.quantity || ''}:${entry.unit || ''}`)
+        .sort()
+        .join('|');
+
+      if (previousIngredientsSnapshot !== nextIngredientsSnapshot) {
+        editedFields.add('les ingredients');
+      }
+
       // Correctif : toujours inclure create, même avec un tableau vide
      data.ingredients = {
        deleteMany: {},
@@ -684,6 +806,14 @@ export async function updateAdminRecipe(req, res) {
           unit: entry.unit,
         })),
       };
+    }
+
+    if (existingRecipe.status === 'PENDING') {
+      data.adminEditedSinceSubmission = true;
+      if (Array.isArray(ingredients)) {
+        data.adminEditedIngredientsSinceSubmission = true;
+      }
+      data.adminEditedFieldsSummary = stringifyEditedFieldsSummary(editedFields);
     }
 
     if (Object.keys(data).length === 0) {

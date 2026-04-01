@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -317,9 +318,19 @@ function AdminCategories() {
                     <span className={styles.categoryDot} style={{ background: category.color }}>
                       {category.name}
                     </span>
-                    <small className={styles.categoryMeta}>
-                      {recipesCount} recette{recipesCount > 1 ? 's' : ''}
-                    </small>
+                    {recipesCount > 0 ? (
+                      <Link
+                        to={`/admin/categories/${category.id}/recettes`}
+                        className={`${styles.submittedByRowTag} ${styles.clickableTag}`.trim()}
+                        aria-label={`Voir les ${recipesCount} recettes de la catégorie ${category.name}`}
+                      >
+                        {recipesCount} recette{recipesCount > 1 ? 's' : ''}
+                      </Link>
+                    ) : (
+                      <small className={styles.categoryMeta}>
+                        {recipesCount} recette{recipesCount > 1 ? 's' : ''}
+                      </small>
+                    )}
                   </div>
                   <span className={styles.inlineTools}>
                     <button

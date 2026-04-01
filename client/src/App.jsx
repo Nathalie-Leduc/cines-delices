@@ -23,6 +23,7 @@ import { Dashboard, Recettes, Categories, Utilisateurs, IngredientsValidation, A
 import ProtectedRoute from './router';
 import AdminRoute from './router/AdminRoute.jsx';
 import CookieConsent from './components/CookieConsent/CookieConsent.jsx';
+import ScrollToTop from './components/ScrollToTop/ScrollToTop.jsx';
 import ResetPassword from './pages/resetPassword/resetPassword.jsx';
 import ReglesModeration from './pages/ReglesModeration/ReglesModerations.jsx';
 
@@ -31,6 +32,7 @@ import ReglesModeration from './pages/ReglesModeration/ReglesModerations.jsx';
 function App() {
   return (
     <>
+      <ScrollToTop />
       <CookieConsent />
     <Routes>
       <Route element={<PublicLayout />}>

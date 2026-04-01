@@ -141,6 +141,7 @@ export default function AdminCategoryRecipes() {
                 <div className={styles.cardActionsExact}>
                   <button
                     type="button"
+                    className={`${styles.cardActionButton} ${styles.cardActionEdit}`.trim()}
                     aria-label="Modifier la recette"
                     onClick={(event) => {
                       event.preventDefault();
@@ -152,7 +153,7 @@ export default function AdminCategoryRecipes() {
                       });
                     }}
                   >
-                    <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
+                    <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
                   </button>
                 </div>
               </div>
