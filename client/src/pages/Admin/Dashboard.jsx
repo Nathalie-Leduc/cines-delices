@@ -5,6 +5,7 @@ import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import {
+  buildCategoryFilters,
   LIMIT_OPTIONS,
   normalizeCategoryLabel,
 } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
@@ -12,6 +13,7 @@ import {
   approveAdminIngredient,
   approveAdminRecipe,
   deleteAdminIngredient,
+  getAdminCategories,
   getAdminIngredients,
   getPendingRecipes,
   rejectAdminRecipe,
@@ -134,6 +136,7 @@ function AdminDashboard() {
   const [blockingIngredients, setBlockingIngredients] = useState([]);
   const [loadingBlockingIngredients, setLoadingBlockingIngredients] = useState(false);
   const [ingredientActionKey, setIngredientActionKey] = useState('');
+  const [categories, setCategories] = useState([]);
   const [rejectReason, setRejectReason] = useState(`Votre recette n’a pas été validée.\n\nElle ne respecte pas nos règles de publication\n(contenu incohérent ou incomplet).\n\nMerci de modifier votre recette avant de la soumettre à nouveau.`);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -141,8 +144,12 @@ function AdminDashboard() {
   useEffect(() => {
     const loadPendingRecipes = async () => {
       try {
-        const payload = await getPendingRecipes();
-        setPendingRecipes(Array.isArray(payload) ? payload : []);
+        const [pendingPayload, categoriesPayload] = await Promise.all([
+          getPendingRecipes(),
+          getAdminCategories().catch(() => []),
+        ]);
+        setPendingRecipes(Array.isArray(pendingPayload) ? pendingPayload : []);
+        setCategories(Array.isArray(categoriesPayload) ? categoriesPayload : categoriesPayload?.data ?? []);
       } catch (loadError) {
         setError(loadError.message || 'Impossible de charger les recettes à valider.');
       } finally {
@@ -187,34 +194,12 @@ function AdminDashboard() {
     ));
   }, [pendingRecipes, activeFilter, searchInput]);
 
-  const filters = useMemo(() => {
-    const baseFilters = [
-      { label: 'Tous', value: 'Tous', key: 'tous' },
-      { label: 'Entrée', value: 'Entrée', key: 'entree' },
-      { label: 'Plat', value: 'Plat', key: 'plat' },
-      { label: 'Dessert', value: 'Dessert', key: 'dessert' },
-      { label: 'Boisson', value: 'Boisson', key: 'boisson' },
-    ];
-
-    const baseValues = new Set(baseFilters.map((filter) => filter.value));
-    const extraFilters = Object.keys(counters)
-      .filter((label) => !baseValues.has(label))
-      .sort((left, right) => left.localeCompare(right, 'fr', { sensitivity: 'base' }))
-      .map((label) => ({
-        label,
-        value: label,
-        key: String(label || '')
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/\s+/g, '-')
-          .toLowerCase(),
-      }));
-
-    return [...baseFilters, ...extraFilters].map((filter) => ({
+  const filters = useMemo(() => (
+    buildCategoryFilters(categories).map((filter) => ({
       ...filter,
       count: filter.value === 'Tous' ? pendingRecipes.length : (counters[filter.value] || 0),
-    }));
-  }, [pendingRecipes.length, counters]);
+    }))
+  ), [pendingRecipes.length, counters, categories]);
 
   useEffect(() => {
     if (activeFilter === 'Tous') {

@@ -10,7 +10,7 @@ import {
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
 import {
-  FILTERS,
+  buildCategoryFilters,
   LIMIT_OPTIONS,
   normalizeCategoryLabel,
 } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
@@ -187,11 +187,11 @@ function AdminRecettes() {
       return accumulator;
     }, {});
 
-    return FILTERS.map((filter) => ({
+    return buildCategoryFilters(categories).map((filter) => ({
       ...filter,
       count: filter.value === 'Tous' ? recipes.length : (counts[filter.value] || 0),
     }));
-  }, [recipes]);
+  }, [recipes, categories]);
 
   const totalRecipes = filteredRecipes.length;
   const totalPages = Math.max(1, Math.ceil(totalRecipes / currentLimit));

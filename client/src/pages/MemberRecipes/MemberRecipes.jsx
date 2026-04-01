@@ -19,6 +19,7 @@ import {
   MEDIA_SUGGESTION_POSTER_FALLBACK,
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
+import { buildCategoryFilters } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 // ──────────────────────────────────────────────────────────────────────────
 //  MODIF 1 : import du hook useAuth
 //  Avant  : pas d'import, le logout se faisait manuellement via localStorage
@@ -40,6 +41,7 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
     : '')
   || `${API_BASE_URL}/api/ingredients`;
 const PROFILE_API = import.meta.env.VITE_PROFILE_API || `${API_BASE_URL}/api/auth/me`;
+const CATEGORIES_API = `${API_BASE_URL}/api/categories`;
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -219,6 +221,7 @@ export default function MesRecettes() {
   // ──────────────────────────────────────────────────────────────────────
   const { logout } = useAuth ();
   const [recipes, setRecipes] = useState([]);
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [userDisplayName, setUserDisplayName] = useState(localStorage.getItem('displayName') || '');
   const [userEmail, setUserEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -359,6 +362,38 @@ export default function MesRecettes() {
     };
   }, []);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch(CATEGORIES_API);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const categoryList = (Array.isArray(payload) ? payload : payload?.data || [])
+          .map((category) => String(category?.name || category?.nom || '').trim())
+          .filter(Boolean);
+
+        if (isMounted) {
+          setAvailableCategories(categoryList);
+        }
+      } catch {
+        if (isMounted) {
+          setAvailableCategories([]);
+        }
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   // Navigation latérale du compte membre.
   const pendingRecipesCount = recipes.filter(
     (recipe) => String(recipe?.status || '').toUpperCase() === 'PENDING',
@@ -429,13 +464,13 @@ export default function MesRecettes() {
   });
 
   // Compteurs dynamiques par catégorie à partir des recettes chargées.
-  const categories = [
-    { label: 'Tous', count: recipesForCurrentPage.length, color: 'tous' },
-    { label: 'Entrée', count: recipesForCurrentPage.filter(r => r.categorie === 'Entrée').length, color: 'entree' },
-    { label: 'Plat', count: recipesForCurrentPage.filter(r => r.categorie === 'Plat').length, color: 'plat' },
-    { label: 'Dessert', count: recipesForCurrentPage.filter(r => r.categorie === 'Dessert').length, color: 'dessert' },
-    { label: 'Boisson', count: recipesForCurrentPage.filter(r => r.categorie === 'Boisson').length, color: 'boisson' },
-  ];
+  const categories = buildCategoryFilters(availableCategories).map((category) => ({
+    label: category.label,
+    count: category.value === 'Tous'
+      ? recipesForCurrentPage.length
+      : recipesForCurrentPage.filter((recipe) => recipe.categorie === category.value).length,
+    color: category.key,
+  }));
 
   // Application du filtre actif.
   const filtered = activeFilter === 'Tous'
@@ -1026,10 +1061,13 @@ export default function MesRecettes() {
                   value={editForm.categorie}
                   onChange={e => handleEditChange('categorie', e.target.value)}
                 >
-                  <option value="Entrée">Entrée</option>
-                  <option value="Plat">Plat</option>
-                  <option value="Dessert">Dessert</option>
-                  <option value="Boisson">Boisson</option>
+                  {buildCategoryFilters(availableCategories)
+                    .filter((category) => category.value !== 'Tous')
+                    .map((category) => (
+                      <option key={category.key} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
                 </select>
               </label>
 
