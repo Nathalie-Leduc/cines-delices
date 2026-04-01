@@ -184,6 +184,9 @@ model Recipe {
   tempsCuisson     Int?         @map("temps_cuisson")     // en minutes
   status           RecipeStatus @default(DRAFT)
   rejectionReason  String?      @map("rejection_reason")
+  adminEditedSinceSubmission Boolean @default(false) @map("admin_edited_since_submission")
+  adminEditedIngredientsSinceSubmission Boolean @default(false) @map("admin_edited_ingredients_since_submission")
+  adminEditedFieldsSummary String? @map("admin_edited_fields_summary")
 
   // FK
   userId     String? @map("user_id")    // ← String → String? (nullable pour SetNull)

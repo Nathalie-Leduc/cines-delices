@@ -131,6 +131,7 @@ function AdminRecettes() {
   const [creatingIngredient, setCreatingIngredient] = useState({});
   const [editImageError, setEditImageError] = useState('');
   const [categories, setCategories] = useState([]);
+  const [returnAfterSave, setReturnAfterSave] = useState(null);
   const filmSearchTimeoutRef = useRef(null);
   const ingredientSearchTimeouts = useRef({});
 
@@ -154,6 +155,7 @@ function AdminRecettes() {
 
   useEffect(() => {
     const targetRecipeId = location.state?.openEditRecipeId;
+    const nextReturnAfterSave = location.state?.returnTo || null;
 
     if (!targetRecipeId || recipes.length === 0) {
       return;
@@ -161,6 +163,7 @@ function AdminRecettes() {
 
     const recipe = recipes.find((item) => item.id === targetRecipeId);
     if (recipe) {
+      setReturnAfterSave(nextReturnAfterSave);
       openEditModal(recipe);
       navigate('/admin/recettes', { replace: true, state: {} });
     }
@@ -561,6 +564,13 @@ function AdminRecettes() {
             : recipe,
         ));
         setShowEditModal(false);
+        if (returnAfterSave?.pathname) {
+          navigate(returnAfterSave.pathname, {
+            replace: true,
+            state: returnAfterSave.state || {},
+          });
+          setReturnAfterSave(null);
+        }
       })
       .catch((saveError) => {
         setError(saveError.message || 'Sauvegarde impossible.');

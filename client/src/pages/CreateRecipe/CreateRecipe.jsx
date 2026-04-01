@@ -25,7 +25,7 @@ import {
 } from '../../utils/mediaSearch.js';
 
 
-const categoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
+const defaultCategoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)', 'tasse'];
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
@@ -37,6 +37,7 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
 const RECIPE_CREATE_API = import.meta.env.VITE_RECIPE_CREATE_API
   || import.meta.env.VITE_RECIPE_API_URL
   || `${API_BASE_URL}/api/recipes`;
+const CATEGORIES_API = `${API_BASE_URL}/api/categories`;
 const TMDB_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || `${API_BASE_URL}/api/tmdb/medias/search`;
 
@@ -85,6 +86,7 @@ export default function CreerRecette() {
   const filmSearchTimeoutRef = useRef(null);
   const ingredientSearchTimeoutRef = useRef(null);
   const [form, setForm] = useState(INITIAL_FORM);
+  const [categoriesOptions, setCategoriesOptions] = useState(defaultCategoriesOptions);
   const [lastSubmittedSignature, setLastSubmittedSignature] = useState('');
   //Média sélectionné depuis TMDB
   const [selectedMedia, setSelectedMedia] = useState(null); // état pour stocker le média choisi
@@ -115,6 +117,40 @@ export default function CreerRecette() {
       titre: prev.titre || initialTitleFromNavigation,
     }));
   }, [initialTitleFromNavigation]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadCategories() {
+      try {
+        const response = await fetch(CATEGORIES_API);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const categoryList = (Array.isArray(payload) ? payload : payload?.data || [])
+          .map((category) => String(category?.name || '').trim())
+          .filter(Boolean);
+
+        if (!isMounted || categoryList.length === 0) {
+          return;
+        }
+
+        setCategoriesOptions(categoryList);
+      } catch {
+        if (isMounted) {
+          setCategoriesOptions(defaultCategoriesOptions);
+        }
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
 
   // ===== HANDLERS GÉNÉRAUX =====

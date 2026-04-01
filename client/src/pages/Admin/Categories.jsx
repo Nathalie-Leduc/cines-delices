@@ -311,69 +311,76 @@ function AdminCategories() {
           </div>
 
           <div className={styles.list}>
-            {paginatedCategories.map((category) => (
-              <div key={category.id} className={styles.categoryRow}>
-                <div className={styles.ingredientIdentity}>
-                  <span className={styles.categoryDot} style={{ background: category.color }}>
-                    {category.name}
-                  </span>
-                  {category.recipesCount > 0 ? (
-                    <Link
-                      to={`/admin/categories/${category.id}/recettes`}
-                      className={`${styles.submittedByRowTag} ${styles.clickableTag}`}
-                      aria-label={`Voir les ${category.recipesCount} recettes liées à la catégorie ${category.name}`}
+            {paginatedCategories.map((category) => {
+              const recipesCount = category.recipesCount || 0;
+              const deleteDisabled = !canDeleteCategory(category);
+
+              return (
+                <div key={category.id} className={styles.categoryRow}>
+                  <div className={styles.ingredientIdentity}>
+                    <span className={styles.categoryDot} style={{ background: category.color }}>
+                      {category.name}
+                    </span>
+                    {recipesCount > 0 ? (
+                      <Link
+                        to={`/admin/categories/${category.id}/recettes`}
+                        className={`${styles.submittedByRowTag} ${styles.clickableTag}`}
+                        aria-label={`Voir les ${recipesCount} recettes liées à la catégorie ${category.name}`}
+                      >
+                        Utilisée dans {recipesCount} recette{recipesCount > 1 ? 's' : ''}
+                      </Link>
+                    ) : (
+                      <small className={styles.categoryMeta}>
+                        0 recette
+                      </small>
+                    )}
+                  </div>
+                  <span className={styles.inlineTools}>
+                    <button
+                      type="button"
+                      className={`${styles.roundIconBtn} ${styles.roundIconBtnEdit}`.trim()}
+                      aria-label={`Modifier la catégorie ${category.name}`}
+                      onClick={() => {
+                        setEditingCategory(category);
+                        setCategoryFormName(category.name);
+                        setSelectedColor(category.color);
+                        setIsCreatingCategory(false);
+                        setDeleteModalError('');
+                        setError('');
+                      }}
                     >
-                      Utilisée dans {category.recipesCount} recette{category.recipesCount > 1 ? 's' : ''}
-                    </Link>
-                  ) : (
-                    <small className={styles.categoryMeta}>
-                      0 recette
-                    </small>
-                  )}
-                </div>
-                <span className={styles.inlineTools}>
-                  <button
-                    type="button"
-                    className={`${styles.roundIconBtn} ${styles.roundIconBtnEdit}`.trim()}
-                    aria-label={`Modifier la catégorie ${category.name}`}
-                    onClick={() => {
-                      setEditingCategory(category);
-                      setCategoryFormName(category.name);
-                      setSelectedColor(category.color);
-                      setIsCreatingCategory(false);
-                      setDeleteModalError('');
-                      setError('');
-                    }}
-                  >
-                    <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.roundIconBtn} ${styles.roundIconBtnDelete}`.trim()}
-                    disabled={!canDeleteCategory(category)}
-                    title={
-                      canDeleteCategory(category)
-                        ? 'Supprimer'
-                        : `Suppression impossible : ${category.recipesCount} recette${category.recipesCount > 1 ? 's utilisent' : ' utilise'} cette catégorie`
-                    }
-                    aria-label={`Supprimer la catégorie ${category.name}`}
-                    onClick={() => {
-                      if (!canDeleteCategory(category)) {
-                        return;
+                      <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.roundIconBtn} ${styles.roundIconBtnDelete}`.trim()}
+                      aria-label={`Supprimer la catégorie ${category.name}`}
+                      disabled={deleteDisabled}
+                      title={
+                        deleteDisabled
+                          ? `Suppression impossible : ${recipesCount} recette${recipesCount > 1 ? 's utilisent' : ' utilise'} cette catégorie`
+                          : `Supprimer la catégorie ${category.name}`
                       }
-                      setEditingCategory(category);
-                      setCategoryFormName(category.name);
-                      setIsCreatingCategory(false);
-                      setDeleteModalError('');
-                      setShowDeleteModal(true);
-                      setError('');
-                    }}
-                  >
-                    <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
-                  </button>
-                </span>
-              </div>
-            ))}
+                      onClick={() => {
+                        if (deleteDisabled) {
+                          return;
+                        }
+
+                        setEditingCategory(category);
+                        setCategoryFormName(category.name);
+                        setSelectedColor(category.color);
+                        setIsCreatingCategory(false);
+                        setDeleteModalError('');
+                        setShowDeleteModal(true);
+                        setError('');
+                      }}
+                    >
+                      <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                    </button>
+                  </span>
+                </div>
+              );
+            })}
 
             {!isLoading && !error && filteredCategories.length === 0 ? (
               <StatusBlock

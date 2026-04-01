@@ -366,6 +366,22 @@ function AdminDashboard() {
     }
   }
 
+  function openEditFromValidation(recipe) {
+    if (!recipe?.id) {
+      return;
+    }
+
+    navigate('/admin/recettes', {
+      state: {
+        openEditRecipeId: recipe.id,
+        returnTo: {
+          pathname: '/admin/validation-recettes',
+          state: { openRecipeId: recipe.id },
+        },
+      },
+    });
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.headerLine}>
@@ -520,6 +536,20 @@ function AdminDashboard() {
                 <div key={recipe.id} className={styles.adminRecipeCardWrap}>
                   <RecipeCard recipe={recipeForCatalogCard} />
                   <span className={styles.submittedByCardTag}>Soumis par {getSubmittedByLabel(recipe)}</span>
+                  <div className={styles.cardActionsExact}>
+                    <button
+                      type="button"
+                      className={`${styles.cardActionButton} ${styles.cardActionEdit}`.trim()}
+                      aria-label="Modifier la recette avant validation"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        openEditFromValidation(recipe);
+                      }}
+                    >
+                      <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
+                    </button>
+                  </div>
                   <button
                     type="button"
                     className={styles.cardNavOverlay}
@@ -639,7 +669,14 @@ function AdminDashboard() {
           </article>
 
           <div className={`${styles.actionButtons} ${styles.heroActionButtons}`.trim()}>
-            <button type="button" className={`${styles.btnMuted} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowRefuseModal(true)}>
+            <button
+              type="button"
+              className={`${styles.btnMuted} ${styles.fullWidthBtn}`.trim()}
+              onClick={() => openEditFromValidation(selectedRecipe)}
+            >
+              Modifier
+            </button>
+            <button type="button" className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowRefuseModal(true)}>
               Refuser
             </button>
             <button type="button" className={`${styles.btnSuccess} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowValidateModal(true)}>

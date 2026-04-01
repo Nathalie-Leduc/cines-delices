@@ -511,12 +511,25 @@ export const updateRecipe = async (req, res) => {
     const data = {};
     if (titre !== undefined) data.titre = titre;
     if (instructions !== undefined || Array.isArray(etapes)) data.instructions = normalizedInstructions;
-    if (categoryId !== undefined) data.categoryId = categoryId;
-    if (mediaId !== undefined) data.mediaId = mediaId;
+    if (categoryId !== undefined) {
+      data.category = {
+        connect: { id: categoryId },
+      };
+    }
+    if (mediaId !== undefined) {
+      data.media = {
+        connect: { id: mediaId },
+      };
+    }
     if (normalizedNombrePersonnes !== undefined) data.nombrePersonnes = normalizedNombrePersonnes;
     if (tempsPreparation !== undefined) data.tempsPreparation = tempsPreparation;
     if (tempsCuisson !== undefined) data.tempsCuisson = tempsCuisson;
     if (imageUrl !== undefined) data.imageURL = imageUrl || null;
+    if (!isAdminEditing) {
+      data.adminEditedSinceSubmission = false;
+      data.adminEditedIngredientsSinceSubmission = false;
+      data.adminEditedFieldsSummary = null;
+    }
     if (shouldResubmitForModeration) {
       data.status = 'PENDING';
       data.rejectionReason = null;
@@ -702,6 +715,9 @@ export const submitRecipe = asyncHandler(async (req, res) => {
       data: {
         status: 'PENDING',
         rejectionReason: null,
+        adminEditedSinceSubmission: false,
+        adminEditedIngredientsSinceSubmission: false,
+        adminEditedFieldsSummary: null,
       },
       include: recipeRelationsInclude,
     });
