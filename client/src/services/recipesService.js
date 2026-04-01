@@ -8,6 +8,10 @@ export function getPublishedRecipes() {
   return request('/api/recipes'); // ← enlever ?published=true (inutile, le back filtre déjà)
 }
 
+export function getRecipeCategories() {
+  return request('/api/categories');
+}
+
  // Render : correction pour accepter et transmettre les paramètres
 export async function getRecipesCatalog(params = {}) {
   const query = new URLSearchParams();
