@@ -756,18 +756,6 @@ function AdminRecettes() {
                   >
                     <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
                   </button>
-                  <button
-                    type="button"
-                    className={`${styles.cardActionButton} ${styles.cardActionEdit}`.trim()}
-                    aria-label="Modifier la recette"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      openEditModal(recipe);
-                    }}
-                  >
-                    <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
-                  </button>
                 </div>
               </div>
             );
