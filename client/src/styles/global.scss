@@ -108,7 +108,7 @@ label {
 }
 
 main {
-  min-height: calc(100vh - 120px);
+  min-height: 0;
   background:
     linear-gradient(var(--color-bg-overlay), var(--color-bg-overlay)),
     url('/img/rocky-wall.png') center/cover;
