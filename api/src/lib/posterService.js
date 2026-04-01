@@ -1,6 +1,5 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import sharp from 'sharp';
 
 // ============================================================
 // SERVICE TMDB POSTER — Télécharge et convertit en WebP
@@ -30,6 +29,21 @@ const SHARP_CONFIG = {
   maxHeight: 750,
 };
 
+let sharpLoaderPromise = null;
+
+async function getSharp() {
+  if (!sharpLoaderPromise) {
+    sharpLoaderPromise = import('sharp')
+      .then((module) => module.default || module)
+      .catch((error) => {
+        console.warn('[POSTER] Sharp indisponible, conversion désactivée :', error.message);
+        return null;
+      });
+  }
+
+  return sharpLoaderPromise;
+}
+
 // Créer le dossier posters s'il n'existe pas
 fs.mkdirSync(POSTERS_DIR, { recursive: true });
 
@@ -50,6 +64,11 @@ export async function downloadAndConvertPoster(tmdbImageUrl, req) {
   }
 
   try {
+    const sharp = await getSharp();
+    if (!sharp) {
+      return null;
+    }
+
     // Extraire un nom unique depuis l'URL TMDB
     // "/abc123def.jpg" → "abc123def"
     const urlPath = new URL(tmdbImageUrl).pathname;
