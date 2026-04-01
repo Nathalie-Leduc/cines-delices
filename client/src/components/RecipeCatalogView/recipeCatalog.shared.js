@@ -26,8 +26,41 @@ export function normalizeCategoryLabel(value) {
   if (normalized === "plat") return "Plat";
   if (normalized === "dessert") return "Dessert";
   if (normalized === "boisson") return "Boisson";
+  if (!normalized) return "Autre";
 
-  return value || "Autre";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+export function toCategoryFilterKey(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+export function buildCategoryFilters(categories = []) {
+  const labels = categories
+    .map((category) => normalizeCategoryLabel(String(category?.name || category?.nom || category || '').trim()))
+    .filter(Boolean);
+
+  const uniqueLabels = Array.from(new Set(labels));
+  const preferredOrder = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
+  const orderedLabels = [
+    ...preferredOrder.filter((label) => uniqueLabels.includes(label)),
+    ...uniqueLabels.filter((label) => !preferredOrder.includes(label)),
+  ];
+
+  return [
+    { label: 'Tous', value: 'Tous', key: 'tous' },
+    ...orderedLabels.map((label) => ({
+      label,
+      value: label,
+      key: toCategoryFilterKey(label),
+    })),
+  ];
 }
 
 export function parsePositiveInt(value, fallback) {
