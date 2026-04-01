@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import multer from 'multer';
-import sharp from 'sharp';
 
 // ============================================================
 // MIDDLEWARE UPLOAD IMAGE — Multer + Sharp
@@ -30,6 +29,21 @@ const SHARP_CONFIG = {
   maxWidth: 1200,          // largeur max (les recettes n'ont pas besoin de 4K)
   maxHeight: 1200,         // hauteur max
 };
+
+let sharpLoaderPromise = null;
+
+async function getSharp() {
+  if (!sharpLoaderPromise) {
+    sharpLoaderPromise = import('sharp')
+      .then((module) => module.default || module)
+      .catch((error) => {
+        console.warn('[UPLOAD] Sharp indisponible, conversion image désactivée :', error.message);
+        return null;
+      });
+  }
+
+  return sharpLoaderPromise;
+}
 
 // Créer le dossier uploads s'il n'existe pas
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -70,6 +84,11 @@ const uploadToMemory = multer({
 //   3. Compresse à 80% de qualité
 //   4. Écrit le fichier final sur disque
 async function convertToWebp(buffer) {
+  const sharp = await getSharp();
+  if (!sharp) {
+    throw new Error('Sharp indisponible');
+  }
+
   const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
   const filename = `recipe-${unique}.webp`;
   const outputPath = path.join(UPLOADS_DIR, filename);

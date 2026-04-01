@@ -112,11 +112,15 @@ export const login = async (req, res) => {
       return res.status(401).json({ error: 'Email ou mot de passe incorrect' });
     }
 
-    // ← AJOUT : mise à jour de la date de dernière connexion (RGPD)
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { lastLoginAt: new Date() },
-    });
+    // La connexion ne doit pas échouer si l'audit lastLoginAt n'est pas disponible.
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      });
+    } catch (auditError) {
+      console.warn('[login] impossible de mettre à jour lastLoginAt:', auditError.message);
+    }
 
     const token = signToken(user);
     res.json({ token, user: safeUser(user) });
