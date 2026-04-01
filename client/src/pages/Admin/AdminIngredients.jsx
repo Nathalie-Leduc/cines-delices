@@ -7,9 +7,30 @@ import { LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.
 import {
   deleteAdminIngredient,
   getValidatedAdminIngredients,
+  mergeAdminIngredients,
   updateAdminIngredient,
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
+
+// ─────────────────────────────────────────────────────────────
+// normalizeIngredientName — même fonction que partout ailleurs
+// Permet de pré-remplir la recherche de la cible de merge avec
+// le nom normalisé au singulier ("citrons" → cherche "citron")
+// ─────────────────────────────────────────────────────────────
+function normalizeIngredientName(name) {
+  const str = String(name || '').trim().toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const exceptions = new Set([
+    'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
+    'fois', 'buis', 'tapas', 'papas', 'colis',
+  ]);
+
+  if (exceptions.has(str)) return str;
+  if (str.endsWith('s') && str.length > 3) return str.slice(0, -1);
+  return str;
+}
 
 export default function AdminIngredients() {
   const [ingredients, setIngredients] = useState([]);
@@ -22,6 +43,25 @@ export default function AdminIngredients() {
   const [selectedIngredient, setSelectedIngredient] = useState(null);
   const [editedName, setEditedName] = useState('');
   const [error, setError] = useState('');
+
+  // ──────────────────────────────────────────────────────────
+  // NOUVEAUX ÉTATS — merge d'ingrédients
+  //
+  // showMergeModal     : affiche la modale de sélection de cible
+  // mergeTargetSearch  : valeur saisie dans le champ recherche
+  // mergeTargetResults : liste des ingrédients validés matchant
+  // mergeTarget        : l'ingrédient cible sélectionné
+  // isMerging          : loader pendant l'appel API
+  //
+  // Analogie : l'admin ouvre un sélecteur "vers quel bocal
+  // voulez-vous déverser les étiquettes ?", tape "citron",
+  // choisit dans la liste et confirme la fusion.
+  // ──────────────────────────────────────────────────────────
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergeTargetSearch, setMergeTargetSearch] = useState('');
+  const [mergeTargetResults, setMergeTargetResults] = useState([]);
+  const [mergeTarget, setMergeTarget] = useState(null);
+  const [isMerging, setIsMerging] = useState(false);
 
   useEffect(() => {
     const loadIngredients = async () => {
@@ -92,6 +132,91 @@ export default function AdminIngredients() {
     }
   }
 
+  // ──────────────────────────────────────────────────────────
+  // openMergeModal — ouvre la modale de fusion pour un ingrédient
+  //
+  // On pré-remplit la recherche avec le nom normalisé au singulier
+  // pour que "citrons" propose automatiquement "citron" comme cible.
+  // ──────────────────────────────────────────────────────────
+  async function openMergeModal(ingredient) {
+    setSelectedIngredient(ingredient);
+    setMergeTarget(null);
+    setError('');
+
+    // Pré-remplir avec le nom normalisé ("citrons" → "citron")
+    const normalizedName = normalizeIngredientName(ingredient.name);
+    setMergeTargetSearch(normalizedName);
+
+    // Lancer la recherche initiale avec ce nom normalisé
+    await searchMergeTargets(normalizedName, ingredient.id);
+    setShowMergeModal(true);
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // searchMergeTargets — cherche les ingrédients validés
+  // correspondant à la saisie, en excluant l'ingrédient source.
+  // ──────────────────────────────────────────────────────────
+  async function searchMergeTargets(query, excludeId) {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setMergeTargetResults([]);
+      return;
+    }
+
+    try {
+      const results = await getValidatedAdminIngredients(trimmed);
+      const list = Array.isArray(results) ? results : [];
+      // Exclure l'ingrédient source lui-même de la liste
+      setMergeTargetResults(list.filter((i) => i.id !== excludeId));
+    } catch {
+      setMergeTargetResults([]);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // handleMerge — appelle mergeAdminIngredients puis met à jour
+  // la liste locale : supprime source, met à jour target.
+  // ──────────────────────────────────────────────────────────
+  async function handleMerge() {
+    if (!selectedIngredient || !mergeTarget) return;
+
+    setIsMerging(true);
+    setError('');
+
+    try {
+      const updatedTarget = await mergeAdminIngredients(
+        selectedIngredient.id, // source : l'ingrédient à absorber ("citrons")
+        mergeTarget.id,        // target : l'ingrédient qui survit ("citron")
+      );
+
+      setIngredients((previous) =>
+        previous
+          // Supprimer la source de la liste
+          .filter((i) => i.id !== selectedIngredient.id)
+          // Mettre à jour la target avec le nouveau recipesCount
+          .map((i) => (i.id === updatedTarget.id ? updatedTarget : i)),
+      );
+
+      setShowMergeModal(false);
+      setSelectedIngredient(null);
+      setMergeTarget(null);
+      setMergeTargetSearch('');
+      setMergeTargetResults([]);
+    } catch (mergeError) {
+      setError(mergeError.message || 'Fusion impossible.');
+    } finally {
+      setIsMerging(false);
+    }
+  }
+
+  function closeMergeModal() {
+    setShowMergeModal(false);
+    setSelectedIngredient(null);
+    setMergeTarget(null);
+    setMergeTargetSearch('');
+    setMergeTargetResults([]);
+  }
+
   return (
     <div className={styles.page}>
       <div className={styles.headerLine}>
@@ -150,7 +275,7 @@ export default function AdminIngredients() {
             </select>
           </label>
 
-          <div className={styles.mobileLimitControl} aria-label="Nombre d’ingrédients validés par page">
+          <div className={styles.mobileLimitControl} aria-label="Nombre d'ingrédients validés par page">
             <div className={styles.mobileLimitPills}>
               {LIMIT_OPTIONS.map((limit) => {
                 const isActive = currentLimit === limit;
@@ -224,6 +349,22 @@ export default function AdminIngredients() {
               >
                 <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
               </button>
+
+              {/* ── NOUVEAU : bouton Fusionner ────────────────────────
+                  Toujours visible — même pour les ingrédients utilisés
+                  dans des recettes (c'est justement pour ça qu'on en
+                  a besoin : supprimer est impossible, merge l'est).
+                  Icône: merge ou link — à adapter selon tes assets */}
+              <button
+                type="button"
+                className={`${styles.roundIconBtn} ${styles.roundIconBtnMerge}`.trim()}
+                title="Fusionner avec un autre ingrédient"
+                aria-label={`Fusionner l'ingrédient ${ingredient.name} avec un autre`}
+                onClick={() => openMergeModal(ingredient)}
+              >
+                <img src="/icon/merge.svg" alt="" aria-hidden="true" />
+              </button>
+
               <button
                 type="button"
                 className={`${styles.roundIconBtn} ${styles.roundIconBtnDelete}`.trim()}
@@ -288,6 +429,7 @@ export default function AdminIngredients() {
         </nav>
       ) : null}
 
+      {/* MODALES EXISTANTES — inchangées */}
       {showDeleteModal && (
         <AdminModal
           onCancel={() => {
@@ -321,6 +463,103 @@ export default function AdminIngredients() {
             onChange={(event) => setEditedName(event.target.value)}
             placeholder="Nom de l'ingrédient"
           />
+        </AdminModal>
+      )}
+
+      {/* ── NOUVELLE MODALE — fusion d'ingrédients ───────────────────
+          Workflow :
+          1. L'admin clique "Fusionner" sur "citrons"
+          2. La modale s'ouvre avec "citron" pré-recherché
+          3. L'admin voit la liste et clique sur "citron"
+          4. Un résumé apparaît : "citrons (1 recette) → citron (12 recettes)"
+          5. L'admin confirme → merge + suppression de "citrons"
+      ────────────────────────────────────────────────────────────── */}
+      {showMergeModal && selectedIngredient && (
+        <AdminModal
+          title="Fusionner l'ingrédient"
+          confirmLabel={isMerging ? 'Fusion...' : 'Confirmer la fusion'}
+          confirmVariant="danger"
+          onCancel={closeMergeModal}
+          onConfirm={handleMerge}
+        >
+          <p>
+            Fusionner <strong>"{selectedIngredient.name}"</strong>
+            {selectedIngredient.recipesCount > 0
+              ? ` (${selectedIngredient.recipesCount} recette${selectedIngredient.recipesCount > 1 ? 's' : ''})`
+              : ' (0 recette)'}
+            {' '}vers :
+          </p>
+
+          {/* Champ de recherche de la cible */}
+          <input
+            className={styles.modalInput}
+            style={{ marginTop: '0.75rem' }}
+            type="search"
+            placeholder="Rechercher l'ingrédient cible..."
+            value={mergeTargetSearch}
+            onChange={async (event) => {
+              setMergeTargetSearch(event.target.value);
+              setMergeTarget(null);
+              await searchMergeTargets(event.target.value, selectedIngredient.id);
+            }}
+          />
+
+          {/* Liste des résultats */}
+          {mergeTargetResults.length > 0 && !mergeTarget && (
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0' }}>
+              {mergeTargetResults.slice(0, 8).map((result) => (
+                <li key={result.id}>
+                  <button
+                    type="button"
+                    className={styles.ingredientSuggestionBtn ?? ''}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '0.4rem 0.6rem',
+                      background: 'none',
+                      border: '1px solid #444',
+                      borderRadius: '4px',
+                      marginBottom: '4px',
+                      cursor: 'pointer',
+                      color: 'inherit',
+                    }}
+                    onClick={() => {
+                      setMergeTarget(result);
+                      setMergeTargetResults([]);
+                    }}
+                  >
+                    {result.name}
+                    {result.recipesCount > 0 && (
+                      <span style={{ opacity: 0.6, marginLeft: '0.5rem', fontSize: '0.85em' }}>
+                        ({result.recipesCount} recette{result.recipesCount > 1 ? 's' : ''})
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {/* Résumé une fois la cible sélectionnée */}
+          {mergeTarget && (
+            <p style={{ marginTop: '0.75rem', padding: '0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}>
+              <strong>"{selectedIngredient.name}"</strong>
+              {selectedIngredient.recipesCount > 0 ? ` (${selectedIngredient.recipesCount} recette${selectedIngredient.recipesCount > 1 ? 's' : ''})` : ''}
+              {' '}→{' '}
+              <strong>"{mergeTarget.name}"</strong>
+              {mergeTarget.recipesCount > 0 ? ` (${mergeTarget.recipesCount} recette${mergeTarget.recipesCount > 1 ? 's' : ''})` : ''}
+              <br />
+              <span style={{ opacity: 0.7, fontSize: '0.85em' }}>
+                "{selectedIngredient.name}" sera supprimé définitivement.
+              </span>
+            </p>
+          )}
+
+          {!mergeTarget && mergeTargetSearch.trim().length >= 2 && mergeTargetResults.length === 0 && (
+            <p style={{ marginTop: '0.5rem', opacity: 0.6, fontSize: '0.9em' }}>
+              Aucun ingrédient trouvé pour "{mergeTargetSearch}".
+            </p>
+          )}
         </AdminModal>
       )}
     </div>

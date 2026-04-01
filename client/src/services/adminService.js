@@ -103,7 +103,7 @@ export const updateAdminIngredient = (id, payload) =>
 
 // Approuver un ingrédient
 export const approveAdminIngredient = (id) => {
-   // On renvoie la promesse pour pouvoir faire un await ou .then() côté appel
+  // On renvoie la promesse pour pouvoir faire un await ou .then() côté appel
   return request(`${ADMIN_API_BASE}/ingredients/${id}/approve`, { method: 'PATCH' });
 };
 
@@ -111,4 +111,27 @@ export const approveAdminIngredient = (id) => {
 export const deleteAdminIngredient = (id) =>
   request(`${ADMIN_API_BASE}/ingredients/${id}`, { method: 'DELETE' });
 
-
+// ─────────────────────────────────────────────────────────────
+// mergeAdminIngredients — fusionne deux ingrédients en un seul
+//
+// Problème résolu : "citrons" (doublon) coexiste avec "citron"
+// (validé, 12 recettes). On veut rattacher toutes les recettes
+// de "citrons" vers "citron", puis supprimer "citrons".
+//
+// Paramètres :
+//   sourceId  — l'ingrédient à absorber (ex: "citrons", le doublon)
+//   targetId  — l'ingrédient cible qui survit (ex: "citron")
+//
+// Côté back : route POST /api/admin/ingredients/merge
+//   → reattache tous les recipeIngredient de source vers target
+//   → supprime source
+//   → retourne target mis à jour
+//
+// Analogie : on recolle toutes les étiquettes "citrons" sur
+// les bocaux "citron", puis on jette le bocal vide "citrons".
+// ─────────────────────────────────────────────────────────────
+export const mergeAdminIngredients = (sourceId, targetId) =>
+  request(`${ADMIN_API_BASE}/ingredients/merge`, {
+    method: 'POST',
+    body: { sourceId, targetId },
+  });
