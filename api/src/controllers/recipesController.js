@@ -5,6 +5,46 @@ import { downloadAndConvertPoster } from '../lib/posterService.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+// ─────────────────────────────────────────────────────────────
+// normalizeIngredientName — force le singulier + minuscule + trim
+//
+// Problème résolu : "citrons" et "citron" coexistaient en BDD
+// comme deux ingrédients distincts alors qu'ils sont identiques.
+//
+// Règle : on retire le 's' final si le mot fait plus de 3 lettres
+// et n'est pas dans la liste d'exceptions (mots naturellement en 's').
+//
+// Analogie : le carnet de recettes n'accepte qu'une orthographe
+// par ingrédient — "citron" uniquement, jamais "Citrons".
+//
+// Exemples :
+//   "Citrons"    → "citron"
+//   "tomates"    → "tomate"
+//   "oeufs"      → "oeuf"
+//   "riz"        → "riz"     (exception, déjà singulier)
+//   "noix"       → "noix"    (exception)
+//   "ananas"     → "ananas"  (exception)
+// ─────────────────────────────────────────────────────────────
+function normalizeIngredientName(name) {
+  const str = String(name || '').trim().toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const exceptions = new Set([
+    'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
+    'fois', 'buis', 'tapas', 'papas', 'colis',
+  ]);
+
+  if (exceptions.has(str)) return str;
+
+  // Retire le 's' final uniquement (pas 'x' ni 'z' — trop risqué)
+  if (str.endsWith('s') && str.length > 3) {
+    return str.slice(0, -1);
+  }
+
+  return str;
+}
+
 function buildRecipeLookupWhere(identifier) {
   const normalizedIdentifier = String(identifier || '').trim();
   const orConditions = [{ slug: normalizedIdentifier }];
@@ -251,9 +291,16 @@ export const createRecipe = async (req, res) => {
 
     if (ingredients && ingredients.length > 0) {
       for (const ing of ingredients) {
-        const ingredientName = String(ing.nom || '').toLowerCase().trim();
+        // ✅ CORRECTIF — normalizeIngredientName force le singulier + minuscule
+        // AVANT : String(ing.nom || '').toLowerCase().trim() → "citrons" stocké tel quel
+        // APRÈS : normalizeIngredientName(ing.nom) → "citrons" devient "citron"
+        const ingredientName = normalizeIngredientName(ing.nom);
         const quantity = ing.quantity ?? ing.quantite ?? null;
         const unit = ing.unit ?? ing.unite ?? null;
+
+        if (!ingredientName) {
+          continue;
+        }
 
         let ingredient = await prisma.ingredient.findUnique({
           where: { nom: ingredientName },
@@ -556,7 +603,10 @@ export const updateRecipe = async (req, res) => {
         await tx.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
 
         for (const ing of ingredients) {
-          const ingredientName = String(ing.nom || '').toLowerCase().trim();
+          // ✅ CORRECTIF — normalizeIngredientName force le singulier + minuscule
+          // AVANT : String(ing.nom || '').toLowerCase().trim() → "citrons" stocké tel quel
+          // APRÈS : normalizeIngredientName(ing.nom) → "citrons" devient "citron"
+          const ingredientName = normalizeIngredientName(ing.nom);
 
           if (!ingredientName) {
             continue;

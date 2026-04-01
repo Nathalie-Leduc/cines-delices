@@ -31,9 +31,26 @@ export async function searchIngredients(req, res) {
   }
 }
 
+//normalisation des ingrédients au singulier pour éviter par exemple citron et citrons dans la liste des ingrédients et dans la BDD
+function normalizeIngredientName(name) {
+  const str = String(name || '').trim().toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const exceptions = new Set([
+    'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
+    'fois', 'buis', 'tapas', 'papas', 'colis',
+  ]);
+
+  if (exceptions.has(str)) return str;
+  if (str.endsWith('s') && str.length > 3) return str.slice(0, -1);
+  return str;
+}
+
+
 export async function createIngredient(req, res) {
   try {
-    const name = String(req.body?.name || req.body?.nom || '').trim().toLowerCase();
+    const name = normalizeIngredientName(req.body?.name || req.body?.nom || '');
 
     if (!name) {
       return res.status(400).json({ message: 'Le nom de l\'ingrédient est requis.' });
