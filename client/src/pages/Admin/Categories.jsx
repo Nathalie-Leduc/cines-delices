@@ -440,6 +440,19 @@ function AdminCategories() {
             className={styles.pageState}
           />
 
+          <p className={styles.categoryEditorLead}>
+            {isCreatingCategory
+              ? 'Choisissez un nom et une couleur pour créer une nouvelle catégorie.'
+              : 'Modifiez le nom et la couleur de la catégorie sélectionnée.'}
+          </p>
+
+          <Alert
+            type="error"
+            message={error}
+            onClose={() => setError('')}
+            className={styles.pageState}
+          />
+
           <label className={styles.categoryNameLabel}>
             Nom de la catégorie
             <input
