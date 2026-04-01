@@ -1493,31 +1493,6 @@
   line-height: 1.5;
 }
 
-.categoryCreateHeading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.8rem;
-  margin: 0.5rem auto 1.4rem;
-  color: #c9a45c;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
-  font-weight: 700;
-  white-space: nowrap;
-
-  &::before,
-  &::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: rgba(232, 220, 200, 0.36);
-  }
-
-  .roundIconBtn {
-    flex-shrink: 0;
-  }
-}
-
 .categoryNameLabel {
   display: flex;
   flex-direction: column;

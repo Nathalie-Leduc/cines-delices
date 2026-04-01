@@ -2,8 +2,6 @@
 // Structure validée : { body, params, query }
 // Utilisation dans un router
 
-import { ZodError } from "zod";
-
 export const validate = (shema) => (req, res, next) => {
   try {
     // safeParse ne lève pas d'exception : retourne ( success, data, error )

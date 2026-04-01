@@ -33,6 +33,7 @@ export default function Login() {
       if (payload?.user?.role === 'ADMIN') {
         redirectPath = '/admin';
       }
+
       navigate(redirectPath, { replace: true });
     } catch (requestError) {
       setError(requestError.message || 'Connexion impossible');
@@ -44,26 +45,28 @@ export default function Login() {
   const handleForgotPassword = async () => {
     setResetMessage('');
     setResetError('');
-    if (!emailForReset) {
-      setResetError("Veuillez entrer votre email.");
-      setTimeout(() => setShowModal(false), 2000);
+
+    if (!emailForReset.trim()) {
+      setResetError('Veuillez entrer votre email.');
       return;
     }
+
     try {
       await forgotPassword(emailForReset);
-      setResetMessage("Email envoyé si le compte existe !");
-      setResetError('');
-      setTimeout(() => {
-        setShowModal(false);
-        setEmailForReset('');
-        setResetMessage('');
-        setResetError('');
-      }, 2000);
-    } catch (err) {
-      setResetError(err?.response?.data?.message || "Erreur lors de l'envoi du mail");
-      setResetMessage('');
-      setTimeout(() => setShowModal(false), 2000);
+      setResetMessage('Email envoyé si le compte existe !');
+      setEmailForReset('');
+    } catch (requestError) {
+      console.error(requestError);
+      setResetError(
+        requestError?.response?.data?.message || 'Une erreur est survenue, réessaie.',
+      );
     }
+  };
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEmailForReset('');
+    setResetMessage('');
+    setResetError('');
   };
 
   return (
@@ -97,6 +100,10 @@ export default function Login() {
             Mot de passe
           </label>
           <div className={styles.inputWrapper}>
+            <span
+              className={`${styles.leadingIcon} ${styles.lockIcon}`}
+              aria-hidden="true"
+            />
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -110,7 +117,7 @@ export default function Login() {
             <button
               type="button"
               className={styles.togglePassword}
-              onClick={() => setShowPassword((prev) => !prev)}
+              onClick={() => setShowPassword((current) => !current)}
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
             >
@@ -118,18 +125,20 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Forgot Password */}
-          <NavLink
-            to="#"
+          <button
+            type="button"
             className={styles.forgotPassword}
-            onClick={(e) => { e.preventDefault(); setShowModal(true); }}
+            onClick={() => setShowModal(true)}
           >
-            Mot de passe oublié
-          </NavLink>
+            Mot de passe oublié ?
+          </button>
         </div>
 
-        {/* SUBMIT BUTTON */}
-        <button type="submit" className={styles.submitButton} disabled={isSubmitting}>
+        <button
+          type="submit"
+          className={styles.submitButton}
+          disabled={isSubmitting}
+        >
           {isSubmitting ? 'Connexion...' : 'Se connecter'}
         </button>
 
@@ -178,7 +187,51 @@ export default function Login() {
           onClose={() => setError('')}
           className={styles.formAlert}
         />
+
+        <p className={styles.noAccount}>
+          Nouveau sur notre site ?{' '}
+          <NavLink to="/signup" className={styles.link}>
+            Créer un compte
+          </NavLink>
+        </p>
       </form>
+
+      {showModal && (
+        <div className={styles.overlay}>
+          <div className={styles.modal}>
+            <h2>Mot de passe oublié</h2>
+
+            <input
+              type="email"
+              placeholder="Votre email"
+              value={emailForReset}
+              onChange={(e) => setEmailForReset(e.target.value)}
+            />
+            {resetMessage && (
+              <p className={styles.resetSuccess}>{resetMessage}</p>
+            )}
+            {resetError && (
+              <p className={styles.resetError}>{resetError}</p>
+            )}
+
+            <button
+              type="button"
+              className={styles.submitButtonMDP}
+              onClick={handleForgotPassword}
+            >
+              Envoyer
+            </button>
+
+            <button
+              type="button"
+              className={styles.submitButtonMDP}
+              onClick={handleCloseModal}
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </AuthShell>
   );
 }

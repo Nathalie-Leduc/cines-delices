@@ -24,7 +24,7 @@ if (!url) {
 console.log('\n✅ DATABASE_URL trouvée, test connexion...');
 const pool = new pg.Pool({ connectionString: url });
 try {
-  const res = await pool.query('SELECT 1');
+  await pool.query('SELECT 1');
   console.log('✅ Connexion PostgreSQL OK');
 } catch (e) {
   console.log('❌ Connexion échouée :', e.message);

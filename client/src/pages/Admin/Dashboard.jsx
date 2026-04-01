@@ -201,6 +201,18 @@ function AdminDashboard() {
     }))
   ), [pendingRecipes.length, counters, categories]);
 
+  useEffect(() => {
+    if (activeFilter === 'Tous') {
+      return;
+    }
+
+    const filterExists = filters.some((filter) => filter.value === activeFilter);
+    if (!filterExists) {
+      setActiveFilter('Tous');
+      setCurrentPage(1);
+    }
+  }, [activeFilter, filters]);
+
   const totalPendingRecipes = filteredPendingRecipes.length;
   const totalPages = Math.max(1, Math.ceil(totalPendingRecipes / currentLimit));
   const paginatedPendingRecipes = useMemo(() => {
