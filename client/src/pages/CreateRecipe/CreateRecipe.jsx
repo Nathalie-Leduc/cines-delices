@@ -310,10 +310,83 @@ export default function CreerRecette() {
   }
 
   // ===== INGRÉDIENTS =====
+
+  // ─────────────────────────────────────────────────────────────
+  // normalizeIngredientName — force le singulier + minuscule
+  // Analogie : le carnet de recettes accepte uniquement "citron",
+  // jamais "Citrons" — on standardise dès la saisie.
+  // ─────────────────────────────────────────────────────────────
+  function normalizeIngredientName(name) {
+    const str = String(name || '').trim().toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    const exceptions = new Set([
+      'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
+      'fois', 'buis', 'tapas', 'papas', 'colis',
+    ]);
+
+    if (exceptions.has(str)) return str;
+
+    if (str.endsWith('s') && str.length > 3) {
+      return str.slice(0, -1);
+    }
+
+    return str;
+  }
+
   function clearIngredientSearchState() {
     setIngredientSearchResults([]);
     setIngredientSearchLoading(false);
     setIngredientSearchError('');
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // FUZZY SEARCH — détecte les fautes de frappe par distance de Levenshtein
+  //
+  // Analogie : c'est comme un correcteur orthographique de cuisine.
+  // Tu tapes "citon" → il comprend que tu voulais dire "citron" (1 lettre manquante).
+  //
+  // Distance de Levenshtein = nombre minimal d'opérations pour passer d'un mot
+  // à l'autre (ajout, suppression, substitution d'un caractère).
+  // Exemples :
+  //   "citon"    → "citron"    : distance 1 (ajouter 'r')
+  //   "tomattes" → "tomates"   : distance 1 (supprimer un 't')
+  //   "aubrgin"  → "aubergine" : distance 3 (trop éloigné → pas de fuzzy)
+  // ─────────────────────────────────────────────────────────────────────
+  function levenshtein(a, b) {
+    const matrix = Array.from({ length: b.length + 1 }, (_, i) =>
+      Array.from({ length: a.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    );
+    for (let i = 1; i <= b.length; i++) {
+      for (let j = 1; j <= a.length; j++) {
+        matrix[i][j] = a[j - 1] === b[i - 1]
+          ? matrix[i - 1][j - 1]
+          : 1 + Math.min(matrix[i - 1][j - 1], matrix[i][j - 1], matrix[i - 1][j]);
+      }
+    }
+    return matrix[b.length][a.length];
+  }
+
+  // Normalise pour la comparaison : minuscule + sans accents
+  function normalizeForFuzzy(str) {
+    return String(str || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  // Seuil de distance selon la longueur du mot :
+  //   ≤ 3 lettres → pas de fuzzy (trop de faux positifs sur les mots courts)
+  //   4-5 lettres → distance max 1  ("citon" → "citron" ✅)
+  //   ≥ 6 lettres → distance max 2  ("tomattes" → "tomates" ✅)
+  function isFuzzyMatch(query, candidate) {
+    const q = normalizeForFuzzy(query);
+    const c = normalizeForFuzzy(candidate);
+    if (q.length <= 3) return false;
+    const maxDist = q.length <= 5 ? 1 : 2;
+    return levenshtein(q, c) <= maxDist;
   }
 
   async function searchIngredients(query) {
@@ -328,30 +401,66 @@ export default function CreerRecette() {
     setIngredientSearchError('');
 
     try {
+      // ─── Requête 1 : recherche normale (contains) ───────────────────
       const response = await fetch(`${INGREDIENT_SEARCH_API}?q=${encodeURIComponent(trimmed)}`);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
       const payload = await response.json();
       const rawList = Array.isArray(payload) ? payload : payload.data || [];
-      const normalized = rawList.map(item => ({
+      let normalized = rawList.map(item => ({
         id: item.id,
         name: item.name || item.nom || '',
       })).filter(item => item.name);
 
+      // Vérifier d'abord un match exact dans les résultats normaux
       const normalizedQuery = trimmed.toLowerCase();
       const exactMatch = normalized.find(
         item => item.name.trim().toLowerCase() === normalizedQuery,
       );
-
       if (exactMatch) {
         selectIngredient(exactMatch);
         setIngredientAlreadyExists(true);
         return;
       }
 
-      setIngredientSearchResults(normalized);
+      // ─── Requête 2 : fuzzy — si peu/pas de résultats ──────────────────
+      // Analogie : "citon" ne contient pas "citron", donc la 1ère recherche
+      // revient vide. On relance avec les 3 premières lettres ("cit") pour
+      // ramener des candidats ("citron", "citronnade"...) que le fuzzy
+      // peut alors comparer et classer.
+      // On fait cette 2ème requête si la 1ère a renvoyé moins de 3 résultats.
+      if (normalized.length < 3 && trimmed.length >= 3) {
+        const prefix = trimmed.slice(0, 3); // ex: "citon" → "cit"
+        try {
+          const fuzzyResponse = await fetch(
+            `${INGREDIENT_SEARCH_API}?q=${encodeURIComponent(prefix)}`
+          );
+          if (fuzzyResponse.ok) {
+            const fuzzyPayload = await fuzzyResponse.json();
+            const fuzzyRaw = Array.isArray(fuzzyPayload) ? fuzzyPayload : fuzzyPayload.data || [];
+            const fuzzyList = fuzzyRaw.map(item => ({
+              id: item.id,
+              name: item.name || item.nom || '',
+            })).filter(item => item.name);
+
+            // Fusionner sans doublons (par id)
+            const existingIds = new Set(normalized.map(i => i.id));
+            const extras = fuzzyList.filter(i => !existingIds.has(i.id));
+            normalized = [...normalized, ...extras];
+          }
+        } catch {
+          // La 2ème requête est optionnelle — on continue sans elle
+        }
+      }
+
+      // ─── Tri final : fuzzy matches en tête ───────────────────────────
+      // Parmi tous les candidats récupérés, on met en premier ceux qui
+      // ressemblent le plus à ce que l'utilisateur a tapé.
+      const fuzzyFirst = [
+        ...normalized.filter(item => isFuzzyMatch(trimmed, item.name)),
+        ...normalized.filter(item => !isFuzzyMatch(trimmed, item.name)),
+      ];
+      setIngredientSearchResults(fuzzyFirst);
     } catch {
       setIngredientSearchResults([]);
       setIngredientSearchError("Impossible de rechercher les ingrédients pour l'instant.");
@@ -361,9 +470,11 @@ export default function CreerRecette() {
   }
 
   function handleIngredientNameInput(value) {
+    // ✅ Normaliser dès la frappe : "Citrons" devient "citron" en temps réel
+    const normalized = normalizeIngredientName(value);
     setIngredientDraft(prev => ({
       ...prev,
-      nom: value,
+      nom: normalized,
       ingredientId: null,
     }));
     setIngredientAlreadyExists(false);
@@ -529,60 +640,32 @@ export default function CreerRecette() {
   }
 
   function buildRecipePayload() {
-    // ✅ parseTimeToMinutes — convertit une saisie libre en minutes
-    // Formats acceptés :
-    //   "70"       → 70 min   (nombre seul = minutes)
-    //   "1h10"     → 70 min
-    //   "1h"       → 60 min
-    //   "1h 10"    → 70 min
-    //   "1h10min"  → 70 min
-    //   "1:10"     → 70 min
-    //   "30min"    → 30 min
-    //   "30 min"   → 30 min
-    // Analogie : c'est comme un assistant qui comprend
-    // "1h10", "70 minutes" ou "1:10" et répond toujours en minutes.
+    // ✅ parseTimeToMinutes — comprend "1h10", "1:10", "70min", "70" → minutes entières
+    // Analogie : un assistant qui comprend toutes les façons de dire un temps.
     const parseTimeToMinutes = (value) => {
-      if (value === '' || value === null || value === undefined) {
-        return undefined;
-      }
-
-      const str = String(value).trim().toLowerCase()
-        .replace(/\s+/g, '')      // supprimer les espaces
-        .replace(/,/g, '.');       // virgule → point
-
-      // Format "1h10", "1h10min", "1h 10", "1h"
+      if (value === '' || value === null || value === undefined) return undefined;
+      const str = String(value).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '.');
       const hMatch = str.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
       if (hMatch) {
-        const hours = parseFloat(hMatch[1]);
-        const mins  = parseInt(hMatch[2] || '0', 10);
-        const total = Math.round(hours * 60 + mins);
+        const total = Math.round(parseFloat(hMatch[1]) * 60 + parseInt(hMatch[2] || '0', 10));
         return total > 0 ? total : undefined;
       }
-
-      // Format "1:10" ou "1:10:00"
       const colonMatch = str.match(/^(\d+):(\d+)(?::\d+)?$/);
       if (colonMatch) {
-        const hours = parseInt(colonMatch[1], 10);
-        const mins  = parseInt(colonMatch[2], 10);
-        const total = hours * 60 + mins;
+        const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
         return total > 0 ? total : undefined;
       }
-
-      // Format "30min", "30 min", "30m"
       const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
       if (minMatch) {
         const parsed = Math.round(parseFloat(minMatch[1]));
         return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
       }
-
       return undefined;
     };
 
+    // Reste utilisé pour nbPersonnes (entier simple)
     const parseNullableNumber = (value) => {
-      if (value === '' || value === null || value === undefined) {
-        return undefined;
-      }
-
+      if (value === '' || value === null || value === undefined) return undefined;
       const parsed = Number(value);
       return Number.isNaN(parsed) ? undefined : parsed;
     };
@@ -981,7 +1064,7 @@ export default function CreerRecette() {
             className={styles.input}
             type="text"
             aria-label="Temps de préparation"
-            placeholder="ex: 15, 30min, 1h, 1h10"
+            placeholder="15 min"
             value={form.tempsPréparation}
             onChange={e => handleChange('tempsPréparation', e.target.value)}
           />
@@ -996,7 +1079,7 @@ export default function CreerRecette() {
             className={styles.input}
             type="text"
             aria-label="Temps de cuisson"
-            placeholder="ex: 30, 1h, 1h30"
+            placeholder="30 min"
             value={form.tempsCuisson}
             onChange={e => handleChange('tempsCuisson', e.target.value)}
           />
@@ -1100,7 +1183,6 @@ export default function CreerRecette() {
                 && !ingredientSearchError
                 && ingredientDraft.nom.trim().length >= 2
                 && !ingredientAlreadyExists
-                && !ingredientDraft.ingredientId
                 && ingredientSearchResults.length === 0 && (
                   <button
                     type="button"
