@@ -60,6 +60,7 @@
 }
 
 .latestCarousel {
+  position: relative;
   margin-top: 1.75rem;
 }
 
@@ -70,6 +71,63 @@
   mask-image: linear-gradient(90deg, transparent 0, #000 3%, #000 97%, transparent 100%);
   touch-action: pan-y pinch-zoom;
   cursor: grab;
+}
+
+.carouselArrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  width: 3rem;
+  height: 3rem;
+  border: 1px solid rgba(232, 220, 200, 0.58);
+  border-radius: 999px;
+  background: rgba(31, 29, 30, 0.84);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(12px);
+  transform: translateY(-58%);
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
+
+  &:hover:not(:disabled),
+  &:focus-visible:not(:disabled) {
+    border-color: rgba(251, 220, 166, 0.88);
+    background: rgba(54, 47, 43, 0.94);
+    box-shadow: 0 20px 36px rgba(0, 0, 0, 0.34);
+    transform: translateY(-58%) scale(1.03);
+  }
+
+  &:disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  img {
+    width: 0.72rem;
+    height: auto;
+    opacity: 0.96;
+  }
+}
+
+.carouselArrowLeft {
+  left: -1.45rem;
+
+  img {
+    transform: rotate(180deg);
+  }
+}
+
+.carouselArrowRight {
+  right: -1.45rem;
 }
 
 .latestViewportDragging {
@@ -906,6 +964,25 @@
     padding-inline: 0.1rem;
     mask-image: none;
     cursor: default;
+  }
+
+  .carouselArrow {
+    width: 2.6rem;
+    height: 2.6rem;
+    transform: translateY(-60%);
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      transform: translateY(-60%) scale(1.03);
+    }
+  }
+
+  .carouselArrowLeft {
+    left: -0.2rem;
+  }
+
+  .carouselArrowRight {
+    right: -0.2rem;
   }
 
   .latestTrack {

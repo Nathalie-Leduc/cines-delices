@@ -105,6 +105,8 @@ function Home() {
 
   const maxCarouselIndex = Math.max(0, latestRecipes.length - visibleSlides);
   const isCarouselPaused = isViewportPaused || isDraggingCarousel;
+  const hasPreviousSlide = carouselState.index > 0;
+  const hasNextSlide = carouselState.index < maxCarouselIndex;
 
   const getMaxTrackOffset = () => {
     const viewport = viewportRef.current;
@@ -408,6 +410,28 @@ function Home() {
     suppressClickRef.current = false;
   };
 
+  const handleCarouselStep = (step) => {
+    if (maxCarouselIndex === 0 || isDraggingCarousel) {
+      return;
+    }
+
+    setCarouselState((previous) => {
+      const nextIndex = Math.min(
+        maxCarouselIndex,
+        Math.max(0, previous.index + step),
+      );
+
+      if (nextIndex === previous.index) {
+        return previous;
+      }
+
+      return {
+        index: nextIndex,
+        direction: step > 0 ? 1 : -1,
+      };
+    });
+  };
+
   return (
     <main className={styles.container}>
       <section className={styles.hero}>
@@ -575,14 +599,40 @@ function Home() {
             className={styles.latestState}
           />
         ) : (
-          <div className={styles.latestCarousel}>
+          <div
+            className={styles.latestCarousel}
+            onMouseEnter={() => setIsViewportPaused(true)}
+            onMouseLeave={() => setIsViewportPaused(false)}
+            onFocusCapture={() => setIsViewportPaused(true)}
+            onBlurCapture={() => setIsViewportPaused(false)}
+          >
+            {maxCarouselIndex > 0 ? (
+              <>
+                <button
+                  type="button"
+                  className={`${styles.carouselArrow} ${styles.carouselArrowLeft}`.trim()}
+                  onClick={() => handleCarouselStep(-1)}
+                  disabled={!hasPreviousSlide}
+                  aria-label="Voir les recettes précédentes"
+                >
+                  <img src="/icon/arrow.svg" alt="" aria-hidden="true" />
+                </button>
+
+                <button
+                  type="button"
+                  className={`${styles.carouselArrow} ${styles.carouselArrowRight}`.trim()}
+                  onClick={() => handleCarouselStep(1)}
+                  disabled={!hasNextSlide}
+                  aria-label="Voir les recettes suivantes"
+                >
+                  <img src="/icon/arrow.svg" alt="" aria-hidden="true" />
+                </button>
+              </>
+            ) : null}
+
             <div
               ref={viewportRef}
               className={`${styles.latestViewport} ${isDraggingCarousel ? styles.latestViewportDragging : ""}`.trim()}
-              onMouseEnter={() => setIsViewportPaused(true)}
-              onMouseLeave={() => setIsViewportPaused(false)}
-              onFocusCapture={() => setIsViewportPaused(true)}
-              onBlurCapture={() => setIsViewportPaused(false)}
               onPointerDown={handleCarouselPointerDown}
               onPointerMove={handleCarouselPointerMove}
               onPointerUp={handleCarouselPointerEnd}
