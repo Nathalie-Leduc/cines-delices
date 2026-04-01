@@ -1,7 +1,10 @@
 import 'dotenv/config';
 import pg from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+// fix import PrismaClient dans le seed Node.js25 avec ESM
+// ne supporte pas l'import nommé de Common.js (problème deploiement avec Render)
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 import argon2 from 'argon2';
 import fs from 'node:fs';
 import path from 'node:path';
