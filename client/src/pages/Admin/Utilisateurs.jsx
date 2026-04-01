@@ -296,12 +296,12 @@ function AdminUtilisateurs() {
 
           <div className={styles.detailBox}>
             <div className={styles.field}>
-              <label>Prénom</label>
-              <p>{selectedUser.prenom || '—'}</p>
-            </div>
-            <div className={styles.field}>
               <label>Nom</label>
               <p>{selectedUser.nom || '—'}</p>
+            </div>
+            <div className={styles.field}>
+              <label>Prénom</label>
+              <p>{selectedUser.prenom || '—'}</p>
             </div>
             <div className={styles.field}>
               <label>E-mail</label>
@@ -309,28 +309,31 @@ function AdminUtilisateurs() {
             </div>
             <div className={styles.field}>
               <label>Rôle</label>
-              <p>
+              <div className={styles.roleValueWrap}>
                 <span className={`${styles.statusPill} ${selectedUser.role === 'ADMIN' ? styles.statusAdmin : styles.statusMember}`.trim()}>
                   {getRoleLabel(selectedUser.role)}
                 </span>
-              </p>
+              </div>
             </div>
 
             <div className={styles.recipesBlock}>
               <span className={styles.blockLabel}>Recettes</span>
-
-              <div className={styles.countersRow}>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.entree || 0}</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.plat || 0}</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.dessert || 0}</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.boisson || 0}</span>
-              </div>
 
               <div className={styles.badgesRow}>
                 <span className={`${styles.badge} ${styles.entree}`.trim()}>Entrée</span>
                 <span className={`${styles.badge} ${styles.plat}`.trim()}>Plat</span>
                 <span className={`${styles.badge} ${styles.dessert}`.trim()}>Dessert</span>
                 <span className={`${styles.badge} ${styles.boisson}`.trim()}>Boisson</span>
+              </div>
+
+              <div className={styles.countersRow}>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.entree || 0}</span>
+                <span className={styles.separator}>|</span>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.plat || 0}</span>
+                <span className={styles.separator}>|</span>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.dessert || 0}</span>
+                <span className={styles.separator}>|</span>
+                <span className={styles.counter}>{selectedUser.recipeCounts?.boisson || 0}</span>
               </div>
             </div>
           </div>
