@@ -204,6 +204,23 @@
   pointer-events: none;
 }
 
+.searchSubmitButton {
+  position: absolute;
+  top: 50%;
+  left: 1rem;
+  z-index: 2;
+  width: 1rem;
+  height: 1rem;
+  border: 0;
+  padding: 0;
+  border-radius: 0;
+  background-color: rgba(246, 241, 232, 0.72);
+  -webkit-mask: url("/icon/Search.svg") center / contain no-repeat;
+  mask: url("/icon/Search.svg") center / contain no-repeat;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
 .mobileSearchLauncher {
   display: none;
 }
@@ -219,6 +236,177 @@
   appearance: none;
   -webkit-appearance: none;
   padding-left: 2.7rem;
+}
+
+.catalogMobileSearchOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.catalogMobileSearchOverlayVisible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.catalogMobileSearchBackdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background:
+    linear-gradient(rgba(18, 17, 18, 0.72), rgba(18, 17, 18, 0.86)),
+    url("/img/rocky-wall.png");
+  background-size: cover;
+  background-position: center;
+  backdrop-filter: blur(10px);
+}
+
+.catalogMobileSearchModal {
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  padding: 1.25rem 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(16px);
+  transition: transform 0.25s ease;
+}
+
+.catalogMobileSearchModalOpen {
+  transform: translateY(0);
+}
+
+.catalogMobileSearchHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(100%, 800px);
+  margin: 0 auto;
+}
+
+.catalogMobileSearchTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  width: min(100%, 800px);
+  max-width: calc(100% - 4rem);
+  margin: 0 auto;
+  min-width: 0;
+}
+
+.catalogMobileSearchEyebrow {
+  margin: 0;
+  padding-top: calc(0.45rem + 30px);
+  color: #fbdca6;
+  font-family: "Playfair Display", serif;
+  font-size: 1.75rem;
+  line-height: 1.1;
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.42);
+}
+
+.catalogMobileSearchTitleLine {
+  flex: 1;
+  height: 1px;
+  margin-top: 30px;
+  background: rgba(240, 210, 154, 0.62);
+  transform: translateY(0.35rem);
+}
+
+.catalogMobileSearchCloseButton {
+  border: 0;
+  background: transparent;
+  color: #c9a45c;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.catalogMobileSearchCloseButton img {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+.catalogMobileSearchContent {
+  position: relative;
+  flex: 1;
+  width: min(100%, 800px);
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  padding-top: 30px;
+}
+
+.catalogMobileSearchForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.catalogMobileSearchField {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 64px;
+  padding: 0 1.1rem;
+  border: 1px solid rgba(246, 241, 232, 0.22);
+  border-radius: 1.25rem;
+  background: rgba(17, 16, 16, 0.55);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+}
+
+.catalogMobileSearchIcon {
+  width: 22px;
+  height: 22px;
+  display: block;
+  pointer-events: none;
+}
+
+.catalogMobileSearchInput {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #f6f1e8;
+  font-size: 1.05rem;
+  padding-right: 2.75rem;
+}
+
+.catalogMobileSearchInput::placeholder {
+  color: rgba(246, 241, 232, 0.62);
+  font-size: 0.95rem;
+}
+
+.catalogMobileSearchInput::-webkit-search-decoration,
+.catalogMobileSearchInput::-webkit-search-cancel-button,
+.catalogMobileSearchInput::-webkit-search-results-button,
+.catalogMobileSearchInput::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.catalogMobileSearchInput::-ms-clear,
+.catalogMobileSearchInput::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.catalogMobileSearchResults {
+  list-style: none;
+  overflow: hidden;
+  background: rgba(23, 21, 22, 0.92);
+  border: 1px solid rgba(201, 164, 92, 0.24);
+  border-radius: 1.25rem;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 }
 
 .searchInput::-webkit-search-decoration,

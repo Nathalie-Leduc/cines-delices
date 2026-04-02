@@ -90,6 +90,7 @@ export default function Login() {
     <AuthShell
       title="Bienvenue"
       subtitle="Connectez-vous à votre compte"
+      showBrand={false}
     >
       <form className={styles.form} onSubmit={handleSubmit}>
         {/* EMAIL */}

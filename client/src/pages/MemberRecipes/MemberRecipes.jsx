@@ -2,7 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
 import { buildApiUrl } from '../../services/api.js';
-import { deleteMyRecipe, getMyNotifications, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
+import {
+  deleteMyNotification,
+  deleteMyRecipe,
+  getMyNotifications,
+  getMyRecipes,
+  updateMyRecipe,
+} from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -73,6 +79,47 @@ function formatApiError(error, fallbackMessage) {
     : '';
 
   return details || error?.message || fallbackMessage;
+}
+
+function getNotificationVariantClassName(message) {
+  const normalizedMessage = String(message || '').toLowerCase();
+
+  const hasRejectedSignal =
+    normalizedMessage.includes('a ete refusee')
+    || normalizedMessage.includes('a été refusée')
+    || normalizedMessage.includes('a ete refuse')
+    || normalizedMessage.includes('a été refusé')
+    || normalizedMessage.includes('refusee')
+    || normalizedMessage.includes('refusée')
+    || normalizedMessage.includes('refuse')
+    || normalizedMessage.includes('refusé')
+    || normalizedMessage.includes("n'a pas ete validee")
+    || normalizedMessage.includes("n'a pas été validée")
+    || normalizedMessage.includes('pas ete validee')
+    || normalizedMessage.includes('pas été validée');
+
+  if (hasRejectedSignal) {
+    return 'rejected';
+  }
+
+  if (
+    normalizedMessage.includes('a ete validee')
+    || normalizedMessage.includes('a été validée')
+    || normalizedMessage.includes('validee')
+    || normalizedMessage.includes('validée')
+    || normalizedMessage.includes('valide')
+    || normalizedMessage.includes('validé')
+  ) {
+    return 'approved';
+  }
+
+  return '';
+}
+
+function extractRecipeTitleFromNotificationMessage(message) {
+  const normalizedMessage = String(message || '');
+  const quotedTitleMatch = normalizedMessage.match(/recette\s+"([^"]+)"/i);
+  return quotedTitleMatch?.[1]?.trim() || '';
 }
 
 function normalizeCategoryLabel(value) {
@@ -386,6 +433,62 @@ export default function MesRecettes() {
     ? 'Recettes en cours de validation'
     : 'Mes recettes';
   const panelTitle = isNotificationsView ? 'Notifications' : recipesPageTitle;
+
+  function openNotificationTarget(notification) {
+    const notificationRecipeId = String(notification?.recipeId || '').trim();
+    const notificationRecipeSlug = String(notification?.recipeSlug || '').trim();
+    const notificationRecipeTitle = extractRecipeTitleFromNotificationMessage(notification?.message);
+
+    const matchedRecipe = recipes.find((recipe) => {
+      if (!recipe) {
+        return false;
+      }
+
+      const recipeId = String(recipe.id || '').trim();
+      const recipeSlug = String(recipe.slug || '').trim();
+      const recipeTitle = String(recipe.titre || '').trim().toLowerCase();
+
+      return (
+        (notificationRecipeId && recipeId === notificationRecipeId)
+        || (notificationRecipeSlug && recipeSlug === notificationRecipeSlug)
+        || (notificationRecipeTitle && recipeTitle === notificationRecipeTitle.toLowerCase())
+      );
+    });
+
+    const targetId = String(matchedRecipe?.id || notificationRecipeId).trim();
+    const targetSlugOrId = String(matchedRecipe?.slug || notificationRecipeSlug || targetId).trim();
+
+    if (targetSlugOrId) {
+      navigate(`/recipes/${targetSlugOrId}`, {
+        state: {
+          fromMemberRecipes: true,
+          openEditRecipeId: targetId || undefined,
+        },
+      });
+      return;
+    }
+
+    navigate('/membre/mes-recettes');
+  }
+
+  async function removeNotification(event, notification) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!notification?.id) {
+      return;
+    }
+
+    try {
+      await deleteMyNotification(notification.id);
+      setNotifications((previous) => previous.filter((item) => item.id !== notification.id));
+      if (!notification.isRead) {
+        setNotificationsUnreadCount((previous) => Math.max(0, previous - 1));
+      }
+    } catch (removeError) {
+      setNotificationsError(removeError?.message || 'Suppression de notification impossible.');
+    }
+  }
 
   const [editForm, setEditForm] = useState({
     id: null,
@@ -1362,21 +1465,46 @@ export default function MesRecettes() {
               ) : null}
 
               {!isNotificationsLoading && !notificationsError && notifications.length > 0 ? (
-                <div className={styles.notificationsList}>
+                <ul className={styles.notificationsList}>
                   {notifications.map((notification) => (
-                    <article key={notification.id} className={styles.notificationRow}>
-                      <strong className={styles.notificationMessage}>{notification.message}</strong>
-                      <span className={styles.notificationMeta}>
-                        {new Date(notification.createdAt).toLocaleString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </article>
+                    <li
+                      key={notification.id}
+                      className={`${styles.notificationRow} ${styles[`notificationRow_${getNotificationVariantClassName(notification.message)}`] || ''}`.trim()}
+                    >
+                      <button
+                        type="button"
+                        className={styles.notificationOpenButton}
+                        onClick={() => openNotificationTarget(notification)}
+                        aria-label="Voir la notification"
+                        title="Voir"
+                      >
+                        <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
+                      </button>
+
+                      <div className={styles.notificationBody}>
+                        <strong className={styles.notificationMessage}>{notification.message}</strong>
+                        <span className={styles.notificationMeta}>
+                          {new Date(notification.createdAt).toLocaleString('fr-FR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={styles.notificationDeleteButton}
+                        aria-label="Supprimer cette notification"
+                        title="Supprimer"
+                        onClick={(event) => removeNotification(event, notification)}
+                      >
+                        <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                      </button>
+                    </li>
                   ))}
-                </div>
+                </ul>
               ) : null}
             </>
           ) : isLoading ? (

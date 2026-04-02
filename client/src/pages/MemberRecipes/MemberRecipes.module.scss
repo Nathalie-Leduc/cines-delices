@@ -2294,6 +2294,9 @@
 }
 
 .notificationsList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
   gap: 0.95rem;
   max-width: 860px;
@@ -2307,8 +2310,26 @@
     $padding: 1.08rem 1.18rem
   );
   display: grid;
-  gap: 0.45rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.7rem;
   box-shadow: var(--shadow-soft);
+}
+
+.notificationRow_approved {
+  border-color: rgba(95, 228, 159, 0.62);
+  background: rgba(95, 228, 159, 0.1);
+}
+
+.notificationRow_rejected {
+  border-color: rgba(248, 113, 113, 0.68);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.notificationBody {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
 }
 
 .notificationMessage {
@@ -2333,6 +2354,45 @@
   font-family: 'Inter', sans-serif;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.notificationOpenButton,
+.notificationDeleteButton {
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+
+  img {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.notificationOpenButton {
+  border: 1px solid rgba(127, 224, 255, 0.82);
+  background: rgba(76, 172, 201, 0.82);
+
+  &:hover {
+    box-shadow: 0 10px 20px rgba(76, 172, 201, 0.28);
+  }
+}
+
+.notificationDeleteButton {
+  border: 1px solid rgba(247, 195, 114, 0.72);
+  background: rgba(142, 31, 47, 0.9);
+
+  &:hover {
+    box-shadow: 0 10px 20px rgba(142, 31, 47, 0.28);
+  }
 }
 
 @media (max-width: 1023px) {
@@ -2360,6 +2420,32 @@
 
   .grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .notificationRow {
+    grid-template-columns: 1fr auto auto;
+    align-items: start;
+  }
+
+  .notificationBody {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    padding-right: 0.35rem;
+  }
+
+  .notificationOpenButton,
+  .notificationDeleteButton {
+    grid-row: 2;
+    width: 2.4rem;
+    height: 2.4rem;
+  }
+
+  .notificationOpenButton {
+    justify-self: end;
+  }
+
+  .notificationDeleteButton {
+    justify-self: end;
   }
 }
 
