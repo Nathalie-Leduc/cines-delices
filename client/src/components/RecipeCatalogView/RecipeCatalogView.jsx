@@ -193,7 +193,7 @@ export default function RecipeCatalogView({
           slug: recipe.slug,
           title: recipe.titre || "Recette sans titre",
           mediaTitle: recipe.media?.titre || "",
-          image: recipe.media?.posterUrl || recipe.imageURL || "/img/placeholder.jpg",
+          image: recipe.imageURL || recipe.imageUrl || "/img/hero-home.png",
         }));
 
         if (!isCancelled) {
