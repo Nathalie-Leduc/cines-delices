@@ -1392,6 +1392,7 @@ export default function MesRecettes() {
                 onSubmit={(event) => event.preventDefault()}
               >
                 <div className={styles.recipeSearchField}>
+                  <span className={styles.recipeSearchFieldIcon} aria-hidden="true" />
                   <input
                     className={styles.recipeSearchInput}
                     type="search"
@@ -1401,9 +1402,6 @@ export default function MesRecettes() {
                     onChange={(event) => setSearchInput(event.target.value)}
                   />
                 </div>
-                <button type="submit" className={styles.recipeSearchButton}>
-                  Rechercher
-                </button>
               </form>
 
               {!isPendingRecipesView ? (

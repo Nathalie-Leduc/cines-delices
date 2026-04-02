@@ -189,7 +189,7 @@
 
 @media (max-width: 767px) {
   .editFromDetailButton {
-    top: 4.6rem;
+    top: 1.6rem;
     right: 1rem;
     font-size: 0.82rem;
     padding-inline: 0.72rem;
@@ -622,7 +622,7 @@
   }
 
   .title {
-    font-size: clamp(2.25rem, 10vw, 3.9rem);
+    font-size: clamp(1.85rem, 9vw, 3.2rem);
     line-height: 0.94;
     text-wrap: pretty;
   }
@@ -645,8 +645,10 @@
   }
 
   .heroBadge {
-    font-size: 0.92rem;
-    line-height: 1.2;
+    font-size: clamp(0.78rem, 3.5vw, 0.92rem);
+    line-height: 1.3;
+    white-space: normal;
+    flex-wrap: wrap;
   }
 
   .sectionHeading {
@@ -655,7 +657,7 @@
   }
 
   .sectionTitle {
-    font-size: 1.85rem;
+    font-size: clamp(1.35rem, 5.5vw, 1.85rem);
   }
 
   .mediaCard {

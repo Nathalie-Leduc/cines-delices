@@ -274,6 +274,7 @@ export default function MediaCatalog({
           <div className={styles.toolbar}>
             <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
               <div ref={searchRef} className={styles.searchField}>
+                <span className={styles.searchFieldIcon} aria-hidden="true" />
                 <input
                   type="search"
                   value={searchInput}
@@ -334,7 +335,6 @@ export default function MediaCatalog({
                   </ul>
                 )}
               </div>
-              <button type="submit" className={styles.searchButton}>Rechercher</button>
             </form>
           </div>
 

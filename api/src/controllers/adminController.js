@@ -134,7 +134,7 @@ function formatRecipe(recipe) {
 
 function formatUser(user) {
   const recipeCounts = user.recipes.reduce((accumulator, recipe) => {
-    const key = String(recipe.category?.nom || '').trim().toLowerCase();
+    const key = String(recipe.category?.nom || '').trim();
     if (key) {
       accumulator[key] = (accumulator[key] || 0) + 1;
     }
@@ -148,12 +148,7 @@ function formatUser(user) {
     prenom: user.pseudo,
     email: user.email,
     role: user.role,
-    recipeCounts: {
-      entree: recipeCounts['entrée'] || recipeCounts.entree || 0,
-      plat: recipeCounts.plat || 0,
-      dessert: recipeCounts.dessert || 0,
-      boisson: recipeCounts.boisson || 0,
-    },
+    recipeCounts,
   };
 }
 
@@ -230,6 +225,23 @@ function parseEditedFieldsSummary(value) {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function normalizeIngredientNameForMatch(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function extractRejectedIngredientNameFromReason(reason) {
+  const message = String(reason || '').trim();
+
+  // Format attendu côté front : l'ingredient "<nom>" a ete refuse
+  const quotedIngredientMatch = message.match(/ingredient\s+"([^"]+)"/i);
+
+  return quotedIngredientMatch?.[1]?.trim() || null;
 }
 
 function stringifyEditedFieldsSummary(fields) {
@@ -552,6 +564,7 @@ export async function publishRecipe(req, res) {
 export async function rejectRecipe(req, res) {
   try {
     const rejectionReason = String(req.body.rejectionReason || '').trim();
+    const rejectedIngredientName = extractRejectedIngredientNameFromReason(rejectionReason);
 
     if (rejectionReason.length < 10) {
       return res.status(400).json({ message: 'Le motif de refus est obligatoire (min 10 caractères).' });
@@ -584,6 +597,41 @@ export async function rejectRecipe(req, res) {
         },
       });
 
+      if (rejectedIngredientName) {
+        const normalizedRejectedIngredientName = normalizeIngredientNameForMatch(rejectedIngredientName);
+        const matchingIngredient = recipe.ingredients
+          .map((item) => item.ingredient)
+          .find((ingredient) => normalizeIngredientNameForMatch(ingredient.nom) === normalizedRejectedIngredientName);
+
+        if (matchingIngredient) {
+          await tx.recipeIngredient.deleteMany({
+            where: {
+              recipeId: recipe.id,
+              ingredientId: matchingIngredient.id,
+            },
+          });
+
+          const remainingUsageCount = await tx.recipeIngredient.count({
+            where: { ingredientId: matchingIngredient.id },
+          });
+
+          if (remainingUsageCount === 0 && !matchingIngredient.approved) {
+            await tx.ingredient.delete({
+              where: { id: matchingIngredient.id },
+            });
+
+            await tx.notification.updateMany({
+              where: {
+                userId: req.user.id,
+                isRead: false,
+                message: `Nouvel ingrédient soumis: ${matchingIngredient.nom}`,
+              },
+              data: { isRead: true },
+            });
+          }
+        }
+      }
+
       if (recipe.userId) {
         await tx.notification.create({
           data: {
@@ -604,7 +652,24 @@ export async function rejectRecipe(req, res) {
         data: { isRead: true },
       });
 
-      return recipe;
+      return tx.recipe.findUnique({
+        where: { id: recipe.id },
+        include: {
+          user: {
+            select: {
+              nom: true,
+              pseudo: true,
+            },
+          },
+          category: true,
+          media: true,
+          ingredients: {
+            include: {
+              ingredient: true,
+            },
+          },
+        },
+      });
     });
 
     return res.json(formatRecipe(updatedRecipe));

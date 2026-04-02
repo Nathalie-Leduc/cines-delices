@@ -2063,11 +2063,25 @@
   min-width: 0;
 }
 
+.recipeSearchFieldIcon {
+  position: absolute;
+  top: 50%;
+  left: 0.95rem;
+  width: 1rem;
+  height: 1rem;
+  background-color: rgba(246, 241, 232, 0.72);
+  -webkit-mask: url("/icon/Search.svg") center / contain no-repeat;
+  mask: url("/icon/Search.svg") center / contain no-repeat;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
 .recipeSearchInput {
   @include ui.input-surface;
   appearance: none;
   -webkit-appearance: none;
   font-size: 1rem;
+  padding-left: 2.5rem;
 }
 
 .recipeSearchInput::-webkit-search-decoration,

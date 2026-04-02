@@ -389,6 +389,7 @@ export default function RecipeCatalogView({
                     <img src="/icon/Search.svg" alt="" aria-hidden="true" className={styles.mobileSearchIcon} />
                   </button>
                 )}
+                <span className={styles.searchFieldIcon} aria-hidden="true" />
                 <input
                   type="search"
                   value={searchInput}
@@ -435,9 +436,6 @@ export default function RecipeCatalogView({
                   </ul>
                 )}
               </div>
-              {!isMobileViewport && (
-                <button type="submit" className={styles.searchButton}>Rechercher</button>
-              )}
             </form>
 
             {isMobileViewport ? (
