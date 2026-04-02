@@ -217,6 +217,7 @@ function AdminCategories() {
             }}
           >
             <div className={styles.categoriesSearchField}>
+              <span className={styles.categoriesSearchFieldIcon} aria-hidden="true" />
               <input
                 type="search"
                 className={styles.categoriesSearchInput}
@@ -231,12 +232,6 @@ function AdminCategories() {
                 }}
                 aria-label="Rechercher une catégorie"
               />
-            </div>
-
-            <div className={styles.categoriesSearchActions}>
-              <button type="submit" className={styles.categoriesSearchButton}>
-                Rechercher
-              </button>
             </div>
           </form>
 
@@ -317,7 +312,7 @@ function AdminCategories() {
 
               return (
                 <div key={category.id} className={styles.categoryRow}>
-                  <div className={styles.ingredientIdentity}>
+                  <div className={styles.categoryIdentity}>
                     <span className={styles.categoryDot} style={{ background: category.color }}>
                       {category.name}
                     </span>

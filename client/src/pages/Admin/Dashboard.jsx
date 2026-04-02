@@ -4,6 +4,7 @@ import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import { getApiOrigin } from '../../services/api.js';
 import {
   buildCategoryFilters,
   LIMIT_OPTIONS,
@@ -20,7 +21,7 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_ORIGIN = getApiOrigin();
 
 function normalizeImageUrl(value) {
   const rawValue = String(value || '').trim();
@@ -34,7 +35,7 @@ function normalizeImageUrl(value) {
 
   try {
     const parsed = new URL(rawValue);
-    const apiOrigin = new URL(API_BASE_URL).origin;
+    const apiOrigin = new URL(API_ORIGIN).origin;
     const isLocalhostSource = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
 
     if (isLocalhostSource && parsed.origin !== apiOrigin) {
@@ -313,16 +314,23 @@ function AdminDashboard() {
         return;
       }
 
-      await deleteAdminIngredient(ingredient.id);
-
-      if (selectedRecipe?.id) {
-        window.dispatchEvent(new CustomEvent('admin-notification-consumed', {
-          detail: { recipeId: selectedRecipe.id },
-        }));
+      if (!selectedRecipe?.id) {
+        throw new Error('Recette introuvable pour appliquer le refus.');
       }
 
-      setPendingRecipes((previous) => previous.filter((recipe) => recipe.id !== selectedRecipe?.id));
+      const rejectedIngredientName = String(ingredient.name || '').trim() || 'un ingrédient';
+      const rejectionReason = `Votre recette n'a pas ete validee car l'ingredient \"${rejectedIngredientName}\" a ete refuse par la moderation. Merci de corriger les ingredients puis de soumettre a nouveau.`;
+
+      await rejectAdminRecipe(selectedRecipe.id, rejectionReason);
+
+      window.dispatchEvent(new CustomEvent('admin-notification-consumed', {
+        detail: { recipeId: selectedRecipe.id },
+      }));
+
+      setPendingRecipes((previous) => previous.filter((recipe) => recipe.id !== selectedRecipe.id));
       setSelectedRecipe(null);
+      setShowValidateModal(false);
+      setShowRefuseModal(false);
       setShowIngredientModerationModal(false);
       setBlockingIngredients([]);
     } catch (ingredientActionError) {
@@ -383,6 +391,7 @@ function AdminDashboard() {
             }}
           >
             <div className={styles.recipeSearchField}>
+                  <span className={styles.recipeSearchFieldIcon} aria-hidden="true" />
               <input
                 className={styles.recipeSearchInput}
                 type="search"
@@ -395,10 +404,6 @@ function AdminDashboard() {
                 aria-label="Rechercher une recette à valider"
               />
             </div>
-
-            <button type="submit" className={styles.recipeSearchButton}>
-              Rechercher
-            </button>
           </form>
 
           <div className={styles.recipeFiltersRow} aria-label="Filtrer les recettes par catégorie">

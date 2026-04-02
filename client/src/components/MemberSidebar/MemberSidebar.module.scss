@@ -1,0 +1,386 @@
+@use "../../styles/visitor-mixins" as ui;
+
+.accountPanel {
+  display: flex;
+  min-height: 620px;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 1rem;
+  @include ui.surface-panel(
+    $background: rgba(31, 29, 30, 0.78),
+    $border: rgba(232, 220, 200, 0.42),
+    $radius: 24px,
+    $padding: 0.85rem
+  );
+  box-shadow: 0 26px 48px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+}
+
+.accountLinks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.notificationsBox {
+  margin-top: 0.2rem;
+  border: 1px solid rgba(232, 220, 200, 0.45);
+  border-radius: 16px;
+  padding: 0.58rem 0.56rem 0.55rem;
+  background: rgba(31, 29, 30, 0.58);
+}
+
+.notificationsBoxUnread {
+  border-color: rgba(95, 228, 159, 0.72);
+  box-shadow: 0 0 0 1px rgba(95, 228, 159, 0.28) inset;
+}
+
+.notificationsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  margin-bottom: 0.42rem;
+}
+
+.notificationsHeadingButton {
+  all: unset;
+  cursor: pointer;
+  color: #f6f1e8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.notificationsCount,
+.notificationsCountUnread {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.notificationsCount {
+  color: rgba(246, 241, 232, 0.66);
+}
+
+.notificationsCountUnread {
+  color: #d5f7e6;
+}
+
+.notificationsUnreadDot {
+  width: 0.43rem;
+  height: 0.43rem;
+  border-radius: 50%;
+  background: #5fe49f;
+  box-shadow: 0 0 0 4px rgba(95, 228, 159, 0.2);
+}
+
+.notificationsEmpty {
+  margin: 0;
+  color: rgba(246, 241, 232, 0.58);
+  font-size: 0.72rem;
+}
+
+.notificationsList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.notificationsListScrollable {
+  max-height: 122px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(246, 241, 232, 0.34) rgba(246, 241, 232, 0.08);
+}
+
+.notificationItem {
+  border-radius: 11px;
+  border: 1px solid rgba(232, 220, 200, 0.2);
+  background: rgba(246, 241, 232, 0.06);
+  padding: 0.35rem 0.38rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+
+  p {
+    margin: 0;
+    color: #f6f1e8;
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
+
+  small {
+    display: block;
+    margin-top: 0.22rem;
+    color: rgba(246, 241, 232, 0.58);
+    font-size: 0.68rem;
+  }
+}
+
+.notificationApproved {
+  border-color: rgba(95, 228, 159, 0.65);
+  background: rgba(95, 228, 159, 0.12);
+}
+
+.notificationRejected {
+  border-color: rgba(248, 113, 113, 0.7);
+  background: rgba(248, 113, 113, 0.12);
+}
+
+.notificationButton {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  flex: 1;
+  min-width: 0;
+  border-radius: 6px;
+
+  &:hover {
+    background: rgba(246, 241, 232, 0.08);
+  }
+}
+
+.notificationDeleteButton {
+  position: relative;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid rgba(246, 241, 232, 0.34);
+  border-radius: 999px;
+  background: rgba(246, 241, 232, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-top: 0.15rem;
+
+  img {
+    width: 10px;
+    height: 10px;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: rgba(168, 42, 58, 0.32);
+    border-color: rgba(244, 165, 85, 0.7);
+  }
+}
+
+.accountItem {
+  border: 1px solid transparent;
+  background-color: transparent;
+  border-radius: 16px;
+  padding: 0.92rem 0.9rem;
+  color: #f6f1e8;
+  text-align: left;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.accountItem:hover,
+.accountItemActive {
+  background: rgba(246, 241, 232, 0.08);
+  border-color: rgba(232, 220, 200, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.accountIcon {
+  width: 42px;
+  height: 42px;
+  text-align: center;
+  border-radius: 12px;
+  background: rgba(246, 241, 232, 0.08);
+  border: 1px solid rgba(246, 241, 232, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  img {
+    width: 20px;
+    height: 20px;
+    display: block;
+    margin: 0 auto;
+  }
+}
+
+.accountContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  flex: 1;
+  min-width: 0;
+  font-family: 'Inter', sans-serif;
+
+  strong {
+    color: #fbdca5;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.12rem;
+    font-weight: 700;
+    line-height: 1.08;
+  }
+
+  small {
+    color: rgba(246, 241, 232, 0.56);
+    font-size: 0.82rem;
+    line-height: 1.2;
+  }
+}
+
+.accountContent .accountSubTag {
+  @include ui.badge-chip(
+    $background: rgba(142, 31, 47, 0.96),
+    $color: #fff7ea,
+    $border: rgba(251, 220, 166, 0.82),
+    $padding: 0.22rem 0.56rem,
+    $font-size: 0.7rem,
+    $font-weight: 700
+  );
+  @include ui.badge-gradient-recipe;
+  align-self: flex-start;
+  margin-inline-start: -0.08rem;
+  padding: 0.22rem 0.56rem 0.22rem 0.42rem;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
+}
+
+.accountArrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  img {
+    width: 0.72rem;
+    height: auto;
+    display: block;
+  }
+}
+
+.logoutBtn {
+  margin-top: auto;
+  width: 100%;
+  border: none;
+  border-radius: 18px;
+  background: #8e1f2f;
+  color: #f6f1e8;
+  padding: 1rem;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    background: #a02436;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 30px rgba(96, 16, 31, 0.32);
+  }
+}
+
+.logoutIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 20px;
+    height: 20px;
+    display: block;
+  }
+}
+
+.accountPanelMobile {
+  min-height: auto;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  gap: 0.75rem;
+  box-shadow: none;
+  backdrop-filter: none;
+
+  .accountLinks {
+    gap: 0.6rem;
+  }
+
+  .notificationsBox {
+    border-color: rgba(232, 220, 200, 0.55);
+    background: rgba(31, 29, 30, 0.42);
+  }
+
+  .accountItem {
+    align-items: center;
+    padding: 0.82rem 0.86rem;
+    border: 1px solid rgba(232, 220, 200, 0.52);
+    border-radius: 16px;
+    background: rgba(31, 29, 30, 0.42);
+  }
+
+  .accountItem:hover,
+  .accountItemActive {
+    background: rgba(246, 241, 232, 0.12);
+    transform: none;
+  }
+
+  .accountContent {
+    gap: 0.02rem;
+
+    strong {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.05rem, 3.8vw, 1.2rem);
+      color: #fbdca6;
+      font-weight: 700;
+      line-height: 1.08;
+    }
+
+    small {
+      color: rgba(246, 241, 232, 0.65);
+      font-size: 0.72rem;
+      font-family: 'Inter', sans-serif;
+    }
+  }
+
+  .accountIcon {
+    width: 22px;
+    height: 22px;
+
+    img {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .accountArrow {
+    img {
+      width: 0.62rem;
+    }
+  }
+
+  .logoutBtn {
+    border-radius: 12px;
+    margin-top: 0.1rem;
+    padding: 0.82rem 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .logoutIcon img {
+    width: 18px;
+    height: 18px;
+  }
+}

@@ -8,6 +8,10 @@ export function getPublishedRecipes() {
   return request('/api/recipes'); // ← enlever ?published=true (inutile, le back filtre déjà)
 }
 
+export function getRecipeCategories() {
+  return request('/api/categories');
+}
+
  // Render : correction pour accepter et transmettre les paramètres
 export async function getRecipesCatalog(params = {}) {
   const query = new URLSearchParams();
@@ -41,6 +45,10 @@ export function deleteMyRecipe(recipeId) {
 // Récupère les notifications de l'utilisateur connecté
 export function getMyNotifications() {
   return request('/api/users/me/notifications');
+}
+
+export function deleteMyNotification(notificationId) {
+  return request(`/api/users/me/notifications/${notificationId}`, { method: 'DELETE' });
 }
 
 // Tâche F-04

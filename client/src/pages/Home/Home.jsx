@@ -55,8 +55,8 @@ function mapApiRecipeToCard(recipe) {
     mediaTitle: recipe?.media?.titre || "Sans média",
     mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
     duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL || recipe?.imageUrl || recipe?.media?.posterUrl || "/img/hero-home.png",
-    fallbackImage: recipe?.media?.posterUrl || "/img/hero-home.png",
+    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.png",
+    fallbackImage: "/img/hero-home.png",
   };
 }
 
@@ -569,7 +569,8 @@ function Home() {
             <h2 className={styles.sectionTitle}>Dernières recettes publiées</h2>
           </div>
           <Link className={styles.secondaryLink} to="/recipes">
-            Voir tout le catalogue
+            <span>Voir tout le catalogue</span>
+            <img src="/icon/arrow.svg" alt="" aria-hidden="true" />
           </Link>
         </div>
 

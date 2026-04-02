@@ -71,6 +71,35 @@
     cursor: not-allowed;
     opacity: 0.72;
   }
+
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:active {
+    -webkit-text-fill-color: rgba(46, 42, 40, 0.95);
+    -webkit-box-shadow: 0 0 0 1000px rgba(217, 208, 196, 0.58) inset;
+    box-shadow: 0 0 0 1000px rgba(217, 208, 196, 0.58) inset;
+    caret-color: rgba(46, 42, 40, 0.95);
+    transition: background-color 9999s ease-out 0s;
+  }
+
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: rgba(46, 42, 40, 0.95);
+    -webkit-box-shadow: 0 0 0 1000px rgba(228, 219, 206, 0.68) inset;
+    box-shadow: 0 0 0 1000px rgba(228, 219, 206, 0.68) inset;
+    caret-color: rgba(46, 42, 40, 0.95);
+  }
+
+  &:-moz-autofill {
+    box-shadow: 0 0 0 1000px rgba(217, 208, 196, 0.58) inset;
+    color: rgba(46, 42, 40, 0.95);
+    caret-color: rgba(46, 42, 40, 0.95);
+  }
+
+  &:-moz-autofill:focus {
+    box-shadow: 0 0 0 1000px rgba(228, 219, 206, 0.68) inset;
+    color: rgba(46, 42, 40, 0.95);
+    caret-color: rgba(46, 42, 40, 0.95);
+  }
 }
 
 .leadingIcon {
@@ -168,7 +197,7 @@
 .forgotPassword {
   margin: 0.5rem 0.05rem 0 0;
   align-self: flex-end;
-  color:#d4a84d;
+  color: #d4a84d;
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
@@ -176,6 +205,10 @@
   text-decoration: underline;
   text-decoration-thickness: 0.08em;
   text-underline-offset: 0.16em;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
   transition:
     color 0.2s ease,
     opacity 0.2s ease;

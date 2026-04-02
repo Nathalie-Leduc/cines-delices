@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import { deleteMe, getMe, updateMe, updateMyPassword } from '../../services/api.js';
@@ -11,15 +11,27 @@ const initialUser = {
   prenom: '',
   email: '',
   motDePasse: '********',
-  recettes: {
-    entrees: 0,
-    plats: 0,
-    desserts: 0,
-    boissons: 0,
-    recettesEnValidation: 0,
-  },
+  recettes: {},
+  recettesEnValidation: 0,
   dateInscription: '',
 };
+
+function normalizeCategoryKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getCategoryBadgeToneClass(categoryName) {
+  const normalized = normalizeCategoryKey(categoryName);
+  if (normalized === 'entree') return styles.entree;
+  if (normalized === 'plat') return styles.plat;
+  if (normalized === 'dessert') return styles.dessert;
+  if (normalized === 'boisson') return styles.boisson;
+  return '';
+}
 
 function normalizeDisplayName(name) {
   const trimmed = String(name || '').trim();
@@ -50,7 +62,6 @@ export default function Profil() {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-  // Liens du panneau de navigation latéral (sidebar)
   // Données du profil affichées dans les champs
   const [userData, setUserData] = useState(initialUser);
   // Contrôle l'affichage de la modale de suppression de compte
@@ -61,6 +72,32 @@ export default function Profil() {
   const [editModalData, setEditModalData] = useState(null);
   const [profileFeedback, setProfileFeedback] = useState({ type: '', message: '' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const recipeCategories = useMemo(() => {
+    const recipeCounts = userData.recettes || {};
+    const preferredOrder = ['entree', 'plat', 'dessert', 'boisson'];
+
+    return Object.entries(recipeCounts)
+      .filter(([name]) => String(name || '').trim().length > 0)
+      .map(([name, count]) => ({
+        key: normalizeCategoryKey(name),
+        name: String(name || '').trim(),
+        count: Number(count) || 0,
+      }))
+      .sort((a, b) => {
+        const aIndex = preferredOrder.indexOf(a.key);
+        const bIndex = preferredOrder.indexOf(b.key);
+
+        const aRank = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+        const bRank = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+
+        if (aRank !== bRank) {
+          return aRank - bRank;
+        }
+
+        return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+      });
+  }, [userData.recettes]);
 
   function syncDisplayName(name) {
     const normalizedName = normalizeDisplayName(name);
@@ -114,27 +151,24 @@ export default function Profil() {
         ? payload.data
         : [];
 
-    const counts = {
-      entrees: 0,
-      plats: 0,
-      desserts: 0,
-      boissons: 0,
-      recettesEnValidation: 0,
-    };
+    const counts = {};
+    let recettesEnValidation = 0;
 
     recipes.forEach((recipe) => {
       const status = String(recipe?.status || '').toUpperCase();
 
       if (status === 'PENDING') {
-        counts.recettesEnValidation += 1;
+        recettesEnValidation += 1;
       }
 
-      if (status !== 'PENDING' && recipe.category && recipe.category.nom) {
-        const nomLower = recipe.category.nom.toLowerCase();
-        if (nomLower === 'entrée') counts.entrees++;
-        else if (nomLower === 'plat') counts.plats++;
-        else if (nomLower === 'dessert') counts.desserts++;
-        else if (nomLower === 'boisson') counts.boissons++;
+      if (status !== 'PENDING') {
+        const categoryName = String(
+          recipe?.category?.nom || recipe?.categorie || recipe?.category || '',
+        ).trim();
+
+        if (categoryName) {
+          counts[categoryName] = (counts[categoryName] || 0) + 1;
+        }
       }
 
     });
@@ -142,6 +176,7 @@ export default function Profil() {
     setUserData((prev) => ({
       ...prev,
       recettes: counts,
+      recettesEnValidation,
     }));
   }
 
@@ -159,48 +194,6 @@ export default function Profil() {
 
     loadProfileData();
   }, []);
-
-  const totalRecipes =
-    Number(userData.recettes.entrees || 0)
-    + Number(userData.recettes.plats || 0)
-    + Number(userData.recettes.desserts || 0)
-    + Number(userData.recettes.boissons || 0);
-
-  const accountItems = [
-    {
-      icon: '/icon/Recipes.svg',
-      label: 'Mes recettes',
-      sub: `${totalRecipes} recette${totalRecipes > 1 ? 's' : ''}`,
-      subLinks: [
-        {
-          label: 'Recettes en cours de validation',
-          path: '/membre/mes-recettes/recettes-en-validation',
-          count: userData.recettes.recettesEnValidation || 0,
-        },
-      ],
-      path: '/membre/mes-recettes',
-      subTone: 'recipe',
-    },
-    {
-      icon: '/icon/Message_fill.svg',
-      label: 'Notifications',
-      sub: 'Voir mes alertes',
-      path: '/membre',
-    },
-    {
-      icon: '/icon/User.svg',
-      label: 'Mes informations',
-      sub: userData.email,
-      path: '/membre/profil',
-      active: true,
-    },
-    {
-      icon: '/icon/Contact.svg',
-      label: 'Contact',
-      sub: 'help@support.cine-delices.com',
-      path: '/contact',
-    },
-  ];
 
   function openEditModal(fieldName, label, type = 'text') {
     setProfileFeedback({ type: '', message: '' });
@@ -358,11 +351,6 @@ export default function Profil() {
     }
   }
 
-  function handleLogout() {
-    logout();
-    navigate('/');
-  }
-
   async function handleDelete() {
     try {
       await deleteMe();
@@ -383,10 +371,11 @@ export default function Profil() {
   const isPasswordModal = editModalData?.mode === 'password';
 
   return (
-    <div className={styles.profil}>
+    <>
       {showModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
+            <h2 className={styles.modalTitle}>Supprimer le compte</h2>
             <p className={styles.modalText}>
               Êtes-vous sûr de vouloir supprimer votre compte ?
             </p>
@@ -413,9 +402,9 @@ export default function Profil() {
       {showEditModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
-            <p className={styles.modalText}>
+            <h2 className={styles.modalTitle}>
               Modifier {editModalData?.label?.toLowerCase()}
-            </p>
+            </h2>
 
             {isPasswordModal ? (
               <>
@@ -499,64 +488,8 @@ export default function Profil() {
           </div>
         </div>
       )}
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Mon compte</h1>
-      </div>
-      <p className={styles.welcomeText}>
-        Bonjour <strong>{userData.prenom}</strong>, bienvenue chez Cine Delices !
-      </p>
-
-      <div className={styles.desktopLayout}>
-        <aside className={styles.accountPanel}>
-          <div className={styles.accountLinks}>
-            {accountItems.map(item => (
-              <button
-                key={item.path}
-                type="button"
-                className={`${styles.accountItem} ${item.active ? styles.accountItemActive : ''}`}
-                onClick={() => navigate(item.path)}
-              >
-                <span className={styles.accountIcon}>
-                  <img src={item.icon} alt="" aria-hidden="true" />
-                </span>
-                <span className={styles.accountContent}>
-                  <strong>{item.label}</strong>
-                  <small className={item.subTone === 'recipe' ? styles.accountSubTag : undefined}>{item.sub}</small>
-                  {Array.isArray(item.subLinks) && item.subLinks.length > 0 ? (
-                    <span className={styles.accountSubLinks}>
-                      {item.subLinks.map((subLink) => (
-                        <button
-                          key={subLink.path}
-                          type="button"
-                          className={styles.accountSubLink}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            navigate(subLink.path);
-                          }}
-                        >
-                          <span>{subLink.label}</span>
-                          <strong>{subLink.count}</strong>
-                        </button>
-                      ))}
-                    </span>
-                  ) : null}
-                </span>
-                <span className={styles.accountArrow}>›</span>
-              </button>
-            ))}
-          </div>
-
-          <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
-            <span className={styles.logoutIcon}>
-              <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
-            </span>
-            <span>Se déconnecter</span>
-            <span>›</span>
-          </button>
-        </aside>
-
         <section className={styles.profilePanel}>
-          <h1 className={styles.title}>Mes informations</h1>
+          <h2 className={styles.title}>Mes informations</h2>
 
           <Alert
             type={profileFeedback.type || 'info'}
@@ -569,14 +502,14 @@ export default function Profil() {
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
             <label className={styles.label}>Nom</label>
-            <button
-              type="button"
-              className={styles.editBtn}
-              aria-label="Modification du nom indisponible"
-              onClick={() => openEditModal('nom', 'Nom')}
-            >
-              <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-            </button>
+              <button
+                type="button"
+                className={styles.editBtn}
+                aria-label="Modification du nom indisponible"
+                onClick={() => openEditModal('nom', 'Nom')}
+              >
+              <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
+              </button>
           </div>
           <input
             className={styles.input}
@@ -590,14 +523,14 @@ export default function Profil() {
         <div className={styles.field}>
           <div className={styles.fieldHeader}>
             <label className={styles.label}>Prénom</label>
-            <button
-              type="button"
-              className={styles.editBtn}
-              aria-label="Modifier le prénom"
-              onClick={() => openEditModal('prenom', 'Prénom')}
-            >
-              <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-            </button>
+              <button
+                type="button"
+                className={styles.editBtn}
+                aria-label="Modifier le prénom"
+                onClick={() => openEditModal('prenom', 'Prénom')}
+              >
+              <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
+              </button>
           </div>
           <input
             className={styles.input}
@@ -624,14 +557,14 @@ export default function Profil() {
         <div className={styles.field}>
           <div className={styles.passwordHeader}>
             <label className={styles.label}>Mot de passe</label>
-            <button
-              type="button"
-              className={styles.editBtn}
-              aria-label="Modifier le mot de passe"
-              onClick={() => openEditModal('motDePasse', 'Mot de passe', 'password')}
-            >
-              <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-            </button>
+              <button
+                type="button"
+                className={styles.editBtn}
+                aria-label="Modifier le mot de passe"
+                onClick={() => openEditModal('motDePasse', 'Mot de passe', 'password')}
+              >
+              <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
+              </button>
           </div>
           <input
             className={styles.input}
@@ -646,18 +579,20 @@ export default function Profil() {
 
           <div className={styles.bottomRow}>
             <div className={styles.recettesBlock}>
-              <h2 className={styles.recettesTitle}>Recettes</h2>
-              <div className={styles.tags}>
-                <span className={`${styles.tag} ${styles.entree}`}>Entrée</span>
-                <span className={`${styles.tag} ${styles.plat}`}>Plat</span>
-                <span className={`${styles.tag} ${styles.dessert}`}>Dessert</span>
-                <span className={`${styles.tag} ${styles.boisson}`}>Boisson</span>
-              </div>
-              <div className={styles.counts}>
-                <span className={styles.count}>{userData.recettes.entrees}</span>
-                <span className={styles.count}>{userData.recettes.plats}</span>
-                <span className={styles.count}>{userData.recettes.desserts}</span>
-                <span className={styles.count}>{userData.recettes.boissons}</span>
+              <span className={styles.blockLabel}>Recettes</span>
+
+              <div className={styles.recipesGrid}>
+                {recipeCategories.map((category) => (
+                  <div
+                    key={category.name}
+                    className={`${styles.recipeCategoryItem} ${getCategoryBadgeToneClass(category.name)}`.trim()}
+                  >
+                    <span className={`${styles.badge} ${getCategoryBadgeToneClass(category.name)}`.trim()}>
+                      {category.name}
+                    </span>
+                    <span className={styles.counter}>{category.count}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -670,8 +605,6 @@ export default function Profil() {
             </button>
           </div>
         </section>
-      </div>
-
-    </div>
+    </>
   );
 }

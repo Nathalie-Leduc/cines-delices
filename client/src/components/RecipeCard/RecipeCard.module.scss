@@ -57,6 +57,13 @@
 
 .category {
   @include ui.badge-pill;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 5.15rem;
+  min-height: 2rem;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.22);
 }
 
 .category.entree {
@@ -73,6 +80,28 @@
 
 .category.boisson {
   background: rgba(58, 138, 154, 0.95);
+}
+
+@container member-card (max-width: 268px) {
+  .category {
+    top: 0.46rem;
+    right: 0.46rem;
+    min-width: 3.9rem;
+    min-height: 1.52rem;
+    padding: 0.16rem 0.42rem;
+    font-size: 0.56rem;
+  }
+}
+
+@container member-card (max-width: 232px) {
+  .category {
+    top: 0.38rem;
+    right: 0.38rem;
+    min-width: 3.45rem;
+    min-height: 1.34rem;
+    padding: 0.12rem 0.34rem;
+    font-size: 0.5rem;
+  }
 }
 
 .content {
@@ -209,5 +238,102 @@
     right: 0.72rem;
     padding: 0.28rem 0.64rem;
     font-size: 0.68rem;
+  }
+}
+
+@media (max-width: 580px) {
+  .content {
+    padding: 0.64rem 0.68rem 0.7rem;
+  }
+
+  .title {
+    font-size: 0.74rem;
+  }
+
+  .divider {
+    margin: 0.36rem 0 0.42rem;
+  }
+
+  .infoRow {
+    gap: 0.42rem;
+  }
+
+  .infoRow + .infoRow {
+    margin-top: 0.28rem;
+  }
+
+  .icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .metaText {
+    font-size: 0.68rem;
+    line-height: 1.12;
+  }
+
+  .mediaType {
+    width: 1.56rem;
+    height: 1.56rem;
+    border-width: 1.5px;
+    border-radius: 0.56rem;
+    font-size: 0.72rem;
+  }
+
+  .category {
+    top: 0.58rem;
+    right: 0.58rem;
+    min-width: 4.4rem;
+    min-height: 1.72rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.62rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .content {
+    padding: 0.58rem 0.6rem 0.64rem;
+  }
+
+  .title {
+    font-size: 0.7rem;
+  }
+
+  .divider {
+    margin: 0.32rem 0 0.38rem;
+  }
+
+  .infoRow {
+    gap: 0.36rem;
+  }
+
+  .infoRow + .infoRow {
+    margin-top: 0.24rem;
+  }
+
+  .icon {
+    width: 13px;
+    height: 13px;
+  }
+
+  .metaText {
+    font-size: 0.64rem;
+  }
+
+  .mediaType {
+    width: 1.36rem;
+    height: 1.36rem;
+    border-width: 1.5px;
+    border-radius: 0.5rem;
+    font-size: 0.64rem;
+  }
+
+  .category {
+    top: 0.46rem;
+    right: 0.46rem;
+    min-width: 3.9rem;
+    min-height: 1.5rem;
+    padding: 0.16rem 0.42rem;
+    font-size: 0.56rem;
   }
 }

@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import styles from "./Navbar.module.scss";
-import { getRecipesCatalog } from "../../services/recipesService";
-import { useAuth } from "../../contexts/AuthContext.jsx"
+import { useAuth } from "../../contexts/AuthContext.jsx";
+import { searchHeaderContent } from "../../services/searchService";
 import AdminSidebar from "../AdminSidebar";
+import MemberSidebar from "../MemberSidebar/MemberSidebar.jsx";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tâche f-05 : Navbar branchée sur AuthContext
@@ -115,8 +116,8 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
   // Le nom affiché dans la Navbar (ex: "Bonjour, Nathalie")
   const userName = isAuthenticated ? getDisplayName(user) : "";
 
-  // Le lien "Mon compte" pointe vers /admin si admin, /membre/profil sinon
-  const accountPath = isAdmin ? "/admin" : "/membre/profil";
+  // Le lien "Mon compte" pointe vers /admin si admin, /membre/mes-recettes sinon
+  const accountPath = isAdmin ? "/admin" : "/membre/mes-recettes";
   const desktopNavItems = NAVBAR_VARIANTS.public.items;
   const mobileNavItems = NAVBAR_VARIANTS[resolvedVariant]?.items ?? NAVBAR_VARIANTS.public.items;
   const roleLabel = NAVBAR_VARIANTS[resolvedVariant]?.roleLabel ?? "";
@@ -189,30 +190,30 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
       return;
     }
 
+    let isCancelled = false;
+
     // Définir un timeout pour attendre 400ms après la dernière frappe
     const timeout = setTimeout(async () => {
       try {
-        const payload = await getRecipesCatalog({
-          q: search.trim(),
-          limit: 5,
-        });
-        const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
-        const mappedResults = rawRecipes.map((recipe) => ({
-          id: recipe.id,
-          slug: recipe.slug,
-          title: recipe.titre || "Recette sans titre",
-          mediaTitle: recipe.media?.titre || "",
-          image: recipe.imageURL || recipe.imageUrl || recipe.media?.posterUrl || "/img/hero-home.png",
-        }));
-        setResults(mappedResults);
+        const mappedResults = await searchHeaderContent(search.trim());
+
+        if (!isCancelled) {
+          setResults(mappedResults);
+        }
       } catch (err) {
         console.error("Erreur fetch recettes :", err);
-        setResults([]);
+
+        if (!isCancelled) {
+          setResults([]);
+        }
       }
     }, 400); // 400ms de debounce
 
     // Nettoyage : si l'utilisateur tape encore avant la fin du timeout
-    return () => clearTimeout(timeout);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeout);
+    };
   }, [search]); // dépendance : se déclenche à chaque changement de search
 
   // Ferme la liste des résultats quand l'utilisateur clique en dehors
@@ -318,7 +319,11 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
           <button
             type="button"
             className={styles.burger}
-            aria-label={mobileMenuMode === "external" ? "Ouvrir le menu admin" : "Ouvrir le menu"}
+            aria-label={
+              mobileMenuMode === "external"
+                ? (resolvedVariant === "admin" ? "Ouvrir le menu admin" : "Ouvrir le menu membre")
+                : "Ouvrir le menu"
+            }
             onClick={() => {
               if (mobileMenuMode === "external") {
                 onBurgerClick?.();
@@ -370,7 +375,8 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   type="search"
                   value={search}
                   onChange={handleSearch}
-                  placeholder="Rechercher..."
+                  placeholder="Recette, film ou série."
+                  aria-label="Rechercher une recette, un film ou une série"
                   className={styles.searchInput}
                 />
                 <button
@@ -386,22 +392,23 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                 </button>
                 {results.length > 0 && (
                   <ul className={styles.searchResults}>
-                    {results.map((recipe) => (
-                      <li key={recipe.id} className={styles.searchResultItem}>
+                    {results.map((result) => (
+                      <li key={result.key} className={styles.searchResultItem}>
                         <NavLink
-                          to={`/recipes/${recipe.slug || recipe.id}`}
+                          to={result.to}
                           onClick={handleResultClick}
                         >
                           <img
-                            src={recipe.image}
-                            alt={recipe.title}
+                            src={result.image}
+                            alt={result.title}
                             className={styles.searchResultThumb}
                           />
                           <span className={styles.searchResultCopy}>
-                            <span>{recipe.title}</span>
-                            {recipe.mediaTitle && (
-                              <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
-                            )}
+                            <span className={styles.searchResultTitle}>{result.title}</span>
+                            <span className={styles.searchResultMetaRow}>
+                              <span className={styles.searchResultBadge}>{result.badgeLabel}</span>
+                              <small className={styles.searchResultMeta}>{result.meta}</small>
+                            </span>
                           </span>
                         </NavLink>
                       </li>
@@ -424,26 +431,14 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   </span>
                   <span className={styles.userName}>{userName}</span>
                 </NavLink>
-                <NavLink
-                  to={accountPath}
-                  className={styles.userIcon}
-                  aria-label="Mon compte"
-                >
-                  <img
-                    src="/icon/Profil.svg"
-                    alt="Profil"
-                    className={styles.profileIcon}
-                  />
-                </NavLink>
                 <button
                   type="button"
                   className={styles.desktopLogoutButton}
                   onClick={handleLogout}
                   aria-label="Se déconnecter"
                 >
-                  {/* Icône Logout — même icône que le bouton du compte membre */}
                   <img
-                    src="/icon/Logout.svg"
+                    src="/icon/On_button_fill.svg"
                     alt=""
                     aria-hidden="true"
                     className={styles.desktopLogoutIcon}
@@ -491,7 +486,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
           />
 
           <aside
-            className={`${styles.mobilePanel} ${resolvedVariant === "admin" ? styles.mobilePanelAdmin : ""} ${isMenuOpen ? styles.mobilePanelOpen : ""}`.trim()}
+            className={`${styles.mobilePanel} ${resolvedVariant === "admin" || resolvedVariant === "member" ? styles.mobilePanelDashboard : ""} ${isMenuOpen ? styles.mobilePanelOpen : ""}`.trim()}
             aria-hidden={!isMenuOpen}
           >
             {resolvedVariant === "admin" ? (
@@ -534,6 +529,48 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   </nav>
 
                   <AdminSidebar mobile className={styles.adminMobileSidebar} onNavigate={closeMenu} />
+                </>
+              ) : null
+            ) : resolvedVariant === "member" ? (
+              isMenuOpen ? (
+                <>
+                  <div className={styles.adminMobileHeader}>
+                    <div className={styles.adminMobileHeading}>
+                      <h2>Tableau de bord</h2>
+                      <span className={styles.memberMobileBadge}>Espace membre</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className={styles.closeButton}
+                      aria-label="Fermer le menu membre"
+                      onClick={closeMenu}
+                    >
+                      <img src="/icon/close_menu.svg" alt="Fermer" />
+                    </button>
+                  </div>
+
+                  <nav className={styles.adminMobileSiteNav} aria-label="Explorer le site">
+                    <p className={styles.adminMobileSiteNavLabel}>Explorer le site</p>
+
+                    <ul className={styles.adminMobileSiteNavList}>
+                      {SITE_EXPLORATION_ITEMS.map((item) => (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            onClick={closeMenu}
+                            className={({ isActive }) =>
+                              `${styles.adminMobileSiteLink} ${isActive ? styles.adminMobileSiteLinkActive : ""}`.trim()
+                            }
+                          >
+                            {item.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+
+                  <MemberSidebar mobile onNavigate={closeMenu} />
                 </>
               ) : null
             ) : (
@@ -678,7 +715,8 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                     type="search"
                     value={search}
                     onChange={handleSearch}
-                    placeholder="Rechercher une recette, un film, une serie"
+                    placeholder="Recette, film ou série."
+                    aria-label="Rechercher une recette, un film ou une série"
                     className={styles.mobileSearchInput}
                   />
                   {search && (
@@ -695,22 +733,23 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
 
                 {results.length > 0 && (
                   <ul className={styles.mobileSearchResults}>
-                    {results.map((recipe) => (
-                      <li key={recipe.id} className={styles.searchResultItem}>
+                    {results.map((result) => (
+                      <li key={result.key} className={styles.searchResultItem}>
                         <NavLink
-                          to={`/recipes/${recipe.slug || recipe.id}`}
+                          to={result.to}
                           onClick={handleResultClick}
                         >
                           <img
-                            src={recipe.image}
-                            alt={recipe.title}
+                            src={result.image}
+                            alt={result.title}
                             className={styles.searchResultThumb}
                           />
                           <span className={styles.searchResultCopy}>
-                            <span>{recipe.title}</span>
-                            {recipe.mediaTitle && (
-                              <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
-                            )}
+                            <span className={styles.searchResultTitle}>{result.title}</span>
+                            <span className={styles.searchResultMetaRow}>
+                              <span className={styles.searchResultBadge}>{result.badgeLabel}</span>
+                              <small className={styles.searchResultMeta}>{result.meta}</small>
+                            </span>
                           </span>
                         </NavLink>
                       </li>

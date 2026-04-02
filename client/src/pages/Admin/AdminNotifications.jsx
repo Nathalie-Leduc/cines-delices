@@ -8,6 +8,8 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
+const CONTACT_PREVIEW_LIMIT = 100;
+
 function formatNotificationDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
@@ -37,12 +39,28 @@ function resolveNotificationTarget(notification) {
   return null;
 }
 
+function isContactNotification(notification) {
+  const normalizedMessage = String(notification?.message || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return /formulaire\s+de\s+contact/.test(normalizedMessage);
+}
+
+function buildContactNotificationPreview(message) {
+  const normalized = String(message || '').replace(/\s+/g, ' ').trim();
+
+  if (normalized.length <= CONTACT_PREVIEW_LIMIT) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, CONTACT_PREVIEW_LIMIT)}…`;
+}
+
 export default function AdminNotifications() {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [openedContactMessageNotification, setOpenedContactMessageNotification] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -138,12 +156,16 @@ export default function AdminNotifications() {
         <div className={styles.list}>
           {notifications.map((notification) => {
             const target = resolveNotificationTarget(notification);
+            const isContact = isContactNotification(notification);
+            const notificationMessage = isContact
+              ? buildContactNotificationPreview(notification.message)
+              : notification.message;
 
             return (
               <div key={notification.id} className={styles.categoryRow}>
                 <div className={styles.ingredientIdentity}>
                   <strong style={{ fontFamily: 'Playfair Display, serif', fontSize: '1.08rem', fontWeight: 700 }}>
-                    {notification.message}
+                    {notificationMessage}
                   </strong>
                   <span className={styles.submittedByRowTag}>
                     {formatNotificationDate(notification.createdAt)}
@@ -151,12 +173,19 @@ export default function AdminNotifications() {
                 </div>
 
                 <span className={styles.inlineTools}>
-                  {target ? (
+                  {target || isContact ? (
                     <button
                       type="button"
                       className={`${styles.roundIconBtn} ${styles.roundBlue}`.trim()}
-                      title="Ouvrir"
-                      onClick={() => handleOpenNotification(notification)}
+                      title={isContact ? 'Voir le message complet' : 'Ouvrir'}
+                      onClick={() => {
+                        if (isContact) {
+                          setOpenedContactMessageNotification(notification);
+                          return;
+                        }
+
+                        handleOpenNotification(notification);
+                      }}
                     >
                       <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
                     </button>
@@ -173,6 +202,32 @@ export default function AdminNotifications() {
               </div>
             );
           })}
+        </div>
+      ) : null}
+
+      {openedContactMessageNotification ? (
+        <div className={styles.notificationMessageOverlay}>
+          <div className={styles.notificationMessageModal}>
+            <h3 className={styles.notificationMessageTitle}>Message de contact</h3>
+
+            <p className={styles.notificationMessageBody}>
+              {openedContactMessageNotification.message}
+            </p>
+
+            <p className={styles.notificationMessageMeta}>
+              {formatNotificationDate(openedContactMessageNotification.createdAt)}
+            </p>
+
+            <div className={styles.notificationMessageActions}>
+              <button
+                type="button"
+                className={styles.btnMuted}
+                onClick={() => setOpenedContactMessageNotification(null)}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

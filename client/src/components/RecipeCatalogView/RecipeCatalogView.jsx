@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import RecipeCard from "../RecipeCard";
 import StatusBlock from "../StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 import styles from "../../pages/RecipesPage/RecipesPage.module.scss";
 import {
+  buildCategoryFilters,
   CATEGORY_PARAM_TO_FILTER,
   FILTERS,
   LIMIT_OPTIONS,
@@ -12,9 +13,57 @@ import {
   mixRecipesByCategory,
   parsePositiveInt,
 } from "./recipeCatalog.shared";
+import { getRecipeCategories } from "../../services/recipesService";
 
 function buildDefaultSummaryText({ totalItems, activeFilter, currentQuery }) {
   return `${totalItems} recette${totalItems > 1 ? "s" : ""} trouvée${totalItems > 1 ? "s" : ""}${activeFilter !== "Tous" ? ` en ${activeFilter}` : ""}${currentQuery ? ` pour "${currentQuery}"` : ""}.`;
+}
+
+function extractRecipesFromPayload(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.recipes)) {
+    return payload.recipes;
+  }
+
+  if (Array.isArray(payload?.data)) {
+    return payload.data;
+  }
+
+  return [];
+}
+
+async function fetchCompleteCatalog(getCatalog) {
+  const limit = 50;
+  let page = 1;
+  let totalPages = 1;
+  const collectedRecipes = [];
+
+  while (page <= totalPages) {
+    const payload = await getCatalog({ page, limit });
+    const rawRecipes = extractRecipesFromPayload(payload);
+
+    collectedRecipes.push(...rawRecipes);
+
+    if (Array.isArray(payload)) {
+      break;
+    }
+
+    const pagination = payload?.pagination || {};
+    totalPages = Math.max(1, Number(pagination.totalPages || 1));
+
+    if (!pagination.hasNextPage || page >= totalPages) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return Array.from(
+    new Map(collectedRecipes.map((recipe) => [recipe?.id, recipe])).values(),
+  );
 }
 
 export default function RecipeCatalogView({
@@ -26,10 +75,10 @@ export default function RecipeCatalogView({
   ctaTo,
   ctaLabel,
   catalogTitle,
-  searchPlaceholder = "Rechercher une recette, un film, une serie",
+  searchPlaceholder = "Rechercher une recette, un film, une série",
   searchAriaLabel = "Rechercher dans le catalogue",
   loadingMessage = "Chargement des recettes...",
-  updatingMessage = "Mise à jour des recettes...",
+  updatingMessage: _updatingMessage = "Mise à jour des recettes...",
   errorFallbackMessage = "Impossible de charger les recettes.",
   emptyMessage = "Aucune recette disponible pour le moment.",
   buildSummaryText = buildDefaultSummaryText,
@@ -37,28 +86,62 @@ export default function RecipeCatalogView({
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [recipes, setRecipes] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 15,
-    totalItems: 0,
-    totalPages: 0,
-    hasNextPage: false,
-    hasPreviousPage: false,
-  });
+  const [availableCategories, setAvailableCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPaginating, setIsPaginating] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth <= 767);
-  const searchRef = useRef(null);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
+  const mobileSearchInputRef = useRef(null);
   const isHeroVisible = useHeroReveal();
 
   const categoryParam = searchParams.get("category")?.toLowerCase() || "";
-  const activeFilter = CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
-  const currentQuery = searchParams.get("q")?.trim() || "";
   const currentPage = parsePositiveInt(searchParams.get("page"), 1);
   const currentLimit = parsePositiveInt(searchParams.get("limit"), 15);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const payload = await getRecipeCategories();
+        if (!isMounted) return;
+
+        const categories = Array.isArray(payload) ? payload : payload?.data ?? [];
+        setAvailableCategories(categories);
+      } catch {
+        if (!isMounted) return;
+        setAvailableCategories([]);
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const filters = useMemo(() => {
+    const fallbackCategories = FILTERS
+      .filter((filter) => filter.value !== "Tous")
+      .map((filter) => filter.value);
+
+    return buildCategoryFilters(
+      availableCategories.length ? availableCategories : fallbackCategories,
+    );
+  }, [availableCategories]);
+
+  const activeFilter = useMemo(() => {
+    if (!categoryParam) {
+      return "Tous";
+    }
+
+    const dynamicMatch = filters.find((filter) => filter.key === categoryParam);
+    return dynamicMatch?.value || CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
+  }, [filters, categoryParam]);
+
+  const shouldUseMobileSearchOverlay = isMobileViewport;
 
   useEffect(() => {
     setSearchInput(searchParams.get("q") || "");
@@ -69,50 +152,22 @@ export default function RecipeCatalogView({
 
     const fetchRecipes = async () => {
       try {
-        const payload = await getCatalog({
-          page: currentPage,
-          limit: currentLimit,
-          category: activeFilter !== "Tous" ? activeFilter : undefined,
-          q: currentQuery || undefined,
-        });
-        const rawRecipes = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.recipes)
-            ? payload.recipes
-            : Array.isArray(payload?.data)
-              ? payload.data
-              : [];
+        setIsLoading(true);
+        const rawRecipes = await fetchCompleteCatalog(getCatalog);
 
         if (!isMounted) return;
 
         const mappedRecipes = rawRecipes.map(mapApiRecipeToCard);
-        setRecipes(activeFilter === "Tous" ? mixRecipesByCategory(mappedRecipes) : mappedRecipes);
-        setPagination({
-          page: Number(payload?.pagination?.page || currentPage),
-          limit: Number(payload?.pagination?.limit || currentLimit),
-          totalItems: Number(payload?.pagination?.totalItems || 0),
-          totalPages: Number(payload?.pagination?.totalPages || 0),
-          hasNextPage: Boolean(payload?.pagination?.hasNextPage),
-          hasPreviousPage: Boolean(payload?.pagination?.hasPreviousPage),
-        });
+        setRecipes(mappedRecipes);
         setError("");
       } catch (fetchError) {
         if (!isMounted) return;
 
         setRecipes([]);
-        setPagination({
-          page: currentPage,
-          limit: currentLimit,
-          totalItems: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        });
         setError(fetchError?.message || errorFallbackMessage);
       } finally {
         if (isMounted) {
           setIsLoading(false);
-          setIsPaginating(false);
         }
       }
     };
@@ -122,47 +177,7 @@ export default function RecipeCatalogView({
     return () => {
       isMounted = false;
     };
-  }, [activeFilter, currentLimit, currentPage, currentQuery, errorFallbackMessage, getCatalog]);
-
-  useEffect(() => {
-    if (!searchInput || searchInput.trim().length < 2) {
-      setSearchResults([]);
-      return;
-    }
-
-    let isCancelled = false;
-
-    const timeout = setTimeout(async () => {
-      try {
-        const payload = await getCatalog({
-          q: searchInput.trim(),
-          limit: 5,
-        });
-
-        const rawRecipes = Array.isArray(payload?.recipes) ? payload.recipes : [];
-        const mappedResults = rawRecipes.map((recipe) => ({
-          id: recipe.id,
-          slug: recipe.slug,
-          title: recipe.titre || "Recette sans titre",
-          mediaTitle: recipe.media?.titre || "",
-          image: recipe.media?.posterUrl || recipe.imageURL || "/img/placeholder.jpg",
-        }));
-
-        if (!isCancelled) {
-          setSearchResults(mappedResults);
-        }
-      } catch {
-        if (!isCancelled) {
-          setSearchResults([]);
-        }
-      }
-    }, 250);
-
-    return () => {
-      isCancelled = true;
-      clearTimeout(timeout);
-    };
-  }, [getCatalog, searchInput]);
+  }, [errorFallbackMessage, getCatalog]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
@@ -179,15 +194,27 @@ export default function RecipeCatalogView({
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setSearchResults([]);
+    if (!isMobileSearchOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    mobileSearchInputRef.current?.focus();
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileSearchOpen(false);
       }
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileSearchOpen]);
 
   const updateCatalogParams = (mutateParams) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -208,12 +235,12 @@ export default function RecipeCatalogView({
     });
   };
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    const normalized = searchInput.trim();
+  const handleSearchChange = (value) => {
+    setSearchInput(value);
+
     updateCatalogParams((nextParams) => {
-      if (normalized) {
-        nextParams.set("q", normalized);
+      if (value.trim()) {
+        nextParams.set("q", value);
       } else {
         nextParams.delete("q");
       }
@@ -221,7 +248,14 @@ export default function RecipeCatalogView({
       nextParams.set("page", "1");
       nextParams.set("limit", String(currentLimit));
     });
-    setSearchResults([]);
+  };
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+
+    if (isMobileViewport) {
+      closeMobileSearchModal();
+    }
   };
 
   const handleLimitChange = (event) => {
@@ -241,7 +275,6 @@ export default function RecipeCatalogView({
 
   const clearSearch = () => {
     setSearchInput("");
-    setSearchResults([]);
     updateCatalogParams((nextParams) => {
       nextParams.delete("q");
       nextParams.set("page", "1");
@@ -249,15 +282,12 @@ export default function RecipeCatalogView({
     });
   };
 
-  const handleSuggestionClick = () => {
-    setSearchResults([]);
-    setSearchInput("");
+  const openMobileSearchModal = () => {
+    setIsMobileSearchOpen(true);
   };
 
-  const openMobileSearchModal = () => {
-    window.dispatchEvent(new CustomEvent("open-mobile-search", {
-      detail: { search: searchInput },
-    }));
+  const closeMobileSearchModal = () => {
+    setIsMobileSearchOpen(false);
   };
 
   const goToPage = (page) => {
@@ -267,8 +297,44 @@ export default function RecipeCatalogView({
     });
   };
 
+  const filteredRecipes = useMemo(() => {
+    const normalizedQuery = searchInput.trim().toLowerCase();
+
+    const visibleRecipes = recipes.filter((recipe) => {
+      const matchesFilter = activeFilter === "Tous" || recipe.category === activeFilter;
+      const matchesQuery = !normalizedQuery
+        || String(recipe?.title || "").toLowerCase().includes(normalizedQuery)
+        || String(recipe?.mediaTitle || "").toLowerCase().includes(normalizedQuery)
+        || String(recipe?.category || "").toLowerCase().includes(normalizedQuery);
+
+      return matchesFilter && matchesQuery;
+    });
+
+    return activeFilter === "Tous" ? mixRecipesByCategory(visibleRecipes) : visibleRecipes;
+  }, [activeFilter, recipes, searchInput]);
+
+  const totalRecipes = filteredRecipes.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecipes / currentLimit));
+  const paginatedRecipes = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredRecipes.slice(startIndex, startIndex + currentLimit);
+  }, [currentLimit, currentPage, filteredRecipes]);
+
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+  const currentQuery = searchInput.trim();
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      updateCatalogParams((nextParams) => {
+        nextParams.set("page", String(totalPages));
+        nextParams.set("limit", String(currentLimit));
+      });
+    }
+  }, [currentLimit, currentPage, totalPages]);
+
   const summaryText = buildSummaryText({
-    totalItems: pagination.totalItems,
+    totalItems: totalRecipes,
     activeFilter,
     currentQuery,
   });
@@ -310,7 +376,7 @@ export default function RecipeCatalogView({
       <section className={styles.catalogue}>
         <div className={styles.catalogueInner}>
           <div className={styles.filters} aria-label="Filtrer les recettes par catégorie">
-            {FILTERS.map((filter) => {
+            {filters.map((filter) => {
               const isActive = activeFilter === filter.value;
 
               return (
@@ -334,8 +400,8 @@ export default function RecipeCatalogView({
 
           <div className={styles.toolbar}>
             <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
-              <div ref={searchRef} className={styles.searchField}>
-                {isMobileViewport && (
+              <div className={styles.searchField}>
+                {shouldUseMobileSearchOverlay && (
                   <button
                     type="button"
                     className={styles.mobileSearchLauncher}
@@ -345,16 +411,17 @@ export default function RecipeCatalogView({
                     <img src="/icon/Search.svg" alt="" aria-hidden="true" className={styles.mobileSearchIcon} />
                   </button>
                 )}
+                <span className={styles.searchFieldIcon} aria-hidden="true" />
                 <input
                   type="search"
                   value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
+                  onChange={(event) => handleSearchChange(event.target.value)}
                   className={styles.searchInput}
                   placeholder={searchPlaceholder}
                   aria-label={searchAriaLabel}
-                  readOnly={isMobileViewport}
-                  onFocus={isMobileViewport ? openMobileSearchModal : undefined}
-                  onClick={isMobileViewport ? openMobileSearchModal : undefined}
+                  readOnly={shouldUseMobileSearchOverlay}
+                  onFocus={shouldUseMobileSearchOverlay ? openMobileSearchModal : undefined}
+                  onClick={shouldUseMobileSearchOverlay ? openMobileSearchModal : undefined}
                 />
                 {searchInput && (
                   <button
@@ -366,34 +433,7 @@ export default function RecipeCatalogView({
                     ×
                   </button>
                 )}
-                {searchResults.length > 0 && (
-                  <ul className={styles.searchResults}>
-                    {searchResults.map((recipe) => (
-                      <li key={recipe.id} className={styles.searchResultItem}>
-                        <Link
-                          to={`/recipes/${recipe.slug || recipe.id}`}
-                          onClick={handleSuggestionClick}
-                        >
-                          <img
-                            src={recipe.image}
-                            alt={recipe.title}
-                            className={styles.searchResultThumb}
-                          />
-                          <span className={styles.searchResultCopy}>
-                            <span>{recipe.title}</span>
-                            {recipe.mediaTitle && (
-                              <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
-                            )}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
-              {!isMobileViewport && (
-                <button type="submit" className={styles.searchButton}>Rechercher</button>
-              )}
             </form>
 
             {isMobileViewport ? (
@@ -428,6 +468,63 @@ export default function RecipeCatalogView({
             )}
           </div>
 
+          {isMobileViewport && (
+            <div
+              className={`${styles.catalogMobileSearchOverlay} ${isMobileSearchOpen ? styles.catalogMobileSearchOverlayVisible : ""}`}
+              aria-hidden={!isMobileSearchOpen}
+            >
+              <button
+                type="button"
+                className={styles.catalogMobileSearchBackdrop}
+                aria-label="Fermer la recherche"
+                onClick={closeMobileSearchModal}
+              />
+
+              <section className={`${styles.catalogMobileSearchModal} ${isMobileSearchOpen ? styles.catalogMobileSearchModalOpen : ""}`} aria-label="Recherche rapide">
+                <div className={styles.catalogMobileSearchHeader}>
+                  <div className={styles.catalogMobileSearchTitleRow}>
+                    <p className={styles.catalogMobileSearchEyebrow}>Recherche rapide</p>
+                    <span className={styles.catalogMobileSearchTitleLine} />
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.catalogMobileSearchCloseButton}
+                    aria-label="Fermer la recherche"
+                    onClick={closeMobileSearchModal}
+                  >
+                    <img src="/icon/close_menu.svg" alt="Fermer" />
+                  </button>
+                </div>
+
+                <div className={styles.catalogMobileSearchContent}>
+                  <form className={styles.catalogMobileSearchForm} onSubmit={handleSearchSubmit}>
+                    <div className={styles.catalogMobileSearchField}>
+                      <img src="/icon/Search.svg" alt="" aria-hidden="true" className={styles.catalogMobileSearchIcon} />
+                      <input
+                        ref={mobileSearchInputRef}
+                        type="search"
+                        value={searchInput}
+                        onChange={(event) => handleSearchChange(event.target.value)}
+                        placeholder={searchPlaceholder}
+                        className={styles.catalogMobileSearchInput}
+                      />
+                      {searchInput && (
+                        <button
+                          type="button"
+                          className={styles.clearSearchButton}
+                          onClick={clearSearch}
+                          aria-label="Effacer la recherche"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                </div>
+              </section>
+            </div>
+          )}
+
           <div className={styles.summaryRow}>
             <p className={styles.summaryText}>{summaryText}</p>
           </div>
@@ -436,14 +533,6 @@ export default function RecipeCatalogView({
             <StatusBlock
               variant="loading"
               title={loadingMessage}
-              className={styles.catalogState}
-            />
-          )}
-          {isPaginating && !isLoading && (
-            <StatusBlock
-              variant="loading"
-              title={updatingMessage}
-              size="compact"
               className={styles.catalogState}
             />
           )}
@@ -457,12 +546,11 @@ export default function RecipeCatalogView({
             />
           )}
           {isLoading && <p>{loadingMessage}</p>}
-          {isPaginating && !isLoading && <p className={styles.loadingInline}>{updatingMessage}</p>}
           {error && !isLoading && <p>{error}</p>}
 
           {!isLoading && !error && (
             <section className={styles.grid}>
-              {recipes.length === 0 && (
+              {paginatedRecipes.length === 0 && (
                 <StatusBlock
                   variant="empty"
                   title={currentQuery ? "Aucune recette trouvée" : "Aucune recette publiée"}
@@ -471,33 +559,33 @@ export default function RecipeCatalogView({
                     : emptyMessage}
                   className={styles.gridState}
                 />
-           )}
-              {recipes.map((recipe) => (
+              )}
+              {paginatedRecipes.map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={recipe} />
               ))}
             </section>
           )}
 
-          {!isLoading && !error && pagination.totalPages > 1 && (
+          {!isLoading && !error && totalPages > 1 && (
             <nav className={styles.pagination} aria-label="Pagination du catalogue">
               <button
                 type="button"
                 className={styles.paginationButton}
-                onClick={() => goToPage(pagination.page - 1)}
-                disabled={!pagination.hasPreviousPage || isPaginating}
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={!hasPreviousPage}
               >
                 Précédent
               </button>
 
               <span className={styles.paginationStatus}>
-                Page {pagination.page} / {pagination.totalPages}
+                Page {currentPage} / {totalPages}
               </span>
 
               <button
                 type="button"
                 className={styles.paginationButton}
-                onClick={() => goToPage(pagination.page + 1)}
-                disabled={!pagination.hasNextPage || isPaginating}
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={!hasNextPage}
               >
                 Suivant
               </button>

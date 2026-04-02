@@ -50,6 +50,10 @@
   list-style: none;
 }
 
+.desktopLinks li {
+  min-width: 0;
+}
+
 .link,
 .activeLink,
 .mobileLink,
@@ -116,6 +120,21 @@
 
 .searchInput::placeholder {
   color: rgba(246, 241, 232, 0.7);
+}
+
+.searchInput::-webkit-search-decoration,
+.searchInput::-webkit-search-cancel-button,
+.searchInput::-webkit-search-results-button,
+.searchInput::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.searchInput::-ms-clear,
+.searchInput::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .searchButton {
@@ -246,14 +265,12 @@
   border: none; /* le mixin gère déjà le style de bordure */
 }
 
-/* Icône Logout.svg à gauche — même taille que dans la page compte */
+/* Icône de déconnexion identique à l'Admin */
 .desktopLogoutIcon {
   width: 20px;
   height: 20px;
   display: block;
   flex-shrink: 0;
-  /* Pas de filtre : Logout.svg est déjà blanc/clair,
-     conçu pour fond sombre — même fichier que la page compte */
 }
 
 .desktopLoginLink {
@@ -482,7 +499,7 @@
   transform: translateX(0);
 }
 
-.mobilePanelAdmin {
+.mobilePanelDashboard {
   width: min(100%, 430px);
   max-width: 430px;
   padding: 1.2rem 0.85rem 0.85rem;
@@ -530,6 +547,24 @@
   border-radius: 999px;
   background: rgba(201, 164, 92, 0.14);
   color: #fbdca6;
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.memberMobileBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.65rem;
+  padding: 0.18rem 0.62rem;
+  border: 1px solid rgba(92, 177, 194, 0.42);
+  border-radius: 999px;
+  background: rgba(58, 138, 154, 0.16);
+  color: #d7f4f8;
   font-family: "Inter", sans-serif;
   font-size: 0.72rem;
   font-weight: 700;
@@ -780,9 +815,44 @@
   min-width: 0;
 }
 
+.searchResultTitle {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.searchResultMetaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.searchResultBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-height: 1.25rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid rgba(201, 164, 92, 0.32);
+  border-radius: 999px;
+  background: rgba(201, 164, 92, 0.14);
+  color: #fbdca6;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .searchResultMeta {
+  min-width: 0;
   color: rgba(246, 241, 232, 0.62);
   font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .clearSearchButton {
@@ -845,6 +915,11 @@
     list-style: none;
   }
 
+  .desktopLinks li {
+    display: flex;
+    justify-content: center;
+  }
+
   .rightZone {
     display: flex;
     align-items: center;
@@ -886,8 +961,8 @@
   }
 
   .desktopLinks {
-    width: min(100%, var(--desktop-nav-max-width, 24rem));
-    gap: 0.75rem;
+    width: min(100%, 26rem);
+    gap: clamp(0.5rem, 0.85vw, 0.75rem);
   }
 
   .userRoleBadge {
@@ -907,6 +982,77 @@
     font-size: 0.8rem;
     padding: 0.55rem 0.9rem;
     min-width: unset;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1370px) {
+  .container {
+    column-gap: clamp(0.55rem, 1vw, 0.95rem);
+  }
+
+  .desktopNav {
+    justify-content: stretch;
+    padding-inline: clamp(0.7rem, 1.35vw, 1.3rem);
+  }
+
+  .desktopLinks {
+    width: min(100%, clamp(22rem, 30vw, 28rem));
+    grid-template-columns: repeat(var(--desktop-nav-columns, 4), minmax(0, 1fr));
+    justify-content: stretch;
+    gap: clamp(0.4rem, 0.75vw, 0.8rem);
+  }
+
+  .link,
+  .activeLink {
+    font-size: clamp(0.88rem, 0.8rem + 0.18vw, 0.94rem);
+  }
+
+  .rightZone {
+    gap: clamp(0.5rem, 0.9vw, 0.85rem);
+  }
+
+  .searchForm {
+    min-width: clamp(170px, 17vw, 240px);
+  }
+
+  .searchInput {
+    padding-inline: 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .searchButton {
+    padding-inline: 0.85rem;
+  }
+
+  .userBlock {
+    gap: clamp(0.45rem, 0.85vw, 0.75rem);
+  }
+
+  .userGreeting {
+    display: none;
+  }
+
+  .userName {
+    max-width: 7rem;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .desktopLogoutButton {
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1135px) {
+  .userTextLink {
+    display: none;
+  }
+
+  .desktopLogoutButton {
+    padding-inline: 0.8rem;
   }
 }
 

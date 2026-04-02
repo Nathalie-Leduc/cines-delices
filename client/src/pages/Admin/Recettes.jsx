@@ -4,6 +4,7 @@ import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import { buildApiUrl } from '../../services/api.js';
 import {
   getMediaSuggestionMeta,
   MEDIA_SUGGESTION_POSTER_FALLBACK,
@@ -24,12 +25,11 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
-  || `${API_BASE_URL}/api/tmdb/medias/search`;
+  || buildApiUrl('/api/tmdb/medias/search');
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
-  || `${API_BASE_URL}/api/ingredients`;
+  || buildApiUrl('/api/ingredients');
 const UNITES_OPTIONS = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
 // ✅ parseTimeToMinutes — convertit "1h10", "1:10", "70min", "70" → minutes
@@ -592,6 +592,7 @@ function AdminRecettes() {
           }}
         >
           <div className={styles.recipeSearchField}>
+            <span className={styles.recipeSearchFieldIcon} aria-hidden="true" />
             <input
               className={styles.recipeSearchInput}
               type="search"
@@ -604,10 +605,6 @@ function AdminRecettes() {
               aria-label="Rechercher une recette"
             />
           </div>
-
-          <button type="submit" className={styles.recipeSearchButton}>
-            Rechercher
-          </button>
         </form>
 
         <div className={styles.recipeFiltersRow} aria-label="Filtrer les recettes par catégorie">
@@ -1063,7 +1060,7 @@ function AdminRecettes() {
                 </button>
               </div>
 
-              <label className={styles.adminEditLabel}>
+              <label className={`${styles.adminEditLabel} ${styles.adminEditLabelMedia}`.trim()}>
                 Image (.png, .jpg, .jpeg, .webp)
                 <input
                   className={styles.adminEditInput}
@@ -1073,7 +1070,7 @@ function AdminRecettes() {
                 />
               </label>
 
-              <label className={styles.adminEditLabel}>
+              <label className={`${styles.adminEditLabel} ${styles.adminEditLabelMedia}`.trim()}>
                 Ou URL image
                 <input
                   className={styles.adminEditInput}
@@ -1091,7 +1088,17 @@ function AdminRecettes() {
               <button
                 type="button"
                 className={styles.adminCancelBtn}
-                onClick={() => { setShowEditModal(false); setError(''); }}
+                onClick={() => {
+                  setShowEditModal(false);
+                  setError('');
+                  if (returnAfterSave?.pathname) {
+                    navigate(returnAfterSave.pathname, {
+                      replace: true,
+                      state: returnAfterSave.state || {},
+                    });
+                    setReturnAfterSave(null);
+                  }
+                }}
               >
                 Annuler
               </button>

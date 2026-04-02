@@ -6,6 +6,7 @@ export default function AuthShell({
   children,
   contentClassName = '',
   bodyClassName = '',
+  showBrand = true,
 }) {
   return (
     <section className={styles.page}>
@@ -19,13 +20,15 @@ export default function AuthShell({
           {children}
         </div>
 
-        <div className={styles.brand}>
-          <img
-            src="/img/logo-cine-delices.png"
-            alt="Ciné Délices"
-            className={styles.logo}
-          />
-        </div>
+        {showBrand ? (
+          <div className={styles.brand}>
+            <img
+              src="/img/logo-cine-delices.png"
+              alt="Ciné Délices"
+              className={styles.logo}
+            />
+          </div>
+        ) : null}
       </section>
     </section>
   );

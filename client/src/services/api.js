@@ -1,3 +1,49 @@
+const DEFAULT_API_ORIGIN = 'http://localhost:3000';
+
+function normalizeBaseUrl(value) {
+  const rawValue = String(value || '').trim();
+  return rawValue ? rawValue.replace(/\/$/, '') : '';
+}
+
+export function getApiBaseUrl() {
+  const configuredBaseUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL);
+
+  if (configuredBaseUrl) {
+    return configuredBaseUrl;
+  }
+
+  if (import.meta.env.MODE === 'test') {
+    return DEFAULT_API_ORIGIN;
+  }
+
+  return '';
+}
+
+export function getApiOrigin() {
+  return normalizeBaseUrl(import.meta.env.VITE_API_ORIGIN)
+    || normalizeBaseUrl(import.meta.env.VITE_API_URL)
+    || DEFAULT_API_ORIGIN;
+}
+
+export function buildApiUrl(endpoint) {
+  const normalizedEndpoint = String(endpoint || '').startsWith('/')
+    ? String(endpoint || '')
+    : `/${String(endpoint || '')}`;
+
+  return `${getApiBaseUrl()}${normalizedEndpoint}`;
+}
+
+export function buildApiAssetUrl(path) {
+  const rawPath = String(path || '').trim();
+
+  if (!rawPath || /^https?:\/\//i.test(rawPath) || rawPath.startsWith('data:')) {
+    return rawPath;
+  }
+
+  const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  return `${getApiOrigin()}${normalizedPath}`;
+}
+
 /**
  * Effectue une requête HTTP vers l'API avec injection automatique du token.
  * @param {string} endpoint - Chemin de la route (ex: '/api/recipes')
@@ -25,9 +71,10 @@ export async function request(endpoint, options = {}) {
       ...(token ? { Authorization: `Bearer ${token}` } : {}), // token si présent
     };
  
-    // 🔹 Construire l'URL complète via la variable d'environnement Vite
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    const url = `${baseUrl}${endpoint}`;
+    // 🔹 Construire l'URL complète :
+    //    - en navigateur de dev → endpoint relatif (/api/...)
+    //    - en test / URL explicite → URL absolue
+    const url = buildApiUrl(endpoint);
  
     // 🔹 Envoyer la requête
     const response = await fetch(url, {
