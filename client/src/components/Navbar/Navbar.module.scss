@@ -482,7 +482,7 @@
   transform: translateX(0);
 }
 
-.mobilePanelAdmin {
+.mobilePanelDashboard {
   width: min(100%, 430px);
   max-width: 430px;
   padding: 1.2rem 0.85rem 0.85rem;
@@ -530,6 +530,24 @@
   border-radius: 999px;
   background: rgba(201, 164, 92, 0.14);
   color: #fbdca6;
+  font-family: "Inter", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.memberMobileBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.65rem;
+  padding: 0.18rem 0.62rem;
+  border: 1px solid rgba(92, 177, 194, 0.42);
+  border-radius: 999px;
+  background: rgba(58, 138, 154, 0.16);
+  color: #d7f4f8;
   font-family: "Inter", sans-serif;
   font-size: 0.72rem;
   font-weight: 700;

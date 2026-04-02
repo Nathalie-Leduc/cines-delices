@@ -592,6 +592,7 @@ function AdminRecettes() {
           }}
         >
           <div className={styles.recipeSearchField}>
+            <span className={styles.recipeSearchFieldIcon} aria-hidden="true" />
             <input
               className={styles.recipeSearchInput}
               type="search"
@@ -604,10 +605,6 @@ function AdminRecettes() {
               aria-label="Rechercher une recette"
             />
           </div>
-
-          <button type="submit" className={styles.recipeSearchButton}>
-            Rechercher
-          </button>
         </form>
 
         <div className={styles.recipeFiltersRow} aria-label="Filtrer les recettes par catégorie">
@@ -1051,7 +1048,7 @@ function AdminRecettes() {
                 </button>
               </div>
 
-              <label className={styles.adminEditLabel}>
+              <label className={`${styles.adminEditLabel} ${styles.adminEditLabelMedia}`.trim()}>
                 Image (.png, .jpg, .jpeg, .webp)
                 <input
                   className={styles.adminEditInput}
@@ -1061,7 +1058,7 @@ function AdminRecettes() {
                 />
               </label>
 
-              <label className={styles.adminEditLabel}>
+              <label className={`${styles.adminEditLabel} ${styles.adminEditLabelMedia}`.trim()}>
                 Ou URL image
                 <input
                   className={styles.adminEditInput}
@@ -1079,7 +1076,17 @@ function AdminRecettes() {
               <button
                 type="button"
                 className={styles.adminCancelBtn}
-                onClick={() => { setShowEditModal(false); setError(''); }}
+                onClick={() => {
+                  setShowEditModal(false);
+                  setError('');
+                  if (returnAfterSave?.pathname) {
+                    navigate(returnAfterSave.pathname, {
+                      replace: true,
+                      state: returnAfterSave.state || {},
+                    });
+                    setReturnAfterSave(null);
+                  }
+                }}
               >
                 Annuler
               </button>

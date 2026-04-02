@@ -235,6 +235,7 @@ export default function IngredientsValidation() {
         }}
       >
         <div className={styles.recipeSearchField}>
+          <span className={styles.recipeSearchFieldIcon} aria-hidden="true" />
           <input
             className={styles.recipeSearchInput}
             type="search"
@@ -247,10 +248,6 @@ export default function IngredientsValidation() {
             aria-label="Rechercher un ingrédient à valider"
           />
         </div>
-
-        <button type="submit" className={styles.recipeSearchButton}>
-          Rechercher
-        </button>
       </form>
 
       <div className={styles.recipeSummaryRow}>

@@ -31,9 +31,8 @@ function normalizePseudoBase(value) {
   return normalized;
 }
 
-async function generateUniquePseudo({ prenom, nom }) {
-  const rawBase = `${prenom}.${nom}`;
-  const base = normalizePseudoBase(rawBase) || normalizePseudoBase(prenom) || 'membre';
+async function generateUniquePseudo({ prenom }) {
+  const base = normalizePseudoBase(prenom) || 'membre';
   const maxLength = 30;
 
   let candidate = base.slice(0, maxLength);
@@ -61,7 +60,7 @@ export const register = async (req, res) => {
     const normalizedNom = String(nom || '').trim();
     const normalizedPrenom = String(prenom || '').trim();
     const providedPseudo = optionalPseudo ? String(optionalPseudo).trim() : null;
-    const pseudo = providedPseudo || await generateUniquePseudo({ prenom: normalizedPrenom, nom: normalizedNom });
+    const pseudo = providedPseudo || await generateUniquePseudo({ prenom: normalizedPrenom });
 
        // Vérification de l'unicité email + pseudo en une seule requête
     const existing = await prisma.user.findFirst({

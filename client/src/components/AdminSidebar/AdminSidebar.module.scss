@@ -103,6 +103,8 @@
   );
   @include ui.badge-gradient-recipe;
   align-self: flex-start;
+  margin-inline-start: -0.08rem;
+  padding: 0.22rem 0.56rem 0.22rem 0.42rem;
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.14);
 }
 

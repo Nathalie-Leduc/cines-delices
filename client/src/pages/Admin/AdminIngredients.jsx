@@ -231,6 +231,7 @@ export default function AdminIngredients() {
         }}
       >
         <div className={styles.recipeSearchField}>
+          <span className={styles.recipeSearchFieldIcon} aria-hidden="true" />
           <input
             className={styles.recipeSearchInput}
             type="search"
@@ -243,10 +244,6 @@ export default function AdminIngredients() {
             aria-label="Rechercher un ingrédient validé"
           />
         </div>
-
-        <button type="submit" className={styles.recipeSearchButton}>
-          Rechercher
-        </button>
       </form>
 
       <div className={styles.recipeSummaryRow}>

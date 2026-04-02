@@ -61,19 +61,25 @@
 
 @media (max-width: 900px) {
   .footer {
-    padding: 1.4rem var(--layout-gutter);
+    padding: 1rem var(--layout-gutter) 1.1rem;
   }
 
   .footerInner {
     flex-direction: column;
     justify-content: center;
     text-align: center;
-    gap: 1rem;
+    gap: 0.7rem;
+  }
+
+  .footerLogo img {
+    height: 28px;
   }
 
   .footerNav {
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.42rem;
   }
 
   .separator {
@@ -81,6 +87,7 @@
   }
 
   .footerLink {
-    font-size: 0.88rem;
+    font-size: 0.8rem;
+    line-height: 1.2;
   }
 }

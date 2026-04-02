@@ -19,6 +19,23 @@ function getUserIdentityLabel(user) {
     .trim() || 'Utilisateur';
 }
 
+function normalizeCategoryKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getCategoryBadgeToneClass(categoryName) {
+  const normalized = normalizeCategoryKey(categoryName);
+  if (normalized === 'entree') return styles.entree;
+  if (normalized === 'plat') return styles.plat;
+  if (normalized === 'dessert') return styles.dessert;
+  if (normalized === 'boisson') return styles.boisson;
+  return '';
+}
+
 function AdminUtilisateurs() {
   const { user: currentUser } = useAuth();
   const location = useLocation();
@@ -37,13 +54,38 @@ function AdminUtilisateurs() {
   const usersWithTotals = useMemo(() => {
     return users.map((user) => ({
     ...user,
-    totalRecipes:
-      (user.recipeCounts?.entree || 0) +
-      (user.recipeCounts?.plat || 0) +
-      (user.recipeCounts?.dessert || 0) +
-      (user.recipeCounts?.boisson || 0),
+    totalRecipes: Object.values(user.recipeCounts || {}).reduce(
+      (sum, count) => sum + (Number(count) || 0),
+      0,
+    ),
   }));
 }, [users]);
+
+  const selectedUserRecipeCategories = useMemo(() => {
+    const recipeCounts = selectedUser?.recipeCounts || {};
+    const preferredOrder = ['entree', 'plat', 'dessert', 'boisson'];
+
+    return Object.entries(recipeCounts)
+      .filter(([name]) => String(name || '').trim().length > 0)
+      .map(([name, count]) => ({
+        key: normalizeCategoryKey(name),
+        name: String(name || '').trim(),
+        count: Number(count) || 0,
+      }))
+      .sort((a, b) => {
+        const aIndex = preferredOrder.indexOf(a.key);
+        const bIndex = preferredOrder.indexOf(b.key);
+
+        const aRank = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+        const bRank = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+
+        if (aRank !== bRank) {
+          return aRank - bRank;
+        }
+
+        return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+      });
+  }, [selectedUser]);
 
   useEffect(() => {
     setSelectedUser(null);
@@ -140,6 +182,7 @@ function AdminUtilisateurs() {
             }}
           >
             <div className={styles.usersSearchField}>
+              <span className={styles.usersSearchFieldIcon} aria-hidden="true" />
               <input
                 className={styles.usersSearchInput}
                 type="search"
@@ -152,10 +195,6 @@ function AdminUtilisateurs() {
                 aria-label="Rechercher un utilisateur"
               />
             </div>
-
-            <button type="submit" className={styles.usersSearchButton}>
-              Rechercher
-            </button>
           </form>
 
           <div className={styles.recipeSummaryRow}>
@@ -319,21 +358,18 @@ function AdminUtilisateurs() {
             <div className={styles.recipesBlock}>
               <span className={styles.blockLabel}>Recettes</span>
 
-              <div className={styles.badgesRow}>
-                <span className={`${styles.badge} ${styles.entree}`.trim()}>Entrée</span>
-                <span className={`${styles.badge} ${styles.plat}`.trim()}>Plat</span>
-                <span className={`${styles.badge} ${styles.dessert}`.trim()}>Dessert</span>
-                <span className={`${styles.badge} ${styles.boisson}`.trim()}>Boisson</span>
-              </div>
-
-              <div className={styles.countersRow}>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.entree || 0}</span>
-                <span className={styles.separator}>|</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.plat || 0}</span>
-                <span className={styles.separator}>|</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.dessert || 0}</span>
-                <span className={styles.separator}>|</span>
-                <span className={styles.counter}>{selectedUser.recipeCounts?.boisson || 0}</span>
+              <div className={styles.recipesGrid}>
+                {selectedUserRecipeCategories.map((category) => (
+                  <div
+                    key={category.name}
+                    className={`${styles.recipeCategoryItem} ${getCategoryBadgeToneClass(category.name)}`.trim()}
+                  >
+                    <span className={`${styles.badge} ${getCategoryBadgeToneClass(category.name)}`.trim()}>
+                      {category.name}
+                    </span>
+                    <span className={styles.counter}>{category.count}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

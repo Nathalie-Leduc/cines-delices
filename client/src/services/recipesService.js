@@ -47,6 +47,10 @@ export function getMyNotifications() {
   return request('/api/users/me/notifications');
 }
 
+export function deleteMyNotification(notificationId) {
+  return request(`/api/users/me/notifications/${notificationId}`, { method: 'DELETE' });
+}
+
 // Tâche F-04
 // Récupère une recette par son slug
 export function getRecipeBySlug(slug) {

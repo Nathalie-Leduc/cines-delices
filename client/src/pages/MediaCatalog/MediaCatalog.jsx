@@ -6,6 +6,7 @@ import useHeroReveal from "../../hooks/useHeroReveal";
 import styles from "../RecipesPage/RecipesPage.module.scss";
 
 const DEFAULT_LIMIT = 15;
+const LIMIT_OPTIONS = [6, 9, 12, 15];
 
 function parsePositiveInt(value, fallback) {
   const parsed = Number.parseInt(String(value || ""), 10);
@@ -53,8 +54,12 @@ export default function MediaCatalog({
   const [isPaginating, setIsPaginating] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
+  const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth <= 767);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const hasLoadedOnce = useRef(false);
   const searchRef = useRef(null);
+  const searchDebounceRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
   const isHeroVisible = useHeroReveal();
 
   const currentQuery = searchParams.get("q")?.trim() || "";
@@ -62,11 +67,25 @@ export default function MediaCatalog({
   const currentLimit = parsePositiveInt(searchParams.get("limit"), DEFAULT_LIMIT);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateViewport = (event) => {
+      setIsMobileViewport(event.matches);
+    };
+
+    setIsMobileViewport(mediaQuery.matches);
+    mediaQuery.addEventListener("change", updateViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateViewport);
+    };
+  }, []);
+
+  useEffect(() => {
     setSearchInput(searchParams.get("q") || "");
   }, [searchParams]);
 
   useEffect(() => {
-    if (!searchInput || searchInput.trim().length < 2) {
+    if (!searchInput || searchInput.trim().length < 1) {
       setSearchResults([]);
       return;
     }
@@ -109,6 +128,37 @@ export default function MediaCatalog({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) {
+        window.clearTimeout(searchDebounceRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileSearchOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    mobileSearchInputRef.current?.focus();
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileSearchOpen]);
 
   useEffect(() => {
     let isMounted = true;
@@ -221,6 +271,21 @@ export default function MediaCatalog({
     });
   };
 
+  const handleLimitChange = (event) => {
+    const nextLimit = Number(event.target.value);
+    updateCatalogParams((nextParams) => {
+      nextParams.set("limit", String(nextLimit));
+      nextParams.set("page", "1");
+    });
+  };
+
+  const handleMobileLimitChange = (limit) => {
+    updateCatalogParams((nextParams) => {
+      nextParams.set("limit", String(limit));
+      nextParams.set("page", "1");
+    });
+  };
+
   const handleSuggestionClick = (itemTitle) => {
     setSearchInput(itemTitle);
     setSearchResults([]);
@@ -229,6 +294,39 @@ export default function MediaCatalog({
       nextParams.set("page", "1");
       nextParams.set("limit", String(currentLimit));
     });
+  };
+
+  const openMobileSearch = () => {
+    setIsMobileSearchOpen(true);
+  };
+
+  const closeMobileSearch = () => {
+    setIsMobileSearchOpen(false);
+    setSearchResults([]);
+  };
+
+  const handleSearchInputChange = (event) => {
+    const nextValue = event.target.value;
+    setSearchInput(nextValue);
+
+    if (searchDebounceRef.current) {
+      window.clearTimeout(searchDebounceRef.current);
+    }
+
+    searchDebounceRef.current = window.setTimeout(() => {
+      const normalized = nextValue.trim();
+
+      updateCatalogParams((nextParams) => {
+        if (normalized) {
+          nextParams.set("q", normalized);
+        } else {
+          nextParams.delete("q");
+        }
+
+        nextParams.set("page", "1");
+        nextParams.set("limit", String(currentLimit));
+      });
+    }, 250);
   };
 
   const hasResults = items.length > 0;
@@ -274,13 +372,32 @@ export default function MediaCatalog({
           <div className={styles.toolbar}>
             <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
               <div ref={searchRef} className={styles.searchField}>
+                {isMobileViewport ? (
+                  <button
+                    type="button"
+                    className={styles.mobileSearchLauncher}
+                    onClick={openMobileSearch}
+                    aria-label="Ouvrir la recherche"
+                  >
+                    <img src="/icon/Search.svg" alt="" aria-hidden="true" className={styles.mobileSearchIcon} />
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className={styles.searchSubmitButton}
+                    aria-label="Lancer la recherche"
+                  />
+                )}
                 <input
                   type="search"
                   value={searchInput}
-                  onChange={(event) => setSearchInput(event.target.value)}
+                  onChange={handleSearchInputChange}
                   className={styles.searchInput}
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
+                  readOnly={isMobileViewport}
+                  onFocus={isMobileViewport ? openMobileSearch : undefined}
+                  onClick={isMobileViewport ? openMobileSearch : undefined}
                 />
                 {searchInput && (
                   <button
@@ -292,7 +409,7 @@ export default function MediaCatalog({
                     ×
                   </button>
                 )}
-                {searchResults.length > 0 && (
+                {!isMobileViewport && searchResults.length > 0 && (
                   <ul className={styles.searchResults}>
                     {searchResults.map((item) => (
                       <li key={item.id} className={styles.searchResultItem}>
@@ -334,9 +451,141 @@ export default function MediaCatalog({
                   </ul>
                 )}
               </div>
-              <button type="submit" className={styles.searchButton}>Rechercher</button>
             </form>
+
+            {isMobileViewport ? (
+              <div className={styles.mobileLimitControl} aria-label={`Nombre de ${pluralLabel} par page`}>
+                <div className={styles.mobileLimitPills}>
+                  {LIMIT_OPTIONS.map((limit) => {
+                    const isActive = currentLimit === limit;
+
+                    return (
+                      <button
+                        key={limit}
+                        type="button"
+                        className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ""}`}
+                        onClick={() => handleMobileLimitChange(limit)}
+                        aria-pressed={isActive}
+                      >
+                        {limit}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <label className={styles.limitControl}>
+                <span>Par page</span>
+                <select value={currentLimit} onChange={handleLimitChange} className={styles.limitSelect}>
+                  {LIMIT_OPTIONS.map((limit) => (
+                    <option key={limit} value={limit}>{limit}</option>
+                  ))}
+                </select>
+              </label>
+            )}
           </div>
+
+          {isMobileViewport && (
+            <div
+              className={`${styles.catalogMobileSearchOverlay} ${isMobileSearchOpen ? styles.catalogMobileSearchOverlayVisible : ""}`}
+              aria-hidden={!isMobileSearchOpen}
+            >
+              <button
+                type="button"
+                className={styles.catalogMobileSearchBackdrop}
+                aria-label="Fermer la recherche"
+                onClick={closeMobileSearch}
+              />
+
+              <section className={`${styles.catalogMobileSearchModal} ${isMobileSearchOpen ? styles.catalogMobileSearchModalOpen : ""}`} aria-label="Recherche rapide">
+                <div className={styles.catalogMobileSearchHeader}>
+                  <div className={styles.catalogMobileSearchTitleRow}>
+                    <p className={styles.catalogMobileSearchEyebrow}>Recherche rapide</p>
+                    <span className={styles.catalogMobileSearchTitleLine} />
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.catalogMobileSearchCloseButton}
+                    aria-label="Fermer la recherche"
+                    onClick={closeMobileSearch}
+                  >
+                    <img src="/icon/close_menu.svg" alt="Fermer" />
+                  </button>
+                </div>
+
+                <div className={styles.catalogMobileSearchContent}>
+                  <form className={styles.catalogMobileSearchForm} onSubmit={handleSearchSubmit}>
+                    <div className={styles.catalogMobileSearchField}>
+                      <img src="/icon/Search.svg" alt="" aria-hidden="true" className={styles.catalogMobileSearchIcon} />
+                      <input
+                        ref={mobileSearchInputRef}
+                        type="search"
+                        value={searchInput}
+                        onChange={handleSearchInputChange}
+                        placeholder={searchPlaceholder}
+                        className={styles.catalogMobileSearchInput}
+                      />
+                      {searchInput && (
+                        <button
+                          type="button"
+                          className={styles.clearSearchButton}
+                          onClick={clearSearch}
+                          aria-label="Effacer la recherche"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+
+                    {searchResults.length > 0 && (
+                      <ul className={styles.catalogMobileSearchResults}>
+                        {searchResults.map((item) => (
+                          <li key={item.id} className={styles.searchResultItem}>
+                            {item.to ? (
+                              <Link to={item.to} onClick={closeMobileSearch}>
+                                <img
+                                  src={item.poster || item.fallbackPoster}
+                                  alt={item.title}
+                                  className={styles.searchResultThumb}
+                                />
+                                <span className={styles.searchResultCopy}>
+                                  <span>{item.title}</span>
+                                  <small className={styles.searchResultMeta}>
+                                    {item.genre || suggestionMetaFallback}
+                                  </small>
+                                </span>
+                              </Link>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleSuggestionClick(item.title);
+                                  closeMobileSearch();
+                                }}
+                                className={styles.searchResultButton}
+                              >
+                                <img
+                                  src={item.poster || item.fallbackPoster}
+                                  alt={item.title}
+                                  className={styles.searchResultThumb}
+                                />
+                                <span className={styles.searchResultCopy}>
+                                  <span>{item.title}</span>
+                                  <small className={styles.searchResultMeta}>
+                                    {item.genre || suggestionMetaFallback}
+                                  </small>
+                                </span>
+                              </button>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </form>
+                </div>
+              </section>
+            </div>
+          )}
 
           <div className={styles.summaryRow}>
             <p className={styles.summaryText}>

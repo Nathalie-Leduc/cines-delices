@@ -2,7 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
 import { buildApiUrl } from '../../services/api.js';
-import { deleteMyRecipe, getMyNotifications, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
+import {
+  deleteMyNotification,
+  deleteMyRecipe,
+  getMyNotifications,
+  getMyRecipes,
+  updateMyRecipe,
+} from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -11,7 +17,7 @@ import {
   MEDIA_SUGGESTION_POSTER_FALLBACK,
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
-import { buildCategoryFilters } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
+import { buildCategoryFilters, LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
   || buildApiUrl('/api/tmdb/medias/search');
@@ -24,10 +30,9 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
     : '')
   || buildApiUrl('/api/ingredients');
 const CATEGORIES_API = buildApiUrl('/api/categories');
+const CONTACT_PREVIEW_LIMIT = 110;
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const LIMIT_OPTIONS = [6, 9, 12];
-
 // ✅ CORRECTIF TEMPS — remplace parseOptionalPositiveInteger pour les temps.
 // Comprend tous les formats courants et les convertit en minutes (entier).
 // Exemples : "70" → 70, "30min" → 30, "1h" → 60, "1h10" → 70, "1:10" → 70
@@ -73,6 +78,62 @@ function formatApiError(error, fallbackMessage) {
     : '';
 
   return details || error?.message || fallbackMessage;
+}
+
+function getNotificationVariantClassName(message) {
+  const normalizedMessage = String(message || '').toLowerCase();
+
+  const hasRejectedSignal =
+    normalizedMessage.includes('a ete refusee')
+    || normalizedMessage.includes('a été refusée')
+    || normalizedMessage.includes('a ete refuse')
+    || normalizedMessage.includes('a été refusé')
+    || normalizedMessage.includes('refusee')
+    || normalizedMessage.includes('refusée')
+    || normalizedMessage.includes('refuse')
+    || normalizedMessage.includes('refusé')
+    || normalizedMessage.includes("n'a pas ete validee")
+    || normalizedMessage.includes("n'a pas été validée")
+    || normalizedMessage.includes('pas ete validee')
+    || normalizedMessage.includes('pas été validée');
+
+  if (hasRejectedSignal) {
+    return 'rejected';
+  }
+
+  if (
+    normalizedMessage.includes('a ete validee')
+    || normalizedMessage.includes('a été validée')
+    || normalizedMessage.includes('validee')
+    || normalizedMessage.includes('validée')
+    || normalizedMessage.includes('valide')
+    || normalizedMessage.includes('validé')
+  ) {
+    return 'approved';
+  }
+
+  return '';
+}
+
+function extractRecipeTitleFromNotificationMessage(message) {
+  const normalizedMessage = String(message || '');
+  const quotedTitleMatch = normalizedMessage.match(/recette\s+"([^"]+)"/i);
+  return quotedTitleMatch?.[1]?.trim() || '';
+}
+
+function isContactNotification(message) {
+  const normalizedMessage = String(message || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return /formulaire\s+de\s+contact/.test(normalizedMessage);
+}
+
+function buildContactNotificationPreview(message) {
+  const normalizedMessage = String(message || '').replace(/\s+/g, ' ').trim();
+
+  if (normalizedMessage.length <= CONTACT_PREVIEW_LIMIT) {
+    return normalizedMessage;
+  }
+
+  return `${normalizedMessage.slice(0, CONTACT_PREVIEW_LIMIT)}...`;
 }
 
 function normalizeCategoryLabel(value) {
@@ -209,6 +270,7 @@ export default function MesRecettes() {
   const [notificationsUnreadCount, setNotificationsUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
+  const [openedContactMessageNotification, setOpenedContactMessageNotification] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -386,6 +448,62 @@ export default function MesRecettes() {
     ? 'Recettes en cours de validation'
     : 'Mes recettes';
   const panelTitle = isNotificationsView ? 'Notifications' : recipesPageTitle;
+
+  function openNotificationTarget(notification) {
+    const notificationRecipeId = String(notification?.recipeId || '').trim();
+    const notificationRecipeSlug = String(notification?.recipeSlug || '').trim();
+    const notificationRecipeTitle = extractRecipeTitleFromNotificationMessage(notification?.message);
+
+    const matchedRecipe = recipes.find((recipe) => {
+      if (!recipe) {
+        return false;
+      }
+
+      const recipeId = String(recipe.id || '').trim();
+      const recipeSlug = String(recipe.slug || '').trim();
+      const recipeTitle = String(recipe.titre || '').trim().toLowerCase();
+
+      return (
+        (notificationRecipeId && recipeId === notificationRecipeId)
+        || (notificationRecipeSlug && recipeSlug === notificationRecipeSlug)
+        || (notificationRecipeTitle && recipeTitle === notificationRecipeTitle.toLowerCase())
+      );
+    });
+
+    const targetId = String(matchedRecipe?.id || notificationRecipeId).trim();
+    const targetSlugOrId = String(matchedRecipe?.slug || notificationRecipeSlug || targetId).trim();
+
+    if (targetSlugOrId) {
+      navigate(`/recipes/${targetSlugOrId}`, {
+        state: {
+          fromMemberRecipes: true,
+          openEditRecipeId: targetId || undefined,
+        },
+      });
+      return;
+    }
+
+    navigate('/membre/mes-recettes');
+  }
+
+  async function removeNotification(event, notification) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!notification?.id) {
+      return;
+    }
+
+    try {
+      await deleteMyNotification(notification.id);
+      setNotifications((previous) => previous.filter((item) => item.id !== notification.id));
+      if (!notification.isRead) {
+        setNotificationsUnreadCount((previous) => Math.max(0, previous - 1));
+      }
+    } catch (removeError) {
+      setNotificationsError(removeError?.message || 'Suppression de notification impossible.');
+    }
+  }
 
   const [editForm, setEditForm] = useState({
     id: null,
@@ -1362,20 +1480,97 @@ export default function MesRecettes() {
               ) : null}
 
               {!isNotificationsLoading && !notificationsError && notifications.length > 0 ? (
-                <div className={styles.notificationsList}>
+                <ul className={styles.notificationsList}>
                   {notifications.map((notification) => (
-                    <article key={notification.id} className={styles.notificationRow}>
-                      <strong className={styles.notificationMessage}>{notification.message}</strong>
-                      <span className={styles.notificationMeta}>
-                        {new Date(notification.createdAt).toLocaleString('fr-FR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </article>
+                    (() => {
+                      const isContact = isContactNotification(notification?.message);
+                      const notificationMessage = isContact
+                        ? buildContactNotificationPreview(notification?.message)
+                        : notification?.message;
+
+                      return (
+                        <li
+                          key={notification.id}
+                          className={`${styles.notificationRow} ${styles[`notificationRow_${getNotificationVariantClassName(notification.message)}`] || ''}`.trim()}
+                        >
+                          <button
+                            type="button"
+                            className={styles.notificationOpenButton}
+                            onClick={() => {
+                              if (isContact) {
+                                setOpenedContactMessageNotification(notification);
+                                return;
+                              }
+                              openNotificationTarget(notification);
+                            }}
+                            aria-label={isContact ? 'Voir le message complet' : 'Voir la notification'}
+                            title={isContact ? 'Voir le message complet' : 'Voir'}
+                          >
+                            <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
+                          </button>
+
+                          <div className={styles.notificationBody}>
+                            <strong className={styles.notificationMessage}>{notificationMessage}</strong>
+                            <span className={styles.notificationMeta}>
+                              {new Date(notification.createdAt).toLocaleString('fr-FR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            className={styles.notificationDeleteButton}
+                            aria-label="Supprimer cette notification"
+                            title="Supprimer"
+                            onClick={(event) => removeNotification(event, notification)}
+                          >
+                            <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                          </button>
+                        </li>
+                      );
+                    })()
                   ))}
+                </ul>
+              ) : null}
+
+              {openedContactMessageNotification ? (
+                <div
+                  className={styles.notificationMessageOverlay}
+                  onClick={() => setOpenedContactMessageNotification(null)}
+                >
+                  <div
+                    className={styles.notificationMessageModal}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <h3 className={styles.notificationMessageTitle}>Message de contact</h3>
+
+                    <p className={styles.notificationMessageBody}>
+                      {openedContactMessageNotification.message}
+                    </p>
+
+                    <p className={styles.notificationMessageMeta}>
+                      {new Date(openedContactMessageNotification.createdAt).toLocaleString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+
+                    <div className={styles.notificationMessageActions}>
+                      <button
+                        type="button"
+                        className={styles.notificationMessageCloseButton}
+                        onClick={() => setOpenedContactMessageNotification(null)}
+                      >
+                        Fermer
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : null}
             </>
@@ -1392,6 +1587,7 @@ export default function MesRecettes() {
                 onSubmit={(event) => event.preventDefault()}
               >
                 <div className={styles.recipeSearchField}>
+                  <span className={styles.recipeSearchFieldIcon} aria-hidden="true" />
                   <input
                     className={styles.recipeSearchInput}
                     type="search"
@@ -1401,9 +1597,6 @@ export default function MesRecettes() {
                     onChange={(event) => setSearchInput(event.target.value)}
                   />
                 </div>
-                <button type="submit" className={styles.recipeSearchButton}>
-                  Rechercher
-                </button>
               </form>
 
               {!isPendingRecipesView ? (
@@ -1417,21 +1610,23 @@ export default function MesRecettes() {
                 </button>
               ) : null}
 
-              <div className={styles.filters}>
-                {categories.map(cat => (
-                  <div key={cat.label} className={styles.filterItem}>
-                    <span className={`${styles.filterCount} ${styles[cat.color]}`}>
-                      {cat.count}
-                    </span>
-                    <button
-                      className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
-                      aria-label={`Filtrer les recettes: ${cat.label}`}
-                      onClick={() => setActiveFilter(cat.label)}
-                    >
-                      {cat.label}
-                    </button>
-                  </div>
-                ))}
+              <div className={styles.filtersScroller}>
+                <div className={styles.filters}>
+                  {categories.map(cat => (
+                    <div key={cat.label} className={styles.filterItem}>
+                      <span className={`${styles.filterCount} ${styles[cat.color]}`}>
+                        {cat.count}
+                      </span>
+                      <button
+                        className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
+                        aria-label={`Filtrer les recettes: ${cat.label}`}
+                        onClick={() => setActiveFilter(cat.label)}
+                      >
+                        {cat.label}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.recipeSummaryRow}>
@@ -1453,6 +1648,25 @@ export default function MesRecettes() {
                       ))}
                     </select>
                   </label>
+                  <div className={styles.mobileLimitControl} aria-label="Nombre de recettes par page">
+                    <div className={styles.mobileLimitPills}>
+                      {LIMIT_OPTIONS.map((option) => {
+                        const isActive = currentLimit === option;
+
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ''}`.trim()}
+                            onClick={() => setCurrentLimit(option)}
+                            aria-pressed={isActive}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
