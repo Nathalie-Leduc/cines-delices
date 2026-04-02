@@ -2283,6 +2283,8 @@
   width: 100%;
   max-width: none;
   min-width: 0;
+  container-type: inline-size;
+  container-name: member-card;
 }
 
 .cardActionsFloating {
@@ -2340,6 +2342,71 @@
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1;
+}
+
+@container member-card (max-width: 268px) {
+  .moderationBadgeGroup {
+    top: 2.12rem;
+    right: 0.48rem;
+    gap: 0.22rem;
+  }
+
+  .moderationBadge {
+    min-height: 1.3rem;
+    max-width: 6.4rem;
+    padding: 0.14rem 0.42rem;
+    font-size: 0.54rem;
+  }
+
+  .rejectionInfoButton {
+    width: 1.14rem;
+    height: 1.14rem;
+    font-size: 0.66rem;
+  }
+}
+
+@container member-card (max-width: 232px) {
+  .cardActionsFloating {
+    top: 0.38rem;
+    left: 0.38rem;
+    gap: 0.16rem;
+  }
+
+  .actionBtn {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
+
+    img {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  .actionBtnSubmit {
+    min-height: 1.45rem;
+    padding: 0.18rem 0.4rem;
+    font-size: 0.54rem;
+  }
+
+  .moderationBadgeGroup {
+    top: 1.84rem;
+    right: 0.38rem;
+  }
+
+  .moderationBadge {
+    min-height: 1.16rem;
+    max-width: 5.9rem;
+    padding: 0.12rem 0.34rem;
+    font-size: 0.5rem;
+  }
+
+  .rejectionInfoButton {
+    width: 1.02rem;
+    height: 1.02rem;
+    font-size: 0.58rem;
+  }
 }
 
 .paginationStatus {
@@ -2725,6 +2792,122 @@
   }
 }
 
+@media (max-width: 580px) {
+  .cardActionsFloating {
+    top: 0.56rem;
+    left: 0.56rem;
+    gap: 0.28rem;
+  }
+
+  .actionBtn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.22);
+
+    img {
+      width: 13px;
+      height: 13px;
+    }
+  }
+
+  .actionBtnSubmit {
+    min-height: 1.75rem;
+    padding: 0.28rem 0.56rem;
+    font-size: 0.64rem;
+  }
+
+  .moderationBadgeGroup {
+    top: 2.2rem;
+    right: 0.58rem;
+    gap: 0.28rem;
+  }
+
+  .moderationBadge {
+    min-height: 1.42rem;
+    max-width: 8rem;
+    padding: 0.18rem 0.5rem;
+    font-size: 0.58rem;
+  }
+
+  .rejectionInfoButton {
+    width: 1.28rem;
+    height: 1.28rem;
+    font-size: 0.74rem;
+  }
+
+  .rejectionTooltip {
+    width: min(12.5rem, calc(100vw - 1.5rem));
+    padding: 0.6rem 0.68rem;
+  }
+
+  .rejectionTooltipTitle {
+    font-size: 0.78rem;
+  }
+
+  .rejectionTooltipText {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 320px) {
+  .cardActionsFloating {
+    top: 0.46rem;
+    left: 0.46rem;
+    gap: 0.22rem;
+  }
+
+  .actionBtn {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    box-shadow: 0 7px 14px rgba(0, 0, 0, 0.2);
+
+    img {
+      width: 11px;
+      height: 11px;
+    }
+  }
+
+  .actionBtnSubmit {
+    min-height: 1.6rem;
+    padding: 0.24rem 0.48rem;
+    font-size: 0.58rem;
+  }
+
+  .moderationBadgeGroup {
+    top: 1.92rem;
+    right: 0.46rem;
+    gap: 0.22rem;
+  }
+
+  .moderationBadge {
+    min-height: 1.28rem;
+    max-width: 6.8rem;
+    padding: 0.14rem 0.42rem;
+    font-size: 0.54rem;
+  }
+
+  .rejectionInfoButton {
+    width: 1.16rem;
+    height: 1.16rem;
+    font-size: 0.68rem;
+  }
+
+  .rejectionTooltip {
+    width: min(11.25rem, calc(100vw - 1rem));
+    padding: 0.52rem 0.6rem;
+  }
+
+  .rejectionTooltipTitle {
+    font-size: 0.74rem;
+  }
+
+  .rejectionTooltipText {
+    font-size: 0.68rem;
+  }
+}
+
 @media (max-width: 423px) {
   .filtersScroller {
     overflow-x: auto;
@@ -2748,5 +2931,11 @@
 @media (max-width: 389px) {
   .filters {
     gap: 0.45rem;
+  }
+}
+
+@media (max-width: 319px) {
+  .grid {
+    grid-template-columns: 1fr;
   }
 }
