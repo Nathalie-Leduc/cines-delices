@@ -29,7 +29,7 @@ export default function Login() {
       const payload = await loginUser({ email, password });
       login({ token: payload?.token, user: payload?.user ?? null });
 
-      let redirectPath = location.state?.from?.pathname || '/membre';
+      let redirectPath = location.state?.from?.pathname || '/membre/mes-recettes';
       if (payload?.user?.role === 'ADMIN') {
         redirectPath = '/admin';
       }

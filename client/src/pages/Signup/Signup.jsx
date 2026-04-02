@@ -103,7 +103,7 @@ export default function Signup() {
       });
 
       login({ token: payload?.token, user: payload?.user ?? null });
-      navigate('/membre', { replace: true });
+      navigate('/membre/mes-recettes', { replace: true });
     } catch (requestError) {
       const { title, messages } = getUserFriendlyRegisterError(requestError);
       showFormError(messages, title);
