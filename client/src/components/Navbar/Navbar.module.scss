@@ -910,6 +910,76 @@
   }
 }
 
+@media (min-width: 1024px) and (max-width: 1370px) {
+  .container {
+    column-gap: clamp(0.7rem, 1.1vw, 1rem);
+  }
+
+  .desktopNav {
+    justify-content: center;
+    padding-inline: clamp(0.85rem, 1.8vw, 1.8rem);
+  }
+
+  .desktopLinks {
+    width: auto;
+    grid-template-columns: repeat(var(--desktop-nav-columns, 4), max-content);
+    gap: clamp(0.55rem, 0.95vw, 1rem);
+  }
+
+  .link,
+  .activeLink {
+    font-size: 0.92rem;
+  }
+
+  .rightZone {
+    gap: clamp(0.55rem, 0.95vw, 0.9rem);
+  }
+
+  .searchForm {
+    min-width: clamp(170px, 16vw, 240px);
+  }
+
+  .searchInput {
+    padding-inline: 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .searchButton {
+    padding-inline: 0.85rem;
+  }
+
+  .userBlock {
+    gap: clamp(0.45rem, 0.85vw, 0.75rem);
+  }
+
+  .userGreeting {
+    display: none;
+  }
+
+  .userName {
+    max-width: 7rem;
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .desktopLogoutButton {
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1135px) {
+  .userTextLink {
+    display: none;
+  }
+
+  .desktopLogoutButton {
+    padding-inline: 0.8rem;
+  }
+}
+
 @media (max-width: 767px) {
   .container {
     min-height: 68px;
