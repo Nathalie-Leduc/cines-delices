@@ -2180,14 +2180,14 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(var(--recipe-card-min-size), var(--recipe-card-max-size)));
-  justify-content: center;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.95rem;
 }
 
 .cardShell {
   width: 100%;
-  max-width: var(--recipe-card-max-size);
+  max-width: none;
+  min-width: 0;
 }
 
 .cardActionsFloating {
@@ -2345,7 +2345,7 @@
   }
 
   .grid {
-    grid-template-columns: repeat(2, minmax(var(--recipe-card-min-size), var(--recipe-card-max-size)));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2373,8 +2373,7 @@
   }
 
   .grid {
-    grid-template-columns: minmax(0, var(--recipe-card-max-size));
-    justify-content: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
