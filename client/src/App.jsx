@@ -1,9 +1,9 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import AdminLayout from './layouts/AdminLayout';
+import MemberDashboardLayout from './layouts/MemberDashboardLayout/MemberDashboardLayout.jsx';
 import MemberLayout from './layouts/MemberLayout';
 import PublicLayout from './layouts/PublicLayout';
 import Home from './pages/Home';
-import MemberInterface from './pages/MemberInterface';
 import MemberRecipes from './pages/MemberRecipes';
 import MemberProfile from './pages/MemberProfile';
 import CreateRecipe from './pages/CreateRecipe';
@@ -63,10 +63,13 @@ function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<MemberInterface />} />
-        <Route path="profil" element={<MemberProfile />} />
-        <Route path="mes-recettes" element={<MemberRecipes />} />
-        <Route path="mes-recettes/recettes-en-validation" element={<MemberRecipes />} />
+        <Route element={<MemberDashboardLayout />}>
+          <Route index element={<Navigate to="mes-recettes" replace />} />
+          <Route path="profil" element={<MemberProfile />} />
+          <Route path="mes-recettes" element={<MemberRecipes />} />
+          <Route path="mes-recettes/recettes-en-validation" element={<MemberRecipes />} />
+          <Route path="notifications" element={<MemberRecipes />} />
+        </Route>
         <Route path="creer-recette" element={<CreateRecipe />} />
       </Route>
 

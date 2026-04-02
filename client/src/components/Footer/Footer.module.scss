@@ -1,8 +1,10 @@
 .footer {
   position: relative;
   display: flex;
+  flex-shrink: 0;
   justify-content: center;
   align-items: center;
+  margin-top: auto;
   padding: 1.9rem var(--layout-gutter) 1.7rem;
   background:
     linear-gradient(rgba(31, 29, 30, 0.94), rgba(31, 29, 30, 0.94)),

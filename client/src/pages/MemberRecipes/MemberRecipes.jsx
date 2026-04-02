@@ -1,16 +1,7 @@
-// ──────────────────────────────────────────────────────────────────────────
-//  MODIFICATIONS F-07 :
-//   1. Import useAuth + logout via contexte (même fix que MemberInterface)
-//   2. Ajout fonction handleSubmitRecipe pour soumettre un brouillon
-//   3. Bouton "Soumettre" visible uniquement si status === 'DRAFT'
-//   4. Bouton "Modifier" désactivé si status === 'PENDING'
-// ──────────────────────────────────────────────────────────────────────────
-
-
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
-import { deleteMyRecipe, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
+import { deleteMyRecipe, getMyNotifications, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
@@ -20,14 +11,6 @@ import {
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
 import { buildCategoryFilters } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
-// ──────────────────────────────────────────────────────────────────────────
-//  MODIF 1 : import du hook useAuth
-//  Avant  : pas d'import, le logout se faisait manuellement via localStorage
-//  Après  : on passe par le contexte AuthContext (même pattern que Navbar
-//             et MemberInterface) pour que la déconnexion soit cohérente partout.
-// ──────────────────────────────────────────────────────────────────────────
-import { useAuth } from '../../contexts/AuthContext.jsx' 
-
 const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
@@ -40,10 +23,10 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
     ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '')
     : '')
   || `${API_BASE_URL}/api/ingredients`;
-const PROFILE_API = import.meta.env.VITE_PROFILE_API || `${API_BASE_URL}/api/auth/me`;
 const CATEGORIES_API = `${API_BASE_URL}/api/categories`;
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const LIMIT_OPTIONS = [6, 9, 12];
 
 // ✅ CORRECTIF TEMPS — remplace parseOptionalPositiveInteger pour les temps.
 // Comprend tous les formats courants et les convertit en minutes (entier).
@@ -214,20 +197,18 @@ function getRecipeModerationBadge(recipe) {
 export default function MesRecettes() {
   const navigate = useNavigate();
   const location = useLocation();
-  // ──────────────────────────────────────────────────────────────────────
-  //  MODIF 1 (suite) : on récupère logout depuis le contexte
-  //  Avant  : pas de useAuth()
-  //  Après  : logout() vide le state React ET le localStorage d'un coup
-  // ──────────────────────────────────────────────────────────────────────
-  const { logout } = useAuth ();
   const [recipes, setRecipes] = useState([]);
   const [availableCategories, setAvailableCategories] = useState([]);
-  const [userDisplayName, setUserDisplayName] = useState(localStorage.getItem('displayName') || '');
-  const [userEmail, setUserEmail] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState('Tous');
-  const [newRecipeName, setNewRecipeName] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsUnreadCount, setNotificationsUnreadCount] = useState(0);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -248,53 +229,7 @@ export default function MesRecettes() {
   const [recetteToDelete, setRecetteToDelete] = useState(null);
 
   const isPendingRecipesView = location.pathname === '/membre/mes-recettes/recettes-en-validation';
-
-  // Récupérer le profil au montage pour afficher un nom/e-mail dynamiques.
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = localStorage.getItem('token');
-
-        if (!token) {
-          return;
-        }
-
-        const response = await fetch(PROFILE_API, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          return;
-        }
-
-        const payload = await response.json();
-        const user = payload?.data ?? payload;
-        const rawName = (typeof user?.prenom === 'string' && user.prenom.trim())
-          ? user.prenom
-          : (typeof user?.pseudo === 'string' && user.pseudo.trim())
-            ? user.pseudo
-            : '';
-
-        if (rawName) {
-          const normalizedName = rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase();
-          setUserDisplayName(normalizedName);
-          localStorage.setItem('displayName', normalizedName);
-          window.dispatchEvent(new Event('user-display-name-updated'));
-        }
-
-        if (typeof user?.email === 'string') {
-          setUserEmail(user.email);
-        }
-      } catch {
-        // Le fallback localStorage/displayName reste actif.
-      }
-    };
-
-    fetchProfile();
-  }, []);
+  const isNotificationsView = location.pathname === '/membre/notifications';
 
   // Récupérer les recettes au montage puis au retour sur l'onglet/la fenêtre.
   useEffect(() => {
@@ -327,6 +262,7 @@ export default function MesRecettes() {
         if (isActive) {
           setRecipes(normalizedRecipes);
           setError('');
+          window.dispatchEvent(new Event('member-recipes-updated'));
         }
       } catch (err) {
         if (isActive) {
@@ -394,58 +330,63 @@ export default function MesRecettes() {
     };
   }, []);
 
-  // Navigation latérale du compte membre.
-  const pendingRecipesCount = recipes.filter(
-    (recipe) => String(recipe?.status || '').toUpperCase() === 'PENDING',
-  ).length;
+  useEffect(() => {
+    if (!isNotificationsView) {
+      return;
+    }
 
-  const recipesForCurrentPage = isPendingRecipesView
-    ? recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() === 'PENDING')
-    : recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() !== 'PENDING');
+    let isActive = true;
+
+    const loadNotifications = async () => {
+      setIsNotificationsLoading(true);
+      setNotificationsError('');
+
+      try {
+        const payload = await getMyNotifications();
+
+        if (!isActive) {
+          return;
+        }
+
+        setNotifications(Array.isArray(payload?.notifications) ? payload.notifications : []);
+        setNotificationsUnreadCount(Number(payload?.unreadCount || 0));
+      } catch (loadError) {
+        if (!isActive) {
+          return;
+        }
+
+        setNotifications([]);
+        setNotificationsUnreadCount(0);
+        setNotificationsError(loadError.message || 'Impossible de charger vos notifications.');
+      } finally {
+        if (isActive) {
+          setIsNotificationsLoading(false);
+        }
+      }
+    };
+
+    loadNotifications();
+
+    return () => {
+      isActive = false;
+    };
+  }, [isNotificationsView]);
+
+  const pendingRecipes = useMemo(
+    () => recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() === 'PENDING'),
+    [recipes],
+  );
+  const memberRecipes = useMemo(
+    () => recipes.filter((recipe) => String(recipe?.status || '').toUpperCase() !== 'PENDING'),
+    [recipes],
+  );
+  const recipesForCurrentView = isPendingRecipesView ? pendingRecipes : memberRecipes;
 
   const recipesPageTitle = isPendingRecipesView
     ? 'Recettes en cours de validation'
     : 'Mes recettes';
+  const panelTitle = isNotificationsView ? 'Notifications' : recipesPageTitle;
 
-  const accountItems = [
-    {
-      icon: '/icon/Recipes.svg',
-      label: 'Mes recettes',
-      sub: `${recipesForCurrentPage.length} recette${recipesForCurrentPage.length > 1 ? 's' : ''}`,
-      path: '/membre/mes-recettes',
-      active: location.pathname.startsWith('/membre/mes-recettes'),
-      subTone: 'recipe',
-      subLinks: [
-        {
-          label: 'Recettes en cours de validation',
-          path: '/membre/mes-recettes/recettes-en-validation',
-          count: pendingRecipesCount,
-          active: isPendingRecipesView,
-        },
-      ],
-    },
-    {
-      icon: '/icon/Message_fill.svg',
-      label: 'Notifications',
-      sub: 'Voir mes alertes',
-      path: '/membre',
-      active: false,
-    },
-    {
-      icon: '/icon/User.svg',
-      label: 'Mes informations',
-      sub: userEmail,
-      path: '/membre/profil',
-      active: false,
-    },
-    {
-      icon: '/icon/Contact.svg',
-      label: 'Contact',
-      sub: 'help@support.cine-delices.com',
-      path: '/contact',
-      active: false,
-    },
-  ];
   const [editForm, setEditForm] = useState({
     id: null,
     titre: '',
@@ -467,23 +408,33 @@ export default function MesRecettes() {
   const categories = buildCategoryFilters(availableCategories).map((category) => ({
     label: category.label,
     count: category.value === 'Tous'
-      ? recipesForCurrentPage.length
-      : recipesForCurrentPage.filter((recipe) => recipe.categorie === category.value).length,
+      ? recipesForCurrentView.length
+      : recipesForCurrentView.filter((recipe) => recipe.categorie === category.value).length,
     color: category.key,
   }));
 
-  // Application du filtre actif.
-  const filtered = activeFilter === 'Tous'
-    ? recipesForCurrentPage
-    : recipesForCurrentPage.filter(r => r.categorie === activeFilter);
+  const filteredRecipes = useMemo(() => {
+    const normalizedQuery = searchInput.trim().toLowerCase();
 
-  // Grouper par catégorie
-  const grouped = filtered.reduce((acc, recette) => {
-    if (!acc[recette.categorie]) acc[recette.categorie] = [];
-    acc[recette.categorie].push(recette);
-    return acc;
-  }, {});
-  const hasVisibleRecipes = Object.keys(grouped).length > 0;
+    return recipesForCurrentView.filter((recipe) => {
+      const matchesFilter = activeFilter === 'Tous' || recipe.categorie === activeFilter;
+      const matchesQuery = !normalizedQuery
+        || String(recipe?.titre || '').toLowerCase().includes(normalizedQuery)
+        || String(recipe?.film || '').toLowerCase().includes(normalizedQuery);
+
+      return matchesFilter && matchesQuery;
+    });
+  }, [activeFilter, recipesForCurrentView, searchInput]);
+
+  const totalRecipes = filteredRecipes.length;
+  const totalPages = Math.max(1, Math.ceil(totalRecipes / currentLimit));
+  const paginatedRecipes = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredRecipes.slice(startIndex, startIndex + currentLimit);
+  }, [currentLimit, currentPage, filteredRecipes]);
+  const hasVisibleRecipes = totalRecipes > 0;
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
 
   // Ouvre la confirmation de suppression pour une recette ciblée.
   function handleDeleteClick(recette) {
@@ -501,6 +452,7 @@ export default function MesRecettes() {
       setIsDeletingRecipe(true);
       await deleteMyRecipe(recetteToDelete.id);
       setRecipes(prev => prev.filter(recette => recette.id !== recetteToDelete.id));
+      window.dispatchEvent(new Event('member-recipes-updated'));
       setShowDeleteModal(false);
       setRecetteToDelete(null);
       setError('');
@@ -905,6 +857,7 @@ export default function MesRecettes() {
       setRecipes(prev => prev.map(recette => (
         recette.id === updatedRecipe.id ? updatedRecipe : recette
       )));
+      window.dispatchEvent(new Event('member-recipes-updated'));
       setShowEditModal(false);
       setShowEditConfirmModal(false);
       setError('');
@@ -924,41 +877,17 @@ export default function MesRecettes() {
     setOpenRejectionReasonId(prev => (prev === recipeId ? null : recipeId));
   }
 
-  // Déconnexion utilisateur locale.
-  // ──────────────────────────────────────────────────────────────────────
-  //  MODIF 1 (fin) : handleLogout passe par le contexte AuthContext
-  // ──────────────────────────────────────────────────────────────────────
-  function handleLogout() {
-    logout()
-    navigate('/');
-  }
-
   function openCreateRecipeForm() {
-    const trimmedTitle = newRecipeName.trim();
-
-    navigate('/membre/creer-recette', {
-      state: trimmedTitle ? { initialTitle: trimmedTitle } : null,
-    });
+    navigate('/membre/creer-recette');
   }
 
-  function handleCreateRecipeInputKeyDown(event) {
-    if (event.key !== 'Enter') {
-      return;
-    }
-
-    event.preventDefault();
-    openCreateRecipeForm();
-  }
-
- // ──────────────────────────────────────────────────────────────────────
-  //  MODIF 2 : nouvelle fonction handleSubmitRecipe
-  // ──────────────────────────────────────────────────────────────────────
   async function handleSubmitRecipe(recipeId) {
   try {
     await updateMyRecipe(recipeId, { status: 'PENDING' });
     setRecipes(prev => prev.map(r =>
       r.id === recipeId ? { ...r, status: 'PENDING' } : r
     ));
+    window.dispatchEvent(new Event('member-recipes-updated'));
   } catch (err) {
     setError(err?.message || 'Impossible de soumettre la recette.');
   }
@@ -966,12 +895,24 @@ export default function MesRecettes() {
 
   useEffect(() => {
     setActiveFilter('Tous');
+    setSearchInput('');
+    setCurrentPage(1);
   }, [location.pathname]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeFilter, currentLimit, searchInput]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   useEffect(() => {
     const openEditRecipeId = location.state?.openEditRecipeId;
 
-    if (!openEditRecipeId || recipes.length === 0) {
+    if (isNotificationsView || !openEditRecipeId || recipes.length === 0) {
       return;
     }
 
@@ -986,11 +927,11 @@ export default function MesRecettes() {
 
     handleEditClick(recipeToEdit);
     navigate(location.pathname, { replace: true, state: null });
-  }, [location.pathname, location.state, navigate, recipes]);
+  }, [isNotificationsView, location.pathname, location.state, navigate, recipes]);
 
 
   return (
-    <div className={styles.mesRecettes}>
+    <>
 
       {/* MODALE SUPPRESSION */}
       {showDeleteModal && (
@@ -1378,98 +1319,67 @@ export default function MesRecettes() {
         </div>
       )}
 
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Mon compte</h1>
-      </div>
-      <p className={styles.welcomeText}>
-        Bonjour <strong>{userDisplayName || 'toi'}</strong>, bienvenue chez Cine Delices !
-      </p>
-
-      <div className={styles.desktopLayout}>
-        <aside className={styles.accountPanel}>
-          <div className={styles.accountLinks}>
-            {accountItems.map(item => (
-              <button
-                key={item.path}
-                type="button"
-                className={`${styles.accountItem} ${item.active ? styles.accountItemActive : ''}`}
-                onClick={() => navigate(item.path)}
-              >
-                <span className={styles.accountIcon}>
-                  <img src={item.icon} alt="" aria-hidden="true" />
-                </span>
-                <span className={styles.accountContent}>
-                  <strong>{item.label}</strong>
-                  <small className={item.subTone === 'recipe' ? styles.accountSubTag : undefined}>
-                    {item.path === '/membre/mes-recettes' ? item.sub : item.sub}
-                  </small>
-                  {Array.isArray(item.subLinks) && item.subLinks.length > 0 ? (
-                    <span className={styles.accountSubLinks}>
-                      {item.subLinks.map((subLink) => (
-                        <button
-                          key={subLink.path}
-                          type="button"
-                          className={`${styles.accountSubLink} ${subLink.active ? styles.accountSubLinkActive : ''}`}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            navigate(subLink.path);
-                          }}
-                        >
-                          <span>{subLink.label}</span>
-                          <strong>{subLink.count}</strong>
-                        </button>
-                      ))}
-                    </span>
-                  ) : null}
-                </span>
-                <span className={styles.accountArrow}>›</span>
-              </button>
-            ))}
-          </div>
-
-          <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
-            <span className={styles.logoutIcon}>
-              <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
-            </span>
-            <span>Se déconnecter</span>
-            <span>›</span>
-          </button>
-        </aside>
-
         <section className={styles.recipesPanel}>
-          <h2 className={styles.title}>{recipesPageTitle}</h2>
-          <Alert
-            type="error"
-            message={error}
-            onClose={() => setError('')}
-            className={styles.panelState}
-          />
+          <h2 className={styles.title}>{panelTitle}</h2>
+          {!isNotificationsView ? (
+            <Alert
+              type="error"
+              message={error}
+              onClose={() => setError('')}
+              className={styles.panelState}
+            />
+          ) : null}
 
-          {/* CRÉER UNE RECETTE */}
-          <div className={styles.createBlock}>
-            <p className={styles.createLabel}>Créer une nouvelle recette</p>
-            <div className={styles.createInput}>
-              <input
-                className={styles.createNameInput}
-                type="text"
-                aria-label="Nom de la nouvelle recette"
-                placeholder="Entrer son nom"
-                value={newRecipeName}
-                onChange={e => setNewRecipeName(e.target.value)}
-                onKeyDown={handleCreateRecipeInputKeyDown}
+          {isNotificationsView ? (
+            <>
+              <Alert
+                type="error"
+                message={notificationsError}
+                onClose={() => setNotificationsError('')}
+                className={styles.panelState}
               />
-              <button
-                type="button"
-                className={styles.createBtn}
-                aria-label="Aller au formulaire de création de recette"
-                onClick={openCreateRecipeForm}
-              >
-                +
-              </button>
-            </div>
-          </div>
+              {isNotificationsLoading ? (
+                <StatusBlock
+                  variant="loading"
+                  title="Chargement des notifications"
+                  className={styles.panelState}
+                />
+              ) : null}
 
-          {isLoading ? (
+              {!isNotificationsLoading && !notificationsError ? (
+                <p className={styles.pageIntro}>
+                  <strong className={styles.summaryStrong}>{notificationsUnreadCount}</strong> notification{notificationsUnreadCount > 1 ? 's' : ''} non lue{notificationsUnreadCount > 1 ? 's' : ''}.
+                </p>
+              ) : null}
+
+              {!isNotificationsLoading && !notificationsError && notifications.length === 0 ? (
+                <StatusBlock
+                  variant="empty"
+                  title="Pas de notifications actuellement"
+                  message="Les nouvelles alertes liées à vos recettes apparaîtront ici."
+                  className={styles.panelState}
+                />
+              ) : null}
+
+              {!isNotificationsLoading && !notificationsError && notifications.length > 0 ? (
+                <div className={styles.notificationsList}>
+                  {notifications.map((notification) => (
+                    <article key={notification.id} className={styles.notificationRow}>
+                      <strong className={styles.notificationMessage}>{notification.message}</strong>
+                      <span className={styles.notificationMeta}>
+                        {new Date(notification.createdAt).toLocaleString('fr-FR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+            </>
+          ) : isLoading ? (
             <StatusBlock
               variant="loading"
               title="Chargement de vos recettes"
@@ -1477,7 +1387,36 @@ export default function MesRecettes() {
             />
           ) : (
             <>
-              {/* FILTRES */}
+              <form
+                className={styles.recipeSearchRow}
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <div className={styles.recipeSearchField}>
+                  <input
+                    className={styles.recipeSearchInput}
+                    type="search"
+                    aria-label="Rechercher une recette"
+                    placeholder="Rechercher une recette"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                  />
+                </div>
+                <button type="submit" className={styles.recipeSearchButton}>
+                  Rechercher
+                </button>
+              </form>
+
+              {!isPendingRecipesView ? (
+                <button
+                  type="button"
+                  className={styles.addRecipeButton}
+                  onClick={openCreateRecipeForm}
+                >
+                  <span className={styles.addRecipeIcon} aria-hidden="true">+</span>
+                  <span className={styles.addRecipeText}>Ajouter une recette</span>
+                </button>
+              ) : null}
+
               <div className={styles.filters}>
                 {categories.map(cat => (
                   <div key={cat.label} className={styles.filterItem}>
@@ -1495,23 +1434,46 @@ export default function MesRecettes() {
                 ))}
               </div>
 
+              <div className={styles.recipeSummaryRow}>
+                <p className={styles.recipeSummaryText}>
+                  <strong className={styles.summaryStrong}>{totalRecipes}</strong> recette{totalRecipes > 1 ? 's' : ''} trouvée{totalRecipes > 1 ? 's' : ''}.
+                </p>
+                <div className={styles.recipeSummaryMeta}>
+                  <label className={styles.limitControl}>
+                    <span>Par page</span>
+                    <select
+                      className={styles.limitSelect}
+                      value={currentLimit}
+                      onChange={(event) => setCurrentLimit(Number(event.target.value))}
+                    >
+                      {LIMIT_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+              </div>
+
               {!error && !hasVisibleRecipes ? (
                 <StatusBlock
                   variant="empty"
                   title="Aucune recette à afficher"
                   message={activeFilter === 'Tous'
-                    ? "Commence par créer une recette ou attends qu'un brouillon revienne dans cette liste."
+                    ? (isPendingRecipesView
+                      ? 'Aucune recette en cours de validation pour le moment.'
+                      : 'Commencez par ajouter une recette à votre espace membre.')
                     : `Aucune recette ${activeFilter.toLowerCase()} n'est disponible dans votre espace pour le moment.`}
                   className={styles.panelState}
                 />
               ) : null}
 
-              {/* RECETTES GROUPÉES */}
-              {Object.entries(grouped).map(([categorie, recettes]) => (
-                <div key={categorie} className={styles.section}>
-                  <h2 className={styles.sectionTitle}>{categorie}s</h2>
+              {hasVisibleRecipes ? (
+                <div className={styles.section}>
+                  <h3 className={styles.sectionTitle}>Liste des recettes</h3>
                   <div className={styles.grid}>
-                    {recettes.map(recette => (
+                    {paginatedRecipes.map(recette => (
                       <div key={recette.id} className={styles.cardShell}>
                         <RecipeCard
                           recipe={mapMemberRecipeToCard(recette)}
@@ -1563,45 +1525,63 @@ export default function MesRecettes() {
                           );
                         })()}
                         <div className={styles.cardActionsFloating}>
-                      {/* MODIF 3 : bouton "Soumettre" visible si DRAFT */}
-                      {String(recette.status || '').toUpperCase() === 'DRAFT' && (
-                        <button
-                          type="button"
-                          className={styles.actionBtn}
-                          aria-label={`Soumettre la recette ${recette.titre} pour validation`}
-                          onClick={() => handleSubmitRecipe(recette.id)}
-                        >
-                          Soumettre
-                        </button>
-                      )}
-
-                       <button
-                        type="button"
-                        className={styles.actionBtn}
-                        aria-label={`Modifier la recette ${recette.titre}`}
-                        onClick={() => handleEditClick(recette)}
-                      >
-                        <img src="/icon/Edit.svg" alt="" aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.actionBtn}
-                        aria-label={`Supprimer la recette ${recette.titre}`}
-                        onClick={() => handleDeleteClick(recette)}
-                      >
-                        <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
-                      </button>
+                          <button
+                            type="button"
+                            className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+                            aria-label={`Supprimer la recette ${recette.titre}`}
+                            onClick={() => handleDeleteClick(recette)}
+                          >
+                            <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                          </button>
+                          <button
+                            type="button"
+                            className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
+                            aria-label={`Modifier la recette ${recette.titre}`}
+                            onClick={() => handleEditClick(recette)}
+                          >
+                            <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
+                          </button>
+                          {String(recette.status || '').toUpperCase() === 'DRAFT' && (
+                            <button
+                              type="button"
+                              className={`${styles.actionBtn} ${styles.actionBtnSubmit}`}
+                              aria-label={`Soumettre la recette ${recette.titre} pour validation`}
+                              onClick={() => handleSubmitRecipe(recette.id)}
+                            >
+                              Soumettre
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
+
+                  {totalPages > 1 ? (
+                    <div className={styles.pagination}>
+                      <button
+                        type="button"
+                        className={styles.paginationButton}
+                        onClick={() => setCurrentPage((previous) => Math.max(1, previous - 1))}
+                        disabled={!hasPreviousPage}
+                      >
+                        Précédent
+                      </button>
+                      <span className={styles.paginationStatus}>Page {currentPage} / {totalPages}</span>
+                      <button
+                        type="button"
+                        className={styles.paginationButton}
+                        onClick={() => setCurrentPage((previous) => Math.min(totalPages, previous + 1))}
+                        disabled={!hasNextPage}
+                      >
+                        Suivant
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
-              ))}
+              ) : null}
             </>
           )}
         </section>
-      </div>
-
-    </div>
+    </>
   );
 }

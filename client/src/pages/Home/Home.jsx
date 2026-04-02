@@ -569,7 +569,8 @@ function Home() {
             <h2 className={styles.sectionTitle}>Dernières recettes publiées</h2>
           </div>
           <Link className={styles.secondaryLink} to="/recipes">
-            Voir tout le catalogue
+            <span>Voir tout le catalogue</span>
+            <img src="/icon/arrow.svg" alt="" aria-hidden="true" />
           </Link>
         </div>
 

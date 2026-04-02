@@ -347,7 +347,9 @@ export default function Membre() {
                 </div>
               ) : null}
             </div>
-            <span className={styles.arrow}>›</span>
+            <span className={styles.arrow} aria-hidden="true">
+              <img src="/icon/arrow.svg" alt="" />
+            </span>
           </button>
         ))}
 
@@ -357,7 +359,9 @@ export default function Membre() {
             <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
           </span>
           <span className={styles.menuLabel}>Se déconnecter</span>
-          <span className={styles.arrow}>›</span>
+          <span className={styles.arrow} aria-hidden="true">
+            <img src="/icon/arrow.svg" alt="" />
+          </span>
         </button>
       </nav>
     </div>

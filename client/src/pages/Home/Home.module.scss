@@ -46,17 +46,30 @@
 }
 
 .secondaryLink {
+  @include ui.secondary-button;
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
+  padding-inline: 1rem;
+  background: rgba(31, 29, 30, 0.38);
   color: var(--color-text-primary);
   text-decoration: none;
   font-weight: 600;
   line-height: 1;
+  backdrop-filter: blur(4px);
+
+  img {
+    width: 0.62rem;
+    height: auto;
+    opacity: 0.96;
+  }
 }
 
 .secondaryLink:hover {
-  color: var(--color-title);
+  background: rgba(31, 29, 30, 0.58);
+  border-color: rgba(246, 241, 232, 0.75);
+  color: var(--color-text-primary);
+  transform: translateY(-1px);
 }
 
 .latestCarousel {

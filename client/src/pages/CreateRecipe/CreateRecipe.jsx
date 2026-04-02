@@ -866,8 +866,9 @@ export default function CreerRecette() {
       {showSubmitModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
+            <h2 className={styles.modalTitle}>Publier la recette</h2>
             <p className={styles.modalText}>
-              Voulez vous créer cette recette?
+              Voulez-vous confirmer l&apos;envoi de cette recette pour validation ?
             </p>
             <div className={styles.modalButtons}>
               <button
@@ -891,7 +892,7 @@ export default function CreerRecette() {
         </div>
       )}
 
-      <h1 className={styles.title}>Mes recettes</h1>
+      <h1 className={styles.title}>Créer une recette</h1>
       <Alert
         type={alert.type}
         message={alert.message}
