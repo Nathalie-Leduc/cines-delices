@@ -5,16 +5,6 @@ import { getMyRecipes } from '../../services/recipesService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './MemberSidebar.module.scss';
 
-function normalizeDisplayName(name) {
-  const trimmed = String(name || '').trim();
-
-  if (!trimmed) {
-    return '';
-  }
-
-  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
-}
-
 function normalizeRecipe(rawRecipe) {
   const categoryLabel = String(rawRecipe?.categorie || rawRecipe?.category?.nom || rawRecipe?.category || '')
     .trim()
@@ -26,7 +16,7 @@ function normalizeRecipe(rawRecipe) {
   };
 }
 
-export default function MemberSidebar() {
+export default function MemberSidebar({ className = '', onNavigate, mobile = false }) {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [userEmail, setUserEmail] = useState('');
@@ -88,7 +78,12 @@ export default function MemberSidebar() {
 
   function handleLogout() {
     logout();
+    onNavigate?.();
     navigate('/');
+  }
+
+  function handleItemClick() {
+    onNavigate?.();
   }
 
   const accountItems = useMemo(() => [
@@ -131,13 +126,14 @@ export default function MemberSidebar() {
   ], [memberRecipesCount, pendingRecipesCount, userEmail]);
 
   return (
-    <aside className={styles.accountPanel}>
+    <aside className={`${styles.accountPanel} ${mobile ? styles.accountPanelMobile : ''} ${className}`.trim()}>
       <div className={styles.accountLinks}>
         {accountItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.end}
+            onClick={handleItemClick}
             className={({ isActive }) => `${styles.accountItem} ${isActive ? styles.accountItemActive : ''}`.trim()}
           >
             <span className={styles.accountIcon}>

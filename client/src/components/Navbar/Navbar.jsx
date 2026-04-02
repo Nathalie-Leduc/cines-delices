@@ -4,6 +4,7 @@ import styles from "./Navbar.module.scss";
 import { getRecipesCatalog } from "../../services/recipesService";
 import { useAuth } from "../../contexts/AuthContext.jsx"
 import AdminSidebar from "../AdminSidebar";
+import MemberSidebar from "../MemberSidebar/MemberSidebar.jsx";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Tâche f-05 : Navbar branchée sur AuthContext
@@ -318,7 +319,11 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
           <button
             type="button"
             className={styles.burger}
-            aria-label={mobileMenuMode === "external" ? "Ouvrir le menu admin" : "Ouvrir le menu"}
+            aria-label={
+              mobileMenuMode === "external"
+                ? (resolvedVariant === "admin" ? "Ouvrir le menu admin" : "Ouvrir le menu membre")
+                : "Ouvrir le menu"
+            }
             onClick={() => {
               if (mobileMenuMode === "external") {
                 onBurgerClick?.();
@@ -491,7 +496,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
           />
 
           <aside
-            className={`${styles.mobilePanel} ${resolvedVariant === "admin" ? styles.mobilePanelAdmin : ""} ${isMenuOpen ? styles.mobilePanelOpen : ""}`.trim()}
+            className={`${styles.mobilePanel} ${resolvedVariant === "admin" || resolvedVariant === "member" ? styles.mobilePanelDashboard : ""} ${isMenuOpen ? styles.mobilePanelOpen : ""}`.trim()}
             aria-hidden={!isMenuOpen}
           >
             {resolvedVariant === "admin" ? (
@@ -534,6 +539,48 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   </nav>
 
                   <AdminSidebar mobile className={styles.adminMobileSidebar} onNavigate={closeMenu} />
+                </>
+              ) : null
+            ) : resolvedVariant === "member" ? (
+              isMenuOpen ? (
+                <>
+                  <div className={styles.adminMobileHeader}>
+                    <div className={styles.adminMobileHeading}>
+                      <h2>Tableau de bord</h2>
+                      <span className={styles.memberMobileBadge}>Espace membre</span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className={styles.closeButton}
+                      aria-label="Fermer le menu membre"
+                      onClick={closeMenu}
+                    >
+                      <img src="/icon/close_menu.svg" alt="Fermer" />
+                    </button>
+                  </div>
+
+                  <nav className={styles.adminMobileSiteNav} aria-label="Explorer le site">
+                    <p className={styles.adminMobileSiteNavLabel}>Explorer le site</p>
+
+                    <ul className={styles.adminMobileSiteNavList}>
+                      {SITE_EXPLORATION_ITEMS.map((item) => (
+                        <li key={item.to}>
+                          <NavLink
+                            to={item.to}
+                            onClick={closeMenu}
+                            className={({ isActive }) =>
+                              `${styles.adminMobileSiteLink} ${isActive ? styles.adminMobileSiteLinkActive : ""}`.trim()
+                            }
+                          >
+                            {item.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+
+                  <MemberSidebar mobile onNavigate={closeMenu} />
                 </>
               ) : null
             ) : (
