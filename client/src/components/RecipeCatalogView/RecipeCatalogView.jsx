@@ -54,7 +54,9 @@ export default function RecipeCatalogView({
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth <= 767);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const searchRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
   const isHeroVisible = useHeroReveal();
 
   const categoryParam = searchParams.get("category")?.toLowerCase() || "";
@@ -103,6 +105,8 @@ export default function RecipeCatalogView({
     const dynamicMatch = filters.find((filter) => filter.key === categoryParam);
     return dynamicMatch?.value || CATEGORY_PARAM_TO_FILTER[categoryParam] || "Tous";
   }, [filters, categoryParam]);
+
+  const shouldUseMobileSearchOverlay = isMobileViewport;
 
   useEffect(() => {
     setSearchInput(searchParams.get("q") || "");
@@ -233,6 +237,29 @@ export default function RecipeCatalogView({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (!isMobileSearchOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    mobileSearchInputRef.current?.focus();
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsMobileSearchOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMobileSearchOpen]);
+
   const updateCatalogParams = (mutateParams) => {
     const nextParams = new URLSearchParams(searchParams);
     mutateParams(nextParams);
@@ -299,9 +326,12 @@ export default function RecipeCatalogView({
   };
 
   const openMobileSearchModal = () => {
-    window.dispatchEvent(new CustomEvent("open-mobile-search", {
-      detail: { search: searchInput },
-    }));
+    setIsMobileSearchOpen(true);
+  };
+
+  const closeMobileSearchModal = () => {
+    setIsMobileSearchOpen(false);
+    setSearchResults([]);
   };
 
   const goToPage = (page) => {
@@ -379,7 +409,7 @@ export default function RecipeCatalogView({
           <div className={styles.toolbar}>
             <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
               <div ref={searchRef} className={styles.searchField}>
-                {isMobileViewport && (
+                {shouldUseMobileSearchOverlay && (
                   <button
                     type="button"
                     className={styles.mobileSearchLauncher}
@@ -397,9 +427,9 @@ export default function RecipeCatalogView({
                   className={styles.searchInput}
                   placeholder={searchPlaceholder}
                   aria-label={searchAriaLabel}
-                  readOnly={isMobileViewport}
-                  onFocus={isMobileViewport ? openMobileSearchModal : undefined}
-                  onClick={isMobileViewport ? openMobileSearchModal : undefined}
+                  readOnly={shouldUseMobileSearchOverlay}
+                  onFocus={shouldUseMobileSearchOverlay ? openMobileSearchModal : undefined}
+                  onClick={shouldUseMobileSearchOverlay ? openMobileSearchModal : undefined}
                 />
                 {searchInput && (
                   <button
@@ -411,7 +441,7 @@ export default function RecipeCatalogView({
                     ×
                   </button>
                 )}
-                {searchResults.length > 0 && (
+                {!isMobileViewport && searchResults.length > 0 && (
                   <ul className={styles.searchResults}>
                     {searchResults.map((recipe) => (
                       <li key={recipe.id} className={styles.searchResultItem}>
@@ -469,6 +499,91 @@ export default function RecipeCatalogView({
               </label>
             )}
           </div>
+
+          {isMobileViewport && (
+            <div
+              className={`${styles.catalogMobileSearchOverlay} ${isMobileSearchOpen ? styles.catalogMobileSearchOverlayVisible : ""}`}
+              aria-hidden={!isMobileSearchOpen}
+            >
+              <button
+                type="button"
+                className={styles.catalogMobileSearchBackdrop}
+                aria-label="Fermer la recherche"
+                onClick={closeMobileSearchModal}
+              />
+
+              <section className={`${styles.catalogMobileSearchModal} ${isMobileSearchOpen ? styles.catalogMobileSearchModalOpen : ""}`} aria-label="Recherche rapide">
+                <div className={styles.catalogMobileSearchHeader}>
+                  <div className={styles.catalogMobileSearchTitleRow}>
+                    <p className={styles.catalogMobileSearchEyebrow}>Recherche rapide</p>
+                    <span className={styles.catalogMobileSearchTitleLine} />
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.catalogMobileSearchCloseButton}
+                    aria-label="Fermer la recherche"
+                    onClick={closeMobileSearchModal}
+                  >
+                    <img src="/icon/close_menu.svg" alt="Fermer" />
+                  </button>
+                </div>
+
+                <div className={styles.catalogMobileSearchContent}>
+                  <form className={styles.catalogMobileSearchForm} onSubmit={handleSearchSubmit}>
+                    <div className={styles.catalogMobileSearchField}>
+                      <img src="/icon/Search.svg" alt="" aria-hidden="true" className={styles.catalogMobileSearchIcon} />
+                      <input
+                        ref={mobileSearchInputRef}
+                        type="search"
+                        value={searchInput}
+                        onChange={(event) => setSearchInput(event.target.value)}
+                        placeholder={searchPlaceholder}
+                        className={styles.catalogMobileSearchInput}
+                      />
+                      {searchInput && (
+                        <button
+                          type="button"
+                          className={styles.clearSearchButton}
+                          onClick={clearSearch}
+                          aria-label="Effacer la recherche"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
+
+                    {searchResults.length > 0 && (
+                      <ul className={styles.catalogMobileSearchResults}>
+                        {searchResults.map((recipe) => (
+                          <li key={recipe.id} className={styles.searchResultItem}>
+                            <Link
+                              to={`/recipes/${recipe.slug || recipe.id}`}
+                              onClick={() => {
+                                handleSuggestionClick();
+                                closeMobileSearchModal();
+                              }}
+                            >
+                              <img
+                                src={recipe.image}
+                                alt={recipe.title}
+                                className={styles.searchResultThumb}
+                              />
+                              <span className={styles.searchResultCopy}>
+                                <span>{recipe.title}</span>
+                                {recipe.mediaTitle && (
+                                  <small className={styles.searchResultMeta}>{recipe.mediaTitle}</small>
+                                )}
+                              </span>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </form>
+                </div>
+              </section>
+            </div>
+          )}
 
           <div className={styles.summaryRow}>
             <p className={styles.summaryText}>{summaryText}</p>
