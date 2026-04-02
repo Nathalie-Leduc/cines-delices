@@ -30,6 +30,7 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
     : '')
   || buildApiUrl('/api/ingredients');
 const CATEGORIES_API = buildApiUrl('/api/categories');
+const CONTACT_PREVIEW_LIMIT = 110;
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 // ✅ CORRECTIF TEMPS — remplace parseOptionalPositiveInteger pour les temps.
@@ -118,6 +119,21 @@ function extractRecipeTitleFromNotificationMessage(message) {
   const normalizedMessage = String(message || '');
   const quotedTitleMatch = normalizedMessage.match(/recette\s+"([^"]+)"/i);
   return quotedTitleMatch?.[1]?.trim() || '';
+}
+
+function isContactNotification(message) {
+  const normalizedMessage = String(message || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return /formulaire\s+de\s+contact/.test(normalizedMessage);
+}
+
+function buildContactNotificationPreview(message) {
+  const normalizedMessage = String(message || '').replace(/\s+/g, ' ').trim();
+
+  if (normalizedMessage.length <= CONTACT_PREVIEW_LIMIT) {
+    return normalizedMessage;
+  }
+
+  return `${normalizedMessage.slice(0, CONTACT_PREVIEW_LIMIT)}...`;
 }
 
 function normalizeCategoryLabel(value) {
@@ -254,6 +270,7 @@ export default function MesRecettes() {
   const [notificationsUnreadCount, setNotificationsUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
+  const [openedContactMessageNotification, setOpenedContactMessageNotification] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -1465,44 +1482,96 @@ export default function MesRecettes() {
               {!isNotificationsLoading && !notificationsError && notifications.length > 0 ? (
                 <ul className={styles.notificationsList}>
                   {notifications.map((notification) => (
-                    <li
-                      key={notification.id}
-                      className={`${styles.notificationRow} ${styles[`notificationRow_${getNotificationVariantClassName(notification.message)}`] || ''}`.trim()}
-                    >
-                      <button
-                        type="button"
-                        className={styles.notificationOpenButton}
-                        onClick={() => openNotificationTarget(notification)}
-                        aria-label="Voir la notification"
-                        title="Voir"
-                      >
-                        <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
-                      </button>
+                    (() => {
+                      const isContact = isContactNotification(notification?.message);
+                      const notificationMessage = isContact
+                        ? buildContactNotificationPreview(notification?.message)
+                        : notification?.message;
 
-                      <div className={styles.notificationBody}>
-                        <strong className={styles.notificationMessage}>{notification.message}</strong>
-                        <span className={styles.notificationMeta}>
-                          {new Date(notification.createdAt).toLocaleString('fr-FR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
+                      return (
+                        <li
+                          key={notification.id}
+                          className={`${styles.notificationRow} ${styles[`notificationRow_${getNotificationVariantClassName(notification.message)}`] || ''}`.trim()}
+                        >
+                          <button
+                            type="button"
+                            className={styles.notificationOpenButton}
+                            onClick={() => {
+                              if (isContact) {
+                                setOpenedContactMessageNotification(notification);
+                                return;
+                              }
+                              openNotificationTarget(notification);
+                            }}
+                            aria-label={isContact ? 'Voir le message complet' : 'Voir la notification'}
+                            title={isContact ? 'Voir le message complet' : 'Voir'}
+                          >
+                            <img src="/icon/Eye.svg" alt="" aria-hidden="true" />
+                          </button>
 
-                      <button
-                        type="button"
-                        className={styles.notificationDeleteButton}
-                        aria-label="Supprimer cette notification"
-                        title="Supprimer"
-                        onClick={(event) => removeNotification(event, notification)}
-                      >
-                        <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
-                      </button>
-                    </li>
+                          <div className={styles.notificationBody}>
+                            <strong className={styles.notificationMessage}>{notificationMessage}</strong>
+                            <span className={styles.notificationMeta}>
+                              {new Date(notification.createdAt).toLocaleString('fr-FR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            className={styles.notificationDeleteButton}
+                            aria-label="Supprimer cette notification"
+                            title="Supprimer"
+                            onClick={(event) => removeNotification(event, notification)}
+                          >
+                            <img src="/icon/close_menu.svg" alt="" aria-hidden="true" />
+                          </button>
+                        </li>
+                      );
+                    })()
                   ))}
                 </ul>
+              ) : null}
+
+              {openedContactMessageNotification ? (
+                <div
+                  className={styles.notificationMessageOverlay}
+                  onClick={() => setOpenedContactMessageNotification(null)}
+                >
+                  <div
+                    className={styles.notificationMessageModal}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <h3 className={styles.notificationMessageTitle}>Message de contact</h3>
+
+                    <p className={styles.notificationMessageBody}>
+                      {openedContactMessageNotification.message}
+                    </p>
+
+                    <p className={styles.notificationMessageMeta}>
+                      {new Date(openedContactMessageNotification.createdAt).toLocaleString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </p>
+
+                    <div className={styles.notificationMessageActions}>
+                      <button
+                        type="button"
+                        className={styles.notificationMessageCloseButton}
+                        onClick={() => setOpenedContactMessageNotification(null)}
+                      >
+                        Fermer
+                      </button>
+                    </div>
+                  </div>
+                </div>
               ) : null}
             </>
           ) : isLoading ? (

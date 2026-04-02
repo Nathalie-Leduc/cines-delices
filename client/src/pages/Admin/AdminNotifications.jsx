@@ -8,7 +8,7 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
-const CONTACT_PREVIEW_LIMIT = 120;
+const CONTACT_PREVIEW_LIMIT = 100;
 
 function formatNotificationDate(value) {
   const date = new Date(value);
@@ -40,7 +40,8 @@ function resolveNotificationTarget(notification) {
 }
 
 function isContactNotification(notification) {
-  return String(notification?.message || '').toLowerCase().includes('formulaire de contact');
+  const normalizedMessage = String(notification?.message || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return /formulaire\s+de\s+contact/.test(normalizedMessage);
 }
 
 function buildContactNotificationPreview(message) {

@@ -312,7 +312,7 @@ function AdminCategories() {
 
               return (
                 <div key={category.id} className={styles.categoryRow}>
-                  <div className={styles.ingredientIdentity}>
+                  <div className={styles.categoryIdentity}>
                     <span className={styles.categoryDot} style={{ background: category.color }}>
                       {category.name}
                     </span>
