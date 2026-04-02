@@ -2368,6 +2368,11 @@
     font-size: clamp(2.65rem, 14vw, 3.35rem);
   }
 
+  .addRecipeButton {
+    width: 100%;
+    max-width: none;
+  }
+
   .recipeSearchRow,
   .recipeSummaryRow,
   .recipeSummaryMeta,
