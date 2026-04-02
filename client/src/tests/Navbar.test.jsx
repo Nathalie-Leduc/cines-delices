@@ -1,16 +1,24 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Navbar from '../components/Navbar/Navbar.jsx';
 
 const useAuthMock = vi.fn();
+const getRecipesCatalogMock = vi.fn();
+const getMoviesCatalogMock = vi.fn();
+const getSeriesCatalogMock = vi.fn();
 
 vi.mock('../contexts/AuthContext.jsx', () => ({
   useAuth: () => useAuthMock(),
 }));
 
 vi.mock('../services/recipesService', () => ({
-  getRecipesCatalog: vi.fn(),
+  getRecipesCatalog: (...args) => getRecipesCatalogMock(...args),
+}));
+
+vi.mock('../services/mediaService', () => ({
+  getMoviesCatalog: (...args) => getMoviesCatalogMock(...args),
+  getSeriesCatalog: (...args) => getSeriesCatalogMock(...args),
 }));
 
 function renderNavbar() {
@@ -24,6 +32,7 @@ function renderNavbar() {
 describe('Navbar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useRealTimers();
   });
 
   it('affiche la navigation publique pour un visiteur', () => {
@@ -80,5 +89,81 @@ describe('Navbar', () => {
     expect(screen.getAllByText('Bonjour,').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Jade').length).toBeGreaterThan(0);
     expect(screen.queryByRole('link', { name: 'Dashboard' })).not.toBeInTheDocument();
+  });
+
+  it('affiche des résultats mixtes recettes, films et séries avec la bonne destination', async () => {
+    vi.useFakeTimers();
+
+    useAuthMock.mockReturnValue({
+      user: null,
+      isAuthenticated: false,
+      isAdmin: false,
+      logout: vi.fn(),
+    });
+
+    getRecipesCatalogMock.mockResolvedValue({
+      recipes: [
+        {
+          id: 1,
+          slug: 'burger-breakfast-club',
+          titre: 'Burger Breakfast Club',
+          imageURL: '/img/hero-home.png',
+          media: { titre: 'The Breakfast Club' },
+        },
+      ],
+    });
+
+    getMoviesCatalogMock.mockResolvedValue({
+      movies: [
+        {
+          id: 2,
+          slug: 'the-breakfast-club',
+          title: 'The Breakfast Club',
+          poster: '/img/parrain-poster.png',
+        },
+      ],
+    });
+
+    getSeriesCatalogMock.mockResolvedValue({
+      series: [
+        {
+          id: 3,
+          slug: 'breakfast-news',
+          title: 'Breakfast News',
+          poster: '/img/stranger-thing-poster.png',
+        },
+      ],
+    });
+
+    renderNavbar();
+
+    const desktopSearchInput = screen.getAllByRole('searchbox')[0];
+    fireEvent.change(desktopSearchInput, { target: { value: 'breakfast' } });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(401);
+    });
+
+    expect(getRecipesCatalogMock).toHaveBeenCalledWith({
+      q: 'breakfast',
+      limit: 4,
+      page: 1,
+    });
+
+    expect(getMoviesCatalogMock).toHaveBeenCalledWith({
+      q: 'breakfast',
+      limit: 3,
+      page: 1,
+    });
+
+    expect(getSeriesCatalogMock).toHaveBeenCalledWith({
+      q: 'breakfast',
+      limit: 3,
+      page: 1,
+    });
+
+    expect(screen.getAllByText('Burger Breakfast Club')[0].closest('a')).toHaveAttribute('href', '/recipes/burger-breakfast-club');
+    expect(screen.getAllByText('The Breakfast Club')[0].closest('a')).toHaveAttribute('href', '/films/the-breakfast-club');
+    expect(screen.getAllByText('Breakfast News')[0].closest('a')).toHaveAttribute('href', '/series/breakfast-news');
   });
 });
