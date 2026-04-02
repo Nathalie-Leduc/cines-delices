@@ -18,6 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './CreateRecipe.module.scss';
 import Alert from '../../components/Alert/Alert.jsx';
+import { buildApiUrl } from '../../services/api.js';
 import {
   getMediaSuggestionMeta,
   MEDIA_SUGGESTION_POSTER_FALLBACK,
@@ -27,19 +28,18 @@ import {
 
 const defaultCategoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)', 'tasse'];
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
   || import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
-  || `${API_BASE_URL}/api/ingredients/search`;
+  || buildApiUrl('/api/ingredients/search');
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
   || (import.meta.env.VITE_INGREDIENT_SEARCH_API_URL ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '') : '')
-  || `${API_BASE_URL}/api/ingredients`;
+  || buildApiUrl('/api/ingredients');
 const RECIPE_CREATE_API = import.meta.env.VITE_RECIPE_CREATE_API
   || import.meta.env.VITE_RECIPE_API_URL
-  || `${API_BASE_URL}/api/recipes`;
-const CATEGORIES_API = `${API_BASE_URL}/api/categories`;
+  || buildApiUrl('/api/recipes');
+const CATEGORIES_API = buildApiUrl('/api/categories');
 const TMDB_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
-  || `${API_BASE_URL}/api/tmdb/medias/search`;
+  || buildApiUrl('/api/tmdb/medias/search');
 
 const INITIAL_FORM = {
   titre: '',

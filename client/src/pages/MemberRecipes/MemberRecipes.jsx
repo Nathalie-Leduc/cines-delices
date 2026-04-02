@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import styles from './MemberRecipes.module.scss';
+import { buildApiUrl } from '../../services/api.js';
 import { deleteMyRecipe, getMyNotifications, getMyRecipes, updateMyRecipe } from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
 import Alert from '../../components/Alert/Alert.jsx';
@@ -11,19 +12,18 @@ import {
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
 import { buildCategoryFilters } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
-  || `${API_BASE_URL}/api/tmdb/medias/search`;
+  || buildApiUrl('/api/tmdb/medias/search');
 const INGREDIENT_SEARCH_API = import.meta.env.VITE_INGREDIENT_SEARCH_API
   || import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
-  || `${API_BASE_URL}/api/ingredients/search`;
+  || buildApiUrl('/api/ingredients/search');
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
   || (import.meta.env.VITE_INGREDIENT_SEARCH_API_URL
     ? import.meta.env.VITE_INGREDIENT_SEARCH_API_URL.replace(/\/search$/, '')
     : '')
-  || `${API_BASE_URL}/api/ingredients`;
-const CATEGORIES_API = `${API_BASE_URL}/api/categories`;
+  || buildApiUrl('/api/ingredients');
+const CATEGORIES_API = buildApiUrl('/api/categories');
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const LIMIT_OPTIONS = [6, 9, 12];
