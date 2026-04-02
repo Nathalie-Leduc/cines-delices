@@ -1693,6 +1693,7 @@
   padding: 0.5rem 1rem;
   min-height: 0;
   box-sizing: border-box;
+  white-space: nowrap;
 }
 
 .section {
@@ -1782,9 +1783,31 @@
 }
 
 @media (max-width: 767px) {
+  .filtersScroller {
+    padding-bottom: 0.15rem;
+  }
+
   .filters {
-    gap: 0.6rem;
-    padding-inline: 0;
+    width: auto;
+    min-width: 0;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0 0 0.35rem;
+    flex-wrap: wrap;
+  }
+
+  .filterItem {
+    gap: calc(0.18rem + 10px);
+  }
+
+  .filterCount {
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  .filterBtn {
+    font-size: 0.76rem;
+    padding: 0.46rem 1rem;
   }
 
   .createBtn {
@@ -2188,6 +2211,45 @@
   max-width: 100%;
 }
 
+.mobileLimitControl {
+  display: none;
+}
+
+.mobileLimitPills {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.mobileLimitPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3.2rem;
+  min-height: 3.2rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(246, 241, 232, 0.25);
+  border-radius: 999px;
+  background: rgba(24, 22, 23, 0.9);
+  color: rgba(246, 241, 232, 0.88);
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobileLimitPillActive {
+  background: rgba(246, 241, 232, 0.12);
+  border-color: rgba(246, 241, 232, 0.95);
+  color: #f6f1e8;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.24);
+}
+
 .section {
   margin-bottom: 2.25rem;
 }
@@ -2478,10 +2540,7 @@
     max-width: none;
   }
 
-  .recipeSearchRow,
-  .recipeSummaryRow,
-  .recipeSummaryMeta,
-  .limitControl {
+  .recipeSearchRow {
     flex-direction: column;
     align-items: stretch;
   }
@@ -2492,6 +2551,36 @@
   }
 
   .limitSelect {
+    width: 100%;
+  }
+
+  .recipeSummaryRow {
+    align-items: center;
+    margin-bottom: 1.2rem;
+  }
+
+  .recipeSummaryText {
+    width: 100%;
+    text-align: center;
+    font-size: 0.98rem;
+  }
+
+  .summaryStrong {
+    font-size: 1.24rem;
+  }
+
+  .recipeSummaryMeta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .limitControl {
+    display: none;
+  }
+
+  .mobileLimitControl {
+    display: flex;
+    justify-content: center;
     width: 100%;
   }
 
@@ -2525,5 +2614,31 @@
 @media (min-width: 1024px) {
   .mesRecettes {
     padding: 1.8rem 0 3rem;
+  }
+}
+
+@media (max-width: 423px) {
+  .filtersScroller {
+    overflow-x: auto;
+    padding-right: 0.35rem;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .filters {
+    width: max-content;
+    min-width: max-content;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 389px) {
+  .filters {
+    gap: 0.45rem;
   }
 }

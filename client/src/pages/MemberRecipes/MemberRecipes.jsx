@@ -17,7 +17,7 @@ import {
   MEDIA_SUGGESTION_POSTER_FALLBACK,
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
-import { buildCategoryFilters } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
+import { buildCategoryFilters, LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
   || buildApiUrl('/api/tmdb/medias/search');
@@ -32,8 +32,6 @@ const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
 const CATEGORIES_API = buildApiUrl('/api/categories');
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const LIMIT_OPTIONS = [6, 9, 12];
-
 // ✅ CORRECTIF TEMPS — remplace parseOptionalPositiveInteger pour les temps.
 // Comprend tous les formats courants et les convertit en minutes (entier).
 // Exemples : "70" → 70, "30min" → 30, "1h" → 60, "1h10" → 70, "1:10" → 70
@@ -1581,6 +1579,25 @@ export default function MesRecettes() {
                       ))}
                     </select>
                   </label>
+                  <div className={styles.mobileLimitControl} aria-label="Nombre de recettes par page">
+                    <div className={styles.mobileLimitPills}>
+                      {LIMIT_OPTIONS.map((option) => {
+                        const isActive = currentLimit === option;
+
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            className={`${styles.mobileLimitPill} ${isActive ? styles.mobileLimitPillActive : ''}`.trim()}
+                            onClick={() => setCurrentLimit(option)}
+                            aria-pressed={isActive}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
