@@ -1076,7 +1076,17 @@ function AdminRecettes() {
               <button
                 type="button"
                 className={styles.adminCancelBtn}
-                onClick={() => { setShowEditModal(false); setError(''); }}
+                onClick={() => {
+                  setShowEditModal(false);
+                  setError('');
+                  if (returnAfterSave?.pathname) {
+                    navigate(returnAfterSave.pathname, {
+                      replace: true,
+                      state: returnAfterSave.state || {},
+                    });
+                    setReturnAfterSave(null);
+                  }
+                }}
               >
                 Annuler
               </button>
