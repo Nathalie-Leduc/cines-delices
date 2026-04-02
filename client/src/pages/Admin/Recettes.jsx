@@ -4,6 +4,7 @@ import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import { buildApiUrl } from '../../services/api.js';
 import {
   getMediaSuggestionMeta,
   MEDIA_SUGGESTION_POSTER_FALLBACK,
@@ -24,12 +25,11 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').replace(/\/$/, '');
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
-  || `${API_BASE_URL}/api/tmdb/medias/search`;
+  || buildApiUrl('/api/tmdb/medias/search');
 const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
-  || `${API_BASE_URL}/api/ingredients`;
+  || buildApiUrl('/api/ingredients');
 const UNITES_OPTIONS = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 
 // ✅ parseTimeToMinutes — convertit "1h10", "1:10", "70min", "70" → minutes

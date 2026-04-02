@@ -4,6 +4,7 @@ import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
+import { getApiOrigin } from '../../services/api.js';
 import {
   buildCategoryFilters,
   LIMIT_OPTIONS,
@@ -20,7 +21,7 @@ import {
 } from '../../services/adminService.js';
 import styles from './AdminPages.module.scss';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_ORIGIN = getApiOrigin();
 
 function normalizeImageUrl(value) {
   const rawValue = String(value || '').trim();
@@ -34,7 +35,7 @@ function normalizeImageUrl(value) {
 
   try {
     const parsed = new URL(rawValue);
-    const apiOrigin = new URL(API_BASE_URL).origin;
+    const apiOrigin = new URL(API_ORIGIN).origin;
     const isLocalhostSource = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
 
     if (isLocalhostSource && parsed.origin !== apiOrigin) {

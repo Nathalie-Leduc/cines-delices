@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './MembreInterface.module.scss';
+import { buildApiUrl } from '../../services/api.js';
 
 // ──────────────────────────────────────────────────────────────────────────
 //  MODIF : import du hook useAuth pour accéder au contexte d'authentification
@@ -10,10 +11,10 @@ import styles from './MembreInterface.module.scss';
 // ──────────────────────────────────────────────────────────────────────────
 import { useAuth } from '../../contexts/AuthContext.jsx';
 
-const PROFILE_API = import.meta.env.VITE_PROFILE_API || 'http://localhost:3000/api/auth/me';
-const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || 'http://localhost:3000/api/users/me/recipes';
-const ADMIN_PENDING_RECIPES_API = import.meta.env.VITE_ADMIN_RECIPES_API || 'http://localhost:3000/api/admin/recipes/pending';
-const USER_NOTIFICATIONS_API = import.meta.env.VITE_NOTIFICATIONS_API || 'http://localhost:3000/api/users/me/notifications';
+const PROFILE_API = import.meta.env.VITE_PROFILE_API || buildApiUrl('/api/auth/me');
+const USER_RECIPES_API = import.meta.env.VITE_RECIPES_API || buildApiUrl('/api/users/me/recipes');
+const ADMIN_PENDING_RECIPES_API = import.meta.env.VITE_ADMIN_RECIPES_API || buildApiUrl('/api/admin/recipes/pending');
+const USER_NOTIFICATIONS_API = import.meta.env.VITE_NOTIFICATIONS_API || buildApiUrl('/api/users/me/notifications');
 
 // Décode le payload d'un JWT stocké dans le localStorage sans bibliothèque externe
 function parseJwtPayload(token) {
