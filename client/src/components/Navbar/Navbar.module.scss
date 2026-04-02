@@ -261,14 +261,12 @@
   border: none; /* le mixin gère déjà le style de bordure */
 }
 
-/* Icône Logout.svg à gauche — même taille que dans la page compte */
+/* Icône de déconnexion identique à l'Admin */
 .desktopLogoutIcon {
   width: 20px;
   height: 20px;
   display: block;
   flex-shrink: 0;
-  /* Pas de filtre : Logout.svg est déjà blanc/clair,
-     conçu pour fond sombre — même fichier que la page compte */
 }
 
 .desktopLoginLink {

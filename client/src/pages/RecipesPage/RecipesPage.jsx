@@ -17,6 +17,7 @@ export default function RecipesPage() {
       ctaTo="/contact"
       ctaLabel="Nous contacter"
       catalogTitle="Catalogue des recettes"
+      searchPlaceholder="Rechercher une recette"
       getCatalog={getRecipesCatalog}
     />
   );
