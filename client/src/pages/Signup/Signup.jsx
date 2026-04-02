@@ -113,7 +113,7 @@ export default function Signup() {
   };
 
   return (
-    <AuthShell title="Créer un compte">
+    <AuthShell title="Créer un compte" showBrand={false}>
       <form className={styles.form} onSubmit={handleSubmit}>
         <div className={styles.identityRow}>
           <div className={styles.fieldGroup}>

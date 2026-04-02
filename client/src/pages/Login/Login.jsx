@@ -108,6 +108,10 @@ export default function Login() {
             Adresse e-mail
           </label>
           <div className={styles.inputWrapper}>
+            <span
+              className={`${styles.leadingIcon} ${styles.emailIcon}`}
+              aria-hidden="true"
+            />
             <input
               id="email"
               type="email"
@@ -141,19 +145,18 @@ export default function Login() {
               autoComplete="current-password"
               required
             />
-              <button
-                type="button"
-                className={styles.togglePassword}
-                onClick={() => setShowPassword((current) => !current)}
-                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                aria-pressed={showPassword}
-              >
-                <img
-                  src={showPassword ? '/icon/View_hide_fill.svg' : '/icon/View_fill.svg'}
-                  alt={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                  style={{ width: 24, height: 24 }}
-                />
-              </button>
+            <button
+              type="button"
+              className={styles.togglePassword}
+              onClick={() => setShowPassword((current) => !current)}
+              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              aria-pressed={showPassword}
+            >
+              <span
+                className={`${styles.eyeIcon} ${showPassword ? styles.eyeVisible : styles.eyeHidden}`}
+                aria-hidden="true"
+              />
+            </button>
           </div>
 
           <button
