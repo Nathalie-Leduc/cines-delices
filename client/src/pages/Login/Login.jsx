@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, NavLink, useLocation } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import AuthShell from '../../components/AuthShell/AuthShell.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
@@ -8,7 +8,6 @@ import styles from './Login.module.scss';
 
 export default function Login() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,10 +28,9 @@ export default function Login() {
       const payload = await loginUser({ email, password });
       login({ token: payload?.token, user: payload?.user ?? null });
 
-      let redirectPath = location.state?.from?.pathname || '/membre/mes-recettes';
-      if (payload?.user?.role === 'ADMIN') {
-        redirectPath = '/admin';
-      }
+      const redirectPath = payload?.user?.role === 'ADMIN'
+        ? '/admin'
+        : '/membre/mes-recettes';
 
       navigate(redirectPath, { replace: true });
     } catch (requestError) {

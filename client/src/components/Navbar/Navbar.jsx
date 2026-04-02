@@ -115,8 +115,8 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
   // Le nom affiché dans la Navbar (ex: "Bonjour, Nathalie")
   const userName = isAuthenticated ? getDisplayName(user) : "";
 
-  // Le lien "Mon compte" pointe vers /admin si admin, /membre/profil sinon
-  const accountPath = isAdmin ? "/admin" : "/membre/profil";
+  // Le lien "Mon compte" pointe vers /admin si admin, /membre/mes-recettes sinon
+  const accountPath = isAdmin ? "/admin" : "/membre/mes-recettes";
   const desktopNavItems = NAVBAR_VARIANTS.public.items;
   const mobileNavItems = NAVBAR_VARIANTS[resolvedVariant]?.items ?? NAVBAR_VARIANTS.public.items;
   const roleLabel = NAVBAR_VARIANTS[resolvedVariant]?.roleLabel ?? "";
