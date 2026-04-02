@@ -1,0 +1,102 @@
+@use "../../styles/visitor-mixins" as ui;
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  width: 100%;
+  color: #f6f1e8;
+}
+
+.pageHeader {
+  @include ui.section-heading-line(
+    $heading-color: #fbdca5,
+    $line-color: rgba(232, 220, 200, 0.28),
+    $font-size: clamp(2rem, 3.4vw, 3rem),
+    $margin: 0
+  );
+  display: flex;
+  align-items: center;
+}
+
+.headingBlock {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.title {
+  margin: 0;
+  color: #fbdca5;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 3.3vw, 3rem);
+  font-weight: 700;
+  line-height: 1.02;
+}
+
+.contactCard {
+  @include ui.surface-panel(
+    $background: rgba(31, 29, 30, 0.78),
+    $border: rgba(232, 220, 200, 0.42),
+    $radius: 24px,
+    $padding: clamp(1.2rem, 2vw, 1.7rem)
+  );
+  display: grid;
+  gap: 1.35rem;
+  box-shadow: 0 26px 48px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(8px);
+}
+
+.contactIntro {
+  display: grid;
+  gap: 0.72rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(232, 220, 200, 0.12);
+}
+
+.supportBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.9rem;
+  padding: 0.25rem 0.72rem;
+  border: 1px solid rgba(92, 177, 194, 0.42);
+  border-radius: 999px;
+  background: rgba(58, 138, 154, 0.16);
+  color: #d7f4f8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.introText {
+  margin: 0;
+  max-width: 46rem;
+  color: rgba(246, 241, 232, 0.78);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.supportEmail {
+  margin: 0;
+  color: #fbdca5;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 767px) {
+  .contactCard {
+    gap: 1.15rem;
+    padding: 1rem;
+    border-radius: 20px;
+  }
+
+  .contactIntro {
+    padding-bottom: 0.85rem;
+  }
+}

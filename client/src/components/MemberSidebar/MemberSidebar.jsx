@@ -125,7 +125,7 @@ export default function MemberSidebar() {
       icon: '/icon/Contact.svg',
       label: 'Contact',
       sub: 'help@support.cine-delices.com',
-      to: '/contact',
+      to: '/membre/contact',
       end: true,
     },
   ], [memberRecipesCount, pendingRecipesCount, userEmail]);

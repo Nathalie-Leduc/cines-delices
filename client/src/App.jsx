@@ -6,6 +6,7 @@ import PublicLayout from './layouts/PublicLayout';
 import Home from './pages/Home';
 import MemberRecipes from './pages/MemberRecipes';
 import MemberProfile from './pages/MemberProfile';
+import MemberContact from './pages/MemberContact';
 import CreateRecipe from './pages/CreateRecipe';
 import RecipesPage from './pages/RecipesPage';
 import RecipeDetail from "./pages/RecipeDetail";
@@ -66,6 +67,7 @@ function App() {
         <Route element={<MemberDashboardLayout />}>
           <Route index element={<Navigate to="mes-recettes" replace />} />
           <Route path="profil" element={<MemberProfile />} />
+          <Route path="contact" element={<MemberContact />} />
           <Route path="mes-recettes" element={<MemberRecipes />} />
           <Route path="mes-recettes/recettes-en-validation" element={<MemberRecipes />} />
           <Route path="notifications" element={<MemberRecipes />} />
