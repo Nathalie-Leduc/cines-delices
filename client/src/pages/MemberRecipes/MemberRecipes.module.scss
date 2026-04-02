@@ -2275,16 +2275,19 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.95rem;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--recipe-card-min-size)), var(--recipe-card-max-size)));
+  justify-content: center;
 }
 
 .cardShell {
+  position: relative;
   width: 100%;
   max-width: none;
   min-width: 0;
   container-type: inline-size;
   container-name: member-card;
+  transition: transform 0.22s ease;
 }
 
 .cardActionsFloating {
@@ -2342,6 +2345,13 @@
   font-size: 0.72rem;
   font-weight: 700;
   line-height: 1;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(var(--recipe-card-min-size), var(--recipe-card-max-size)));
+  }
 }
 
 @container member-card (max-width: 268px) {
@@ -2623,7 +2633,9 @@
   }
 
   .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
   }
 
   .notificationRow {
@@ -2765,10 +2777,6 @@
 
   .paginationStatus {
     white-space: nowrap;
-  }
-
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .notificationMessageModal {
@@ -2931,11 +2939,5 @@
 @media (max-width: 389px) {
   .filters {
     gap: 0.45rem;
-  }
-}
-
-@media (max-width: 319px) {
-  .grid {
-    grid-template-columns: 1fr;
   }
 }

@@ -20,8 +20,8 @@ import './tarteaucitron-theme-cines-delices.css';
 //   - DenyAllCta: true (refuser aussi simple qu'accepter)
 // ============================================================
 
-// URL de votre page mentions légales / politique de confidentialité
-const PRIVACY_URL = '/mentions-legales';
+// Page dédiée aux informations cookies
+const PRIVACY_URL = '/politique-cookies';
 
 export default function CookieConsent() {
   useEffect(() => {
@@ -41,12 +41,17 @@ export default function CookieConsent() {
 
       // Forcer la langue française pour éviter les erreurs de clé manquante
       window.tarteaucitronForceLanguage = 'fr';
+      window.tarteaucitronCustomText = {
+        alertSmall: 'Gérer les cookies',
+        title: 'Gestion des cookies',
+        privacyUrl: 'Politique des cookies',
+      };
 
       // ─────────────────────────────────────────────
       // Initialisation Tarteaucitron
       // ─────────────────────────────────────────────
       window.tarteaucitron.init({
-        // Lien vers la politique de confidentialité
+        // Lien vers la politique des cookies
         privacyUrl: PRIVACY_URL,
 
         // Position du bandeau

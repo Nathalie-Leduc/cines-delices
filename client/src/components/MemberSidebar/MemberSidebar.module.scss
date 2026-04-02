@@ -239,7 +239,7 @@
   }
 }
 
-.accountSubTag {
+.accountContent .accountSubTag {
   @include ui.badge-chip(
     $background: rgba(142, 31, 47, 0.96),
     $color: #fff7ea,

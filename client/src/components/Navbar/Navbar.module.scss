@@ -50,6 +50,10 @@
   list-style: none;
 }
 
+.desktopLinks li {
+  min-width: 0;
+}
+
 .link,
 .activeLink,
 .mobileLink,
@@ -116,6 +120,21 @@
 
 .searchInput::placeholder {
   color: rgba(246, 241, 232, 0.7);
+}
+
+.searchInput::-webkit-search-decoration,
+.searchInput::-webkit-search-cancel-button,
+.searchInput::-webkit-search-results-button,
+.searchInput::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.searchInput::-ms-clear,
+.searchInput::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .searchButton {
@@ -246,14 +265,12 @@
   border: none; /* le mixin gère déjà le style de bordure */
 }
 
-/* Icône Logout.svg à gauche — même taille que dans la page compte */
+/* Icône de déconnexion identique à l'Admin */
 .desktopLogoutIcon {
   width: 20px;
   height: 20px;
   display: block;
   flex-shrink: 0;
-  /* Pas de filtre : Logout.svg est déjà blanc/clair,
-     conçu pour fond sombre — même fichier que la page compte */
 }
 
 .desktopLoginLink {
@@ -898,6 +915,11 @@
     list-style: none;
   }
 
+  .desktopLinks li {
+    display: flex;
+    justify-content: center;
+  }
+
   .rightZone {
     display: flex;
     align-items: center;
@@ -939,8 +961,8 @@
   }
 
   .desktopLinks {
-    width: min(100%, var(--desktop-nav-max-width, 24rem));
-    gap: 0.75rem;
+    width: min(100%, 26rem);
+    gap: clamp(0.5rem, 0.85vw, 0.75rem);
   }
 
   .userRoleBadge {
@@ -965,31 +987,32 @@
 
 @media (min-width: 1024px) and (max-width: 1370px) {
   .container {
-    column-gap: clamp(0.7rem, 1.1vw, 1rem);
+    column-gap: clamp(0.55rem, 1vw, 0.95rem);
   }
 
   .desktopNav {
-    justify-content: center;
-    padding-inline: clamp(0.85rem, 1.8vw, 1.8rem);
+    justify-content: stretch;
+    padding-inline: clamp(0.7rem, 1.35vw, 1.3rem);
   }
 
   .desktopLinks {
-    width: auto;
-    grid-template-columns: repeat(var(--desktop-nav-columns, 4), max-content);
-    gap: clamp(0.55rem, 0.95vw, 1rem);
+    width: min(100%, clamp(22rem, 30vw, 28rem));
+    grid-template-columns: repeat(var(--desktop-nav-columns, 4), minmax(0, 1fr));
+    justify-content: stretch;
+    gap: clamp(0.4rem, 0.75vw, 0.8rem);
   }
 
   .link,
   .activeLink {
-    font-size: 0.92rem;
+    font-size: clamp(0.88rem, 0.8rem + 0.18vw, 0.94rem);
   }
 
   .rightZone {
-    gap: clamp(0.55rem, 0.95vw, 0.9rem);
+    gap: clamp(0.5rem, 0.9vw, 0.85rem);
   }
 
   .searchForm {
-    min-width: clamp(170px, 16vw, 240px);
+    min-width: clamp(170px, 17vw, 240px);
   }
 
   .searchInput {

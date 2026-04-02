@@ -55,8 +55,8 @@ function mapApiRecipeToCard(recipe) {
     mediaTitle: recipe?.media?.titre || "Sans média",
     mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
     duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL || recipe?.imageUrl || recipe?.media?.posterUrl || "/img/hero-home.png",
-    fallbackImage: recipe?.media?.posterUrl || "/img/hero-home.png",
+    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.png",
+    fallbackImage: "/img/hero-home.png",
   };
 }
 

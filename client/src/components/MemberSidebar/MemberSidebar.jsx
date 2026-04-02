@@ -324,7 +324,7 @@ export default function MemberSidebar({ className = '', onNavigate, mobile = fal
 
       <button type="button" className={styles.logoutBtn} onClick={handleLogout}>
         <span className={styles.logoutIcon}>
-          <img src="/icon/Logout.svg" alt="" aria-hidden="true" />
+          <img src="/icon/On_button_fill.svg" alt="" aria-hidden="true" />
         </span>
         <span>Se déconnecter</span>
         <span className={styles.accountArrow} aria-hidden="true">

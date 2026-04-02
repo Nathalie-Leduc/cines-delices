@@ -375,7 +375,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   type="search"
                   value={search}
                   onChange={handleSearch}
-                  placeholder="Rechercher une recette, un film ou une série"
+                  placeholder="Recette, film ou série."
                   aria-label="Rechercher une recette, un film ou une série"
                   className={styles.searchInput}
                 />
@@ -431,26 +431,14 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   </span>
                   <span className={styles.userName}>{userName}</span>
                 </NavLink>
-                <NavLink
-                  to={accountPath}
-                  className={styles.userIcon}
-                  aria-label="Mon compte"
-                >
-                  <img
-                    src="/icon/Profil.svg"
-                    alt="Profil"
-                    className={styles.profileIcon}
-                  />
-                </NavLink>
                 <button
                   type="button"
                   className={styles.desktopLogoutButton}
                   onClick={handleLogout}
                   aria-label="Se déconnecter"
                 >
-                  {/* Icône Logout — même icône que le bouton du compte membre */}
                   <img
-                    src="/icon/Logout.svg"
+                    src="/icon/On_button_fill.svg"
                     alt=""
                     aria-hidden="true"
                     className={styles.desktopLogoutIcon}
@@ -727,7 +715,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                     type="search"
                     value={search}
                     onChange={handleSearch}
-                    placeholder="Rechercher une recette, un film ou une série"
+                    placeholder="Recette, film ou série."
                     aria-label="Rechercher une recette, un film ou une série"
                     className={styles.mobileSearchInput}
                   />
