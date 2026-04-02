@@ -1543,21 +1543,23 @@ export default function MesRecettes() {
                 </button>
               ) : null}
 
-              <div className={styles.filters}>
-                {categories.map(cat => (
-                  <div key={cat.label} className={styles.filterItem}>
-                    <span className={`${styles.filterCount} ${styles[cat.color]}`}>
-                      {cat.count}
-                    </span>
-                    <button
-                      className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
-                      aria-label={`Filtrer les recettes: ${cat.label}`}
-                      onClick={() => setActiveFilter(cat.label)}
-                    >
-                      {cat.label}
-                    </button>
-                  </div>
-                ))}
+              <div className={styles.filtersScroller}>
+                <div className={styles.filters}>
+                  {categories.map(cat => (
+                    <div key={cat.label} className={styles.filterItem}>
+                      <span className={`${styles.filterCount} ${styles[cat.color]}`}>
+                        {cat.count}
+                      </span>
+                      <button
+                        className={`${styles.filterBtn} ${activeFilter === cat.label ? styles[`active_${cat.color}`] : ''}`}
+                        aria-label={`Filtrer les recettes: ${cat.label}`}
+                        onClick={() => setActiveFilter(cat.label)}
+                      >
+                        {cat.label}
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.recipeSummaryRow}>
