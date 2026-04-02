@@ -2535,6 +2535,40 @@
     font-size: clamp(2.65rem, 14vw, 3.35rem);
   }
 
+  .cardActionsFloating {
+    top: 0.62rem;
+    left: 0.62rem;
+    right: 0.62rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 0.34rem;
+    z-index: 3;
+  }
+
+  .actionBtn:not(.actionBtnSubmit) {
+    width: 2.2rem;
+    height: 2.2rem;
+    min-width: 2.2rem;
+  }
+
+  .actionBtnSubmit {
+    width: auto;
+    min-width: 0;
+    min-height: 2.2rem;
+    padding: 0.35rem 0.68rem;
+    font-size: 0.66rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .moderationBadgeGroup {
+    top: 3.08rem;
+    right: 0.62rem;
+  }
+
   .addRecipeButton {
     width: 100%;
     max-width: none;
