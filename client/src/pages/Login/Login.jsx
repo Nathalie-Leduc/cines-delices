@@ -6,6 +6,8 @@ import { useAuth } from '../../contexts/AuthContext.jsx';
 import { loginUser, forgotPassword } from '../../services/authService.js';
 import styles from './Login.module.scss';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -20,6 +22,8 @@ export default function Login() {
   const [resetError, setResetError] = useState('');
   const [closeCountdown, setCloseCountdown] = useState(0);
   const closeTimer = useRef(null);
+  const normalizedResetEmail = emailForReset.trim().toLowerCase();
+  const isResetEmailValid = EMAIL_REGEX.test(normalizedResetEmail);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,13 +50,18 @@ export default function Login() {
     setResetMessage('');
     setResetError('');
 
-    if (!emailForReset.trim()) {
+    if (!normalizedResetEmail) {
       setResetError('Veuillez entrer votre email.');
       return;
     }
 
+    if (!isResetEmailValid) {
+      setResetError('Veuillez entrer une adresse e-mail valide.');
+      return;
+    }
+
     try {
-      await forgotPassword(emailForReset);
+      await forgotPassword(normalizedResetEmail);
       setResetMessage('Email envoyé si le compte existe !');
       setEmailForReset('');
       setCloseCountdown(3); // 3 secondes
@@ -174,7 +183,10 @@ export default function Login() {
                 type="email"
                 placeholder="Entrez votre email"
                 value={emailForReset}
-                onChange={(e) => setEmailForReset(e.target.value)}
+                onChange={(e) => setEmailForReset(e.target.value.replace(/\s+/g, ''))}
+                inputMode="email"
+                autoComplete="email"
+                required
               />
               {resetMessage && (
                 <div className={styles.successMsg}>{resetMessage}</div>
@@ -183,7 +195,12 @@ export default function Login() {
                 <div className={styles.formAlert}>{resetError}</div>
               )}
               <div className={styles.modalButtons}>
-                <button type="button" className={styles.submitButtonMDPbrown} onClick={handleForgotPassword}>
+                <button
+                  type="button"
+                  className={styles.submitButtonMDPbrown}
+                  onClick={handleForgotPassword}
+                  disabled={!isResetEmailValid}
+                >
                   Envoyer
                 </button>
                 <button type="button" className={styles.submitButtonMDP} onClick={() => setShowModal(false)}>

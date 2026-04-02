@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import { deleteMe, getMe, updateMe, updateMyPassword } from '../../services/api.js';
@@ -11,15 +11,27 @@ const initialUser = {
   prenom: '',
   email: '',
   motDePasse: '********',
-  recettes: {
-    entrees: 0,
-    plats: 0,
-    desserts: 0,
-    boissons: 0,
-    recettesEnValidation: 0,
-  },
+  recettes: {},
+  recettesEnValidation: 0,
   dateInscription: '',
 };
+
+function normalizeCategoryKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function getCategoryBadgeToneClass(categoryName) {
+  const normalized = normalizeCategoryKey(categoryName);
+  if (normalized === 'entree') return styles.entree;
+  if (normalized === 'plat') return styles.plat;
+  if (normalized === 'dessert') return styles.dessert;
+  if (normalized === 'boisson') return styles.boisson;
+  return '';
+}
 
 function normalizeDisplayName(name) {
   const trimmed = String(name || '').trim();
@@ -60,6 +72,32 @@ export default function Profil() {
   const [editModalData, setEditModalData] = useState(null);
   const [profileFeedback, setProfileFeedback] = useState({ type: '', message: '' });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  const recipeCategories = useMemo(() => {
+    const recipeCounts = userData.recettes || {};
+    const preferredOrder = ['entree', 'plat', 'dessert', 'boisson'];
+
+    return Object.entries(recipeCounts)
+      .filter(([name]) => String(name || '').trim().length > 0)
+      .map(([name, count]) => ({
+        key: normalizeCategoryKey(name),
+        name: String(name || '').trim(),
+        count: Number(count) || 0,
+      }))
+      .sort((a, b) => {
+        const aIndex = preferredOrder.indexOf(a.key);
+        const bIndex = preferredOrder.indexOf(b.key);
+
+        const aRank = aIndex === -1 ? Number.MAX_SAFE_INTEGER : aIndex;
+        const bRank = bIndex === -1 ? Number.MAX_SAFE_INTEGER : bIndex;
+
+        if (aRank !== bRank) {
+          return aRank - bRank;
+        }
+
+        return a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' });
+      });
+  }, [userData.recettes]);
 
   function syncDisplayName(name) {
     const normalizedName = normalizeDisplayName(name);
@@ -113,27 +151,24 @@ export default function Profil() {
         ? payload.data
         : [];
 
-    const counts = {
-      entrees: 0,
-      plats: 0,
-      desserts: 0,
-      boissons: 0,
-      recettesEnValidation: 0,
-    };
+    const counts = {};
+    let recettesEnValidation = 0;
 
     recipes.forEach((recipe) => {
       const status = String(recipe?.status || '').toUpperCase();
 
       if (status === 'PENDING') {
-        counts.recettesEnValidation += 1;
+        recettesEnValidation += 1;
       }
 
-      if (status !== 'PENDING' && recipe.category && recipe.category.nom) {
-        const nomLower = recipe.category.nom.toLowerCase();
-        if (nomLower === 'entrée') counts.entrees++;
-        else if (nomLower === 'plat') counts.plats++;
-        else if (nomLower === 'dessert') counts.desserts++;
-        else if (nomLower === 'boisson') counts.boissons++;
+      if (status !== 'PENDING') {
+        const categoryName = String(
+          recipe?.category?.nom || recipe?.categorie || recipe?.category || '',
+        ).trim();
+
+        if (categoryName) {
+          counts[categoryName] = (counts[categoryName] || 0) + 1;
+        }
       }
 
     });
@@ -141,6 +176,7 @@ export default function Profil() {
     setUserData((prev) => ({
       ...prev,
       recettes: counts,
+      recettesEnValidation,
     }));
   }
 
@@ -543,18 +579,20 @@ export default function Profil() {
 
           <div className={styles.bottomRow}>
             <div className={styles.recettesBlock}>
-              <h2 className={styles.recettesTitle}>Recettes</h2>
-              <div className={styles.tags}>
-                <span className={`${styles.tag} ${styles.entree}`}>Entrée</span>
-                <span className={`${styles.tag} ${styles.plat}`}>Plat</span>
-                <span className={`${styles.tag} ${styles.dessert}`}>Dessert</span>
-                <span className={`${styles.tag} ${styles.boisson}`}>Boisson</span>
-              </div>
-              <div className={styles.counts}>
-                <span className={styles.count}>{userData.recettes.entrees}</span>
-                <span className={styles.count}>{userData.recettes.plats}</span>
-                <span className={styles.count}>{userData.recettes.desserts}</span>
-                <span className={styles.count}>{userData.recettes.boissons}</span>
+              <span className={styles.blockLabel}>Recettes</span>
+
+              <div className={styles.recipesGrid}>
+                {recipeCategories.map((category) => (
+                  <div
+                    key={category.name}
+                    className={`${styles.recipeCategoryItem} ${getCategoryBadgeToneClass(category.name)}`.trim()}
+                  >
+                    <span className={`${styles.badge} ${getCategoryBadgeToneClass(category.name)}`.trim()}>
+                      {category.name}
+                    </span>
+                    <span className={styles.counter}>{category.count}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
