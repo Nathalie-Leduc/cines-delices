@@ -67,7 +67,10 @@ export default function ResetPassword() {
                   aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   aria-pressed={showPassword}
                 >
-                  👁️
+                 <img
+                  src={showPassword ? '/icon/View_hide_fill.svg' : '/icon/View_fill.svg'}
+                  alt={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  style={{ width: 24, height: 24 }}></img>
                 </button>
               </div>
             </div>
@@ -94,7 +97,10 @@ export default function ResetPassword() {
                   aria-label={showConfirm ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   aria-pressed={showConfirm}
                 >
-                  👁️
+                  <img
+                  src={showPassword ? '/icon/View_hide_fill.svg' : '/icon/View_fill.svg'}
+                  alt={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  style={{ width: 24, height: 24 }}></img>
                 </button>
               </div>
             </div>

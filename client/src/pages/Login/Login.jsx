@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
 import AuthShell from '../../components/AuthShell/AuthShell.jsx';
@@ -18,6 +18,8 @@ export default function Login() {
   const [emailForReset, setEmailForReset] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [resetError, setResetError] = useState('');
+  const [closeCountdown, setCloseCountdown] = useState(0);
+  const closeTimer = useRef(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,6 +55,7 @@ export default function Login() {
       await forgotPassword(emailForReset);
       setResetMessage('Email envoyé si le compte existe !');
       setEmailForReset('');
+      setCloseCountdown(3); // 3 secondes
     } catch (requestError) {
       console.error(requestError);
       setResetError(
@@ -60,6 +63,22 @@ export default function Login() {
       );
     }
   };
+
+  // Gère le décompte et la fermeture automatique de la modal
+  useEffect(() => {
+    if (closeCountdown > 0) {
+      closeTimer.current = setTimeout(() => {
+        setCloseCountdown((c) => c - 1);
+      }, 1000);
+    } else if (closeCountdown === 0 && resetMessage) {
+      // Ferme la modal après le décompte
+      setTimeout(() => {
+        handleCloseModal();
+      }, 300);
+    }
+    return () => clearTimeout(closeTimer.current);
+    // eslint-disable-next-line
+  }, [closeCountdown]);
   const handleCloseModal = () => {
     setShowModal(false);
     setEmailForReset('');
@@ -112,15 +131,19 @@ export default function Login() {
               autoComplete="current-password"
               required
             />
-            <button
-              type="button"
-              className={styles.togglePassword}
-              onClick={() => setShowPassword((current) => !current)}
-              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-              aria-pressed={showPassword}
-            >
-              👁️
-            </button>
+              <button
+                type="button"
+                className={styles.togglePassword}
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                aria-pressed={showPassword}
+              >
+                <img
+                  src={showPassword ? '/icon/View_hide_fill.svg' : '/icon/View_fill.svg'}
+                  alt={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                  style={{ width: 24, height: 24 }}
+                />
+              </button>
           </div>
 
           <button
@@ -185,51 +208,9 @@ export default function Login() {
           onClose={() => setError('')}
           className={styles.formAlert}
         />
-
-        <p className={styles.noAccount}>
-          Nouveau sur notre site ?{' '}
-          <NavLink to="/signup" className={styles.link}>
-            Créer un compte
-          </NavLink>
-        </p>
       </form>
 
-      {showModal && (
-        <div className={styles.overlay}>
-          <div className={styles.modal}>
-            <h2>Mot de passe oublié</h2>
-
-            <input
-              type="email"
-              placeholder="Votre email"
-              value={emailForReset}
-              onChange={(e) => setEmailForReset(e.target.value)}
-            />
-            {resetMessage && (
-              <p className={styles.resetSuccess}>{resetMessage}</p>
-            )}
-            {resetError && (
-              <p className={styles.resetError}>{resetError}</p>
-            )}
-
-            <button
-              type="button"
-              className={styles.submitButtonMDP}
-              onClick={handleForgotPassword}
-            >
-              Envoyer
-            </button>
-
-            <button
-              type="button"
-              className={styles.submitButtonMDP}
-              onClick={handleCloseModal}
-            >
-              Fermer
-            </button>
-          </div>
-        </div>
-      )}
+      
     </AuthShell>
   );
 }

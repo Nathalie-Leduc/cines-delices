@@ -168,7 +168,7 @@
 .forgotPassword {
   margin: 0.5rem 0.05rem 0 0;
   align-self: flex-end;
-  color:#d4a84d;
+  color: #d4a84d;
   font-family: 'Inter', sans-serif;
   font-size: 0.95rem;
   font-weight: 500;
@@ -176,6 +176,10 @@
   text-decoration: underline;
   text-decoration-thickness: 0.08em;
   text-underline-offset: 0.16em;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0;
   transition:
     color 0.2s ease,
     opacity 0.2s ease;
