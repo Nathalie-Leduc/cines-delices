@@ -375,7 +375,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   type="search"
                   value={search}
                   onChange={handleSearch}
-                  placeholder="Rechercher une recette, un film ou une série"
+                  placeholder="Recette, film ou série."
                   aria-label="Rechercher une recette, un film ou une série"
                   className={styles.searchInput}
                 />
@@ -727,7 +727,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                     type="search"
                     value={search}
                     onChange={handleSearch}
-                    placeholder="Rechercher une recette, un film ou une série"
+                    placeholder="Recette, film ou série."
                     aria-label="Rechercher une recette, un film ou une série"
                     className={styles.mobileSearchInput}
                   />

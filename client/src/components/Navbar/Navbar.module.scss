@@ -118,6 +118,21 @@
   color: rgba(246, 241, 232, 0.7);
 }
 
+.searchInput::-webkit-search-decoration,
+.searchInput::-webkit-search-cancel-button,
+.searchInput::-webkit-search-results-button,
+.searchInput::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.searchInput::-ms-clear,
+.searchInput::-ms-reveal {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 .searchButton {
   border: 0;
   background: transparent;

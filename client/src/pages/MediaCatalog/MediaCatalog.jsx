@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
 import MediaCard from "../../components/MediaCard";
@@ -13,10 +13,47 @@ function parsePositiveInt(value, fallback) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function wait(ms) {
-  return new Promise((resolve) => {
-    window.setTimeout(resolve, ms);
-  });
+function extractItemsFromPayload(payload) {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (Array.isArray(payload?.items)) {
+    return payload.items;
+  }
+
+  return [];
+}
+
+async function fetchCompleteCatalog(getCatalog) {
+  const limit = 50;
+  let page = 1;
+  let totalPages = 1;
+  const collectedItems = [];
+
+  while (page <= totalPages) {
+    const payload = await getCatalog({ page, limit });
+    const rawItems = extractItemsFromPayload(payload);
+
+    collectedItems.push(...rawItems);
+
+    if (Array.isArray(payload)) {
+      break;
+    }
+
+    const pagination = payload?.pagination || {};
+    totalPages = Math.max(1, Number(pagination.totalPages || 1));
+
+    if (!pagination.hasNextPage || page >= totalPages) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return Array.from(
+    new Map(collectedItems.map((item) => [item?.id, item])).values(),
+  );
 }
 
 export default function MediaCatalog({
@@ -32,37 +69,23 @@ export default function MediaCatalog({
   badgeVariant = "film",
   creatorFallback,
   loadingMessage,
-  updatingMessage,
+  updatingMessage: _updatingMessage,
   errorMessage,
   emptyMessage,
-  suggestionMetaFallback,
+  suggestionMetaFallback: _suggestionMetaFallback,
   getCatalog,
   mapItemToCard,
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: DEFAULT_LIMIT,
-    totalItems: 0,
-    totalPages: 0,
-    hasNextPage: false,
-    hasPreviousPage: false,
-  });
   const [isLoading, setIsLoading] = useState(true);
-  const [isPaginating, setIsPaginating] = useState(false);
   const [error, setError] = useState("");
   const [searchInput, setSearchInput] = useState(searchParams.get("q") || "");
   const [isMobileViewport, setIsMobileViewport] = useState(() => window.innerWidth <= 767);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const hasLoadedOnce = useRef(false);
-  const searchRef = useRef(null);
-  const searchDebounceRef = useRef(null);
   const mobileSearchInputRef = useRef(null);
   const isHeroVisible = useHeroReveal();
 
-  const currentQuery = searchParams.get("q")?.trim() || "";
   const currentPage = parsePositiveInt(searchParams.get("page"), 1);
   const currentLimit = parsePositiveInt(searchParams.get("limit"), DEFAULT_LIMIT);
 
@@ -83,59 +106,6 @@ export default function MediaCatalog({
   useEffect(() => {
     setSearchInput(searchParams.get("q") || "");
   }, [searchParams]);
-
-  useEffect(() => {
-    if (!searchInput || searchInput.trim().length < 1) {
-      setSearchResults([]);
-      return;
-    }
-
-    let isCancelled = false;
-
-    const timeout = window.setTimeout(async () => {
-      try {
-        const payload = await getCatalog({
-          q: searchInput.trim(),
-          limit: 5,
-          page: 1,
-        });
-
-        const rawItems = Array.isArray(payload?.items) ? payload.items : [];
-
-        if (!isCancelled) {
-          setSearchResults(rawItems.map(mapItemToCard));
-        }
-      } catch {
-        if (!isCancelled) {
-          setSearchResults([]);
-        }
-      }
-    }, 250);
-
-    return () => {
-      isCancelled = true;
-      window.clearTimeout(timeout);
-    };
-  }, [getCatalog, mapItemToCard, searchInput]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setSearchResults([]);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (searchDebounceRef.current) {
-        window.clearTimeout(searchDebounceRef.current);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (!isMobileSearchOpen) {
@@ -165,61 +135,21 @@ export default function MediaCatalog({
 
     const fetchItems = async () => {
       try {
-        setIsLoading(!hasLoadedOnce.current);
-        setIsPaginating(hasLoadedOnce.current);
-        let payload;
-
-        for (let attempt = 0; attempt < 2; attempt += 1) {
-          try {
-            payload = await getCatalog({
-              page: currentPage,
-              limit: currentLimit,
-              q: currentQuery,
-            });
-            break;
-          } catch (attemptError) {
-            if (attempt === 1) {
-              throw attemptError;
-            }
-
-            await wait(400);
-          }
-        }
+        setIsLoading(true);
+        const rawItems = await fetchCompleteCatalog(getCatalog);
 
         if (!isMounted) return;
 
-        const rawItems = Array.isArray(payload?.items) ? payload.items : [];
-        const paginationPayload = payload?.pagination || {};
-
         setItems(rawItems.map(mapItemToCard));
-        setPagination({
-          page: Number(paginationPayload.page || currentPage),
-          limit: Number(paginationPayload.limit || currentLimit),
-          totalItems: Number(paginationPayload.totalItems || 0),
-          totalPages: Number(paginationPayload.totalPages || 0),
-          hasNextPage: Boolean(paginationPayload.hasNextPage),
-          hasPreviousPage: Boolean(paginationPayload.hasPreviousPage),
-        });
         setError("");
-        hasLoadedOnce.current = true;
       } catch (fetchError) {
         if (!isMounted) return;
 
         setItems([]);
-        setPagination({
-          page: currentPage,
-          limit: currentLimit,
-          totalItems: 0,
-          totalPages: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        });
         setError(fetchError?.message || errorMessage);
-        hasLoadedOnce.current = true;
       } finally {
         if (isMounted) {
           setIsLoading(false);
-          setIsPaginating(false);
         }
       }
     };
@@ -229,7 +159,7 @@ export default function MediaCatalog({
     return () => {
       isMounted = false;
     };
-  }, [currentLimit, currentPage, currentQuery, errorMessage, getCatalog, mapItemToCard]);
+  }, [errorMessage, getCatalog, mapItemToCard]);
 
   const updateCatalogParams = (mutateParams) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -239,24 +169,14 @@ export default function MediaCatalog({
 
   const handleSearchSubmit = (event) => {
     event.preventDefault();
-    const normalized = searchInput.trim();
-    setSearchResults([]);
 
-    updateCatalogParams((nextParams) => {
-      if (normalized) {
-        nextParams.set("q", normalized);
-      } else {
-        nextParams.delete("q");
-      }
-
-      nextParams.set("page", "1");
-      nextParams.set("limit", String(currentLimit));
-    });
+    if (isMobileViewport) {
+      closeMobileSearch();
+    }
   };
 
   const clearSearch = () => {
     setSearchInput("");
-    setSearchResults([]);
     updateCatalogParams((nextParams) => {
       nextParams.delete("q");
       nextParams.set("page", "1");
@@ -286,51 +206,62 @@ export default function MediaCatalog({
     });
   };
 
-  const handleSuggestionClick = (itemTitle) => {
-    setSearchInput(itemTitle);
-    setSearchResults([]);
-    updateCatalogParams((nextParams) => {
-      nextParams.set("q", itemTitle);
-      nextParams.set("page", "1");
-      nextParams.set("limit", String(currentLimit));
-    });
-  };
-
   const openMobileSearch = () => {
     setIsMobileSearchOpen(true);
   };
 
   const closeMobileSearch = () => {
     setIsMobileSearchOpen(false);
-    setSearchResults([]);
   };
 
   const handleSearchInputChange = (event) => {
     const nextValue = event.target.value;
     setSearchInput(nextValue);
 
-    if (searchDebounceRef.current) {
-      window.clearTimeout(searchDebounceRef.current);
-    }
+    updateCatalogParams((nextParams) => {
+      if (nextValue.trim()) {
+        nextParams.set("q", nextValue);
+      } else {
+        nextParams.delete("q");
+      }
 
-    searchDebounceRef.current = window.setTimeout(() => {
-      const normalized = nextValue.trim();
-
-      updateCatalogParams((nextParams) => {
-        if (normalized) {
-          nextParams.set("q", normalized);
-        } else {
-          nextParams.delete("q");
-        }
-
-        nextParams.set("page", "1");
-        nextParams.set("limit", String(currentLimit));
-      });
-    }, 250);
+      nextParams.set("page", "1");
+      nextParams.set("limit", String(currentLimit));
+    });
   };
 
-  const hasResults = items.length > 0;
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = searchInput.trim().toLowerCase();
+
+    return items.filter((item) => {
+      if (!normalizedQuery) {
+        return true;
+      }
+
+      return String(item?.title || "").toLowerCase().includes(normalizedQuery);
+    });
+  }, [items, searchInput]);
+
+  const totalItems = filteredItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / currentLimit));
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * currentLimit;
+    return filteredItems.slice(startIndex, startIndex + currentLimit);
+  }, [currentLimit, currentPage, filteredItems]);
+  const hasResults = paginatedItems.length > 0;
+  const currentQuery = searchInput.trim();
   const hasQuery = Boolean(currentQuery);
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < totalPages;
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      updateCatalogParams((nextParams) => {
+        nextParams.set("page", String(totalPages));
+        nextParams.set("limit", String(currentLimit));
+      });
+    }
+  }, [currentLimit, currentPage, totalPages]);
 
   return (
     <main className={styles.container}>
@@ -371,7 +302,7 @@ export default function MediaCatalog({
 
           <div className={styles.toolbar}>
             <form className={styles.searchForm} onSubmit={handleSearchSubmit}>
-              <div ref={searchRef} className={styles.searchField}>
+              <div className={styles.searchField}>
                 {isMobileViewport ? (
                   <button
                     type="button"
@@ -408,47 +339,6 @@ export default function MediaCatalog({
                   >
                     ×
                   </button>
-                )}
-                {!isMobileViewport && searchResults.length > 0 && (
-                  <ul className={styles.searchResults}>
-                    {searchResults.map((item) => (
-                      <li key={item.id} className={styles.searchResultItem}>
-                        {item.to ? (
-                          <Link to={item.to} onClick={() => setSearchResults([])}>
-                            <img
-                              src={item.poster || item.fallbackPoster}
-                              alt={item.title}
-                              className={styles.searchResultThumb}
-                            />
-                            <span className={styles.searchResultCopy}>
-                              <span>{item.title}</span>
-                              <small className={styles.searchResultMeta}>
-                                {item.genre || suggestionMetaFallback}
-                              </small>
-                            </span>
-                          </Link>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleSuggestionClick(item.title)}
-                            className={styles.searchResultButton}
-                          >
-                            <img
-                              src={item.poster || item.fallbackPoster}
-                              alt={item.title}
-                              className={styles.searchResultThumb}
-                            />
-                            <span className={styles.searchResultCopy}>
-                              <span>{item.title}</span>
-                              <small className={styles.searchResultMeta}>
-                                {item.genre || suggestionMetaFallback}
-                              </small>
-                            </span>
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
                 )}
               </div>
             </form>
@@ -536,51 +426,6 @@ export default function MediaCatalog({
                         </button>
                       )}
                     </div>
-
-                    {searchResults.length > 0 && (
-                      <ul className={styles.catalogMobileSearchResults}>
-                        {searchResults.map((item) => (
-                          <li key={item.id} className={styles.searchResultItem}>
-                            {item.to ? (
-                              <Link to={item.to} onClick={closeMobileSearch}>
-                                <img
-                                  src={item.poster || item.fallbackPoster}
-                                  alt={item.title}
-                                  className={styles.searchResultThumb}
-                                />
-                                <span className={styles.searchResultCopy}>
-                                  <span>{item.title}</span>
-                                  <small className={styles.searchResultMeta}>
-                                    {item.genre || suggestionMetaFallback}
-                                  </small>
-                                </span>
-                              </Link>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  handleSuggestionClick(item.title);
-                                  closeMobileSearch();
-                                }}
-                                className={styles.searchResultButton}
-                              >
-                                <img
-                                  src={item.poster || item.fallbackPoster}
-                                  alt={item.title}
-                                  className={styles.searchResultThumb}
-                                />
-                                <span className={styles.searchResultCopy}>
-                                  <span>{item.title}</span>
-                                  <small className={styles.searchResultMeta}>
-                                    {item.genre || suggestionMetaFallback}
-                                  </small>
-                                </span>
-                              </button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </form>
                 </div>
               </section>
@@ -589,13 +434,13 @@ export default function MediaCatalog({
 
           <div className={styles.summaryRow}>
             <p className={styles.summaryText}>
-              {pagination.totalItems} {pagination.totalItems > 1 ? pluralLabel : singularLabel} trouvé
-              {pagination.totalItems > 1 ? "s" : ""}
+              {totalItems} {totalItems > 1 ? pluralLabel : singularLabel} trouvé
+              {totalItems > 1 ? "s" : ""}
               {hasQuery ? ` pour "${currentQuery}"` : ""}.
             </p>
             <div className={styles.summaryMeta}>
               <p className={styles.summaryText}>
-                Page {pagination.page} sur {Math.max(1, pagination.totalPages || 1)}
+                Page {currentPage} sur {totalPages}
               </p>
             </div>
           </div>
@@ -604,14 +449,6 @@ export default function MediaCatalog({
             <StatusBlock
               variant="loading"
               title={loadingMessage}
-              className={styles.catalogState}
-            />
-          )}
-          {isPaginating && !isLoading && (
-            <StatusBlock
-              variant="loading"
-              title={updatingMessage}
-              size="compact"
               className={styles.catalogState}
             />
           )}
@@ -638,7 +475,7 @@ export default function MediaCatalog({
                 />
               )}
 
-              {items.map((item) => (
+              {paginatedItems.map((item) => (
                 <MediaCard
                   key={item.id}
                   media={item}
@@ -650,26 +487,26 @@ export default function MediaCatalog({
             </section>
           )}
 
-          {!isLoading && !error && pagination.totalPages > 1 && (
+          {!isLoading && !error && totalPages > 1 && (
             <nav className={styles.pagination} aria-label={`Pagination du catalogue ${title.toLowerCase()}`}>
               <button
                 type="button"
                 className={styles.paginationButton}
-                onClick={() => goToPage(pagination.page - 1)}
-                disabled={!pagination.hasPreviousPage || isPaginating}
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={!hasPreviousPage}
               >
                 Précédent
               </button>
 
               <span className={styles.paginationStatus}>
-                Page {pagination.page} / {pagination.totalPages}
+                Page {currentPage} / {totalPages}
               </span>
 
               <button
                 type="button"
                 className={styles.paginationButton}
-                onClick={() => goToPage(pagination.page + 1)}
-                disabled={!pagination.hasNextPage || isPaginating}
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={!hasNextPage}
               >
                 Suivant
               </button>
