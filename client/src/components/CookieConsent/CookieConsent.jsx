@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './tarteaucitron-theme-cines-delices.css';
 
 // ============================================================
@@ -22,8 +23,69 @@ import './tarteaucitron-theme-cines-delices.css';
 
 // Page dédiée aux informations cookies
 const PRIVACY_URL = '/politique-cookies';
+const PRIVACY_TRIGGER_SELECTOR = '#tarteaucitronPrivacyUrl, #tarteaucitronPrivacyUrlDialog';
 
 export default function CookieConsent() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handlePrivacyLinkClick = (event) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      ) {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const privacyButton = target.closest(PRIVACY_TRIGGER_SELECTOR);
+      if (privacyButton) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        navigate(PRIVACY_URL);
+        window.tarteaucitron?.userInterface?.closePanel?.();
+        return;
+      }
+
+      const anchor = target.closest('a[href]');
+      if (!anchor || anchor.target === '_blank' || anchor.hasAttribute('download')) {
+        return;
+      }
+
+      let url;
+      try {
+        url = new URL(anchor.href, window.location.origin);
+      } catch {
+        return;
+      }
+
+      if (url.origin !== window.location.origin || url.pathname !== PRIVACY_URL) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      navigate(`${url.pathname}${url.search}${url.hash}`);
+      window.tarteaucitron?.userInterface?.closePanel?.();
+    };
+
+    document.addEventListener('click', handlePrivacyLinkClick, true);
+
+    return () => {
+      document.removeEventListener('click', handlePrivacyLinkClick, true);
+    };
+  }, [navigate]);
+
   useEffect(() => {
     // Éviter le double chargement (React StrictMode en dev)
     if (window.tarteaucitron) {
