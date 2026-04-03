@@ -17,6 +17,8 @@ const IMAGE_BY_SLUG = {
 };
 
 const FALLBACK_IMAGE = "/img/hero-home.png";
+const CATEGORY_ORDER = ["entree", "plat", "dessert", "boisson"];
+const CATEGORY_ORDER_INDEX = new Map(CATEGORY_ORDER.map((key, index) => [key, index]));
 
 function toSlug(name) {
   return String(name)
@@ -26,6 +28,40 @@ function toSlug(name) {
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function normalizeCategoryOrderKey(category) {
+  const rawValue = category?.label || category?.name || category?.slug || "";
+  const normalized = String(rawValue)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+  if (normalized.startsWith("entree")) return "entree";
+  if (normalized.startsWith("plat")) return "plat";
+  if (normalized.startsWith("dessert")) return "dessert";
+  if (normalized.startsWith("boisson")) return "boisson";
+
+  return normalized;
+}
+
+export function sortHomeCategories(categories = []) {
+  return categories
+    .map((category, index) => ({ category, index }))
+    .sort((left, right) => {
+      const leftOrder = CATEGORY_ORDER_INDEX.get(normalizeCategoryOrderKey(left.category));
+      const rightOrder = CATEGORY_ORDER_INDEX.get(normalizeCategoryOrderKey(right.category));
+
+      if (leftOrder !== rightOrder) {
+        if (leftOrder === undefined) return 1;
+        if (rightOrder === undefined) return -1;
+        return leftOrder - rightOrder;
+      }
+
+      return left.index - right.index;
+    })
+    .map(({ category }) => category);
 }
 
 function mapApiCategoryToCard(category) {
@@ -42,7 +78,7 @@ function mapApiCategoryToCard(category) {
 }
 
 export default function HomeCategories() {
-  const [categories, setCategories] = useState(() => categoriesMock);
+  const [categories, setCategories] = useState(() => sortHomeCategories(categoriesMock));
 
   useEffect(() => {
     let isMounted = true;
@@ -52,7 +88,7 @@ export default function HomeCategories() {
         if (!isMounted) return;
         const raw = Array.isArray(payload) ? payload : payload?.data ?? [];
         if (raw.length === 0) return;
-        setCategories(raw.map(mapApiCategoryToCard));
+        setCategories(sortHomeCategories(raw.map(mapApiCategoryToCard)));
       })
       .catch(() => {
         // Fallback silencieux sur le mock en cas d'erreur
