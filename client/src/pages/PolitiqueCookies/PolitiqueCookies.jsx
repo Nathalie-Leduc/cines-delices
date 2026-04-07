@@ -281,7 +281,7 @@ export default function PolitiqueCookies() {
           </li>
           <li>
             <Link to="/mentions-legales" className={styles.link}>
-              Mentions légales de CinéDélices (le making-of)
+              Mentions légales de CinéDélices (le making-off)
             </Link>
           </li>
           <li>
