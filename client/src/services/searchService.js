@@ -86,7 +86,7 @@ function mapRecipeSearchResult(recipe) {
     title: recipe?.titre || "Recette sans titre",
     mediaTitle,
     meta: mediaTitle ? `Inspirée par ${mediaTitle}` : "Accéder au détail de la recette",
-    image: recipe?.imageURL || recipe?.imageUrl || recipe?.media?.posterUrl || "/img/hero-home.png",
+    image: recipe?.imageURL || recipe?.imageUrl || recipe?.media?.posterUrl || "/img/hero-home.webp",
     to: `/recipes/${slugOrId}`,
   };
 }
@@ -103,7 +103,7 @@ function mapMovieSearchResult(movie) {
     title: movie?.title || "Film sans titre",
     mediaTitle: "",
     meta: "Voir les recettes liées à ce film",
-    image: movie?.poster || "/img/parrain-poster.png",
+    image: movie?.poster || "/img/parrain-poster.webp",
     to: `/films/${movie.slug}`,
   };
 }
@@ -120,7 +120,7 @@ function mapSeriesSearchResult(series) {
     title: series?.title || "Série sans titre",
     mediaTitle: "",
     meta: "Voir les recettes liées à cette série",
-    image: series?.poster || "/img/stranger-thing-poster.png",
+    image: series?.poster || "/img/stranger-thing-poster.webp",
     to: `/series/${series.slug}`,
   };
 }

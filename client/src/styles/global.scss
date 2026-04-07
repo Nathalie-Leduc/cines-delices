@@ -53,7 +53,7 @@ body {
   font-family: var(--font-body);
   background:
     linear-gradient(var(--color-bg-overlay), var(--color-bg-overlay)),
-    url('/img/rocky-wall.png') center/cover fixed;
+    url('/img/rocky-wall.webp') center/cover fixed;
   color: var(--color-text-primary);
   line-height: 1.6;
   font-size: 16px;
@@ -111,7 +111,7 @@ main {
   min-height: 0;
   background:
     linear-gradient(var(--color-bg-overlay), var(--color-bg-overlay)),
-    url('/img/rocky-wall.png') center/cover;
+    url('/img/rocky-wall.webp') center/cover;
   min-width: 0;
 }
 

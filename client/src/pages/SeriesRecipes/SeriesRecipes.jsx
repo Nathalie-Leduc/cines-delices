@@ -9,7 +9,7 @@ export default function SeriesRecipes() {
       listPath="/series"
       getMediaBySlug={getSeriesBySlug}
       payloadKey="series"
-      fallbackPoster="/img/stranger-thing-poster.png"
+      fallbackPoster="/img/stranger-thing-poster.webp"
       loadingEntityMessage="Chargement de la série..."
       loadEntityErrorMessage="Impossible de charger la série."
       missingEntityTitle="Série introuvable"

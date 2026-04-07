@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import styles from "./RecipeCard.module.scss";
 
-const RECIPE_IMAGE_FALLBACK = "/img/hero-home.png";
+const RECIPE_IMAGE_FALLBACK = "/img/hero-home.webp";
 
 export default function RecipeCard({ recipe, to, linkState }) {
   if (!recipe) return null;

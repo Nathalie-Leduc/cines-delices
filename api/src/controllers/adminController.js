@@ -112,7 +112,7 @@ function formatRecipe(recipe) {
     movieId: recipe.mediaId,
     duration: `${duration || 0} min`,
     media: recipe.media?.type === 'SERIES' ? 'S' : 'F',
-    image: recipe.imageURL || recipe.media?.posterUrl || '/img/entrees.png',
+    image: recipe.imageURL || recipe.media?.posterUrl || '/img/entrees.webp',
     mediaPoster: recipe.media?.posterUrl || null,
     director: recipe.media?.realisateur || null,
     status: recipe.status,

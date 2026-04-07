@@ -1,6 +1,6 @@
 import styles from "./FilmCard.module.scss";
 
-const FILM_POSTER_FALLBACK = "/img/parrain-poster.png";
+const FILM_POSTER_FALLBACK = "/img/parrain-poster.webp";
 
 export default function FilmCard({ film }) {
   if (!film) return null;

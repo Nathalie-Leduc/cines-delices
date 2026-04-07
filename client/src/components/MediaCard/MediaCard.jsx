@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import styles from "./MediaCard.module.scss";
 
-const MEDIA_POSTER_FALLBACK = "/img/parrain-poster.png";
+const MEDIA_POSTER_FALLBACK = "/img/parrain-poster.webp";
 
 export default function MediaCard({
   media,

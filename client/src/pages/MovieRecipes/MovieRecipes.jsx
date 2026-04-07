@@ -9,7 +9,7 @@ export default function MovieRecipes() {
       listPath="/films"
       getMediaBySlug={getMovieBySlug}
       payloadKey="movie"
-      fallbackPoster="/img/parrain-poster.png"
+      fallbackPoster="/img/parrain-poster.webp"
       loadingEntityMessage="Chargement du film..."
       loadEntityErrorMessage="Impossible de charger le film."
       missingEntityTitle="Film introuvable"

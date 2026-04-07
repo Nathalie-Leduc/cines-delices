@@ -4,7 +4,7 @@ import { getRecipesCatalog } from "../../services/recipesService";
 export default function RecipesPage() {
   return (
     <RecipeCatalogView
-      heroImage="/img/hero-home.png"
+      heroImage="/img/hero-home.webp"
       heroAlt="Catalogue des recettes"
       heroTitle={(
         <>

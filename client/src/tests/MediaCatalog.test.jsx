@@ -26,8 +26,8 @@ function mapMovieToCard(movie) {
     slug: movie?.slug,
     to: movie?.slug ? `/films/${movie.slug}` : undefined,
     title: movie?.title || "Film sans titre",
-    poster: movie?.poster || "/img/parrain-poster.png",
-    fallbackPoster: "/img/parrain-poster.png",
+    poster: movie?.poster || "/img/parrain-poster.webp",
+    fallbackPoster: "/img/parrain-poster.webp",
     genre: movie?.genre || "Genre non renseigné",
     creator: movie?.creator || "Réalisateur non renseigné",
   };
@@ -38,7 +38,7 @@ function renderCatalog(getCatalog) {
     <MemoryRouter>
       <MediaCatalog
         title="Films"
-        heroImage="/img/fond-cinema-contact.png"
+        heroImage="/img/fond-cinema-contact.webp"
         heroAlt="Catalogue des films"
         heroSubtitle="Sous-titre test"
         searchPlaceholder="Rechercher un film"
@@ -74,7 +74,7 @@ describe("MediaCatalog", () => {
             id: 1,
             slug: "parrain",
             title: "Le Parrain",
-            poster: "/img/parrain-poster.png",
+            poster: "/img/parrain-poster.webp",
             genre: "Crime",
             creator: "Francis Ford Coppola",
           },
@@ -94,7 +94,7 @@ describe("MediaCatalog", () => {
             id: 2,
             slug: "rocky",
             title: "Rocky",
-            poster: "/img/parrain-poster.png",
+            poster: "/img/parrain-poster.webp",
             genre: "Sport",
             creator: "John G. Avildsen",
           },

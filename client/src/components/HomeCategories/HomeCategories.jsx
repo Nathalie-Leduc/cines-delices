@@ -6,17 +6,17 @@ import styles from "./HomeCategories.module.scss";
 
 // Images prédéfinies pour les catégories connues
 const IMAGE_BY_SLUG = {
-  entree: "/img/entrees.png",
-  entrees: "/img/entrees.png",
-  plat: "/img/plats.png",
-  plats: "/img/plats.png",
-  dessert: "/img/desserts.png",
-  desserts: "/img/desserts.png",
-  boisson: "/img/Boissons.png",
-  boissons: "/img/Boissons.png",
+  entree: "/img/entrees.webp",
+  entrees: "/img/entrees.webp",
+  plat: "/img/plats.webp",
+  plats: "/img/plats.webp",
+  dessert: "/img/desserts.webp",
+  desserts: "/img/desserts.webp",
+  boisson: "/img/Boissons.webp",
+  boissons: "/img/Boissons.webp",
 };
 
-const FALLBACK_IMAGE = "/img/hero-home.png";
+const FALLBACK_IMAGE = "/img/hero-home.webp";
 const CATEGORY_ORDER = ["entree", "plat", "dessert", "boisson"];
 const CATEGORY_ORDER_INDEX = new Map(CATEGORY_ORDER.map((key, index) => [key, index]));
 

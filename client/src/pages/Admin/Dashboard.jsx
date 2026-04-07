@@ -60,7 +60,7 @@ function getMediaPoster(recipe) {
 
 function handleImageError(event) {
   const target = event.currentTarget;
-  const fallbackSrc = target.dataset.fallbackSrc || '/img/hero-home.png';
+  const fallbackSrc = target.dataset.fallbackSrc || '/img/hero-home.webp';
 
   if (target.src !== fallbackSrc) {
     target.src = fallbackSrc;
@@ -234,10 +234,10 @@ function AdminDashboard() {
   const selectedRecipeMediaPoster = selectedRecipe ? getMediaPoster(selectedRecipe) : '';
   const selectedRecipeHeroFallback = selectedRecipeMediaPoster && selectedRecipeMediaPoster !== selectedRecipeHeroImage
     ? selectedRecipeMediaPoster
-    : '/img/hero-home.png';
+    : '/img/hero-home.webp';
   const selectedRecipeMediaFallback = selectedRecipeHeroImage && selectedRecipeHeroImage !== selectedRecipeMediaPoster
     ? selectedRecipeHeroImage
-    : '/img/parrain-poster.png';
+    : '/img/parrain-poster.webp';
 
   async function handleApprove() {
     if (!selectedRecipe) {
@@ -509,7 +509,7 @@ function AdminDashboard() {
             {paginatedPendingRecipes.map((recipe) => {
               const slug = recipe.slug || String(recipe.id);
               const primaryImage = getRecipeImage(recipe);
-              const fallbackImage = getMediaPoster(recipe) || '/img/hero-home.png';
+              const fallbackImage = getMediaPoster(recipe) || '/img/hero-home.webp';
               const recipeForCatalogCard = {
                 id: recipe.id,
                 slug,
@@ -646,11 +646,11 @@ function AdminDashboard() {
                 <h4 className={styles.blockTitle} style={{ marginTop: '0.75rem' }}>Recettes similaires</h4>
                 <div className={styles.sideMedia}>
                   <div className={styles.sideMediaRow}>
-                    <img src="/img/Spaghetti.png" alt="Recette similaire" />
+                    <img src="/img/Spaghetti.webp" alt="Recette similaire" />
                     <p>Spaghetti Ratatouille<br />25 min</p>
                   </div>
                   <div className={styles.sideMediaRow}>
-                    <img src="/img/lospolloshermanos.png" alt="Recette similaire" />
+                    <img src="/img/lospolloshermanos.webp" alt="Recette similaire" />
                     <p>Los Pollos Hermanos<br />35 min</p>
                   </div>
                 </div>

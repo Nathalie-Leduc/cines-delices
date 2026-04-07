@@ -34,12 +34,12 @@ function buildRecipePayload() {
       titre: "Cheesecake de Friends",
       tempsPreparation: 20,
       tempsCuisson: 40,
-      imageURL: "/img/hero-home.png",
+      imageURL: "/img/hero-home.webp",
       category: { nom: "Dessert" },
       media: {
         titre: "Friends",
         type: "SERIES",
-        posterUrl: "/img/stranger-thing-poster.png",
+        posterUrl: "/img/stranger-thing-poster.webp",
       },
     },
     {
@@ -48,12 +48,12 @@ function buildRecipePayload() {
       titre: "Bieraubeurre de Poudlard",
       tempsPreparation: 10,
       tempsCuisson: 5,
-      imageURL: "/img/hero-home.png",
+      imageURL: "/img/hero-home.webp",
       category: { nom: "Boisson" },
       media: {
         titre: "Harry Potter",
         type: "MOVIE",
-        posterUrl: "/img/parrain-poster.png",
+        posterUrl: "/img/parrain-poster.webp",
       },
     },
   ];
@@ -63,7 +63,7 @@ function renderCatalog(getCatalog) {
   return render(
     <MemoryRouter>
       <RecipeCatalogView
-        heroImage="/img/hero-home.png"
+        heroImage="/img/hero-home.webp"
         heroAlt="Catalogue test"
         heroTitle="Catalogue test"
         heroSubtitle="Sous-titre test"

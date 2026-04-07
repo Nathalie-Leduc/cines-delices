@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
         <span className={styles.footerLogo}>
-          <img src="/img/logo-cine-delices.png" alt="Cine Delices" />
+          <img src="/img/logo-cines-delices.webp" alt="Cines Delices" />
         </span>
 
         <nav className={styles.footerNav} aria-label="Liens du footer">

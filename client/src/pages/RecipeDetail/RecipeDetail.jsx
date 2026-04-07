@@ -15,7 +15,7 @@ const DEFAULT_STEPS = [
   "Assemble la recette progressivement pour garder équilibre et gourmandise.",
   "Dresse soigneusement puis sers immédiatement pour profiter de toutes les saveurs.",
 ];
-const RECIPE_IMAGE_FALLBACK = "/img/hero-home.png";
+const RECIPE_IMAGE_FALLBACK = "/img/hero-home.webp";
 
 // ✅ formatMinutes — affiche un temps en minutes de façon lisible
 // < 60 min  → "30 min"
@@ -104,9 +104,9 @@ function normalizeApiRecipe(apiRecipe) {
     slug: apiRecipe.slug,
     title: apiRecipe.title || apiRecipe.titre || 'Recette sans titre',
     category: normalizeCategoryLabel(apiRecipe.category?.nom || apiRecipe.category),
-    image: apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
-    heroImage: apiRecipe.heroImage || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
-    posterImage: apiRecipe.posterImage || apiRecipe.media?.posterUrl || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.png',
+    image: apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.webp',
+    heroImage: apiRecipe.heroImage || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.webp',
+    posterImage: apiRecipe.posterImage || apiRecipe.media?.posterUrl || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.webp',
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
     duration: totalTime,
@@ -136,8 +136,8 @@ function mapApiRecipeToCard(recipe) {
     mediaTitle: recipe?.media?.titre || "Sans média",
     mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
     duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.png",
-    fallbackImage: "/img/hero-home.png",
+    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.webp",
+    fallbackImage: "/img/hero-home.webp",
   };
 }
 

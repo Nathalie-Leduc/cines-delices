@@ -12,7 +12,7 @@
   isolation: isolate;
   background:
     linear-gradient(rgba(31, 29, 30, 0.5), rgba(31, 29, 30, 0.6)),
-    url('/img/rocky-wall.png') center center / cover no-repeat;
+    url('/img/rocky-wall.webp') center center / cover no-repeat;
 }
 
 .page::before,
@@ -33,7 +33,7 @@
       rgba(18, 12, 14, 0.16) 62%,
       rgba(18, 12, 14, 0.28) 100%
     ),
-    url('/img/fond-auth.png') center center / cover no-repeat;
+    url('/img/fond-auth.webp') center center / cover no-repeat;
   opacity: 0.4;
   z-index: -2;
 }

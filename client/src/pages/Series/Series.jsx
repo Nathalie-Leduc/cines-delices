@@ -7,8 +7,8 @@ function mapSeriesToCard(series) {
     slug: series?.slug,
     to: series?.slug ? `/series/${series.slug}` : undefined,
     title: series?.title || "Série sans titre",
-    poster: series?.poster || "/img/stranger-thing-poster.png",
-    fallbackPoster: "/img/stranger-thing-poster.png",
+    poster: series?.poster || "/img/stranger-thing-poster.webp",
+    fallbackPoster: "/img/stranger-thing-poster.webp",
     genre: series?.genre || "Genre non renseigné",
     creator: series?.creator || "Créateur non renseigné",
   };
@@ -27,7 +27,7 @@ export default function Series() {
   return (
     <MediaCatalog
       title="Séries"
-      heroImage="/img/fond-cinema-contact.png"
+      heroImage="/img/fond-cinema-contact.webp"
       heroAlt="Catalogue des séries"
       heroObjectPosition="center 38%"
       heroSubtitle="Retrouve les séries qui inspirent l’univers gourmand de Cinés Délices."

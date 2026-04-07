@@ -7,8 +7,8 @@ function mapMovieToCard(movie) {
     slug: movie?.slug,
     to: movie?.slug ? `/films/${movie.slug}` : undefined,
     title: movie?.title || "Film sans titre",
-    poster: movie?.poster || "/img/parrain-poster.png",
-    fallbackPoster: "/img/parrain-poster.png",
+    poster: movie?.poster || "/img/parrain-poster.webp",
+    fallbackPoster: "/img/parrain-poster.webp",
     genre: movie?.genre || "Genre non renseigné",
     creator: movie?.director || movie?.creator || "Réalisateur non renseigné",
   };
@@ -27,7 +27,7 @@ export default function Movies() {
   return (
     <MediaCatalog
       title="Films"
-      heroImage="/img/fond-cinema-contact.png"
+      heroImage="/img/fond-cinema-contact.webp"
       heroAlt="Catalogue des films"
       heroObjectPosition="center 38%"
       heroSubtitle="Explore le catalogue des films qui nourrissent l’univers Cinés Délices."

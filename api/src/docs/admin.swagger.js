@@ -99,7 +99,7 @@
  *           example: F
  *         image:
  *           type: string
- *           example: /img/entrees.png
+ *           example: /img/entrees.webp
  *         mediaPoster:
  *           type: string
  *           nullable: true

@@ -203,9 +203,9 @@ function mapMemberRecipeToCard(recipe) {
   const mediaType = String(recipe?.type || '').toUpperCase() === 'F' ? 'film' : 'serie';
   const durationValue = String(recipe?.temps || '').match(/\d+/);
   const duration = durationValue ? Number(durationValue[0]) : 0;
-  const primaryImage = recipe?.image || '/img/hero-home.png';
+  const primaryImage = recipe?.image || '/img/hero-home.webp';
   const mediaPoster = recipe?.media?.posterUrl || '';
-  const fallbackImage = mediaPoster && mediaPoster !== primaryImage ? mediaPoster : '/img/hero-home.png';
+  const fallbackImage = mediaPoster && mediaPoster !== primaryImage ? mediaPoster : '/img/hero-home.webp';
 
   return {
     id: recipe?.id,

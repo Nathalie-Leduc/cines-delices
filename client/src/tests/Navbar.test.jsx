@@ -107,7 +107,7 @@ describe('Navbar', () => {
           id: 1,
           slug: 'burger-breakfast-club',
           titre: 'Burger Breakfast Club',
-          imageURL: '/img/hero-home.png',
+          imageURL: '/img/hero-home.webp',
           media: { titre: 'The Breakfast Club' },
         },
       ],
@@ -119,7 +119,7 @@ describe('Navbar', () => {
           id: 2,
           slug: 'the-breakfast-club',
           title: 'The Breakfast Club',
-          poster: '/img/parrain-poster.png',
+          poster: '/img/parrain-poster.webp',
         },
       ],
     });
@@ -130,7 +130,7 @@ describe('Navbar', () => {
           id: 3,
           slug: 'breakfast-news',
           title: 'Breakfast News',
-          poster: '/img/stranger-thing-poster.png',
+          poster: '/img/stranger-thing-poster.webp',
         },
       ],
     });
