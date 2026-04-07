@@ -9,13 +9,9 @@ import useHeroReveal from "../../hooks/useHeroReveal";
 import { getRecipeBySlug, getRecipesCatalog } from "../../services/recipesService";
 import styles from "./RecipeDetail.module.scss";
 
-const DEFAULT_STEPS = [
-  "Prépare tous les ingrédients et organise ton plan de travail avant de commencer.",
-  "Lance les cuissons principales en surveillant les textures et l'assaisonnement.",
-  "Assemble la recette progressivement pour garder équilibre et gourmandise.",
-  "Dresse soigneusement puis sers immédiatement pour profiter de toutes les saveurs.",
-];
-const RECIPE_IMAGE_FALLBACK = "/img/hero-home.webp";
+// ✅ Pas de fallback pour les données de recette :
+// les ingrédients et les étapes sont obligatoires à la création (validés front ET back).
+// Si ces données sont absentes, c'est un bug à corriger, pas à masquer.
 
 // ✅ formatMinutes — affiche un temps en minutes de façon lisible
 // < 60 min  → "30 min"
@@ -69,26 +65,16 @@ function normalizeApiRecipe(apiRecipe) {
   const ingredients = (apiRecipe.ingredients || []).map((ingredient) => {
     if (typeof ingredient === 'string') return ingredient;
 
+    // Les ingrédients sont stockés au singulier en BDD (normalizeIngredientName côté back).
+    // On affiche le nom tel quel, sans transformation.
     const rawName = ingredient.name || ingredient.nom || ingredient.ingredient?.nom || '';
     const quantity = ingredient.quantity || ingredient.quantite || '';
     const unit = ingredient.unit || ingredient.unite || '';
 
-    // Pluriel automatique : si la quantité est un nombre > 1 et que le nom
-    // ne se termine pas déjà par 's', on ajoute un 's'.
-    // Analogie : 1 tomate → "tomate", 3 tomates → "tomates"
-    const numericQty = parseFloat(String(quantity).replace(',', '.'));
-    const shouldPluralize = Number.isFinite(numericQty)
-      && numericQty > 1
-      && rawName.length > 0
-      && !rawName.trim().endsWith('s')
-      && !rawName.trim().endsWith('x')
-      && !rawName.trim().endsWith('z');
-    const displayName = shouldPluralize ? `${rawName}s` : rawName;
-
     const parts = [];
     if (quantity) parts.push(quantity);
     if (unit) parts.push(unit);
-    parts.push(displayName);
+    parts.push(rawName);
     return parts.join(' ').trim();
   });
 
@@ -104,16 +90,20 @@ function normalizeApiRecipe(apiRecipe) {
     slug: apiRecipe.slug,
     title: apiRecipe.title || apiRecipe.titre || 'Recette sans titre',
     category: normalizeCategoryLabel(apiRecipe.category?.nom || apiRecipe.category),
-    image: apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.webp',
-    heroImage: apiRecipe.heroImage || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.webp',
-    posterImage: apiRecipe.posterImage || apiRecipe.media?.posterUrl || apiRecipe.image || apiRecipe.imageURL || apiRecipe.imageUrl || '/img/hero-home.webp',
+    // Image uploadée par l'utilisateur — null si absente, jamais remplacée par le poster
+    image: apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image || null,
+    heroImage: apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image || null,
+    // Poster du film (TMDB) — champ séparé, jamais mélangé avec l'image recette
+    posterImage: apiRecipe.media?.posterUrl || null,
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
     duration: totalTime,
     description: apiRecipe.description || apiRecipe.media?.synopsis || null,
     director: apiRecipe.director || apiRecipe.media?.realisateur || null,
-    year: apiRecipe.year,
-    genre: apiRecipe.genre,
+    // annee et synopsis viennent de media (champs directs Prisma)
+    // genre n'est pas un champ direct — non affiché pour l'instant
+    year: apiRecipe.year || apiRecipe.media?.annee || null,
+    genre: apiRecipe.genre || null,
     servings,
     prepTime,
     cookTime,
@@ -136,8 +126,8 @@ function mapApiRecipeToCard(recipe) {
     mediaTitle: recipe?.media?.titre || "Sans média",
     mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
     duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.webp",
-    fallbackImage: "/img/hero-home.webp",
+    image: recipe?.imageURL || recipe?.imageUrl || null,
+    fallbackImage: null,
   };
 }
 
@@ -152,12 +142,9 @@ export default function RecipeDetail() {
   const [error, setError] = useState("");
 
   function handleImageError(event) {
-    if (event.currentTarget.dataset.fallbackApplied === "true") {
-      return;
-    }
-
-    event.currentTarget.dataset.fallbackApplied = "true";
-    event.currentTarget.src = RECIPE_IMAGE_FALLBACK;
+    // Si l'image échoue à charger, on la masque proprement
+    // plutôt que d'afficher une image générique trompeuse.
+    event.currentTarget.style.display = "none";
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -327,18 +314,19 @@ export default function RecipeDetail() {
 
   const categoryKey = normalizeCategory(category);
   const mediaTypeLabel = mediaType?.toLowerCase().startsWith("f") ? "F" : "S";
-  const recipeIngredients = ingredients?.length
-    ? ingredients
-    : ["400g de spaghetti", "3 tomates", "2 gousses d'ail", "Huile d'olive", "Basilic frais"];
-  const recipeSteps = steps?.length ? steps : DEFAULT_STEPS;
+  // ✅ Pas de fallback : ingrédients et étapes sont obligatoires à la création.
+  // Si null → on affiche un message clair plutôt que des données inventées.
+  // Analogie 🍽️ : mieux vaut dire "menu épuisé" que servir un plat au hasard.
+  const recipeIngredients = ingredients?.length ? ingredients : null;
+  const recipeSteps = steps?.length ? steps : null;
   const recipePrepTime = prepTime ?? Math.max(10, Math.round((duration ?? 30) / 3));
   const recipeCookTime = cookTime ?? Math.max(15, Math.round((duration ?? 30) / 1.5));
   const recipeTotalTime = totalTime ?? duration ?? recipePrepTime + recipeCookTime;
   const recipeServings = servings ?? 4;
-  const recipeDirector = director ?? recipe.media?.realisateur ?? "Studio original";
-  const recipeYear = year ?? 2010;
-  const recipeGenre = genre ?? "Cuisine fiction";
-  const recipeDescription = description ?? `Une recette inspirée de l'univers de ${mediaTitle}, pensée pour retrouver à table l'ambiance du ${mediaType}.`;
+  const recipeDirector = director ?? recipe.media?.realisateur ?? null;
+  const recipeYear = year ?? null;
+  const recipeGenre = genre ?? null;
+  const recipeDescription = description ?? recipe.media?.synopsis ?? null;
   const canEditFromMemberSpace = Boolean(state?.fromMemberRecipes);
   const canEditFromAdminSpace = Boolean(isAdmin && recipe?.id);
 
@@ -361,12 +349,22 @@ export default function RecipeDetail() {
   return (
     <main className={styles.page}>
       <section className={styles.hero}>
-        <img
-          src={heroImage || image || "/img/placeholder.jpg"}
-          alt={title}
-          className={styles.heroImage}
-          onError={handleImageError}
-        />
+        {(heroImage || image) ? (
+          <img
+            src={heroImage || image}
+            alt={title}
+            className={styles.heroImage}
+            onError={handleImageError}
+          />
+        ) : (
+          // Placeholder : appareil photo barré quand la recette n'a pas d'image
+          <div className={styles.heroImagePlaceholder} aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.placeholderIcon}>
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+              <line x1="1" y1="1" x2="23" y2="23" />
+            </svg>
+          </div>
+        )}
         <div className={styles.heroOverlay} />
 
         <div className={styles.contentWrap}>
@@ -446,14 +444,18 @@ export default function RecipeDetail() {
                 <span className={styles.sectionLine} />
               </div>
 
-              <ul className={styles.ingredientsList}>
-                {recipeIngredients.map((ingredient, index) => (
-                  <li key={`${ingredient}-${index}`} className={styles.ingredientItem}>
-                    <span className={styles.ingredientDot} aria-hidden="true" />
-                    <span>{ingredient}</span>
-                  </li>
-                ))}
-              </ul>
+              {recipeIngredients ? (
+                <ul className={styles.ingredientsList}>
+                  {recipeIngredients.map((ingredient, index) => (
+                    <li key={`${ingredient}-${index}`} className={styles.ingredientItem}>
+                      <span className={styles.ingredientDot} aria-hidden="true" />
+                      <span>{ingredient}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.emptyState}>Ingrédients non renseignés.</p>
+              )}
             </section>
 
             <section className={`${styles.mediaCard} ${styles.mediaSection}`}>
@@ -466,20 +468,34 @@ export default function RecipeDetail() {
               </div>
 
               <div className={styles.mediaBody}>
-                <img
-                  src={posterImage || image || "/img/placeholder.jpg"}
-                  alt={mediaTitle}
-                  className={styles.mediaPoster}
-                  onError={handleImageError}
-                />
+                {posterImage ? (
+                  <img
+                    src={posterImage}
+                    alt={mediaTitle}
+                    className={styles.mediaPoster}
+                    onError={handleImageError}
+                  />
+                ) : (
+                  // Placeholder : appareil photo barré si pas de poster TMDB
+                  <div className={`${styles.mediaPoster} ${styles.mediaPosterPlaceholder}`} aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.placeholderIcon}>
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                      <line x1="1" y1="1" x2="23" y2="23" />
+                    </svg>
+                  </div>
+                )}
 
                 <div className={styles.mediaCopy}>
-                  <p><strong>Director :</strong> {recipeDirector}</p>
-                  <p><strong>Année :</strong> {recipeYear}</p>
-                  <p><strong>Genre :</strong> {recipeGenre}</p>
+                  {recipeDirector && <p><strong>Réalisateur :</strong> {recipeDirector}</p>}
+                  {recipeYear && <p><strong>Année :</strong> {recipeYear}</p>}
+                  {recipeGenre && <p><strong>Genre :</strong> {recipeGenre}</p>}
 
-                  <h3 className={styles.synopsisTitle}>Synopsis :</h3>
-                  <p className={styles.synopsisText}>{recipeDescription}</p>
+                  {recipeDescription && (
+                    <>
+                      <h3 className={styles.synopsisTitle}>Synopsis :</h3>
+                      <p className={styles.synopsisText}>{recipeDescription}</p>
+                    </>
+                  )}
                 </div>
               </div>
             </section>
@@ -490,14 +506,18 @@ export default function RecipeDetail() {
                 <span className={styles.sectionLine} />
               </div>
 
-              <ol className={styles.stepsList}>
-                {recipeSteps.map((step, index) => (
-                  <li key={`${index + 1}-${step}`} className={styles.stepItem}>
-                    <span className={styles.stepNumber}>{index + 1}</span>
-                    <p>{step}</p>
-                  </li>
-                ))}
-              </ol>
+              {recipeSteps ? (
+                <ol className={styles.stepsList}>
+                  {recipeSteps.map((step, index) => (
+                    <li key={`${index + 1}-${step}`} className={styles.stepItem}>
+                      <span className={styles.stepNumber}>{index + 1}</span>
+                      <p>{step}</p>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className={styles.emptyState}>Étapes de préparation non renseignées.</p>
+              )}
             </section>
 
             <section className={`${styles.section} ${styles.similarSection}`}>

@@ -263,6 +263,15 @@ export const createRecipe = async (req, res) => {
       return res.status(400).json({ message: 'Les instructions sont obligatoires.' });
     }
 
+    // ✅ Validation des ingrédients côté back
+    // Le front valide déjà, mais on vérifie ici aussi pour sécuriser
+    // les appels directs à l'API (ex: via Postman ou un script).
+    // Analogie 🍽️ : le serveur vérifie le bon de commande ET la cuisine
+    // refuse de préparer un plat sans ingrédients listés.
+    if (!Array.isArray(ingredients) || ingredients.length === 0) {
+      return res.status(400).json({ message: 'Au moins un ingrédient est obligatoire.' });
+    }
+
     const normalizedNombrePersonnes = nombrePersonnes ?? nbPersonnes;
 
     const recipeSlug = await generateUniqueSlug(

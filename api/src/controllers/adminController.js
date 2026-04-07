@@ -112,9 +112,14 @@ function formatRecipe(recipe) {
     movieId: recipe.mediaId,
     duration: `${duration || 0} min`,
     media: recipe.media?.type === 'SERIES' ? 'S' : 'F',
-    image: recipe.imageURL || recipe.media?.posterUrl || '/img/entrees.webp',
+    // Image uploadée par l'utilisateur — null si absente
+    // On ne cascade PAS vers posterUrl : ce sont deux données distinctes
+    image: recipe.imageURL || null,
     mediaPoster: recipe.media?.posterUrl || null,
     director: recipe.media?.realisateur || null,
+    year: recipe.media?.annee || null,
+    synopsis: recipe.media?.synopsis || null,
+    // genres non inclus dans la requête Prisma (relation MediaGenre non chargée ici)
     status: recipe.status,
     instructions: recipe.instructions,
     people: recipe.nombrePersonnes || 0,

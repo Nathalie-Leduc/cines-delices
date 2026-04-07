@@ -59,15 +59,8 @@ function getMediaPoster(recipe) {
 }
 
 function handleImageError(event) {
-  const target = event.currentTarget;
-  const fallbackSrc = target.dataset.fallbackSrc || '/img/hero-home.webp';
-
-  if (target.src !== fallbackSrc) {
-    target.src = fallbackSrc;
-    return;
-  }
-
-  target.onerror = null;
+  // Masquer l'image si elle échoue à charger, sans substituer par une image générique
+  event.currentTarget.style.display = 'none';
 }
 
 function getDurationMinutes(duration) {
@@ -232,12 +225,9 @@ function AdminDashboard() {
 
   const selectedRecipeHeroImage = selectedRecipe ? getRecipeImage(selectedRecipe) : '';
   const selectedRecipeMediaPoster = selectedRecipe ? getMediaPoster(selectedRecipe) : '';
-  const selectedRecipeHeroFallback = selectedRecipeMediaPoster && selectedRecipeMediaPoster !== selectedRecipeHeroImage
-    ? selectedRecipeMediaPoster
-    : '/img/hero-home.webp';
-  const selectedRecipeMediaFallback = selectedRecipeHeroImage && selectedRecipeHeroImage !== selectedRecipeMediaPoster
-    ? selectedRecipeHeroImage
-    : '/img/parrain-poster.webp';
+  // Pas de fallback vers des images génériques : on affiche null si absent
+  const selectedRecipeHeroFallback = null;
+  const selectedRecipeMediaFallback = null;
 
   async function handleApprove() {
     if (!selectedRecipe) {
@@ -509,12 +499,12 @@ function AdminDashboard() {
             {paginatedPendingRecipes.map((recipe) => {
               const slug = recipe.slug || String(recipe.id);
               const primaryImage = getRecipeImage(recipe);
-              const fallbackImage = getMediaPoster(recipe) || '/img/hero-home.webp';
+              const fallbackImage = null;
               const recipeForCatalogCard = {
                 id: recipe.id,
                 slug,
-                image: primaryImage || fallbackImage || '/img/placeholder.jpg',
-                fallbackImage,
+                image: primaryImage || null,
+                fallbackImage: null,
                 title: recipe.title,
                 category: normalizeCategoryLabel(recipe.category),
                 mediaTitle: recipe.movie || 'Film non renseigné',
@@ -583,12 +573,20 @@ function AdminDashboard() {
         <>
           <article className={styles.heroRecipe}>
             <div className={styles.heroImage}>
-              <img
-                src={selectedRecipeHeroImage || selectedRecipeHeroFallback}
-                alt="Illustration de la recette en attente"
-                data-fallback-src={selectedRecipeHeroFallback}
-                onError={handleImageError}
-              />
+              {selectedRecipeHeroImage ? (
+                <img
+                  src={selectedRecipeHeroImage}
+                  alt="Illustration de la recette en attente"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div className={styles.heroImagePlaceholder} aria-hidden="true">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.placeholderIcon}>
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                </div>
+              )}
               <div className={styles.heroText}>
                 <h3>{selectedRecipe.title}</h3>
                 <p>L’esprit du film {selectedRecipe.movie}</p>
@@ -633,27 +631,33 @@ function AdminDashboard() {
               <div>
                 <div className={styles.sideMedia}>
                   <div className={styles.sideMediaRow}>
-                    <img
-                      src={selectedRecipeMediaPoster || selectedRecipeMediaFallback}
-                      alt="Média associé"
-                      data-fallback-src={selectedRecipeMediaFallback}
-                      onError={handleImageError}
-                    />
-                    <p>{selectedRecipe.movie}<br />Synopsis<br />Recette en attente de validation.</p>
+                    {selectedRecipeMediaPoster ? (
+                      <img
+                        src={selectedRecipeMediaPoster}
+                        alt="Média associé"
+                        onError={handleImageError}
+                      />
+                    ) : (
+                      <div className={styles.mediaPosterPlaceholder} aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.placeholderIcon}>
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                          <line x1="1" y1="1" x2="23" y2="23" />
+                        </svg>
+                      </div>
+                    )}
+                    <div>
+                      <p><strong>{selectedRecipe.movie}</strong></p>
+                      {selectedRecipe.year && <p>Année : {selectedRecipe.year}</p>}
+                      {selectedRecipe.director && <p>Réalisateur : {selectedRecipe.director}</p>}
+                      {selectedRecipe.synopsis
+                        ? <p style={{ marginTop: '0.4rem', fontSize: '0.85rem', opacity: 0.8 }}>{selectedRecipe.synopsis}</p>
+                        : <p style={{ opacity: 0.5, fontSize: '0.85rem' }}>Synopsis non disponible.</p>
+                      }
+                    </div>
                   </div>
                 </div>
 
-                <h4 className={styles.blockTitle} style={{ marginTop: '0.75rem' }}>Recettes similaires</h4>
-                <div className={styles.sideMedia}>
-                  <div className={styles.sideMediaRow}>
-                    <img src="/img/Spaghetti.webp" alt="Recette similaire" />
-                    <p>Spaghetti Ratatouille<br />25 min</p>
-                  </div>
-                  <div className={styles.sideMediaRow}>
-                    <img src="/img/lospolloshermanos.webp" alt="Recette similaire" />
-                    <p>Los Pollos Hermanos<br />35 min</p>
-                  </div>
-                </div>
+                {/* Recettes similaires supprimées — données hardcodées retirées */}
               </div>
             </div>
           </article>
