@@ -659,7 +659,8 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   </button>
 
                   <img
-                    src="/img/logo-cines-delices.webp"
+                    src="/img/logo-cines-delices.webp
+                    "
                     alt="CinéDélices"
                     className={styles.mobileBottomLogo}
                   />
