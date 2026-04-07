@@ -753,6 +753,18 @@ function AdminRecettes() {
                   >
                     <img src="/icon/Edit_duotone_line.svg" alt="" aria-hidden="true" />
                   </button>
+                  <button
+                    type="button"
+                    className={`${styles.cardActionButton} ${styles.cardActionDelete}`.trim()}
+                    aria-label="Supprimer la recette"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setModalState({ type: 'delete', recipeId: recipe.id, recipeTitle: recipe.title });
+                    }}
+                  >
+                    <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                  </button>
                 </div>
               </div>
             );
