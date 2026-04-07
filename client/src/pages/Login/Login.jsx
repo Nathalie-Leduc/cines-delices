@@ -108,10 +108,6 @@ export default function Login() {
             Adresse e-mail
           </label>
           <div className={styles.inputWrapper}>
-            <span
-              className={`${styles.leadingIcon} ${styles.emailIcon}`}
-              aria-hidden="true"
-            />
             <input
               id="email"
               type="email"
@@ -152,10 +148,7 @@ export default function Login() {
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
             >
-              <span
-                className={`${styles.eyeIcon} ${showPassword ? styles.eyeVisible : styles.eyeHidden}`}
-                aria-hidden="true"
-              />
+              👁️
             </button>
           </div>
 
