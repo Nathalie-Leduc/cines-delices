@@ -1,6 +1,7 @@
 import express from "express";
 import {
   approveIngredient,
+  createAdminIngredient,
   createCategory,
   deleteAdminNotification,
   getCategoryRecipes,
@@ -56,6 +57,7 @@ router.delete('/categories/:id', deleteCategory);
 
 router.get('/ingredients', getAdminIngredients);
 router.get('/ingredients/validated', getValidatedIngredients);
+router.post('/ingredients', createAdminIngredient);
 
 // ✅ CORRECTIF — route merge déclarée AVANT /:id
 // Analogie : Express lit les routes de haut en bas comme une liste

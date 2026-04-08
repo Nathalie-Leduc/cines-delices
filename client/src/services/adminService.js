@@ -97,6 +97,10 @@ export const getValidatedAdminIngredients = (search = '') =>
 export const getAdminIngredientRecipes = (id) =>
   request(`${ADMIN_API_BASE}/ingredients/${id}/recipes`);
 
+// Crée un ingrédient directement approuvé (admin uniquement).
+export const createAdminIngredient = (name) =>
+  request(`${ADMIN_API_BASE}/ingredients`, { method: 'POST', body: { name } });
+
 // Mettre à jour un ingrédient
 export const updateAdminIngredient = (id, payload) =>
   request(`${ADMIN_API_BASE}/ingredients/${id}`, { method: 'PATCH', body: payload });

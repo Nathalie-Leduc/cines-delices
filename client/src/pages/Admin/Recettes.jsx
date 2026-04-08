@@ -581,6 +581,9 @@ function AdminRecettes() {
     <div className={styles.page}>
       <div className={styles.headerLine}>
         <h2>Gérer les recettes</h2>
+        <Link to="/admin/creer-recette" className={styles.addRecipeButton}>
+          + Créer une recette
+        </Link>
       </div>
 
       <section className={styles.recipesPanelFrame}>

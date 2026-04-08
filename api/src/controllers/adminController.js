@@ -1221,6 +1221,75 @@ export async function getAdminIngredients(req, res) {
   }
 }
 
+// L'admin crée un ingrédient directement approuvé (approved: true).
+// Si l'ingrédient existe déjà non approuvé, il est approuvé en même temps.
+export async function createAdminIngredient(req, res) {
+  try {
+    const name = String(req.body?.name || req.body?.nom || '').trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (!name) {
+      return res.status(400).json({ message: "Le nom de l'ingrédient est requis." });
+    }
+
+    const existing = await prisma.ingredient.findUnique({ where: { nom: name } });
+
+    if (existing) {
+      if (!existing.approved) {
+        const approved = await prisma.ingredient.update({
+          where: { id: existing.id },
+          data: { approved: true },
+          include: {
+            _count: { select: { recipes: true } },
+            recipes: {
+              include: {
+                recipe: {
+                  select: { createdAt: true, user: { select: { nom: true, pseudo: true } } },
+                },
+              },
+            },
+          },
+        });
+        return res.status(200).json(formatIngredient(approved));
+      }
+      const withCount = await prisma.ingredient.findUnique({
+        where: { id: existing.id },
+        include: {
+          _count: { select: { recipes: true } },
+          recipes: {
+            include: {
+              recipe: {
+                select: { createdAt: true, user: { select: { nom: true, pseudo: true } } },
+              },
+            },
+          },
+        },
+      });
+      return res.status(200).json(formatIngredient(withCount));
+    }
+
+    const ingredient = await prisma.ingredient.create({
+      data: { nom: name, approved: true },
+      include: {
+        _count: { select: { recipes: true } },
+        recipes: {
+          include: {
+            recipe: {
+              select: { createdAt: true, user: { select: { nom: true, pseudo: true } } },
+            },
+          },
+        },
+      },
+    });
+
+    return res.status(201).json(formatIngredient(ingredient));
+  } catch (error) {
+    return sendError(res, error, "Erreur lors de la création de l'ingrédient.");
+  }
+}
+
 export async function updateIngredient(req, res) {
   try {
     const name = String(req.body.name || '').trim().toLowerCase();

@@ -5,6 +5,7 @@ import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import { LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
 import {
+  createAdminIngredient,
   deleteAdminIngredient,
   getValidatedAdminIngredients,
   mergeAdminIngredients,
@@ -48,6 +49,9 @@ export default function AdminIngredients() {
   const [selectedIngredient, setSelectedIngredient] = useState(null);
   const [editedName, setEditedName] = useState('');
   const [error, setError] = useState('');
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newIngredientName, setNewIngredientName] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
 
   // ──────────────────────────────────────────────────────────
   // NOUVEAUX ÉTATS — merge d'ingrédients
@@ -134,6 +138,28 @@ export default function AdminIngredients() {
       setSelectedIngredient(null);
     } catch (updateError) {
       setError(updateError.message || 'Modification impossible.');
+    }
+  }
+
+  async function handleCreateIngredient() {
+    const name = newIngredientName.trim();
+    if (!name) return;
+
+    setIsCreating(true);
+    setError('');
+    try {
+      const created = await createAdminIngredient(name);
+      setIngredients((previous) => {
+        const exists = previous.find((i) => i.id === created.id);
+        if (exists) return previous.map((i) => (i.id === created.id ? created : i));
+        return [...previous, created];
+      });
+      setShowCreateModal(false);
+      setNewIngredientName('');
+    } catch (createError) {
+      setError(createError.message || 'Création impossible.');
+    } finally {
+      setIsCreating(false);
     }
   }
 
@@ -226,6 +252,13 @@ export default function AdminIngredients() {
     <div className={styles.page}>
       <div className={styles.headerLine}>
         <h2>Gérer les ingrédients</h2>
+        <button
+          type="button"
+          className={styles.addRecipeButton}
+          onClick={() => { setNewIngredientName(''); setError(''); setShowCreateModal(true); }}
+        >
+          + Ajouter un ingrédient
+        </button>
       </div>
 
       <form
@@ -430,6 +463,29 @@ export default function AdminIngredients() {
           </button>
         </nav>
       ) : null}
+
+      {showCreateModal && (
+        <AdminModal
+          title="Ajouter un ingrédient"
+          confirmLabel={isCreating ? 'Création...' : 'Créer'}
+          confirmVariant="success"
+          onCancel={() => { setShowCreateModal(false); setNewIngredientName(''); }}
+          onConfirm={handleCreateIngredient}
+        >
+          <p style={{ marginBottom: '0.5rem', fontSize: '0.9rem', opacity: 0.8 }}>
+            L&apos;ingrédient sera directement validé et disponible pour tous les membres.
+          </p>
+          <input
+            className={styles.modalInput}
+            type="text"
+            value={newIngredientName}
+            onChange={(event) => setNewIngredientName(event.target.value)}
+            placeholder="Nom de l'ingrédient (ex: fraise des bois)"
+            onKeyDown={(event) => { if (event.key === 'Enter' && !isCreating) handleCreateIngredient(); }}
+            autoFocus
+          />
+        </AdminModal>
+      )}
 
       {/* MODALES EXISTANTES — inchangées */}
       {showDeleteModal && (
