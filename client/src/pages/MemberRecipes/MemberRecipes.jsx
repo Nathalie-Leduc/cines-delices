@@ -724,7 +724,12 @@ export default function MesRecettes() {
       );
 
       if (exactMatch) {
-        selectEditIngredient(index, exactMatch);
+        // Même logique que CreateRecipe : met en tête sans verrouiller
+        const others = normalized.filter(item => item.id !== exactMatch.id);
+        setEditIngredientSearchResults(prev => ({
+          ...prev,
+          [index]: [exactMatch, ...others],
+        }));
         return;
       }
 
@@ -1436,7 +1441,7 @@ export default function MesRecettes() {
                           );
                         })()}
                         <div className={styles.cardActionsFloating}>
-                          {String(recette.status || '').toUpperCase() !== 'PENDING' && (
+                          {String(recette.status || '').toUpperCase() === 'DRAFT' && (
                             <button
                               type="button"
                               className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
