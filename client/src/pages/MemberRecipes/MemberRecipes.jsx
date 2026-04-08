@@ -184,7 +184,10 @@ function normalizeRecipe(rawRecipe) {
     categorie: categoryLabel,
     filmId: rawRecipe?.filmId || rawRecipe?.mediaId || rawRecipe?.media?.id || null,
     film: rawRecipe?.film || rawRecipe?.media?.titre || 'Sans titre',
-    image: rawRecipe?.image || rawRecipe?.imageURL || rawRecipe?.imageUrl || rawRecipe?.media?.posterUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400',
+    // On ne garde que l'image uploadée par le membre.
+    // media?.posterUrl et l'URL Unsplash sont retirés intentionnellement :
+    // si pas d'image propre → null → RecipeCard affiche le placeholder SVG.
+    image: rawRecipe?.image || rawRecipe?.imageURL || rawRecipe?.imageUrl || null,
     nbPersonnes: rawRecipe?.nbPersonnes || rawRecipe?.nombrePersonnes || '',
     ingredients: normalizedIngredients,
     etapes: Array.isArray(rawRecipe?.etapes)
@@ -203,9 +206,11 @@ function mapMemberRecipeToCard(recipe) {
   const mediaType = String(recipe?.type || '').toUpperCase() === 'F' ? 'film' : 'serie';
   const durationValue = String(recipe?.temps || '').match(/\d+/);
   const duration = durationValue ? Number(durationValue[0]) : 0;
-  const primaryImage = recipe?.image || '/img/hero-home.webp';
-  const mediaPoster = recipe?.media?.posterUrl || '';
-  const fallbackImage = mediaPoster && mediaPoster !== primaryImage ? mediaPoster : '/img/hero-home.webp';
+
+  // null si pas d'image uploadée → RecipeCard affiche son SVG appareil photo barré.
+  // Aucun fallback (ni hero-home.webp, ni poster TMDB) : l'absence d'image
+  // doit être visible pour inciter le membre à en ajouter une.
+  const recipeImage = recipe?.image || null;
 
   return {
     id: recipe?.id,
@@ -215,8 +220,7 @@ function mapMemberRecipeToCard(recipe) {
     mediaTitle: recipe?.film || 'Sans média',
     mediaType,
     duration,
-    image: primaryImage,
-    fallbackImage,
+    image: recipeImage,
   };
 }
 
