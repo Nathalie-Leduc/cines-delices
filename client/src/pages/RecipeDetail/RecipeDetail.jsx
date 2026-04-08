@@ -138,7 +138,10 @@ export default function RecipeDetail() {
   const { isAdmin } = useAuth();
   const isHeroVisible = useHeroReveal();
   const [recipes, setRecipes] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Si on a des données partielles depuis la navigation, on les affiche
+  // immédiatement (isLoading=false) pendant que le fetch complet tourne en arrière-plan.
+  // Analogie : on lit le résumé du menu pendant que le serveur va chercher la fiche complète.
+  const [isLoading, setIsLoading] = useState(!state?.recipe);
   const [error, setError] = useState("");
 
   function handleImageError(event) {
@@ -159,12 +162,10 @@ export default function RecipeDetail() {
   useEffect(() => {
     let isMounted = true;
 
-    // Si on a déjà la recette depuis la navigation (state), pas besoin de fetch
-    if (state?.recipe) {
-      setIsLoading(false);
-      return;
-    }
-
+    // On fait TOUJOURS le fetch pour avoir les données complètes (poster, synopsis, année).
+    // state?.recipe peut venir du catalogue (données partielles) → on ne s'y fie pas.
+    // Analogie : même si on a un résumé du plat sous la main, on demande quand même
+    // la fiche complète à la cuisine.
     const fetchRecipe = async () => {
       try {
         // 1️⃣ Charger la recette demandée (le plat principal)
