@@ -337,3 +337,22 @@
     font-size: 0.56rem;
   }
 }
+
+/* ─────────────────────────────────────────────────────────
+   Placeholder image — appareil photo barré
+   S'affiche quand la recette n'a pas d'image uploadée
+───────────────────────────────────────────────────────── */
+.imagePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: #2a2729;
+}
+
+.placeholderIcon {
+  width: 2rem;
+  height: 2rem;
+  color: rgba(246, 241, 232, 0.2);
+}
