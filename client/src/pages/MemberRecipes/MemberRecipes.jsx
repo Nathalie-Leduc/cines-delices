@@ -475,14 +475,22 @@ export default function MesRecettes() {
     });
 
     const targetId = String(matchedRecipe?.id || notificationRecipeId).trim();
-    const targetSlugOrId = String(matchedRecipe?.slug || notificationRecipeSlug || targetId).trim();
+    const targetStatus = String(matchedRecipe?.status || '').toUpperCase();
+    const targetSlug = String(matchedRecipe?.slug || notificationRecipeSlug || '').trim();
 
-    if (targetSlugOrId) {
-      navigate(`/recipes/${targetSlugOrId}`, {
-        state: {
-          fromMemberRecipes: true,
-          openEditRecipeId: targetId || undefined,
-        },
+    // Recette publiée → page publique (le membre veut la voir telle quelle)
+    if (targetStatus === 'PUBLISHED' && targetSlug) {
+      navigate(`/recipes/${targetSlug}`, {
+        state: { fromMemberRecipes: true },
+      });
+      return;
+    }
+
+    // Recette PENDING ou DRAFT (refusée) → espace membre avec actions
+    // (boutons Modifier + Supprimer disponibles ici, pas sur la page publique)
+    if (targetId) {
+      navigate('/membre/mes-recettes', {
+        state: { openEditRecipeId: targetId },
       });
       return;
     }
@@ -1743,14 +1751,16 @@ export default function MesRecettes() {
                           );
                         })()}
                         <div className={styles.cardActionsFloating}>
-                          <button
-                            type="button"
-                            className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
-                            aria-label={`Supprimer la recette ${recette.titre}`}
-                            onClick={() => handleDeleteClick(recette)}
-                          >
-                            <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
-                          </button>
+                          {String(recette.status || '').toUpperCase() !== 'PENDING' && (
+                            <button
+                              type="button"
+                              className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+                              aria-label={`Supprimer la recette ${recette.titre}`}
+                              onClick={() => handleDeleteClick(recette)}
+                            >
+                              <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             className={`${styles.actionBtn} ${styles.actionBtnEdit}`}
