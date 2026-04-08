@@ -107,9 +107,12 @@ export const approveAdminIngredient = (id) => {
   return request(`${ADMIN_API_BASE}/ingredients/${id}/approve`, { method: 'PATCH' });
 };
 
-// Supprimer un ingrédient par son ID
-export const deleteAdminIngredient = (id) =>
-  request(`${ADMIN_API_BASE}/ingredients/${id}`, { method: 'DELETE' });
+// Le motif de refus est transmis en body pour notifier le membre.
+export const deleteAdminIngredient = (id, rejectionReason = '') =>
+  request(`${ADMIN_API_BASE}/ingredients/${id}`, {
+    method: 'DELETE',
+    body: rejectionReason ? { rejectionReason } : undefined,
+  });
 
 // ─────────────────────────────────────────────────────────────
 // mergeAdminIngredients — fusionne deux ingrédients en un seul

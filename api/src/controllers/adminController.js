@@ -1308,29 +1308,44 @@ export async function approveIngredient(req, res) {
 export async function deleteIngredient(req, res) {
   try {
     const ingredientId = req.params.id;
+    const rejectionReason = String(req.body?.rejectionReason || '').trim();
+
+    // Récupérer l'ingrédient + la première recette liée pour identifier le membre
     const ingredient = await prisma.ingredient.findUnique({
-      where: { id: req.params.id },
+      where: { id: ingredientId },
       select: {
         nom: true,
-        _count: {
-          select: { recipes: true },
+        approved: true,
+        _count: { select: { recipes: true } },
+        recipes: {
+          take: 1,
+          include: {
+            recipe: {
+              select: { id: true, titre: true, userId: true, status: true },
+            },
+          },
         },
       },
     });
 
-    if (!ingredient) {
-      return res.status(404).json({ message: 'Ingrédient introuvable.' });
-    }
+    if (!ingredient) return res.status(404).json({ message: 'Ingrédient introuvable.' });
 
-    if ((ingredient._count?.recipes || 0) > 0) {
+    // Seuls les ingrédients non approuvés ET non utilisés dans des recettes publiées
+    // peuvent être supprimés via cette route.
+    if (ingredient.approved && (ingredient._count?.recipes || 0) > 0) {
       return res.status(409).json({
-        message: 'Impossible de supprimer un ingrédient déjà utilisé dans une recette.',
+        message: 'Impossible de supprimer un ingrédient approuvé utilisé dans une recette.',
       });
     }
+
+    const linkedRecipe = ingredient.recipes[0]?.recipe || null;
+    const memberUserId = linkedRecipe?.userId || null;
 
     await prisma.$transaction(async (tx) => {
       await tx.recipeIngredient.deleteMany({ where: { ingredientId } });
       await tx.ingredient.delete({ where: { id: ingredientId } });
+
+      // Marquer la notif admin "Nouvel ingrédient soumis" comme lue
       await tx.notification.updateMany({
         where: {
           userId: req.user.id,
@@ -1339,6 +1354,19 @@ export async function deleteIngredient(req, res) {
         },
         data: { isRead: true },
       });
+
+      // Notifier le membre si on a pu l'identifier via la recette liée
+      if (memberUserId) {
+        const motif = rejectionReason ? ` Motif : ${rejectionReason}` : '';
+        await tx.notification.create({
+          data: {
+            userId: memberUserId,
+            recipeId: linkedRecipe?.id || null,
+            type: 'RECIPE_SUBMITTED',
+            message: `Votre ingrédient "${ingredient.nom}" a été refusé par l'administrateur.${motif} Veuillez modifier votre recette avec un ingrédient existant.`,
+          },
+        });
+      }
     });
 
     return res.status(204).send();
