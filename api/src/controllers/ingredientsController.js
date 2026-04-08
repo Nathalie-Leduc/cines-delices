@@ -37,6 +37,11 @@ function normalizeIngredientName(name) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
+  // CORRECTIF — noms composés (avec espace) : pas de singularisation.
+  // "fraise des bois" → "fraise des bois" ✅ (était "fraise des boi" ❌)
+  // "fraises"         → "fraise"          ✅ (inchangé)
+  if (str.includes(' ')) return str;
+
   const exceptions = new Set([
     'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
     'fois', 'buis', 'tapas', 'papas', 'colis',
