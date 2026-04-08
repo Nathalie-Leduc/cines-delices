@@ -167,14 +167,17 @@ export async function deleteIngredient(req, res) {
       });
 
       // Notifier le membre si on a pu l'identifier via la recette liée
+      // Le front envoie maintenant le message complet (textarea modifiable)
       if (memberUserId) {
-        const motif = rejectionReason ? ` Motif : ${rejectionReason}` : '';
+        const message = rejectionReason && rejectionReason.trim()
+          ? rejectionReason.trim()
+          : `Votre ingrédient "${ingredient.nom}" a été refusé par l'administrateur. Veuillez modifier votre recette en sélectionnant un ingrédient existant.`;
         await tx.notification.create({
           data: {
             userId: memberUserId,
             recipeId: linkedRecipe?.id || null,
             type: 'RECIPE_SUBMITTED',
-            message: `Votre ingrédient "${ingredient.nom}" a été refusé par l'administrateur.${motif} Veuillez modifier votre recette avec un ingrédient existant.`,
+            message,
           },
         });
       }

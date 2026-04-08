@@ -122,8 +122,10 @@ export default function IngredientsValidation() {
     }
   }, [currentPage, totalPages]);
 
+  // La vraie garde est côté back (approved && count > 0).
+  // Un ingrédient non approuvé lié à une recette PENDING est toujours supprimable.
   function canDeleteIngredient(ingredient) {
-    return (ingredient?.recipesCount || 0) === 0;
+    return true;
   }
 
   // ──────────────────────────────────────────────────────────
@@ -194,7 +196,10 @@ export default function IngredientsValidation() {
     }
 
     try {
-      await deleteAdminIngredient(selectedIngredient.id, deleteRejectionReason);
+      // Utiliser le message complet de la textarea comme notification
+      const notificationMessage = deleteRejectionReason.trim()
+        || `Votre ingrédient "${selectedIngredient.name}" a été refusé par l'administrateur.\n\nMotif : cet ingrédient existe déjà dans notre base ou son nom n'est pas conforme.\n\nMerci de modifier votre recette en sélectionnant un ingrédient existant.`;
+      await deleteAdminIngredient(selectedIngredient.id, notificationMessage);
       setIngredients((previous) => previous.filter((ingredient) => ingredient.id !== selectedIngredient.id));
       setShowDeleteModal(false);
       setDeleteRejectionReason('');
@@ -437,26 +442,29 @@ export default function IngredientsValidation() {
       {showDeleteModal && (
         <AdminModal
           title="Refuser et supprimer l'ingrédient"
-          confirmLabel="Refuser"
+          confirmLabel="Refuser et notifier"
           onCancel={() => {
             setShowDeleteModal(false);
             setDeleteRejectionReason('');
           }}
           onConfirm={handleDeleteIngredient}
         >
-          <p>
-            Êtes-vous sûr de vouloir refuser l&apos;ingrédient{' '}
-            <strong>&quot;{selectedIngredient?.name}&quot;</strong> ?
+          <p style={{ marginBottom: '0.75rem' }}>
+            Refus de l&apos;ingrédient{' '}
+            <strong>&quot;{selectedIngredient?.name}&quot;</strong>.
           </p>
-          <p style={{ marginTop: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
-            Le membre recevra une notification de refus. Motif (optionnel) :
+          <p style={{ marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>
+            Message de notification envoyé au membre (modifiable) :
           </p>
-          <input
+          <textarea
             className={styles.modalInput}
-            type="text"
-            value={deleteRejectionReason}
+            rows={5}
+            style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem' }}
+            value={
+              deleteRejectionReason ||
+              `Votre ingrédient "${selectedIngredient?.name}" a été refusé par l'administrateur.\n\nMotif : cet ingrédient existe déjà dans notre base ou son nom n'est pas conforme.\n\nMerci de modifier votre recette en sélectionnant un ingrédient existant.`
+            }
             onChange={(event) => setDeleteRejectionReason(event.target.value)}
-            placeholder="Ex : doublon avec 'fraise', nom trop générique..."
           />
         </AdminModal>
       )}

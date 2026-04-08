@@ -425,8 +425,10 @@ export default function CreerRecette() {
         item => item.name.trim().toLowerCase() === trimmed.toLowerCase(),
       );
       if (exactMatch) {
-        selectIngredient(exactMatch);
-        setIngredientAlreadyExists(true);
+        // Met l'exact match en tête de liste sans verrouiller le champ.
+        // L'utilisateur reste libre de continuer à taper (ex: "fraise" → "fraise des bois")
+        const others = normalized.filter(item => item.id !== exactMatch.id);
+        setIngredientSearchResults([exactMatch, ...others]);
         return;
       }
 
