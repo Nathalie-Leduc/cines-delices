@@ -321,6 +321,11 @@ export default function CreerRecette() {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
+    // CORRECTIF — noms composés (avec espace) : pas de singularisation.
+    // "fraise des bois" → "fraise des bois" ✅ (était "fraise des boi" ❌)
+    // "fraises"         → "fraise"          ✅ (inchangé)
+    if (str.includes(' ')) return str;
+
     const exceptions = new Set([
       'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
       'fois', 'buis', 'tapas', 'papas', 'colis',
@@ -414,8 +419,10 @@ export default function CreerRecette() {
 
       // Vérifier d'abord un match exact dans les résultats normaux
       const normalizedQuery = trimmed.toLowerCase();
+      // On compare avec trimmed (texte brut saisi) et non normalizedQuery (singulier).
+      // "fraise des bois" !== "fraise" → pas de sélection automatique erronée.
       const exactMatch = normalized.find(
-        item => item.name.trim().toLowerCase() === normalizedQuery,
+        item => item.name.trim().toLowerCase() === trimmed.toLowerCase(),
       );
       if (exactMatch) {
         selectIngredient(exactMatch);
