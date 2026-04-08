@@ -23,7 +23,7 @@ export default function AuthShell({
         {showBrand ? (
           <div className={styles.brand}>
             <img
-              src="/img/logo-cines-delices.webp"
+              src="/img/logo-cines-delices-v6.webp"
               alt="Ciné Délices"
               className={styles.logo}
             />
