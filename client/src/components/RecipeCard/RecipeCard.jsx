@@ -1,37 +1,33 @@
 import { Link } from "react-router-dom";
 import styles from "./RecipeCard.module.scss";
 
-const RECIPE_IMAGE_FALLBACK = "/img/hero-home.webp";
-
 export default function RecipeCard({ recipe, to, linkState }) {
   if (!recipe) return null;
 
-  const { id, image, fallbackImage, title, category, mediaTitle, mediaType, duration } = recipe;
+  const { id, image, title, category, mediaTitle, mediaType, duration } = recipe;
   const categoryKey = category?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const mediaTypeLabel = mediaType?.toLowerCase().startsWith("f") ? "F" : "S";
   const targetPath = to || `/recipes/${recipe.slug || recipe.id}`;
-
-  const handleImageError = (event) => {
-    const nextSource = event.currentTarget.dataset.fallbackSrc || RECIPE_IMAGE_FALLBACK;
-
-    if (event.currentTarget.src.endsWith(nextSource)) {
-      return;
-    }
-
-    event.currentTarget.src = nextSource;
-  };
 
   return (
     <Link to={targetPath} state={linkState} className={styles.cardLink}>
       <article className={`${styles.card} ${styles[categoryKey] || ""}`}>
         <div className={styles.imageWrapper}>
-          <img
-            src={image || fallbackImage || RECIPE_IMAGE_FALLBACK}
-            alt={title}
-            className={styles.image}
-            data-fallback-src={fallbackImage || RECIPE_IMAGE_FALLBACK}
-            onError={handleImageError}
-          />
+          {image ? (
+            <img
+              src={image}
+              alt={title}
+              className={styles.image}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          ) : (
+            <div className={styles.imagePlaceholder} aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={styles.placeholderIcon}>
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+            </div>
+          )}
           <span className={`${styles.category} ${styles[categoryKey] || ""}`}>{category}</span>
         </div>
 
