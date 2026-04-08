@@ -66,6 +66,7 @@ export default function IngredientsValidation() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
   const [editedName, setEditedName] = useState('');
+  const [deleteRejectionReason, setDeleteRejectionReason] = useState('');
   const [error, setError] = useState('');
 
   // ──────────────────────────────────────────────────────────
@@ -193,9 +194,10 @@ export default function IngredientsValidation() {
     }
 
     try {
-      await deleteAdminIngredient(selectedIngredient.id);
+      await deleteAdminIngredient(selectedIngredient.id, deleteRejectionReason);
       setIngredients((previous) => previous.filter((ingredient) => ingredient.id !== selectedIngredient.id));
       setShowDeleteModal(false);
+      setDeleteRejectionReason('');
       setSelectedIngredient(null);
     } catch (deleteError) {
       setError(deleteError.message || 'Suppression impossible.');
@@ -357,6 +359,7 @@ export default function IngredientsValidation() {
                   if (!canDeleteIngredient(ingredient)) {
                     return;
                   }
+                  setDeleteRejectionReason('');
                   setSelectedIngredient(ingredient);
                   setShowDeleteModal(true);
                 }}
@@ -433,12 +436,28 @@ export default function IngredientsValidation() {
 
       {showDeleteModal && (
         <AdminModal
-          title="Supprimer l'ingrédient"
-          confirmLabel="Supprimer"
-          onCancel={() => setShowDeleteModal(false)}
+          title="Refuser et supprimer l'ingrédient"
+          confirmLabel="Refuser"
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setDeleteRejectionReason('');
+          }}
           onConfirm={handleDeleteIngredient}
         >
-          Êtes-vous sûr de vouloir supprimer cet ingrédient ?
+          <p>
+            Êtes-vous sûr de vouloir refuser l&apos;ingrédient{' '}
+            <strong>&quot;{selectedIngredient?.name}&quot;</strong> ?
+          </p>
+          <p style={{ marginTop: '0.5rem', marginBottom: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
+            Le membre recevra une notification de refus. Motif (optionnel) :
+          </p>
+          <input
+            className={styles.modalInput}
+            type="text"
+            value={deleteRejectionReason}
+            onChange={(event) => setDeleteRejectionReason(event.target.value)}
+            placeholder="Ex : doublon avec 'fraise', nom trop générique..."
+          />
         </AdminModal>
       )}
 
