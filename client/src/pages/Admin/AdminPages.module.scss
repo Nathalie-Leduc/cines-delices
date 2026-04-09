@@ -723,6 +723,32 @@
   );
 }
 
+.adminStatusBadge {
+  position: absolute;
+  top: 3.2rem;      // sous le badge catégorie (qui est à ~0.45rem)
+  right: 0.6rem;
+  z-index: 2;
+  pointer-events: none;
+  @include ui.badge-chip(
+    $background: rgba(31, 29, 30, 0.82),
+    $color: #f6f1e8,
+    $border: rgba(255, 255, 255, 0.22),
+    $padding: 0.26rem 0.62rem,
+    $font-size: 0.68rem,
+    $font-weight: 700
+  );
+}
+
+.adminStatusBadge_pending {
+  background: rgba(251, 220, 166, 0.9);
+  color: #3d2c16;
+}
+
+.adminStatusBadge_rejected {
+  background: rgba(142, 31, 47, 0.92);
+  color: #f6f1e8;
+}
+
 .cardNavOverlay {
   position: absolute;
   inset: 0;

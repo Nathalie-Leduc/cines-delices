@@ -67,8 +67,8 @@ function toSlug(value) {
 
 function getStatusBadge(status) {
   const s = String(status || '').toUpperCase();
-  if (s === 'PENDING') return { label: 'En validation', color: '#C9A45C' };
-  if (s === 'DRAFT')   return { label: 'Refusée',       color: '#E53935' };
+  if (s === 'PENDING') return { label: 'En validation', tone: 'pending' };
+  if (s === 'DRAFT')   return { label: 'Refusée',       tone: 'rejected' };
   return null;
 }
 
@@ -734,21 +734,7 @@ function AdminRecettes() {
                 {(() => {
                   const badge = getStatusBadge(recipe.status);
                   return badge ? (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '0.5rem',
-                        left: '0.5rem',
-                        background: badge.color,
-                        color: '#fff',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '2px 8px',
-                        borderRadius: '4px',
-                        zIndex: 2,
-                        pointerEvents: 'none',
-                      }}
-                    >
+                    <span className={`${styles.adminStatusBadge} ${styles[`adminStatusBadge_${badge.tone}`]}`}>
                       {badge.label}
                     </span>
                   ) : null;
