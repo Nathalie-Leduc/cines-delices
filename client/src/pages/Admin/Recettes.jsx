@@ -720,7 +720,7 @@ function AdminRecettes() {
             const recipeForCatalogCard = {
               id: recipe.id,
               slug,
-              image: recipe.image || '/img/placeholder.jpg',
+              image: recipe.image || null,
               title: recipe.title,
               category: recipe.category,
               mediaTitle: recipe.movie || 'Film non renseigne',

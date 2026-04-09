@@ -710,8 +710,9 @@
 
 .submittedByCardTag {
   position: absolute;
-  top: 3.9rem;
-  left: 0.7rem;
+  top: 3.2rem;    /* sous le badge catégorie (~2.2rem de hauteur) */
+  right: 0.6rem;  /* ← à droite, côté opposé aux boutons */
+  left: auto;     /* annule le left précédent */
   z-index: 2;
   @include ui.badge-chip(
     $background: rgba(31, 29, 30, 0.86),
