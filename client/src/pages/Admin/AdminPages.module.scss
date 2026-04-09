@@ -2976,6 +2976,54 @@
   }
 }
 
+/* Modal recettes utilisateur — fond sombre */
+.adminRecipesModal {
+  background: #1f1d1e;
+  border: 1px solid rgba(246, 241, 232, 0.12);
+  border-radius: 22px;
+  padding: 1.8rem;
+  width: 100%;
+  max-width: 900px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.32);
+}
+
+.adminModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  h3 {
+    color: #c9a45c;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.adminModalCloseBtn {
+  background: transparent;
+  border: 1px solid rgba(246, 241, 232, 0.3);
+  border-radius: 50%;
+  color: #f6f1e8;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &:hover { background: rgba(246, 241, 232, 0.1); }
+}
+
+.recipePillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 /* ─────────────────────────────────────────────────────────
    Placeholders image — appareil photo barré
 ───────────────────────────────────────────────────────── */

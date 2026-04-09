@@ -10,6 +10,7 @@ export {
   rejectRecipe,
   deleteRecipe,
   updateAdminRecipe,
+  getAdminUserRecipes,
 } from './adminRecipesController.js';
 
 export {

@@ -400,3 +400,21 @@ export async function updateAdminRecipe(req, res) {
     return sendError(res, error, 'Erreur lors de la modification de la recette.');
   }
 }
+
+export async function getAdminUserRecipes(req, res) {
+  try {
+    const { id } = req.params;
+    const recipes = await prisma.recipe.findMany({
+      where: {
+        userId: id,
+        // Hors brouillons purs (jamais soumis)
+        NOT: { AND: [{ status: 'DRAFT' }, { rejectionReason: null }] },
+      },
+      include: recipeRelationsInclude,
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.json(recipes.map(formatRecipe));
+  } catch (error) {
+    return sendError(res, error, 'Erreur lors de la récupération des recettes du membre.');
+  }
+}

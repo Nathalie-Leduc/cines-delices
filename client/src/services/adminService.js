@@ -142,3 +142,6 @@ export const mergeAdminIngredients = (sourceId, targetId) =>
     method: 'POST',
     body: { sourceId, targetId },
   });
+
+  export const getAdminUserRecipes = (userId) =>
+  request(`/api/admin/users/${userId}/recipes`);

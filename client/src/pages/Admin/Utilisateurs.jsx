@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
+import RecipeCard from '../../components/RecipeCard';
+import { getAdminUserRecipes } from '../../services/adminService.js';
 import Alert from '../../components/Alert/Alert.jsx';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import { LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
@@ -49,6 +51,10 @@ function AdminUtilisateurs() {
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [showRecipesModal, setShowRecipesModal] = useState(false);
+  const [userRecipes, setUserRecipes] = useState([]);
+  const [recipesLoading, setRecipesLoading] = useState(false);
+  const [recipesFilter, setRecipesFilter] = useState('Tous');
 
   // Calcul du total des recettes pour l'utilisateur sélectionné
   const usersWithTotals = useMemo(() => {
@@ -163,6 +169,20 @@ function AdminUtilisateurs() {
       setError(roleError.message || 'Modification du rôle impossible.');
     } finally {
       setIsUpdatingRole(false);
+    }
+  }
+
+  async function handleViewRecipes() {
+    setRecipesLoading(true);
+    setShowRecipesModal(true);
+    setRecipesFilter('Tous');
+    try {
+      const data = await getAdminUserRecipes(selectedUser.id);
+      setUserRecipes(Array.isArray(data) ? data : []);
+    } catch {
+      setUserRecipes([]);
+    } finally {
+      setRecipesLoading(false);
     }
   }
 
@@ -355,9 +375,8 @@ function AdminUtilisateurs() {
               </div>
             </div>
 
-            <div className={styles.recipesBlock}>
-              <span className={styles.blockLabel}>Recettes</span>
-
+          <div className={styles.recipesBlock}>
+            <span className={styles.blockLabel}>Recettes</span>
               <div className={styles.recipesGrid}>
                 {selectedUserRecipeCategories.map((category) => (
                   <div
@@ -371,6 +390,16 @@ function AdminUtilisateurs() {
                   </div>
                 ))}
               </div>
+              {/* ✅ Bouton voir les recettes — uniquement si le membre en a */}
+              {selectedUser.totalRecipes > 0 && (
+                <button
+                  type="button"
+                  className={styles.btnMuted}
+                  onClick={handleViewRecipes}
+                >
+                  Voir les recettes
+                </button>
+              )}
             </div>
           </div>
 
@@ -406,8 +435,98 @@ function AdminUtilisateurs() {
           Êtes-vous sûr de vouloir supprimer cet utilisateur ?
         </AdminModal>
       )}
-    </div>
+
+      {/* ✅ MODAL RECETTES — ajout ici, après showDeleteModal */}
+      {showRecipesModal && (
+        <div className={styles.adminEditOverlay} onClick={() => setShowRecipesModal(false)}>
+          <div
+            className={styles.adminRecipesModal}
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '900px', width: '95%' }}
+          >
+            {/* ... contenu du modal ... */}
+            {/* En-tête */}
+            <div className={styles.adminModalHeader}>
+              <h3>Recettes de {getUserIdentityLabel(selectedUser)}</h3>
+              <button
+                type="button"
+                className={styles.adminModalCloseBtn}
+                onClick={() => setShowRecipesModal(false)}
+                aria-label="Fermer"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Filtres catégorie */}
+            <div className={styles.recipePillsRow}>
+              {[
+                { label: 'Tous',    tone: 'Tous'    },
+                { label: 'Entrée',  tone: 'Entree'  },
+                { label: 'Plat',    tone: 'Plat'    },
+                { label: 'Dessert', tone: 'Dessert' },
+                { label: 'Boisson', tone: 'Boisson' },
+              ].map(({ label, tone }) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={[
+                    styles.recipePill,
+                    styles[`recipePill${tone}`],                              // couleur catégorie
+                    recipesFilter === label ? styles.recipePillActive : '',   // actif si sélectionné
+                  ].join(' ').trim()}
+                  onClick={() => setRecipesFilter(label)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {/* Grille de recettes */}
+            {recipesLoading ? (
+              <StatusBlock variant="loading" title="Chargement des recettes" />
+            ) : userRecipes.length === 0 ? (
+              <StatusBlock variant="empty" title="Aucune recette à afficher" />
+            ) : (
+              <div className={styles.recipesGridExact}>
+                {userRecipes
+                  .filter((r) => recipesFilter === 'Tous' || r.category === recipesFilter)
+                  .map((recipe) => {
+                    const badge = recipe.status === 'PENDING'
+                      ? { label: 'En validation', tone: 'pending' }
+                      : recipe.status === 'DRAFT'
+                      ? { label: 'Refusée', tone: 'rejected' }
+                      : null;
+
+                    return (
+                      <div key={recipe.id} className={styles.adminRecipeCardWrap}>
+                        <RecipeCard
+                          recipe={{
+                            id: recipe.id,
+                            slug: recipe.slug,
+                            image: recipe.image || null,
+                            title: recipe.title,
+                            category: recipe.category,
+                            mediaTitle: recipe.movie || '',
+                            mediaType: recipe.media === 'S' ? 'serie' : 'film',
+                            duration: parseInt(recipe.duration) || 0,
+                          }}
+                        />
+                        {badge && (
+                          <span className={`${styles.adminStatusBadge} ${styles[`adminStatusBadge_${badge.tone}`]}`}>
+                            {badge.label}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+    </div>   /* ← fermeture du <div className={styles.page}> */
   );
 }
-
 export default AdminUtilisateurs;

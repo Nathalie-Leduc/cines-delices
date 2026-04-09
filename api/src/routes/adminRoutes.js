@@ -24,6 +24,7 @@ import {
   updateCategory,
   updateIngredient,
   updateUserRole,
+  getAdminUserRecipes,
 } from "../controllers/adminController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
@@ -44,6 +45,7 @@ router.patch('/recipes/:id/reject', validate(rejectRecipeSchema), rejectRecipe);
 router.delete('/recipes/:id', deleteRecipe);
 
 router.get('/users', getAdminUsers);
+router.get('/users/:id/recipes', getAdminUserRecipes);
 router.get('/notifications', getAdminNotifications);
 router.delete('/notifications/:id', deleteAdminNotification);
 router.patch('/users/:id/role', updateUserRole);
