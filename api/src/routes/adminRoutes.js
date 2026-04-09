@@ -1,6 +1,7 @@
 import express from "express";
 import {
   approveIngredient,
+  createAdminIngredient,
   createCategory,
   deleteAdminNotification,
   getCategoryRecipes,
@@ -23,6 +24,7 @@ import {
   updateCategory,
   updateIngredient,
   updateUserRole,
+  getAdminUserRecipes,
 } from "../controllers/adminController.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
 import { adminMiddleware } from "../middlewares/adminMiddleware.js";
@@ -43,6 +45,7 @@ router.patch('/recipes/:id/reject', validate(rejectRecipeSchema), rejectRecipe);
 router.delete('/recipes/:id', deleteRecipe);
 
 router.get('/users', getAdminUsers);
+router.get('/users/:id/recipes', getAdminUserRecipes);
 router.get('/notifications', getAdminNotifications);
 router.delete('/notifications/:id', deleteAdminNotification);
 router.patch('/users/:id/role', updateUserRole);
@@ -56,6 +59,7 @@ router.delete('/categories/:id', deleteCategory);
 
 router.get('/ingredients', getAdminIngredients);
 router.get('/ingredients/validated', getValidatedIngredients);
+router.post('/ingredients', createAdminIngredient);
 
 // ✅ CORRECTIF — route merge déclarée AVANT /:id
 // Analogie : Express lit les routes de haut en bas comme une liste

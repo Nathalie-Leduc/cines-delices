@@ -14,6 +14,7 @@ import {
   approveAdminIngredient,
   approveAdminRecipe,
   deleteAdminIngredient,
+  deleteAdminRecipe,
   getAdminCategories,
   getAdminIngredients,
   getPendingRecipes,
@@ -134,6 +135,9 @@ function AdminDashboard() {
   const [rejectReason, setRejectReason] = useState(`Votre recette n’a pas été validée.\n\nElle ne respecte pas nos règles de publication\n(contenu incohérent ou incomplet).\n\nMerci de modifier votre recette avant de la soumettre à nouveau.`);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showDeleteRecipeModal, setShowDeleteRecipeModal] = useState(false);
+  const [recipeToDelete, setRecipeToDelete] = useState(null);
+  const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
 
   useEffect(() => {
     const loadPendingRecipes = async () => {
@@ -349,6 +353,21 @@ function AdminDashboard() {
     }
   }
 
+  async function handleDeleteRecipe() {
+    if (!recipeToDelete?.id) return;
+    setIsDeletingRecipe(true);
+    try {
+      await deleteAdminRecipe(recipeToDelete.id);
+      setPendingRecipes(prev => prev.filter(r => r.id !== recipeToDelete.id));
+      setShowDeleteRecipeModal(false);
+      setRecipeToDelete(null);
+    } catch (err) {
+      setError(err?.message || 'Impossible de supprimer la recette.');
+    } finally {
+      setIsDeletingRecipe(false);
+    }
+  }
+
   function openEditFromValidation(recipe) {
     if (!recipe?.id) {
       return;
@@ -517,6 +536,19 @@ function AdminDashboard() {
                   <RecipeCard recipe={recipeForCatalogCard} />
                   <span className={styles.submittedByCardTag}>Soumis par {getSubmittedByLabel(recipe)}</span>
                   <div className={styles.cardActionsExact}>
+                    <button
+                      type="button"
+                      className={`${styles.cardActionButton} ${styles.cardActionDelete}`.trim()}
+                      aria-label="Supprimer la recette avant validation"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setRecipeToDelete(recipe);
+                        setShowDeleteRecipeModal(true);
+                      }}
+                    >
+                      <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                    </button>
                     <button
                       type="button"
                       className={`${styles.cardActionButton} ${styles.cardActionEdit}`.trim()}
@@ -780,6 +812,28 @@ function AdminDashboard() {
               </button>
             </div>
           ) : null}
+        </AdminModal>
+      )}
+      {showDeleteRecipeModal && (
+        <AdminModal
+          title="Supprimer la recette"
+          confirmLabel={isDeletingRecipe ? 'Suppression...' : 'Supprimer'}
+          confirmVariant="danger"
+          onCancel={() => {
+            if (!isDeletingRecipe) {
+              setShowDeleteRecipeModal(false);
+              setRecipeToDelete(null);
+            }
+          }}
+          onConfirm={handleDeleteRecipe}
+        >
+          <p>
+            Êtes-vous sûr de vouloir supprimer la recette{' '}
+            <strong>&quot;{recipeToDelete?.title}&quot;</strong> ?
+          </p>
+          <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
+            Cette action est irréversible. Le membre sera notifié.
+          </p>
         </AdminModal>
       )}
     </div>

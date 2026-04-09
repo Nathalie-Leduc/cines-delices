@@ -715,6 +715,20 @@
   }
 }
 
+.recipeAuthor {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(246, 241, 232, 0.58);
+  border-radius: 999px;
+  padding: 0.24rem 0.62rem;
+  background: rgba(31, 29, 30, 0.58);
+  color: rgba(246, 241, 232, 0.95);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  line-height: 1;
+  margin-bottom: 0.8rem;
+}
+
 /* ─────────────────────────────────────────────────────────
    Placeholders image — appareil photo barré
    Apparaissent quand la recette n'a pas d'image uploadée

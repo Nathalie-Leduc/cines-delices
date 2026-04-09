@@ -76,6 +76,8 @@ function App() {
       </Route>
 
       <Route path="/admin" element={<AdminRoute />}>
+        {/* L'admin accède au même formulaire que le membre, hors AdminLayout */}
+        <Route path="creer-recette" element={<CreateRecipe />} />
         <Route element={<AdminLayout />}>
           <Route index element={<Recettes />} />
           <Route path="recettes" element={<Recettes />} />

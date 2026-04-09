@@ -24,6 +24,11 @@ function normalizeIngredientName(name) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
+  // CORRECTIF — noms composés (avec espace) : pas de singularisation.
+  // "fraise des bois" → "fraise des bois" ✅ (était "fraise des boi" ❌)
+  // "fraises"         → "fraise"          ✅ (inchangé)
+  if (str.includes(' ')) return str;
+
   const exceptions = new Set([
     'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
     'fois', 'buis', 'tapas', 'papas', 'colis',
@@ -61,6 +66,7 @@ export default function IngredientsValidation() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
   const [editedName, setEditedName] = useState('');
+  const [deleteRejectionReason, setDeleteRejectionReason] = useState('');
   const [error, setError] = useState('');
 
   // ──────────────────────────────────────────────────────────
@@ -116,8 +122,10 @@ export default function IngredientsValidation() {
     }
   }, [currentPage, totalPages]);
 
+  // La vraie garde est côté back (approved && count > 0).
+  // Un ingrédient non approuvé lié à une recette PENDING est toujours supprimable.
   function canDeleteIngredient(ingredient) {
-    return (ingredient?.recipesCount || 0) === 0;
+    return true;
   }
 
   // ──────────────────────────────────────────────────────────
@@ -188,9 +196,13 @@ export default function IngredientsValidation() {
     }
 
     try {
-      await deleteAdminIngredient(selectedIngredient.id);
+      // Utiliser le message complet de la textarea comme notification
+      const notificationMessage = deleteRejectionReason.trim()
+        || `Votre ingrédient "${selectedIngredient.name}" a été refusé par l'administrateur.\n\nMotif : cet ingrédient existe déjà dans notre base ou son nom n'est pas conforme.\n\nMerci de modifier votre recette en sélectionnant un ingrédient existant.`;
+      await deleteAdminIngredient(selectedIngredient.id, notificationMessage);
       setIngredients((previous) => previous.filter((ingredient) => ingredient.id !== selectedIngredient.id));
       setShowDeleteModal(false);
+      setDeleteRejectionReason('');
       setSelectedIngredient(null);
     } catch (deleteError) {
       setError(deleteError.message || 'Suppression impossible.');
@@ -352,6 +364,7 @@ export default function IngredientsValidation() {
                   if (!canDeleteIngredient(ingredient)) {
                     return;
                   }
+                  setDeleteRejectionReason('');
                   setSelectedIngredient(ingredient);
                   setShowDeleteModal(true);
                 }}
@@ -428,12 +441,31 @@ export default function IngredientsValidation() {
 
       {showDeleteModal && (
         <AdminModal
-          title="Supprimer l'ingrédient"
-          confirmLabel="Supprimer"
-          onCancel={() => setShowDeleteModal(false)}
+          title="Refuser et supprimer l'ingrédient"
+          confirmLabel="Refuser et notifier"
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setDeleteRejectionReason('');
+          }}
           onConfirm={handleDeleteIngredient}
         >
-          Êtes-vous sûr de vouloir supprimer cet ingrédient ?
+          <p style={{ marginBottom: '0.75rem' }}>
+            Refus de l&apos;ingrédient{' '}
+            <strong>&quot;{selectedIngredient?.name}&quot;</strong>.
+          </p>
+          <p style={{ marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 600 }}>
+            Message de notification envoyé au membre (modifiable) :
+          </p>
+          <textarea
+            className={styles.modalInput}
+            rows={5}
+            style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: '0.85rem' }}
+            value={
+              deleteRejectionReason ||
+              `Votre ingrédient "${selectedIngredient?.name}" a été refusé par l'administrateur.\n\nMotif : cet ingrédient existe déjà dans notre base ou son nom n'est pas conforme.\n\nMerci de modifier votre recette en sélectionnant un ingrédient existant.`
+            }
+            onChange={(event) => setDeleteRejectionReason(event.target.value)}
+          />
         </AdminModal>
       )}
 

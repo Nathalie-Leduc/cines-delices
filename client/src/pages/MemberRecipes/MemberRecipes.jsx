@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import RecipeEditModal from '../../components/RecipeEditModal';
 import styles from './MemberRecipes.module.scss';
 import { buildApiUrl } from '../../services/api.js';
 import {
@@ -54,7 +55,7 @@ function parseTimeToMinutes(value) {
     return total > 0 ? total : undefined;
   }
   // "30min", "30m", "30"
-  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|mn|m)?$/);
   if (minMatch) {
     const parsed = Math.round(parseFloat(minMatch[1]));
     return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
@@ -184,7 +185,10 @@ function normalizeRecipe(rawRecipe) {
     categorie: categoryLabel,
     filmId: rawRecipe?.filmId || rawRecipe?.mediaId || rawRecipe?.media?.id || null,
     film: rawRecipe?.film || rawRecipe?.media?.titre || 'Sans titre',
-    image: rawRecipe?.image || rawRecipe?.imageURL || rawRecipe?.imageUrl || rawRecipe?.media?.posterUrl || 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=400',
+    // On ne garde que l'image uploadée par le membre.
+    // media?.posterUrl et l'URL Unsplash sont retirés intentionnellement :
+    // si pas d'image propre → null → RecipeCard affiche le placeholder SVG.
+    image: rawRecipe?.image || rawRecipe?.imageURL || rawRecipe?.imageUrl || null,
     nbPersonnes: rawRecipe?.nbPersonnes || rawRecipe?.nombrePersonnes || '',
     ingredients: normalizedIngredients,
     etapes: Array.isArray(rawRecipe?.etapes)
@@ -201,11 +205,18 @@ function normalizeRecipe(rawRecipe) {
 
 function mapMemberRecipeToCard(recipe) {
   const mediaType = String(recipe?.type || '').toUpperCase() === 'F' ? 'film' : 'serie';
-  const durationValue = String(recipe?.temps || '').match(/\d+/);
-  const duration = durationValue ? Number(durationValue[0]) : 0;
-  const primaryImage = recipe?.image || '/img/hero-home.webp';
-  const mediaPoster = recipe?.media?.posterUrl || '';
-  const fallbackImage = mediaPoster && mediaPoster !== primaryImage ? mediaPoster : '/img/hero-home.webp';
+// ✅ CORRECTIF — calculer la durée depuis tempsPreparation + tempsCuisson
+  // comme RecipeDetail, au lieu de lire le string "80 min" depuis recipe.temps
+  // Analogie : on additionne les ingrédients plutôt que de lire l'étiquette
+  // du plat préparé qui peut être imprécise.
+  const prep = Number(recipe?.tempsPreparation) || 0;
+  const cook = Number(recipe?.tempsCuisson) || 0;
+  const duration = prep + cook;
+
+  // null si pas d'image uploadée → RecipeCard affiche son SVG appareil photo barré.
+  // Aucun fallback (ni hero-home.webp, ni poster TMDB) : l'absence d'image
+  // doit être visible pour inciter le membre à en ajouter une.
+  const recipeImage = recipe?.image || null;
 
   return {
     id: recipe?.id,
@@ -214,9 +225,8 @@ function mapMemberRecipeToCard(recipe) {
     category: recipe?.categorie || 'Autre',
     mediaTitle: recipe?.film || 'Sans média',
     mediaType,
-    duration,
-    image: primaryImage,
-    fallbackImage,
+    duration,   // ← nombre entier en minutes, RecipeCard s'occupe du formatage
+    image: recipeImage,
   };
 }
 
@@ -240,13 +250,20 @@ function getRecipeModerationBadge(recipe) {
     };
   }
 
-  if (status === 'DRAFT' && rejectionReason) {
-    return {
-      label: 'Refusee',
-      tone: 'rejected',
-      title: `Recette refusee par l\'admin${rejectionReason ? ` : ${rejectionReason}` : ''}`,
-    };
-  }
+// AVANT — badge "Refusée" seulement si rejectionReason renseigné
+// if (status === 'DRAFT' && rejectionReason) {
+
+// APRÈS — badge "Refusée" dès que DRAFT
+// (motif optionnel : affiché si disponible, sinon badge quand même)
+if (status === 'DRAFT') {
+  return {
+    label: 'Refusée',
+    tone: 'rejected',
+    title: rejectionReason
+      ? `Recette refusée : ${rejectionReason}`
+      : 'Recette refusée par l\'admin',
+  };
+}
 
   return {
     label: 'Brouillon',
@@ -471,14 +488,22 @@ export default function MesRecettes() {
     });
 
     const targetId = String(matchedRecipe?.id || notificationRecipeId).trim();
-    const targetSlugOrId = String(matchedRecipe?.slug || notificationRecipeSlug || targetId).trim();
+    const targetStatus = String(matchedRecipe?.status || '').toUpperCase();
+    const targetSlug = String(matchedRecipe?.slug || notificationRecipeSlug || '').trim();
 
-    if (targetSlugOrId) {
-      navigate(`/recipes/${targetSlugOrId}`, {
-        state: {
-          fromMemberRecipes: true,
-          openEditRecipeId: targetId || undefined,
-        },
+    // Recette publiée → page publique (le membre veut la voir telle quelle)
+    if (targetStatus === 'PUBLISHED' && targetSlug) {
+      navigate(`/recipes/${targetSlug}`, {
+        state: { fromMemberRecipes: true },
+      });
+      return;
+    }
+
+    // Recette PENDING ou DRAFT (refusée) → espace membre avec actions
+    // (boutons Modifier + Supprimer disponibles ici, pas sur la page publique)
+    if (targetId) {
+      navigate('/membre/mes-recettes', {
+        state: { openEditRecipeId: targetId },
       });
       return;
     }
@@ -711,7 +736,12 @@ export default function MesRecettes() {
       );
 
       if (exactMatch) {
-        selectEditIngredient(index, exactMatch);
+        // Même logique que CreateRecipe : met en tête sans verrouiller
+        const others = normalized.filter(item => item.id !== exactMatch.id);
+        setEditIngredientSearchResults(prev => ({
+          ...prev,
+          [index]: [exactMatch, ...others],
+        }));
         return;
       }
 
@@ -1087,355 +1117,39 @@ export default function MesRecettes() {
         </div>
       )}
 
-      {showEditModal && (
-        <div
-          className={styles.overlay}
-          onClick={() => {
-            if (!isSavingEdit) {
-              setShowEditModal(false);
-            }
-          }}
-        >
-          <div
-            className={`${styles.modal} ${styles.editModal}`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h2 className={styles.editTitle}>Modifier la recette</h2>
-
-            <div className={styles.editFields}>
-              <label className={styles.editLabel}>
-                Titre
-                <input
-                  className={styles.editInput}
-                  type="text"
-                  value={editForm.titre}
-                  onChange={e => handleEditChange('titre', e.target.value)}
-                />
-              </label>
-
-              <label className={styles.editLabel}>
-                Catégorie
-                <select
-                  className={styles.editInput}
-                  value={editForm.categorie}
-                  onChange={e => handleEditChange('categorie', e.target.value)}
-                >
-                  {buildCategoryFilters(availableCategories)
-                    .filter((category) => category.value !== 'Tous')
-                    .map((category) => (
-                      <option key={category.key} value={category.value}>
-                        {category.label}
-                      </option>
-                    ))}
-                </select>
-              </label>
-
-              <label className={styles.editLabel}>
-                Film ou série
-                <input
-                  className={styles.editInput}
-                  type="text"
-                  value={editForm.film}
-                  onChange={e => handleFilmInput(e.target.value)}
-                />
-              </label>
-
-              {(filmSearchLoading || filmSearchError || filmResults.length > 0) && (
-                <div className={styles.filmSearchBox}>
-                  {filmSearchLoading && (
-                    <p className={styles.filmSearchText}>Recherche en cours...</p>
-                  )}
-
-                  {filmSearchError && (
-                    <p className={styles.filmSearchError}>{filmSearchError}</p>
-                  )}
-
-                  {filmResults.length > 0 && (
-                    <ul className={styles.filmSuggestionList}>
-                      {filmResults.map(result => (
-                        <li key={result.id || result.title}>
-                          <button
-                            type="button"
-                            className={styles.filmSuggestionBtn}
-                            onClick={() => selectFilm(result)}
-                          >
-                            <img
-                              src={result.poster || MEDIA_SUGGESTION_POSTER_FALLBACK}
-                              alt=""
-                              aria-hidden="true"
-                              className={styles.filmSuggestionPoster}
-                            />
-                            <span className={styles.filmSuggestionCopy}>
-                              <span className={styles.filmSuggestionTitle}>{result.title}</span>
-                              <span className={styles.filmSuggestionMeta}>{getMediaSuggestionMeta(result)}</span>
-                            </span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-
-              <label className={styles.editLabel}>
-                Type
-                <select
-                  className={styles.editInput}
-                  value={editForm.type}
-                  onChange={e => handleEditChange('type', e.target.value)}
-                >
-                  <option value="F">Film</option>
-                  <option value="S">Série</option>
-                </select>
-              </label>
-
-              <label className={styles.editLabel}>
-                Nombre de personnes
-                <input
-                  className={styles.editInput}
-                  type="number"
-                  value={editForm.nbPersonnes}
-                  onChange={e => handleEditChange('nbPersonnes', e.target.value)}
-                />
-              </label>
-
-              <div className={styles.editLabelBlock}>
-                <span className={styles.editLabelTitle}>Ingrédients</span>
-                {editForm.ingredients.map((ing, index) => (
-                  <div key={index} className={styles.editIngredientRow}>
-                    <input
-                      className={styles.editInput}
-                      type="text"
-                      placeholder="Rechercher un ingrédient..."
-                      value={ing.nom}
-                      onChange={e => handleEditIngredientNameInput(index, e.target.value)}
-                    />
-
-                    {(editIngredientSearchLoading[index]
-                      || (editIngredientSearchResults[index] && editIngredientSearchResults[index].length > 0)
-                      || editIngredientSearchError[index]
-                      || (!ing.ingredientId && ing.nom.trim().length >= 2 && !editIngredientSearchLoading[index]
-                        && (!editIngredientSearchResults[index] || editIngredientSearchResults[index].length === 0))) && (
-                      <div className={styles.filmSearchBox}>
-                        {editIngredientSearchLoading[index] && (
-                          <p className={styles.filmSearchText}>Recherche en cours...</p>
-                        )}
-
-                        {editIngredientSearchError[index] && (
-                          <p className={styles.filmSearchError}>{editIngredientSearchError[index]}</p>
-                        )}
-
-                        {editIngredientSearchResults[index] && editIngredientSearchResults[index].length > 0 && (
-                          <ul className={styles.filmSuggestionList}>
-                            {editIngredientSearchResults[index].map(result => (
-                              <li key={result.id || result.name}>
-                                <button
-                                  type="button"
-                                  className={styles.filmSuggestionBtn}
-                                  onClick={() => selectEditIngredient(index, result)}
-                                >
-                                  {result.name}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                        {!editIngredientSearchLoading[index]
-                          && !editIngredientSearchError[index]
-                          && !ing.ingredientId
-                          && ing.nom.trim().length >= 2
-                          && (!editIngredientSearchResults[index] || editIngredientSearchResults[index].length === 0) && (
-                            <button
-                              type="button"
-                              className={styles.createIngredientBtn}
-                              onClick={() => createEditIngredient(index)}
-                              disabled={creatingEditIngredient[index]}
-                            >
-                              {creatingEditIngredient[index]
-                                ? 'Creation...'
-                                : `Creer l'ingredient "${ing.nom.trim()}"`}
-                            </button>
-                          )}
-                      </div>
-                    )}
-
-                    <div className={styles.editIngredientBottom}>
-                      <input
-                        className={`${styles.editInput} ${styles.editQuantiteInput}`}
-                        type="number"
-                        placeholder="Qté"
-                        value={ing.quantite}
-                        onChange={e => handleEditIngredientChange(index, 'quantite', e.target.value)}
-                      />
-
-                      <select
-                        className={styles.editInput}
-                        value={ing.unite}
-                        onChange={e => handleEditIngredientChange(index, 'unite', e.target.value)}
-                      >
-                        <option value="">Unité</option>
-                        {unitesOptions.map(unite => (
-                          <option key={unite} value={unite}>{unite}</option>
-                        ))}
-                      </select>
-
-                      {editForm.ingredients.length > 1 && (
-                        <button
-                          type="button"
-                          className={styles.removeSmallBtn}
-                          onClick={() => removeEditIngredient(index)}
-                        >
-                          −
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  className={styles.addSmallBtn}
-                  onClick={addEditIngredient}
-                >
-                  + Ajouter un ingrédient
-                </button>
-              </div>
-
-              {/* ✅ CORRECTIF TEMPS — placeholders mis à jour pour indiquer les formats acceptés */}
-              <label className={styles.editLabel}>
-                Temps de préparation
-                <input
-                  className={styles.editInput}
-                  type="text"
-                  placeholder="ex: 20, 1h, 1h30"
-                  value={editForm.tempsPreparation}
-                  onChange={e => handleEditChange('tempsPreparation', e.target.value)}
-                />
-              </label>
-
-              <label className={styles.editLabel}>
-                Temps de cuisson
-                <input
-                  className={styles.editInput}
-                  type="text"
-                  placeholder="ex: 30, 1h, 1h10"
-                  value={editForm.tempsCuisson}
-                  onChange={e => handleEditChange('tempsCuisson', e.target.value)}
-                />
-              </label>
-
-              <div className={styles.editLabelBlock}>
-                <span className={styles.editLabelTitle}>Étapes de préparation</span>
-                {editForm.etapes.map((etape, index) => (
-                  <div key={index} className={styles.editEtapeRow}>
-                    <span className={styles.editEtapeNumber}>{index + 1}</span>
-                    <textarea
-                      className={styles.editTextarea}
-                      placeholder={`Étape ${index + 1}...`}
-                      value={etape}
-                      onChange={e => handleEditEtapeChange(index, e.target.value)}
-                      rows={2}
-                    />
-                    {editForm.etapes.length > 1 && (
-                      <button
-                        type="button"
-                        className={styles.removeSmallBtn}
-                        onClick={() => removeEditEtape(index)}
-                      >
-                        −
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                <button
-                  type="button"
-                  className={styles.addSmallBtn}
-                  onClick={addEditEtape}
-                >
-                  + Ajouter une étape
-                </button>
-              </div>
-
-              <label className={styles.editLabel}>
-                Image (.png, .jpg, .jpeg, .webp)
-                <input
-                  className={styles.editInput}
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                  onChange={e => handleEditImageChange(e.target.files?.[0])}
-                />
-              </label>
-
-              <label className={styles.editLabel}>
-                Ou URL image
-                <input
-                  className={styles.editInput}
-                  type="url"
-                  value={editForm.image}
-                  onChange={e => handleEditChange('image', e.target.value)}
-                />
-              </label>
-
-              {editImageError && <p className={styles.editErrorText}>{editImageError}</p>}
-            </div>
-
-            <div className={styles.modalButtons}>
-              <button
-                className={styles.cancelBtn}
-                disabled={isSavingEdit}
-                onClick={() => setShowEditModal(false)}
-              >
-                Annuler
-              </button>
-              <button
-                className={styles.confirmBtn}
-                disabled={isSavingEdit}
-                onClick={openEditConfirmModal}
-              >
-                Enregistrer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showEditConfirmModal && (
-        <div
-          className={`${styles.overlay} ${styles.confirmOverlay}`}
-          onClick={() => {
-            if (!isSavingEdit) {
-              setShowEditConfirmModal(false);
-            }
-          }}
-        >
-          <div
-            className={`${styles.modal} ${styles.confirmModal}`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <p className={styles.modalText}>
-              Voulez-vous confirmer les modifications de cette recette ?
-            </p>
-            <div className={styles.modalButtons}>
-              <button
-                className={styles.cancelBtn}
-                disabled={isSavingEdit}
-                onClick={() => setShowEditConfirmModal(false)}
-              >
-                Annuler
-              </button>
-              <button
-                className={styles.confirmBtn}
-                disabled={isSavingEdit}
-                onClick={handleEditSave}
-              >
-                {isSavingEdit ? 'Enregistrement...' : 'Confirmer'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <RecipeEditModal
+        showEditModal={showEditModal}
+        showEditConfirmModal={showEditConfirmModal}
+        isSavingEdit={isSavingEdit}
+        editForm={editForm}
+        editImageError={editImageError}
+        filmResults={filmResults}
+        filmSearchLoading={filmSearchLoading}
+        filmSearchError={filmSearchError}
+        editIngredientSearchResults={editIngredientSearchResults}
+        editIngredientSearchLoading={editIngredientSearchLoading}
+        editIngredientSearchError={editIngredientSearchError}
+        creatingEditIngredient={creatingEditIngredient}
+        availableCategories={availableCategories}
+        unitesOptions={unitesOptions}
+        onClose={() => setShowEditModal(false)}
+        onCloseConfirm={() => setShowEditConfirmModal(false)}
+        onSave={handleEditSave}
+        onOpenConfirm={openEditConfirmModal}
+        onEditChange={handleEditChange}
+        onFilmInput={handleFilmInput}
+        onSelectFilm={selectFilm}
+        onIngredientNameInput={handleEditIngredientNameInput}
+        onSelectIngredient={selectEditIngredient}
+        onCreateIngredient={createEditIngredient}
+        onIngredientChange={handleEditIngredientChange}
+        onAddIngredient={addEditIngredient}
+        onRemoveIngredient={removeEditIngredient}
+        onEtapeChange={handleEditEtapeChange}
+        onAddEtape={addEditEtape}
+        onRemoveEtape={removeEditEtape}
+        onImageChange={handleEditImageChange}
+      />
 
         <section className={styles.recipesPanel}>
           <h2 className={styles.title}>{panelTitle}</h2>
@@ -1739,14 +1453,16 @@ export default function MesRecettes() {
                           );
                         })()}
                         <div className={styles.cardActionsFloating}>
-                          <button
-                            type="button"
-                            className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
-                            aria-label={`Supprimer la recette ${recette.titre}`}
-                            onClick={() => handleDeleteClick(recette)}
-                          >
-                            <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
-                          </button>
+                          {String(recette.status || '').toUpperCase() === 'DRAFT' && (
+                            <button
+                              type="button"
+                              className={`${styles.actionBtn} ${styles.actionBtnDelete}`}
+                              aria-label={`Supprimer la recette ${recette.titre}`}
+                              onClick={() => handleDeleteClick(recette)}
+                            >
+                              <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             className={`${styles.actionBtn} ${styles.actionBtnEdit}`}

@@ -321,6 +321,11 @@ export default function CreerRecette() {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
+    // CORRECTIF — noms composés (avec espace) : pas de singularisation.
+    // "fraise des bois" → "fraise des bois" ✅ (était "fraise des boi" ❌)
+    // "fraises"         → "fraise"          ✅ (inchangé)
+    if (str.includes(' ')) return str;
+
     const exceptions = new Set([
       'riz', 'noix', 'ananas', 'brocolis', 'radis', 'mais', 'pois',
       'fois', 'buis', 'tapas', 'papas', 'colis',
@@ -414,12 +419,16 @@ export default function CreerRecette() {
 
       // Vérifier d'abord un match exact dans les résultats normaux
       const normalizedQuery = trimmed.toLowerCase();
+      // On compare avec trimmed (texte brut saisi) et non normalizedQuery (singulier).
+      // "fraise des bois" !== "fraise" → pas de sélection automatique erronée.
       const exactMatch = normalized.find(
-        item => item.name.trim().toLowerCase() === normalizedQuery,
+        item => item.name.trim().toLowerCase() === trimmed.toLowerCase(),
       );
       if (exactMatch) {
-        selectIngredient(exactMatch);
-        setIngredientAlreadyExists(true);
+        // Met l'exact match en tête de liste sans verrouiller le champ.
+        // L'utilisateur reste libre de continuer à taper (ex: "fraise" → "fraise des bois")
+        const others = normalized.filter(item => item.id !== exactMatch.id);
+        setIngredientSearchResults([exactMatch, ...others]);
         return;
       }
 
@@ -469,21 +478,46 @@ export default function CreerRecette() {
     }
   }
 
-  function handleIngredientNameInput(value) {
-    // ✅ Normaliser dès la frappe : "Citrons" devient "citron" en temps réel
-    const normalized = normalizeIngredientName(value);
-    setIngredientDraft(prev => ({
-      ...prev,
-      nom: normalized,
-      ingredientId: null,
-    }));
-    setIngredientAlreadyExists(false);
+// AVANT :
+// function handleIngredientNameInput(value) {
+//  const normalized = normalizeIngredientName(value); // ← normalise pendant la frappe ❌
+//  setIngredientDraft(prev => ({ ...prev, nom: normalized, ingredientId: null }));
+  // ...
+//  searchIngredients(value);
+// }
 
-    clearTimeout(ingredientSearchTimeoutRef.current);
-    ingredientSearchTimeoutRef.current = setTimeout(() => {
-      searchIngredients(value);
-    }, 300);
-  }
+// APRÈS :
+function handleIngredientNameInput(value) {
+  // ✅ On affiche ce que l'utilisateur tape tel quel — pas de normalisation pendant la frappe
+  // La normalisation se fera à la sélection ou à la création de l'ingrédient.
+  // Analogie : le carnet de commandes recopie ce que dit le client mot pour mot,
+  // le cuisinier normalise en cuisine — pas le serveur pendant la prise de commande.
+  setIngredientDraft(prev => ({ ...prev, nom: value, ingredientId: null }));
+  setIngredientAlreadyExists(false);
+
+  clearTimeout(ingredientSearchTimeoutRef.current);
+  ingredientSearchTimeoutRef.current = setTimeout(() => {
+    searchIngredients(value);
+  }, 300);
+}
+// Et on garde la normalisation là où elle a du sens — à la sélection et à la création :
+// selectIngredient — déjà OK, reçoit item.name depuis la BDD (déjà normalisé)
+function selectIngredient(ingredient) {
+  setIngredientDraft(prev => ({
+    ...prev,
+    ingredientId: ingredient.id || null,
+    nom: ingredient.name, // ← vient de la BDD, déjà au singulier
+  }));
+  // ...
+}
+
+// createIngredient — normaliser ici avant envoi au back
+async function createIngredient() {
+  const name = normalizeIngredientName(  // ← normalisation uniquement à la création
+    String(ingredientDraft.nom || '').trim()
+  );
+  // ...
+}
 
   function handleIngredientDraftChange(field, value) {
     setIngredientDraft(prev => ({ ...prev, [field]: value }));
@@ -655,7 +689,7 @@ export default function CreerRecette() {
         const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
         return total > 0 ? total : undefined;
       }
-      const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+      const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|mn|m)?$/);
       if (minMatch) {
         const parsed = Math.round(parseFloat(minMatch[1]));
         return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;

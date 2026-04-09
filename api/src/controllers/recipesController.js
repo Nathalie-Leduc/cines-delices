@@ -821,6 +821,13 @@ export const deleteRecipe = async (req, res) => {
       return res.status(403).json({ message: 'Vous n\'êtes pas autorisé à supprimer cette recette' });
     }
 
+    // Un membre ne peut pas supprimer une recette déjà publiée. Seul un admin le peut.
+    if (user.role !== 'ADMIN' && recipe.status === 'PUBLISHED') {
+      return res.status(403).json({
+        message: 'Impossible de supprimer une recette déjà publiée. Contactez un administrateur.',
+      });
+    }
+
     await prisma.recipe.delete({ where: { id: recipe.id } });
 
     return res.json({ message: 'Recette supprimée' });

@@ -23,6 +23,28 @@
   }
 }
 
+.addRecipeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border: 1px solid rgba(250, 219, 165, 0.4);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #fadba5;
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: rgba(250, 219, 165, 0.08);
+    border-color: rgba(250, 219, 165, 0.7);
+  }
+}
+
 .searchRow {
   position: relative;
   max-width: 430px;
@@ -688,8 +710,9 @@
 
 .submittedByCardTag {
   position: absolute;
-  top: 3.9rem;
-  left: 0.7rem;
+  top: 3.2rem;    /* sous le badge catégorie (~2.2rem de hauteur) */
+  right: 0.6rem;  /* ← à droite, côté opposé aux boutons */
+  left: auto;     /* annule le left précédent */
   z-index: 2;
   @include ui.badge-chip(
     $background: rgba(31, 29, 30, 0.86),
@@ -699,6 +722,32 @@
     $font-size: 0.62rem,
     $font-weight: 600
   );
+}
+
+.adminStatusBadge {
+  position: absolute;
+  top: 3.2rem;      // sous le badge catégorie (qui est à ~0.45rem)
+  right: 0.6rem;
+  z-index: 2;
+  pointer-events: none;
+  @include ui.badge-chip(
+    $background: rgba(31, 29, 30, 0.82),
+    $color: #f6f1e8,
+    $border: rgba(255, 255, 255, 0.22),
+    $padding: 0.26rem 0.62rem,
+    $font-size: 0.68rem,
+    $font-weight: 700
+  );
+}
+
+.adminStatusBadge_pending {
+  background: rgba(251, 220, 166, 0.9);
+  color: #3d2c16;
+}
+
+.adminStatusBadge_rejected {
+  background: rgba(142, 31, 47, 0.92);
+  color: #f6f1e8;
 }
 
 .cardNavOverlay {
@@ -2925,6 +2974,54 @@
   .adminEditLabelMedia {
     grid-column: 1 / -1;
   }
+}
+
+/* Modal recettes utilisateur — fond sombre */
+.adminRecipesModal {
+  background: #1f1d1e;
+  border: 1px solid rgba(246, 241, 232, 0.12);
+  border-radius: 22px;
+  padding: 1.8rem;
+  width: 100%;
+  max-width: 900px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.32);
+}
+
+.adminModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  h3 {
+    color: #c9a45c;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.adminModalCloseBtn {
+  background: transparent;
+  border: 1px solid rgba(246, 241, 232, 0.3);
+  border-radius: 50%;
+  color: #f6f1e8;
+  width: 2rem;
+  height: 2rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &:hover { background: rgba(246, 241, 232, 0.1); }
+}
+
+.recipePillsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 /* ─────────────────────────────────────────────────────────

@@ -65,6 +65,13 @@ function toSlug(value) {
     .replace(/^-+|-+$/g, '');
 }
 
+function getStatusBadge(status) {
+  const s = String(status || '').toUpperCase();
+  if (s === 'PENDING') return { label: 'En validation', tone: 'pending' };
+  if (s === 'DRAFT')   return { label: 'Refusée',       tone: 'rejected' };
+  return null;
+}
+
 function getDurationMinutes(duration) {
   if (typeof duration === 'number' && Number.isFinite(duration)) {
     return duration;
@@ -581,6 +588,9 @@ function AdminRecettes() {
     <div className={styles.page}>
       <div className={styles.headerLine}>
         <h2>Gérer les recettes</h2>
+        <Link to="/admin/creer-recette" className={styles.addRecipeButton}>
+          + Créer une recette
+        </Link>
       </div>
 
       <section className={styles.recipesPanelFrame}>
@@ -710,7 +720,7 @@ function AdminRecettes() {
             const recipeForCatalogCard = {
               id: recipe.id,
               slug,
-              image: recipe.image || '/img/placeholder.jpg',
+              image: recipe.image || null,
               title: recipe.title,
               category: recipe.category,
               mediaTitle: recipe.movie || 'Film non renseigne',
@@ -719,8 +729,9 @@ function AdminRecettes() {
             };
 
             return (
-              <div key={recipe.id} className={styles.adminRecipeCardWrap}>
+              <div key={recipe.id} className={styles.adminRecipeCardWrap} style={{ position: 'relative' }}>
                 <RecipeCard recipe={recipeForCatalogCard} />
+                
                 <Link
                   to={`/recipes/${slug}`}
                   state={{ recipe }}

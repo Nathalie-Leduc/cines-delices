@@ -97,6 +97,10 @@ export const getValidatedAdminIngredients = (search = '') =>
 export const getAdminIngredientRecipes = (id) =>
   request(`${ADMIN_API_BASE}/ingredients/${id}/recipes`);
 
+// Crée un ingrédient directement approuvé (admin uniquement).
+export const createAdminIngredient = (name) =>
+  request(`${ADMIN_API_BASE}/ingredients`, { method: 'POST', body: { name } });
+
 // Mettre à jour un ingrédient
 export const updateAdminIngredient = (id, payload) =>
   request(`${ADMIN_API_BASE}/ingredients/${id}`, { method: 'PATCH', body: payload });
@@ -107,9 +111,12 @@ export const approveAdminIngredient = (id) => {
   return request(`${ADMIN_API_BASE}/ingredients/${id}/approve`, { method: 'PATCH' });
 };
 
-// Supprimer un ingrédient par son ID
-export const deleteAdminIngredient = (id) =>
-  request(`${ADMIN_API_BASE}/ingredients/${id}`, { method: 'DELETE' });
+// Le motif de refus est transmis en body pour notifier le membre.
+export const deleteAdminIngredient = (id, rejectionReason = '') =>
+  request(`${ADMIN_API_BASE}/ingredients/${id}`, {
+    method: 'DELETE',
+    body: rejectionReason ? { rejectionReason } : undefined,
+  });
 
 // ─────────────────────────────────────────────────────────────
 // mergeAdminIngredients — fusionne deux ingrédients en un seul
@@ -135,3 +142,6 @@ export const mergeAdminIngredients = (sourceId, targetId) =>
     method: 'POST',
     body: { sourceId, targetId },
   });
+
+  export const getAdminUserRecipes = (userId) =>
+  request(`/api/admin/users/${userId}/recipes`);
