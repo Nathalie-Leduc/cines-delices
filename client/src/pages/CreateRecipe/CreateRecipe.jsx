@@ -664,7 +664,7 @@ export default function CreerRecette() {
         const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
         return total > 0 ? total : undefined;
       }
-      const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+      const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|mn|m)?$/);
       if (minMatch) {
         const parsed = Math.round(parseFloat(minMatch[1]));
         return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;

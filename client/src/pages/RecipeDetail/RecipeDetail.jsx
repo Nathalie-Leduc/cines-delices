@@ -42,9 +42,17 @@ function normalizeCategoryLabel(value) {
   return value || "Autre";
 }
 
+// AVANT :
+// function toFiniteNumber(value) {
+//  const parsed = Number(value);
+//  return Number.isFinite(parsed) ? parsed : undefined;
+// }
+
+// APRÈS :
 function toFiniteNumber(value) {
+  if (value === null || value === undefined || value === '') return undefined;
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : undefined;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function normalizeApiRecipe(apiRecipe) {

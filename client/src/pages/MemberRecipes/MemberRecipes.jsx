@@ -55,7 +55,7 @@ function parseTimeToMinutes(value) {
     return total > 0 ? total : undefined;
   }
   // "30min", "30m", "30"
-  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|mn|m)?$/);
   if (minMatch) {
     const parsed = Math.round(parseFloat(minMatch[1]));
     return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
@@ -205,8 +205,13 @@ function normalizeRecipe(rawRecipe) {
 
 function mapMemberRecipeToCard(recipe) {
   const mediaType = String(recipe?.type || '').toUpperCase() === 'F' ? 'film' : 'serie';
-  const durationValue = String(recipe?.temps || '').match(/\d+/);
-  const duration = durationValue ? Number(durationValue[0]) : 0;
+// ✅ CORRECTIF — calculer la durée depuis tempsPreparation + tempsCuisson
+  // comme RecipeDetail, au lieu de lire le string "80 min" depuis recipe.temps
+  // Analogie : on additionne les ingrédients plutôt que de lire l'étiquette
+  // du plat préparé qui peut être imprécise.
+  const prep = Number(recipe?.tempsPreparation) || 0;
+  const cook = Number(recipe?.tempsCuisson) || 0;
+  const duration = prep + cook;
 
   // null si pas d'image uploadée → RecipeCard affiche son SVG appareil photo barré.
   // Aucun fallback (ni hero-home.webp, ni poster TMDB) : l'absence d'image
@@ -220,7 +225,7 @@ function mapMemberRecipeToCard(recipe) {
     category: recipe?.categorie || 'Autre',
     mediaTitle: recipe?.film || 'Sans média',
     mediaType,
-    duration,
+    duration,   // ← nombre entier en minutes, RecipeCard s'occupe du formatage
     image: recipeImage,
   };
 }
