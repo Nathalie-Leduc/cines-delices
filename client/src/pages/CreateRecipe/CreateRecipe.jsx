@@ -478,21 +478,46 @@ export default function CreerRecette() {
     }
   }
 
-  function handleIngredientNameInput(value) {
-    // ✅ Normaliser dès la frappe : "Citrons" devient "citron" en temps réel
-    const normalized = normalizeIngredientName(value);
-    setIngredientDraft(prev => ({
-      ...prev,
-      nom: normalized,
-      ingredientId: null,
-    }));
-    setIngredientAlreadyExists(false);
+// AVANT :
+// function handleIngredientNameInput(value) {
+//  const normalized = normalizeIngredientName(value); // ← normalise pendant la frappe ❌
+//  setIngredientDraft(prev => ({ ...prev, nom: normalized, ingredientId: null }));
+  // ...
+//  searchIngredients(value);
+// }
 
-    clearTimeout(ingredientSearchTimeoutRef.current);
-    ingredientSearchTimeoutRef.current = setTimeout(() => {
-      searchIngredients(value);
-    }, 300);
-  }
+// APRÈS :
+function handleIngredientNameInput(value) {
+  // ✅ On affiche ce que l'utilisateur tape tel quel — pas de normalisation pendant la frappe
+  // La normalisation se fera à la sélection ou à la création de l'ingrédient.
+  // Analogie : le carnet de commandes recopie ce que dit le client mot pour mot,
+  // le cuisinier normalise en cuisine — pas le serveur pendant la prise de commande.
+  setIngredientDraft(prev => ({ ...prev, nom: value, ingredientId: null }));
+  setIngredientAlreadyExists(false);
+
+  clearTimeout(ingredientSearchTimeoutRef.current);
+  ingredientSearchTimeoutRef.current = setTimeout(() => {
+    searchIngredients(value);
+  }, 300);
+}
+// Et on garde la normalisation là où elle a du sens — à la sélection et à la création :
+// selectIngredient — déjà OK, reçoit item.name depuis la BDD (déjà normalisé)
+function selectIngredient(ingredient) {
+  setIngredientDraft(prev => ({
+    ...prev,
+    ingredientId: ingredient.id || null,
+    nom: ingredient.name, // ← vient de la BDD, déjà au singulier
+  }));
+  // ...
+}
+
+// createIngredient — normaliser ici avant envoi au back
+async function createIngredient() {
+  const name = normalizeIngredientName(  // ← normalisation uniquement à la création
+    String(ingredientDraft.nom || '').trim()
+  );
+  // ...
+}
 
   function handleIngredientDraftChange(field, value) {
     setIngredientDraft(prev => ({ ...prev, [field]: value }));
