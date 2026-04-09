@@ -740,14 +740,6 @@ function AdminRecettes() {
                   </span>
                 )}
 
-                {(() => {
-                  const badge = getStatusBadge(recipe.status);
-                  return badge ? (
-                    <span className={`${styles.adminStatusBadge} ${styles[`adminStatusBadge_${badge.tone}`]}`}>
-                      {badge.label}
-                    </span>
-                  ) : null;
-                })()}
                 <Link
                   to={`/recipes/${slug}`}
                   state={{ recipe }}

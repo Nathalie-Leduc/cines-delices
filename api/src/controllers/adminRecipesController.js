@@ -24,14 +24,18 @@ export async function getAdminRecipes(req, res) {
     const category = String(req.query.category || '').trim();
     const status = String(req.query.status || '').trim();
 
+//  forcer PUBLISHED par défaut, sauf si status explicitement passé :
     const where = {
-      ...(search
-        ? { titre: { contains: search, mode: 'insensitive' } }
-        : {}),
+  // ✅ CORRECTIF 6 — "Gérer les recettes" ne montre que les recettes publiées.
+  // Les recettes PENDING et DRAFT ont leur propre espace (Validation des recettes).
+  // Si un status est explicitement passé en query, on le respecte (usage futur).
+  // Analogie : la vitrine du restaurant n'affiche que les plats du jour prêts à servir,
+  // pas ceux en cuisine ni ceux refusés par le chef.
+      status: status || 'PUBLISHED',
+      ...(search ? { titre: { contains: search, mode: 'insensitive' } } : {}),
       ...(category && category !== 'Tous'
-        ? { category: { nom: { equals: category, mode: 'insensitive' } } }
-        : {}),
-      ...(status ? { status } : {}),
+      ? { category: { nom: { equals: category, mode: 'insensitive' } } }
+      : {}),
     };
 
     const recipes = await prisma.recipe.findMany({
