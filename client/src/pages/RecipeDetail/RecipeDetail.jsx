@@ -247,13 +247,25 @@ export default function RecipeDetail() {
     return null;
   }, [recipes, slug, state]);
 
-  const similarRecipes = useMemo(() => (
-    recipes
-      .filter((item) => item.slug !== slug)
-      .filter((item) => normalizeCategoryLabel(item?.category?.nom) === recipe?.category)
-      .slice(0, 2)
-      .map(mapApiRecipeToCard)
-  ), [recipes, slug, recipe?.category]);
+const similarRecipes = useMemo(() => {
+  const others = recipes.filter((item) => item.slug !== slug);
+
+  // ✅ Niveau 1 — prioriser le même film/série, compléter avec la même catégorie
+  // Analogie : on propose d'abord les autres plats du même restaurant (film),
+  // puis des plats similaires d'autres restaurants (catégorie) pour compléter.
+  const sameMedia = others.filter((item) =>
+    item.media?.titre === recipe?.mediaTitle
+  );
+
+  const sameCategory = others.filter((item) =>
+    normalizeCategoryLabel(item?.category?.nom) === recipe?.category
+    && item.media?.titre !== recipe?.mediaTitle  // éviter les doublons
+  );
+
+  return [...sameMedia, ...sameCategory]
+    .slice(0, 2)
+    .map(mapApiRecipeToCard);
+}, [recipes, slug, recipe?.category, recipe?.mediaTitle]);
 
   if (isLoading) {
     return (
