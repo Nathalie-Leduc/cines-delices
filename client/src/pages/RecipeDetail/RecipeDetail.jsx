@@ -118,6 +118,7 @@ function normalizeApiRecipe(apiRecipe) {
     totalTime,
     ingredients,
     steps,
+    author: apiRecipe.user?.pseudo || null,
   };
 }
 
@@ -448,10 +449,16 @@ export default function RecipeDetail() {
         <div className={styles.contentWrap}>
           <div className={styles.layout}>
             <section className={`${styles.section} ${styles.ingredientsSection}`}>
+              {/* ✅ PROBLÈME 5 — auteur affiché au-dessus des ingrédients */}
+              {recipe.author && (
+                <p className={styles.recipeAuthor}>auteur {recipe.author}</p>
+              )}
               <div className={styles.sectionHeading}>
                 <h2 className={styles.sectionTitle}>Ingrédients</h2>
                 <span className={styles.sectionLine} />
               </div>
+
+
 
               {recipeIngredients ? (
                 <ul className={styles.ingredientsList}>
