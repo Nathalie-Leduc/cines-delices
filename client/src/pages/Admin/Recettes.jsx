@@ -731,6 +731,15 @@ function AdminRecettes() {
             return (
               <div key={recipe.id} className={styles.adminRecipeCardWrap} style={{ position: 'relative' }}>
                 <RecipeCard recipe={recipeForCatalogCard} />
+                {/* ✅ PROBLÈME 5 — tag auteur sur les recettes validées
+                    Même classe que Dashboard (.submittedByCardTag), même position.
+                    Label "auteur X" au lieu de "Soumis par X" car la recette est publiée. */}
+                {recipe.submittedByLabel && (
+                  <span className={styles.submittedByCardTag}>
+                    auteur {recipe.submittedByLabel}
+                  </span>
+                )}
+
                 {(() => {
                   const badge = getStatusBadge(recipe.status);
                   return badge ? (
