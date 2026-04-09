@@ -245,13 +245,20 @@ function getRecipeModerationBadge(recipe) {
     };
   }
 
-  if (status === 'DRAFT' && rejectionReason) {
-    return {
-      label: 'Refusee',
-      tone: 'rejected',
-      title: `Recette refusee par l\'admin${rejectionReason ? ` : ${rejectionReason}` : ''}`,
-    };
-  }
+// AVANT — badge "Refusée" seulement si rejectionReason renseigné
+// if (status === 'DRAFT' && rejectionReason) {
+
+// APRÈS — badge "Refusée" dès que DRAFT
+// (motif optionnel : affiché si disponible, sinon badge quand même)
+if (status === 'DRAFT') {
+  return {
+    label: 'Refusée',
+    tone: 'rejected',
+    title: rejectionReason
+      ? `Recette refusée : ${rejectionReason}`
+      : 'Recette refusée par l\'admin',
+  };
+}
 
   return {
     label: 'Brouillon',
