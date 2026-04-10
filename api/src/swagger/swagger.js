@@ -7,7 +7,7 @@ const options = {
     info: {
       title: 'CinéDélices API',
       version: '1.0.0',
-      description: 'Documentation de l’API CinéDélices',
+      description: "Documentation de l'API CinéDélices",
     },
     servers: [
       {
@@ -16,10 +16,10 @@ const options = {
       },
     ],
   },
-  apis: ['./src/routes/*.js', './src/controllers/*.js', './src/docs/*.js'], // chemins vers les fichiers à documenter
+  apis: ['./src/docs/*.swagger.js'],
 };
 
-const swaggerSpec = swaggerJSDoc(options);
+export const swaggerSpec = swaggerJSDoc(options);
 
 function setupSwagger(app) {
   app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));

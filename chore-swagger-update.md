@@ -1,386 +1,80 @@
-/**
- * @openapi
- * tags:
- *   - name: Admin - Recipes
- *     description: Moderation des recettes cote administration.
- *   - name: Admin - Users
- *     description: Gestion des utilisateurs cote administration.
- * components:
- *   schemas:
- *     AdminErrorResponse:
- *       type: object
- *       properties:
- *         message:
- *           type: string
- *           example: Recette introuvable.
- *         error:
- *           type: string
- *           example: Acces reserve aux administrateurs
- *     AdminSubmittedBy:
- *       type: object
- *       required:
- *         - firstName
- *         - lastName
- *         - fullName
- *       properties:
- *         firstName:
- *           type: string
- *           example: Marie
- *         lastName:
- *           type: string
- *           example: Dupont
- *         fullName:
- *           type: string
- *           example: Marie Dupont
- *     AdminRecipeIngredient:
- *       type: object
- *       required:
- *         - id
- *         - name
- *         - quantity
- *         - unit
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         name:
- *           type: string
- *           example: chocolat noir
- *         quantity:
- *           type: string
- *           example: 200
- *         unit:
- *           type: string
- *           example: g
- *     AdminRecipe:
- *       type: object
- *       required:
- *         - id
- *         - title
- *         - slug
- *         - category
- *         - movie
- *         - duration
- *         - media
- *         - status
- *         - submittedBy
- *         - submittedByLabel
- *         - ingredients
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         title:
- *           type: string
- *           example: Brownie Matrix
- *         slug:
- *           type: string
- *           example: brownie-matrix
- *         category:
- *           type: string
- *           example: Dessert
- *         categoryId:
- *           type: string
- *           format: uuid
- *           nullable: true
- *         movie:
- *           type: string
- *           example: Matrix
- *         movieId:
- *           type: string
- *           format: uuid
- *           nullable: true
- *         duration:
- *           type: string
- *           example: 45 min
- *         media:
- *           type: string
- *           enum: [F, S]
- *           example: F
- *         image:
- *           type: string
- *           example: /img/entrees.webp
- *         mediaPoster:
- *           type: string
- *           nullable: true
- *           example: https://image.tmdb.org/t/p/w500/abc.jpg
- *         status:
- *           type: string
- *           enum: [DRAFT, PENDING, PUBLISHED]
- *           example: PENDING
- *         instructions:
- *           type: string
- *         people:
- *           type: integer
- *           example: 4
- *         preparationTime:
- *           type: integer
- *           example: 20
- *         cookingTime:
- *           type: integer
- *           example: 25
- *         rejectionReason:
- *           type: string
- *           example: Ingredient non autorise.
- *         submittedBy:
- *           $ref: '#/components/schemas/AdminSubmittedBy'
- *         submittedByLabel:
- *           type: string
- *           example: Marie Dupont
- *         ingredients:
- *           type: array
- *           items:
- *             $ref: '#/components/schemas/AdminRecipeIngredient'
- *     AdminRejectRecipePayload:
- *       type: object
- *       required:
- *         - rejectionReason
- *       properties:
- *         rejectionReason:
- *           type: string
- *           minLength: 10
- *           example: Le motif de refus est detaille ici.
- *     AdminUser:
- *       type: object
- *       required:
- *         - id
- *         - nom
- *         - displayName
- *         - prenom
- *         - email
- *         - role
- *         - totalRecipes
- *         - recipeCounts
- *       properties:
- *         id:
- *           type: string
- *           format: uuid
- *         nom:
- *           type: string
- *           example: MARIE
- *         displayName:
- *           type: string
- *           example: marie
- *         prenom:
- *           type: string
- *           example: marie
- *         email:
- *           type: string
- *           format: email
- *           example: marie@cinesdelices.fr
- *         role:
- *           type: string
- *           enum: [ADMIN, MEMBER]
- *         totalRecipes:
- *           type: integer
- *           example: 8
- *         recipeCounts:
- *           type: object
- *           required:
- *             - entree
- *             - plat
- *             - dessert
- *             - boisson
- *           properties:
- *             entree:
- *               type: integer
- *               example: 2
- *             plat:
- *               type: integer
- *               example: 3
- *             dessert:
- *               type: integer
- *               example: 2
- *             boisson:
- *               type: integer
- *               example: 1
- * paths:
- *   /api/admin/recipes/pending:
- *     get:
- *       summary: Lister les recettes en attente de moderation
- *       tags:
- *         - Admin - Recipes
- *       security:
- *         - bearerAuth: []
- *       responses:
- *         200:
- *           description: Liste des recettes en attente.
- *           content:
- *             application/json:
- *               schema:
- *                 type: array
- *                 items:
- *                   $ref: '#/components/schemas/AdminRecipe'
- *         401:
- *           description: Token manquant, invalide ou expire.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         403:
- *           description: Acces reserve aux administrateurs.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         500:
- *           description: Erreur serveur.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *   /api/admin/recipes/{id}/publish:
- *     patch:
- *       summary: Publier une recette en attente
- *       tags:
- *         - Admin - Recipes
- *       security:
- *         - bearerAuth: []
- *       parameters:
- *         - in: path
- *           name: id
- *           required: true
- *           schema:
- *             type: string
- *             format: uuid
- *           description: ID UUID de la recette.
- *       responses:
- *         200:
- *           description: Recette publiee.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminRecipe'
- *         401:
- *           description: Token manquant, invalide ou expire.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         403:
- *           description: Acces reserve aux administrateurs.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         404:
- *           description: Recette introuvable.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         409:
- *           description: Recette non publiable dans son etat actuel.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         500:
- *           description: Erreur serveur.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *   /api/admin/recipes/{id}/reject:
- *     patch:
- *       summary: Refuser une recette avec motif
- *       tags:
- *         - Admin - Recipes
- *       security:
- *         - bearerAuth: []
- *       parameters:
- *         - in: path
- *           name: id
- *           required: true
- *           schema:
- *             type: string
- *             format: uuid
- *           description: ID UUID de la recette.
- *       requestBody:
- *         required: true
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/AdminRejectRecipePayload'
- *       responses:
- *         200:
- *           description: Recette refusee.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminRecipe'
- *         400:
- *           description: Motif de refus invalide.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         401:
- *           description: Token manquant, invalide ou expire.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         403:
- *           description: Acces reserve aux administrateurs.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         404:
- *           description: Recette introuvable.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         500:
- *           description: Erreur serveur.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *   /api/admin/users:
- *     get:
- *       summary: Lister les utilisateurs cote admin
- *       tags:
- *         - Admin - Users
- *       security:
- *         - bearerAuth: []
- *       parameters:
- *         - in: query
- *           name: search
- *           schema:
- *             type: string
- *           description: Recherche sur pseudo ou email.
- *       responses:
- *         200:
- *           description: Liste des utilisateurs avec compteurs de recettes.
- *           content:
- *             application/json:
- *               schema:
- *                 type: array
- *                 items:
- *                   $ref: '#/components/schemas/AdminUser'
- *         401:
- *           description: Token manquant, invalide ou expire.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         403:
- *           description: Acces reserve aux administrateurs.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- *         500:
- *           description: Erreur serveur.
- *           content:
- *             application/json:
- *               schema:
- *                 $ref: '#/components/schemas/AdminErrorResponse'
- */
+# Chore : Swagger — routes manquantes + suppression doublon
 
+## Branche de travail
+
+```bash
+git checkout develop
+git pull
+git checkout -b chore/swagger-complete
+```
+
+---
+
+## Étape 1 — Supprimer le doublon `api/src/swagger.js`
+
+```bash
+git rm api/src/swagger.js
+```
+
+---
+
+## Étape 2 — Mettre à jour `api/src/swagger/swagger.js`
+
+Remplacer le contenu entier par :
+
+```js
+import swaggerJSDoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
+
+const options = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'CinéDélices API',
+      version: '1.0.0',
+      description: "Documentation de l'API CinéDélices",
+    },
+    servers: [
+      {
+        url: process.env.API_BASE_URL || 'http://localhost:3000',
+        description: 'Serveur de développement',
+      },
+    ],
+  },
+  apis: ['./src/docs/*.swagger.js'],
+};
+
+export const swaggerSpec = swaggerJSDoc(options);
+
+function setupSwagger(app) {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
+
+export default setupSwagger;
+```
+
+---
+
+## Étape 3 — Mettre à jour `api/src/docs/validateSwaggerSpec.js`
+
+Remplacer la ligne d'import :
+
+```js
+// AVANT
+import { swaggerSpec } from '../swagger.js';
+
+// APRÈS
+import { swaggerSpec } from '../swagger/swagger.js';
+```
+
+---
+
+## Étape 4 — Compléter `api/src/docs/admin.swagger.js`
+
+Remplacer la ligne `export {};` à la fin du fichier par :
+
+```js
 /**
  * @openapi
  * tags:
@@ -941,4 +635,506 @@
  */
 
 export {};
+```
 
+---
+
+## Étape 5 — Créer `api/src/docs/users.swagger.js`
+
+```js
+/**
+ * @openapi
+ * tags:
+ *   - name: Users
+ *     description: Espace membre — profil et recettes personnelles.
+ * components:
+ *   schemas:
+ *     MemberNotification:
+ *       type: object
+ *       required: [id, message, createdAt, isRead]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         message:
+ *           type: string
+ *           example: Votre recette Brownie Matrix a ete validee.
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         isRead:
+ *           type: boolean
+ *           example: false
+ *         recipeId:
+ *           type: string
+ *           format: uuid
+ *           nullable: true
+ * paths:
+ *   /api/users/me:
+ *     get:
+ *       summary: Recuperer le profil du membre connecte
+ *       tags: [Users]
+ *       security:
+ *         - bearerAuth: []
+ *       responses:
+ *         200:
+ *           description: Profil du membre.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/AuthUser'
+ *         401:
+ *           description: Non authentifie.
+ *   /api/users/me/recipes:
+ *     get:
+ *       summary: Recettes du membre connecte
+ *       tags: [Users]
+ *       security:
+ *         - bearerAuth: []
+ *       responses:
+ *         200:
+ *           description: Liste des recettes du membre (tous statuts).
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/Recipe'
+ *         401:
+ *           description: Non authentifie.
+ *   /api/users/me/notifications:
+ *     get:
+ *       summary: Notifications du membre connecte
+ *       tags: [Users]
+ *       security:
+ *         - bearerAuth: []
+ *       responses:
+ *         200:
+ *           description: Liste des notifications du membre.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/MemberNotification'
+ *         401:
+ *           description: Non authentifie.
+ *   /api/users/me/notifications/{id}:
+ *     delete:
+ *       summary: Supprimer une notification du membre
+ *       tags: [Users]
+ *       security:
+ *         - bearerAuth: []
+ *       parameters:
+ *         - in: path
+ *           name: id
+ *           required: true
+ *           schema: { type: string, format: uuid }
+ *       responses:
+ *         204:
+ *           description: Notification supprimee.
+ *         401:
+ *           description: Non authentifie.
+ *         404:
+ *           description: Notification introuvable.
+ */
+
+export {};
+```
+
+---
+
+## Étape 6 — Créer `api/src/docs/ingredients.swagger.js`
+
+```js
+/**
+ * @openapi
+ * tags:
+ *   - name: Ingredients
+ *     description: Recherche et creation d'ingredients (membres).
+ * components:
+ *   schemas:
+ *     IngredientSearchResult:
+ *       type: object
+ *       required: [id, name]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         name:
+ *           type: string
+ *           example: chocolat noir
+ *         approved:
+ *           type: boolean
+ *           example: true
+ * paths:
+ *   /api/ingredients/search:
+ *     get:
+ *       summary: Rechercher des ingredients valides
+ *       tags: [Ingredients]
+ *       parameters:
+ *         - in: query
+ *           name: q
+ *           required: true
+ *           schema: { type: string }
+ *           description: Terme de recherche (min 2 caracteres).
+ *           example: choc
+ *       responses:
+ *         200:
+ *           description: Liste des ingredients correspondants.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/IngredientSearchResult'
+ *         400:
+ *           description: Terme de recherche manquant ou trop court.
+ *   /api/ingredients:
+ *     post:
+ *       summary: Soumettre un nouvel ingredient (membre)
+ *       tags: [Ingredients]
+ *       security:
+ *         - bearerAuth: []
+ *       requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [name]
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   example: fraise des bois
+ *       responses:
+ *         201:
+ *           description: Ingredient soumis en attente de validation admin.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/IngredientSearchResult'
+ *         400:
+ *           description: Nom manquant ou invalide.
+ *         401:
+ *           description: Non authentifie.
+ */
+
+export {};
+```
+
+---
+
+## Étape 7 — Créer `api/src/docs/categories.swagger.js`
+
+```js
+/**
+ * @openapi
+ * tags:
+ *   - name: Categories
+ *     description: Categories de recettes (lecture publique, ecriture admin).
+ * components:
+ *   schemas:
+ *     Category:
+ *       type: object
+ *       required: [id, name]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         name:
+ *           type: string
+ *           example: Dessert
+ * paths:
+ *   /api/categories:
+ *     get:
+ *       summary: Lister toutes les categories
+ *       tags: [Categories]
+ *       responses:
+ *         200:
+ *           description: Liste des categories disponibles.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/Category'
+ *     post:
+ *       summary: Creer une categorie (admin)
+ *       tags: [Categories]
+ *       security:
+ *         - bearerAuth: []
+ *       requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [name]
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   example: Boisson
+ *       responses:
+ *         201:
+ *           description: Categorie creee.
+ *         400:
+ *           description: Nom manquant.
+ *         401:
+ *           description: Non authentifie.
+ *         403:
+ *           description: Acces refuse.
+ *   /api/categories/{id}:
+ *     patch:
+ *       summary: Modifier une categorie (admin)
+ *       tags: [Categories]
+ *       security:
+ *         - bearerAuth: []
+ *       parameters:
+ *         - in: path
+ *           name: id
+ *           required: true
+ *           schema: { type: string, format: uuid }
+ *       requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   example: Entree
+ *       responses:
+ *         200:
+ *           description: Categorie modifiee.
+ *         404:
+ *           description: Categorie introuvable.
+ *     delete:
+ *       summary: Supprimer une categorie (admin)
+ *       tags: [Categories]
+ *       security:
+ *         - bearerAuth: []
+ *       parameters:
+ *         - in: path
+ *           name: id
+ *           required: true
+ *           schema: { type: string, format: uuid }
+ *       responses:
+ *         204:
+ *           description: Categorie supprimee.
+ *         404:
+ *           description: Categorie introuvable.
+ */
+
+export {};
+```
+
+---
+
+## Étape 8 — Créer `api/src/docs/media.swagger.js`
+
+```js
+/**
+ * @openapi
+ * tags:
+ *   - name: Media
+ *     description: Catalogue films et series associes aux recettes.
+ * components:
+ *   schemas:
+ *     MediaItem:
+ *       type: object
+ *       required: [id, title, type]
+ *       properties:
+ *         id:
+ *           type: string
+ *           format: uuid
+ *         title:
+ *           type: string
+ *           example: Matrix
+ *         slug:
+ *           type: string
+ *           example: matrix-1999
+ *         type:
+ *           type: string
+ *           enum: [MOVIE, SERIES]
+ *           example: MOVIE
+ *         year:
+ *           type: string
+ *           nullable: true
+ *           example: '1999'
+ *         posterUrl:
+ *           type: string
+ *           nullable: true
+ *         director:
+ *           type: string
+ *           nullable: true
+ *           example: Lana Wachowski
+ *         synopsis:
+ *           type: string
+ *           nullable: true
+ *         recipesCount:
+ *           type: integer
+ *           example: 4
+ * paths:
+ *   /api/media/movies:
+ *     get:
+ *       summary: Catalogue des films avec recettes publiees
+ *       tags: [Media]
+ *       responses:
+ *         200:
+ *           description: Liste des films.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/MediaItem'
+ *   /api/media/movies/{slug}:
+ *     get:
+ *       summary: Detail d'un film par slug
+ *       tags: [Media]
+ *       parameters:
+ *         - in: path
+ *           name: slug
+ *           required: true
+ *           schema: { type: string }
+ *           example: matrix-1999
+ *       responses:
+ *         200:
+ *           description: Detail du film avec ses recettes.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/MediaItem'
+ *         404:
+ *           description: Film introuvable.
+ *   /api/media/series:
+ *     get:
+ *       summary: Catalogue des series avec recettes publiees
+ *       tags: [Media]
+ *       responses:
+ *         200:
+ *           description: Liste des series.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/MediaItem'
+ *   /api/media/series/{slug}:
+ *     get:
+ *       summary: Detail d'une serie par slug
+ *       tags: [Media]
+ *       parameters:
+ *         - in: path
+ *           name: slug
+ *           required: true
+ *           schema: { type: string }
+ *           example: breaking-bad-2008
+ *       responses:
+ *         200:
+ *           description: Detail de la serie avec ses recettes.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 $ref: '#/components/schemas/MediaItem'
+ *         404:
+ *           description: Serie introuvable.
+ */
+
+export {};
+```
+
+---
+
+## Étape 9 — Créer `api/src/docs/contact.swagger.js`
+
+```js
+/**
+ * @openapi
+ * tags:
+ *   - name: Contact
+ *     description: Formulaire de contact.
+ * paths:
+ *   /api/contact:
+ *     post:
+ *       summary: Envoyer un message de contact
+ *       tags: [Contact]
+ *       requestBody:
+ *         required: true
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required: [name, email, message]
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                   example: Marie Dupont
+ *                 email:
+ *                   type: string
+ *                   format: email
+ *                   example: marie@exemple.fr
+ *                 message:
+ *                   type: string
+ *                   example: Bonjour, je souhaite signaler un probleme.
+ *       responses:
+ *         200:
+ *           description: Message envoye avec succes.
+ *           content:
+ *             application/json:
+ *               schema:
+ *                 type: object
+ *                 properties:
+ *                   message:
+ *                     type: string
+ *                     example: Message envoye avec succes.
+ *         400:
+ *           description: Donnees invalides.
+ *         500:
+ *           description: Erreur lors de l'envoi.
+ */
+
+export {};
+```
+
+---
+
+## Commit
+
+```bash
+git rm api/src/swagger.js
+
+git add \
+  api/src/swagger/swagger.js \
+  api/src/docs/validateSwaggerSpec.js \
+  api/src/docs/admin.swagger.js \
+  api/src/docs/users.swagger.js \
+  api/src/docs/ingredients.swagger.js \
+  api/src/docs/categories.swagger.js \
+  api/src/docs/media.swagger.js \
+  api/src/docs/contact.swagger.js
+
+git commit -m "chore: complete swagger docs for all routes and remove duplicate swagger file"
+```
+
+## Push et PR
+
+```bash
+git push perso chore/swagger-complete
+```
+
+Ouvre une Pull Request vers `develop` sur GitHub.
+
+---
+
+## Vérification après merge
+
+```bash
+cd api
+node src/docs/validateSwaggerSpec.js
+# Doit afficher : Swagger spec valide (X paths, Y schemas).
+```
+
+Ou ouvrir http://localhost:3000/api-docs pour voir toutes les routes documentées.
