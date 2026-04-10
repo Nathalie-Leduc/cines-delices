@@ -19,7 +19,8 @@ export const CATEGORY_PARAM_TO_FILTER = {
   boissons: "Boisson",
 };
 
-export { normalizeCategoryLabel } from '../../../utils/recipeUtils.js';
+import { normalizeCategoryLabel, mapApiRecipeToCard } from '../../utils/recipeUtils.js';
+export { normalizeCategoryLabel, mapApiRecipeToCard };
 
 export function toCategoryFilterKey(value) {
   return String(value || '')
@@ -58,7 +59,6 @@ export function parsePositiveInt(value, fallback) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-export { mapApiRecipeToCard } from '../../../utils/recipeUtils.js';
 
 export function mixRecipesByCategory(recipes) {
   const categoryOrder = ["Entrée", "Plat", "Dessert", "Boisson"];
