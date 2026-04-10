@@ -339,6 +339,7 @@ const similarRecipes = useMemo(() => {
             src={heroImage || image}
             alt={title}
             className={styles.heroImage}
+            loading="lazy"
             onError={handleImageError}
           />
         ) : (
@@ -464,6 +465,7 @@ const similarRecipes = useMemo(() => {
                     src={posterImage}
                     alt={mediaTitle}
                     className={styles.mediaPoster}
+                    loading="lazy"
                     onError={handleImageError}
                   />
                 ) : (

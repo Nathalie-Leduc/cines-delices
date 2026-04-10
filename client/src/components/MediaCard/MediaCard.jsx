@@ -37,6 +37,7 @@ export default function MediaCard({
           src={poster || fallbackPoster || MEDIA_POSTER_FALLBACK}
           alt={title}
           className={styles.image}
+          loading="lazy"
           data-fallback-src={fallbackPoster || MEDIA_POSTER_FALLBACK}
           onError={handleImageError}
         />

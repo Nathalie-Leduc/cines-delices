@@ -30,6 +30,7 @@ export default function FilmCard({ film }) {
           src={poster || fallbackPoster || FILM_POSTER_FALLBACK}
           alt={title}
           className={styles.image}
+          loading="lazy"
           data-fallback-src={fallbackPoster || FILM_POSTER_FALLBACK}
           onError={handleImageError}
         />
