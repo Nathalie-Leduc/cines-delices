@@ -1,5 +1,5 @@
 import SwaggerParser from '@apidevtools/swagger-parser';
-import { swaggerSpec } from '../swagger.js';
+import { swaggerSpec } from '../swagger/swagger.js';
 
 try {
   const validated = await SwaggerParser.validate(swaggerSpec);
