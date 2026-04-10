@@ -222,6 +222,35 @@ export const approveRecipe = publishRecipe;
 
 export async function deleteRecipe(req, res) {
   try {
+    const { notifMessage } = req.body;
+
+    // Récupérer la recette AVANT suppression
+    // (une fois supprimée, elle n'existe plus en BDD)
+    const recipe = await prisma.recipe.findUnique({
+      where: { id: req.params.id },
+    });
+
+    if (!recipe) {
+      return res.status(404).json({ message: 'Recette introuvable.' });
+    }
+
+    // Créer la notification pour le membre auteur (si la recette appartient à quelqu'un)
+    if (recipe.userId) {
+      const message =
+        String(notifMessage || '').trim() ||
+        `Votre recette "${recipe.titre}" a été supprimée par l'administrateur.`;
+
+      await prisma.notification.create({
+        data: {
+          userId: recipe.userId,
+          recipeId: null, // null obligatoire : la recette va être supprimée juste après
+          type: 'RECIPE_SUBMITTED',
+          message,
+        },
+      });
+    }
+
+    // Supprimer la recette après avoir créé la notification
     await prisma.recipe.delete({ where: { id: req.params.id } });
     return res.status(204).send();
   } catch (error) {
