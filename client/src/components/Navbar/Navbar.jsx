@@ -339,7 +339,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
           <NavLink to="/" className={styles.logoLink}>
             <img
               src="/img/logo-cines-delices-v6.webp"
-              alt="CinéDélices"
+              alt="Ciné Délices"
               className={styles.logo}
             />
           </NavLink>
@@ -661,7 +661,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
                   <img
                     src="/img/logo-cines-delices-v6.webp
                     "
-                    alt="CinéDélices"
+                    alt="Ciné Délices"
                     className={styles.mobileBottomLogo}
                   />
                 </div>

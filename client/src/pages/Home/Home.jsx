@@ -411,6 +411,7 @@ function Home() {
           src="/img/hero-home.webp"
           alt="CinéDélices"
           className={styles.heroImage}
+          fetchpriority="high"
         />
 
         <div className={styles.heroOverlay} />

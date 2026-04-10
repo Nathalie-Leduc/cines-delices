@@ -19,6 +19,7 @@ export default function RecipeCard({ recipe, to, linkState }) {
               src={image}
               alt={title}
               className={styles.image}
+              loading="lazy"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
           ) : (

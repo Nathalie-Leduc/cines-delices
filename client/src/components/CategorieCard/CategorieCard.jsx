@@ -25,7 +25,7 @@ export default function CategoryCard({ category }) {
       </div>
 
       <Link to={`/recipes?category=${slug}`} className={styles.card}>
-                <img src={image} alt={`Catégorie ${name}`} className={styles.image} />
+                <img src={image} alt={`Catégorie ${name}`} className={styles.image} loading="lazy" />
         <span className={badgeClass} style={badgeStyle}>{label}</span>
         <span className={styles.cta}>{cta}</span>
       </Link>
