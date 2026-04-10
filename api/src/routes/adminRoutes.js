@@ -61,11 +61,9 @@ router.get('/ingredients', getAdminIngredients);
 router.get('/ingredients/validated', getValidatedIngredients);
 router.post('/ingredients', createAdminIngredient);
 
-// ✅ CORRECTIF — route merge déclarée AVANT /:id
-// Analogie : Express lit les routes de haut en bas comme une liste
-// de priorités. Si on mettait POST /ingredients/:id avant cette route,
-// Express intercepterait "merge" comme un id et appellerait le mauvais
-// handler. En déclarant /merge en premier, Express l'attrape en priorité.
+// Route /merge déclarée AVANT /:id — Express lit les routes dans l'ordre.
+// Sans ça, Express intercepterait "merge" comme un :id et appellerait
+// le mauvais handler.
 router.post('/ingredients/merge', mergeIngredients);
 
 router.get('/ingredients/:id/recipes', getIngredientRecipes);

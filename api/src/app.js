@@ -1,79 +1,70 @@
 import express from 'express';
-import setupSwagger from './swagger/swagger.js';
-import cors from 'cors'; // sur toutes les routes
-import helmet from 'helmet'; // Sécurité HTTP headers sur toutes les routes
+import cors from 'cors';
+import helmet from 'helmet';
 import fs from 'node:fs';
 import path from 'node:path';
 import 'dotenv/config';
 import authRoutes from './routes/authRoutes.js';
-import routes from './routes/index.js'
+import routes from './routes/index.js';
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 import { startInactivityCron } from './jobs/inactivityCheck.js';
-
-
-import { sendResetPasswordMail } from './lib/mailer.js';
+import setupSwagger from './swagger/swagger.js';
 
 const app = express();
-// AJOUT À FAIRE DANS app.js — trust proxy
-// ============================================================
-// À ajouter APRÈS la ligne : const app = express();
-// et AVANT : app.use(helmet());
-
 
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.CLIENT_URL;
-const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
 
+// Crée le dossier uploads au démarrage si absent
+const uploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
 fs.mkdirSync(uploadsDir, { recursive: true });
 
-// AJOUT À FAIRE DANS app.js — trust proxy
-// ============================================================
-// À ajouter APRÈS la ligne : const app = express();
-// et AVANT : app.use(helmet());
+// Trust proxy — nécessaire pour Railway (rate limiting, IP réelle derrière le reverse proxy)
 app.set('trust proxy', 1);
 
-
-// Sécurité et parsing
+// Sécurité HTTP headers
 app.use(helmet());
+
+// CORS — autorise uniquement le front défini dans CLIENT_URL
 app.use(cors({
   origin: CLIENT_URL,
-  credentials: true,  // Autoriser les cookies et autres credentials
+  credentials: true,
 }));
+
+// Parsing JSON
 app.use(express.json());
 
-//CORRECTIF
+// Fichiers uploadés — header CORP pour autoriser les images cross-origin
 app.use('/uploads', (req, res, next) => {
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 }, express.static(uploadsDir));
 
-// Swagger docs
+// Documentation Swagger — /api-docs et /api/docs
 setupSwagger(app);
 
-
-// Health Check
+// Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
 // Routes
-app.use('/api/auth', authRoutes); // auth : register; login, me...
-app.use('/api', routes);          // tmdb, users, admin, recipes
+app.use('/api/auth', authRoutes);
+app.use('/api', routes);
 
-// Erreur 404 - route non trouvée
+// 404
 app.use((_req, res) => {
   res.status(404).json({ error: 'Route non trouvée' });
 });
 
-
-// Middleware d'erreur globaL (toujours en dernier)
+// Middleware d'erreur global (toujours en dernier)
 app.use(errorMiddleware);
 
-
-// Démarrage 
+// Démarrage du serveur
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur le port ${PORT}`);
   console.log(`Origine client autorisée : ${CLIENT_URL}`);
 });
 
+// Cron de vérification d'inactivité des comptes
 startInactivityCron();

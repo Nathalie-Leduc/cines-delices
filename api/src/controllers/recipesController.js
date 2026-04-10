@@ -300,9 +300,8 @@ export const createRecipe = async (req, res) => {
 
     if (ingredients && ingredients.length > 0) {
       for (const ing of ingredients) {
-        // ✅ CORRECTIF — normalizeIngredientName force le singulier + minuscule
-        // AVANT : String(ing.nom || '').toLowerCase().trim() → "citrons" stocké tel quel
-        // APRÈS : normalizeIngredientName(ing.nom) → "citrons" devient "citron"
+        // normalizeIngredientName force le singulier + minuscule
+        // "citrons" → "citron", "tomates" → "tomate"
         const ingredientName = normalizeIngredientName(ing.nom);
         const quantity = ing.quantity ?? ing.quantite ?? null;
         const unit = ing.unit ?? ing.unite ?? null;
@@ -426,7 +425,7 @@ export const getMyRecipes = asyncHandler(async (req, res) => {
  * Met à jour une recette
  * PATCH /api/recipes/:id
  *
- * CORRECTIF NOTIFICATION :
+ * Notification soumission :
  * Avant : shouldNotifyAdminsAboutResubmission = shouldResubmit && status !== 'PENDING'
  *   → Si la recette est déjà PENDING (après une 1ère modif), la 2ème modif
  *     ne déclenche AUCUNE notification. L'admin ne sait pas que ça a changé.
@@ -486,10 +485,8 @@ export const updateRecipe = async (req, res) => {
       || Boolean(recipe.rejectionReason)
     );
 
-    // ✅ CORRECTIF — on notifie si la recette doit repasser en modération,
-    // QUE la recette soit déjà PENDING ou non.
-    // AVANT : && recipe.status !== 'PENDING'  → bloquait la 2ème notification
-    // APRÈS : on notifie dans tous les cas où shouldResubmitForModeration est vrai
+    // On notifie dans tous les cas où la recette repasse en modération,
+    // y compris si elle était déjà PENDING (re-soumission après correction).
     const shouldNotifyAdminsAboutResubmission = shouldResubmitForModeration;
 
     const mergedSteps = Array.isArray(etapes)
@@ -612,9 +609,8 @@ export const updateRecipe = async (req, res) => {
         await tx.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
 
         for (const ing of ingredients) {
-          // ✅ CORRECTIF — normalizeIngredientName force le singulier + minuscule
-          // AVANT : String(ing.nom || '').toLowerCase().trim() → "citrons" stocké tel quel
-          // APRÈS : normalizeIngredientName(ing.nom) → "citrons" devient "citron"
+          // normalizeIngredientName force le singulier + minuscule
+          // "citrons" → "citron", "tomates" → "tomate"
           const ingredientName = normalizeIngredientName(ing.nom);
 
           if (!ingredientName) {
@@ -646,7 +642,7 @@ export const updateRecipe = async (req, res) => {
         }
       }
 
-      // ✅ CORRECTIF NOTIFICATION — upsert pour chaque admin :
+      // Upsert pour chaque admin :
       // Si une notif non lue existe déjà → mise à jour du message + date
       // Sinon → création d'une nouvelle notif
       // Résultat : l'admin ne voit jamais qu'une seule notif par recette,

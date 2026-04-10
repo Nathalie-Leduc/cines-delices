@@ -26,11 +26,9 @@ export async function getAdminRecipes(req, res) {
 
 //  forcer PUBLISHED par défaut, sauf si status explicitement passé :
     const where = {
-  // ✅ CORRECTIF 6 — "Gérer les recettes" ne montre que les recettes publiées.
-  // Les recettes PENDING et DRAFT ont leur propre espace (Validation des recettes).
-  // Si un status est explicitement passé en query, on le respecte (usage futur).
-  // Analogie : la vitrine du restaurant n'affiche que les plats du jour prêts à servir,
-  // pas ceux en cuisine ni ceux refusés par le chef.
+  // "Gérer les recettes" ne montre que les recettes publiées.
+  // Les recettes PENDING et DRAFT sont gérées dans "Validation des recettes".
+  // Un status explicite en query param permet un filtrage futur si besoin.
       status: status || 'PUBLISHED',
       ...(search ? { titre: { contains: search, mode: 'insensitive' } } : {}),
       ...(category && category !== 'Tous'
@@ -224,8 +222,8 @@ export async function deleteRecipe(req, res) {
   try {
     const { notifMessage } = req.body;
 
-    // Récupérer la recette AVANT suppression
-    // (une fois supprimée, elle n'existe plus en BDD)
+    // Récupérer la recette avant suppression pour pouvoir notifier le membre
+    // et lire son userId — ces données seront inaccessibles après le delete.
     const recipe = await prisma.recipe.findUnique({
       where: { id: req.params.id },
     });
