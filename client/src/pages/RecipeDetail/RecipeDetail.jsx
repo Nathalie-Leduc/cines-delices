@@ -7,52 +7,15 @@ import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
 import { getRecipeBySlug, getRecipesCatalog } from "../../services/recipesService";
+import { formatMinutes, normalizeCategoryLabel, toFiniteNumber } from "../../utils/recipeUtils.js";
 import styles from "./RecipeDetail.module.scss";
 
 // ✅ Pas de fallback pour les données de recette :
 // les ingrédients et les étapes sont obligatoires à la création (validés front ET back).
 // Si ces données sont absentes, c'est un bug à corriger, pas à masquer.
 
-// ✅ formatMinutes — affiche un temps en minutes de façon lisible
-// < 60 min  → "30 min"
-// >= 60 min → "1h20" ou "2h" (sans "0min" si pile)
-// Analogie : comme une horloge de cuisine qui bascule en heures
-// dès qu'on dépasse 59 minutes.
-function formatMinutes(totalMinutes) {
-  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return null;
-  const mins = Math.round(totalMinutes);
-  if (mins < 60) return `${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m === 0 ? `${h}h` : `${h}h${m}min`;
-}
-
 function normalizeCategory(category) {
   return category?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") || "";
-}
-
-function normalizeCategoryLabel(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-
-  if (normalized === "entree" || normalized === "entrée") return "Entrée";
-  if (normalized === "plat") return "Plat";
-  if (normalized === "dessert") return "Dessert";
-  if (normalized === "boisson") return "Boisson";
-
-  return value || "Autre";
-}
-
-// AVANT :
-// function toFiniteNumber(value) {
-//  const parsed = Number(value);
-//  return Number.isFinite(parsed) ? parsed : undefined;
-// }
-
-// APRÈS :
-function toFiniteNumber(value) {
-  if (value === null || value === undefined || value === '') return undefined;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function normalizeApiRecipe(apiRecipe) {

@@ -110,6 +110,15 @@ export async function request(endpoint, options = {}) {
 }
  
 // ─────────────────────────────────────────────────────────────────────────────
+// ⚠️  Les fonctions ci-dessous sont conservées pour rétrocompatibilité.
+//     Pour tout nouvel appel, préférer les services dédiés :
+//     - Auth    → authService.js
+//     - Recipes → recipesService.js
+//     - Media   → mediaService.js
+//     - Admin   → adminService.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
 // AUTH — /api/auth
 // Gestion de l'authentification : inscription, connexion, profil connecté
 // ─────────────────────────────────────────────────────────────────────────────

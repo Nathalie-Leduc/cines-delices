@@ -5,6 +5,7 @@ import RecipeCard from "../../components/RecipeCard";
 import StatusBlock from "../../components/StatusBlock/StatusBlock.jsx";
 import useHeroReveal from "../../hooks/useHeroReveal";
 import { getRecipesCatalog } from "../../services/recipesService";
+import { mapApiRecipeToCard } from "../../utils/recipeUtils.js";
 import styles from "./Home.module.scss";
 
 const CONCEPT_STEPS = [
@@ -30,35 +31,6 @@ const CONCEPT_TAGS = [
   { label: "Séries", to: "/series", variant: "series" },
   { label: "Recettes", to: "/recipes", variant: "recipe" },
 ];
-
-function normalizeCategoryLabel(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-
-  if (normalized === "entree" || normalized === "entrée") return "Entrée";
-  if (normalized === "plat") return "Plat";
-  if (normalized === "dessert") return "Dessert";
-  if (normalized === "boisson") return "Boisson";
-
-  return String(value || "").trim() || "Autre";
-}
-
-function mapApiRecipeToCard(recipe) {
-  const prep = Number(recipe?.tempsPreparation);
-  const cook = Number(recipe?.tempsCuisson);
-  const duration = [prep, cook].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
-
-  return {
-    id: recipe?.id,
-    slug: recipe?.slug,
-    title: recipe?.titre || "Recette sans titre",
-    category: normalizeCategoryLabel(recipe?.category?.nom),
-    mediaTitle: recipe?.media?.titre || "Sans média",
-    mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
-    duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.webp",
-    fallbackImage: "/img/hero-home.webp",
-  };
-}
 
 function getVisibleSlides() {
   if (typeof window === "undefined") {

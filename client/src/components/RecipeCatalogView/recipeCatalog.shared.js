@@ -19,17 +19,8 @@ export const CATEGORY_PARAM_TO_FILTER = {
   boissons: "Boisson",
 };
 
-export function normalizeCategoryLabel(value) {
-  const normalized = String(value || "").trim().toLowerCase();
-
-  if (normalized === "entree" || normalized === "entrée") return "Entrée";
-  if (normalized === "plat") return "Plat";
-  if (normalized === "dessert") return "Dessert";
-  if (normalized === "boisson") return "Boisson";
-  if (!normalized) return "Autre";
-
-  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
-}
+import { normalizeCategoryLabel, mapApiRecipeToCard } from '../../utils/recipeUtils.js';
+export { normalizeCategoryLabel, mapApiRecipeToCard };
 
 export function toCategoryFilterKey(value) {
   return String(value || '')
@@ -68,23 +59,6 @@ export function parsePositiveInt(value, fallback) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-export function mapApiRecipeToCard(recipe) {
-  const prep = Number(recipe?.tempsPreparation);
-  const cook = Number(recipe?.tempsCuisson);
-  const duration = [prep, cook].filter(Number.isFinite).reduce((sum, value) => sum + value, 0);
-
-  return {
-    id: recipe?.id,
-    slug: recipe?.slug,
-    title: recipe?.titre || "Recette sans titre",
-    category: normalizeCategoryLabel(recipe?.category?.nom),
-    mediaTitle: recipe?.media?.titre || "Sans média",
-    mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
-    duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL || recipe?.imageUrl || "/img/hero-home.webp",
-    fallbackImage: "/img/hero-home.webp",
-  };
-}
 
 export function mixRecipesByCategory(recipes) {
   const categoryOrder = ["Entrée", "Plat", "Dessert", "Boisson"];
