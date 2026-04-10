@@ -108,6 +108,7 @@ function AdminRecettes() {
   const [currentPage, setCurrentPage] = useState(1);
   const [currentLimit, setCurrentLimit] = useState(LIMIT_OPTIONS[0]);
   const [modalState, setModalState] = useState(null);
+  const [deleteNotifMessage, setDeleteNotifMessage] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -222,9 +223,15 @@ function AdminRecettes() {
     }
 
     try {
-      await deleteAdminRecipe(modalState.recipeId);
+      // Passe le message saisi, ou un message par défaut si le champ est vide
+      const message =
+        deleteNotifMessage.trim() ||
+        `Votre recette "${modalState.recipeTitle}" a été supprimée par l'administrateur.`;
+
+      await deleteAdminRecipe(modalState.recipeId, message);
       setRecipes((previous) => previous.filter((recipe) => recipe.id !== modalState.recipeId));
       setModalState(null);
+      setDeleteNotifMessage(''); // reset du textarea pour la prochaine ouverture
     } catch (deleteError) {
       setError(deleteError.message || 'Suppression impossible.');
     }
@@ -748,6 +755,7 @@ function AdminRecettes() {
                       event.preventDefault();
                       event.stopPropagation();
                       setModalState({ type: 'delete', recipeId: recipe.id, recipeTitle: recipe.title });
+                      setDeleteNotifMessage(`Votre recette "${recipe.title}" a été supprimée par l'administrateur.`);  // ← ajouter ça
                     }}
                   >
                     <img src="/icon/Trash.svg" alt="" aria-hidden="true" />
@@ -801,10 +809,27 @@ function AdminRecettes() {
         <AdminModal
           title="Supprimer la recette"
           confirmLabel="Supprimer"
-          onCancel={() => setModalState(null)}
+          onCancel={() => {
+            setModalState(null);
+            setDeleteNotifMessage(''); // reset si l'admin annule
+          }}
           onConfirm={handleDeleteRecipe}
         >
-          Êtes-vous sûr de vouloir supprimer cette recette ?
+          <p>
+            Êtes-vous sûr de vouloir supprimer{' '}
+            <strong>"{modalState.recipeTitle}"</strong> ?
+          </p>
+          <label style={{ display: 'block', marginTop: '1rem' }}>
+            <span style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
+              Message au membre (optionnel)
+            </span>
+            <textarea
+              rows={3}
+              style={{ display: 'block', width: '100%' }}
+              value={deleteNotifMessage}
+              onChange={(e) => setDeleteNotifMessage(e.target.value)}
+            />
+          </label>
         </AdminModal>
       )}
 

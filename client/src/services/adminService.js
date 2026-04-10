@@ -22,8 +22,12 @@ export const getPendingRecipes = () =>
   request(`${ADMIN_API_BASE}/recipes/pending`);
 
 // Supprime une recette par son ID
-export const deleteAdminRecipe = (id) =>
-  request(`${ADMIN_API_BASE}/recipes/${id}`, { method: 'DELETE' });
+// notifMessage : message optionnel envoyé au membre lors de la suppression
+export const deleteAdminRecipe = (id, notifMessage) =>
+  request(`${ADMIN_API_BASE}/recipes/${id}`, {
+    method: 'DELETE',
+    body: notifMessage ? { notifMessage } : undefined,
+  });
 
 // Met à jour une recette avec un payload (objet contenant champs à modifier)
 export const updateAdminRecipe = (id, payload) =>

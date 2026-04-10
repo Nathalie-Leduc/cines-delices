@@ -138,6 +138,7 @@ function AdminDashboard() {
   const [showDeleteRecipeModal, setShowDeleteRecipeModal] = useState(false);
   const [recipeToDelete, setRecipeToDelete] = useState(null);
   const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
+  const [deleteNotifMessage, setDeleteNotifMessage] = useState('');
 
   useEffect(() => {
     const loadPendingRecipes = async () => {
@@ -357,10 +358,21 @@ function AdminDashboard() {
     if (!recipeToDelete?.id) return;
     setIsDeletingRecipe(true);
     try {
-      await deleteAdminRecipe(recipeToDelete.id);
+      const message =
+        deleteNotifMessage.trim() ||
+        `Votre recette "${recipeToDelete.title}" a été supprimée par l'administrateur.`;
+
+      await deleteAdminRecipe(recipeToDelete.id, message);
+
+      // Si on était en vue détail, on revient à la liste
+      if (selectedRecipe?.id === recipeToDelete.id) {
+        setSelectedRecipe(null);
+      }
+
       setPendingRecipes(prev => prev.filter(r => r.id !== recipeToDelete.id));
       setShowDeleteRecipeModal(false);
       setRecipeToDelete(null);
+      setDeleteNotifMessage(''); // reset pour la prochaine ouverture
     } catch (err) {
       setError(err?.message || 'Impossible de supprimer la recette.');
     } finally {
@@ -543,7 +555,8 @@ function AdminDashboard() {
                       onClick={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
-                        setRecipeToDelete(recipe);
+                        setRecipeToDelete(recipeecipe);
+                        setDeleteNotifMessage(`Votre recette "${recipe.title}" a été supprimée par l'administrateur.`);
                         setShowDeleteRecipeModal(true);
                       }}
                     >
@@ -702,11 +715,31 @@ function AdminDashboard() {
             >
               Modifier
             </button>
-            <button type="button" className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowRefuseModal(true)}>
+            <button
+              type="button"
+              className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()}
+              onClick={() => setShowRefuseModal(true)}
+            >
               Refuser
             </button>
-            <button type="button" className={`${styles.btnSuccess} ${styles.fullWidthBtn}`.trim()} onClick={() => setShowValidateModal(true)}>
+            <button
+              type="button"
+              className={`${styles.btnSuccess} ${styles.fullWidthBtn}`.trim()}
+              onClick={() => setShowValidateModal(true)}
+            >
               Valider
+            </button>
+            <button
+              type="button"
+              className={`${styles.btnDanger} ${styles.fullWidthBtn}`.trim()}
+              style={{ opacity: 0.75 }}
+              onClick={() => {
+                setRecipeToDelete(selectedRecipe);
+                setDeleteNotifMessage(`Votre recette "${selectedRecipe.title}" a été supprimée par l'administrateur.`);
+                setShowDeleteRecipeModal(true);
+              }}
+            >
+              Supprimer
             </button>
           </div>
 
@@ -823,17 +856,27 @@ function AdminDashboard() {
             if (!isDeletingRecipe) {
               setShowDeleteRecipeModal(false);
               setRecipeToDelete(null);
+              setDeleteNotifMessage('');
             }
           }}
           onConfirm={handleDeleteRecipe}
         >
           <p>
-            Êtes-vous sûr de vouloir supprimer la recette{' '}
+            Êtes-vous sûr de vouloir supprimer{' '}
             <strong>&quot;{recipeToDelete?.title}&quot;</strong> ?
           </p>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.85rem', opacity: 0.8 }}>
-            Cette action est irréversible. Le membre sera notifié.
-          </p>
+          <label style={{ display: 'block', marginTop: '1rem' }}>
+            <span style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
+              Message au membre (optionnel)
+            </span>
+            <textarea
+              className={styles.modalTextarea}
+              rows={3}
+              value={deleteNotifMessage}
+              onChange={(e) => setDeleteNotifMessage(e.target.value)}
+              disabled={isDeletingRecipe}
+            />
+          </label>
         </AdminModal>
       )}
     </div>
