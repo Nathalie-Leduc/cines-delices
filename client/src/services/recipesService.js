@@ -56,3 +56,6 @@ export function deleteMyNotification(notificationId) {
 export function getRecipeBySlug(slug) {
   return request(`/api/recipes/${slug}`);
 }
+
+export const submitContactMessage = (data) =>
+  request('/api/contact', { method: 'POST', body: data });

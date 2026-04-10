@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { getMe } from '../../services/api.js';
+import { getMe } from '../../services/authService.js';
 import { deleteMyNotification, getMyNotifications, getMyRecipes } from '../../services/recipesService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './MemberSidebar.module.scss';

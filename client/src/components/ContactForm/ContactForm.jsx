@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import Alert from '../Alert/Alert.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { getMe, submitContactMessage } from '../../services/api.js';
+import { getMe } from '../../services/authService.js';
+import { submitContactMessage } from '../../services/recipesService.js';
 import styles from './ContactForm.module.scss';
 
 const EMPTY_IDENTITY = {

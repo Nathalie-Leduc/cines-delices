@@ -1,19 +1,6 @@
 import { Link } from "react-router-dom";
+import { formatMinutes } from '../../utils/recipeUtils.js';
 import styles from "./RecipeCard.module.scss";
-
-// ✅ formatMinutes — affiche un temps en minutes de façon lisible
-// < 60 min  → "30 min"
-// >= 60 min → "1h20" ou "2h" (sans "0min" si pile)
-// Analogie : comme une horloge de cuisine qui bascule en heures
-// dès qu'on dépasse 59 minutes.
-function formatMinutes(totalMinutes) {
-  if (!Number.isFinite(totalMinutes) || totalMinutes <= 0) return null;
-  const mins = Math.round(totalMinutes);
-  if (mins < 60) return `${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m === 0 ? `${h}h` : `${h}h${m}min`;
-}
 
 export default function RecipeCard({ recipe, to, linkState }) {
   if (!recipe) return null;

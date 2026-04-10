@@ -40,3 +40,15 @@ export const resetPassword = ({ token, password }) =>
     body: { token, password },
   });
 
+export const getMe = () =>
+  request('/api/auth/me');
+
+export const updateMe = (data) =>
+  request('/api/auth/me', { method: 'PUT', body: data });
+
+export const updateMyPassword = (data) =>
+  request('/api/auth/me/password', { method: 'PUT', body: data });
+
+export const deleteMe = () =>
+  request('/api/auth/me', { method: 'DELETE' });
+

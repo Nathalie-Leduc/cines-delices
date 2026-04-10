@@ -19,6 +19,7 @@ import {
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
 import { buildCategoryFilters, LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
+import { normalizeCategoryLabel } from '../../utils/recipeUtils.js';
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
   || buildApiUrl('/api/tmdb/medias/search');
@@ -135,32 +136,6 @@ function buildContactNotificationPreview(message) {
   }
 
   return `${normalizedMessage.slice(0, CONTACT_PREVIEW_LIMIT)}...`;
-}
-
-function normalizeCategoryLabel(value) {
-  const source = String(value || '').trim().toLowerCase();
-
-  if (!source) {
-    return 'Autre';
-  }
-
-  if (source === 'entree' || source === 'entrée') {
-    return 'Entrée';
-  }
-
-  if (source === 'plat') {
-    return 'Plat';
-  }
-
-  if (source === 'dessert') {
-    return 'Dessert';
-  }
-
-  if (source === 'boisson') {
-    return 'Boisson';
-  }
-
-  return source.charAt(0).toUpperCase() + source.slice(1);
 }
 
 function normalizeRecipe(rawRecipe) {

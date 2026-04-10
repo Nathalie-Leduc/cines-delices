@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Alert from '../../components/Alert/Alert.jsx';
-import { deleteMe, getMe, updateMe, updateMyPassword } from '../../services/api.js';
+import { deleteMe, getMe, updateMe, updateMyPassword } from '../../services/authService.js';
 import { getMyRecipes as getMyRecipesApi } from '../../services/recipesService.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import styles from './MemberProfile.module.scss';
