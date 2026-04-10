@@ -6,9 +6,10 @@
   align-items: center;
   margin-top: auto;
   padding: 1.9rem var(--layout-gutter) 1.7rem;
-  background:
-    linear-gradient(rgba(31, 29, 30, 0.94), rgba(31, 29, 30, 0.94)),
-    url('/img/rocky-wall.webp') center/cover;
+  /* Image de fond retirée — économise 191 kio sur chaque page.
+     Le gradient seul reproduit fidèlement l'apparence car l'overlay
+     était à 94% d'opacité (l'image était quasi invisible). */
+  background: linear-gradient(135deg, #1a1819 0%, #221f20 50%, #1a1819 100%);
   border-top: 1px solid rgba(246, 241, 232, 0.16);
 }
 
@@ -89,5 +90,10 @@
   .footerLink {
     font-size: 0.8rem;
     line-height: 1.2;
+    /* Zone tactile minimum 44px — recommandation WCAG 2.5.5 */
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0.5rem 0.25rem;
   }
 }

@@ -488,6 +488,7 @@ export default function Navbar({ mobileMenuMode = "default", onBurgerClick, vari
           <aside
             className={`${styles.mobilePanel} ${resolvedVariant === "admin" || resolvedVariant === "member" ? styles.mobilePanelDashboard : ""} ${isMenuOpen ? styles.mobilePanelOpen : ""}`.trim()}
             aria-hidden={!isMenuOpen}
+            inert={!isMenuOpen ? '' : undefined}
           >
             {resolvedVariant === "admin" ? (
               isMenuOpen ? (
