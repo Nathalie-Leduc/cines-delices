@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <rect width="160" height="160" rx="24" fill="#8e1f2f"/>
+  <rect x="20" y="85" width="120" height="55" rx="3" fill="#f5e6c0" stroke="#2a2520" stroke-width="1"/>
+  <rect x="20" y="80" width="120" height="7" rx="1" fill="#2a2520"/>
+  <polygon points="20,80 140,80 132,45 28,52" fill="#2a2520"/>
+  <polygon points="28,52 38,51 28,80 20,80" fill="#f5e6c0"/>
+  <polygon points="44,50 54,50 44,80 36,80" fill="#f5e6c0"/>
+  <polygon points="60,49 70,48.5 60,80 52,80" fill="#f5e6c0"/>
+  <polygon points="76,48 86,47.5 76,80 68,80" fill="#f5e6c0"/>
+  <polygon points="92,47 102,46.5 92,80 84,80" fill="#f5e6c0"/>
+  <polygon points="108,46 118,45.5 108,80 100,80" fill="#f5e6c0"/>
+  <text x="68" y="127" text-anchor="middle" font-family="Georgia,serif" font-size="34" font-weight="bold" fill="#8e1f2f">C</text>
+  <text x="94" y="127" text-anchor="middle" font-family="Georgia,serif" font-size="34" font-weight="bold" fill="#8e1f2f">D</text>
+  <rect x="81" y="88" width="28" height="7" rx="1" fill="#ffffff" stroke="#2a2520" stroke-width="0.8"/>
+  <ellipse cx="95" cy="81" rx="13" ry="10" fill="#ffffff" stroke="#2a2520" stroke-width="0.8"/>
+  <ellipse cx="95" cy="72" rx="6" ry="5" fill="#ffffff" stroke="#2a2520" stroke-width="0.8"/>
+</svg>
