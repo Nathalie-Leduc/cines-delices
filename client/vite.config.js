@@ -14,15 +14,10 @@ export default defineConfig({
     },
   },
   build: {
-    // Découpe le bundle en chunks thématiques
-    // Analogie : au lieu d'un seul gros livre, on a des fascicules —
-    // le visiteur ne télécharge que le fascicule de la page qu'il visite.
     rollupOptions: {
       output: {
         manualChunks: {
-          // Librairies React — chargées sur toutes les pages
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // Pages admin — chargées uniquement par les admins
           'chunk-admin': [
             './src/pages/Admin/Dashboard.jsx',
             './src/pages/Admin/Recettes.jsx',
@@ -34,7 +29,6 @@ export default defineConfig({
             './src/pages/Admin/AdminIngredientRecipes.jsx',
             './src/pages/Admin/AdminCategoryRecipes.jsx',
           ],
-          // Pages membre — chargées uniquement par les membres connectés
           'chunk-member': [
             './src/pages/MemberRecipes/MemberRecipes.jsx',
             './src/pages/MemberProfile/MemberProfile.jsx',
@@ -42,7 +36,6 @@ export default defineConfig({
             './src/pages/MemberInterface/MemberInterface.jsx',
             './src/pages/CreateRecipe/CreateRecipe.jsx',
           ],
-          // Pages légales — rarement visitées
           'chunk-legal': [
             './src/pages/MentionsLegales/MentionsLegales.jsx',
             './src/pages/PolitiqueConfidentialite/PolitiqueConfidentialite.jsx',
@@ -51,6 +44,13 @@ export default defineConfig({
           ],
         },
       },
+    },
+  },
+  preview: {
+    headers: {
+      // Assets avec hash dans le nom (JS, CSS) → cache 1 an
+      // Le hash change automatiquement quand le code change → pas de risque de stale cache
+      'Cache-Control': 'public, max-age=31536000, immutable',
     },
   },
   server: {

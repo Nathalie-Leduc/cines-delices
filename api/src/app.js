@@ -41,9 +41,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
-//CORRECTIF
 app.use('/uploads', (req, res, next) => {
+  // Cache 7 jours pour les images uploadées (recettes, profils...)
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.setHeader('Cache-Control', 'public, max-age=604800');
   next();
 }, express.static(uploadsDir));
 

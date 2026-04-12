@@ -1,24 +1,28 @@
-# Ciné Délices
+# 🎬 Ciné Délices
 
-Application web de recettes inspirées du cinéma et des séries.
+> *"La cuisine, c'est l'art. Le cinéma aussi. Ici, les deux se rencontrent dans l'assiette."*
 
-Associez vos films et séries préférés à des recettes créées par la communauté.
+Application web communautaire où chaque recette est inspirée d'un film ou d'une série culte.
+Cuisinez comme vos personnages préférés, explorez le catalogue et partagez vos créations.
+
+---
 
 ## Structure du projet
 
 ```
 .
-├── api/              # API REST Node.js/Express + Prisma
-├── client/           # Front React/Vite
-└── docker-compose.yml
+├── api/        # API REST — la cuisine se prépare ici (Node.js/Express/Prisma)
+└── client/     # Front React — la salle de cinéma (React/Vite)
 ```
 
 → [Documentation API](./api/README.md)
 → [Documentation Client](./client/README.md)
 
+---
+
 ## Démarrage rapide
 
-### Avec Docker (recommandé)
+### Avec Docker (recommandé pour le dev)
 
 ```bash
 # Copier les variables d'environnement
@@ -29,13 +33,13 @@ cp api/.env.example api/.env
 docker compose up --build
 ```
 
-| Service | URL |
-|---|---|
-| Front | http://localhost:5173 |
-| API | http://localhost:3000 |
-| Health | http://localhost:3000/api/health |
-| Swagger | http://localhost:3000/api-docs |
-| PostgreSQL | localhost:5432 |
+| Service    | URL                                       |
+|------------|-------------------------------------------|
+| Front      | <http://localhost:5173>                   |
+| API        | <http://localhost:3000>                   |
+| Health     | <http://localhost:3000/api/health>        |
+| Swagger    | <http://localhost:3000/api-docs>          |
+| PostgreSQL | `localhost:5432`                          |
 
 Arrêt :
 ```bash
@@ -49,7 +53,7 @@ docker compose down
 **2. API**
 ```bash
 cd api
-cp .env.example .env   # puis remplir les variables
+cp .env.example .env   # remplir les variables (TMDB_API_KEY obligatoire)
 npm install
 npm run db:generate
 npm run db:push
@@ -65,11 +69,30 @@ npm install
 npm run dev
 ```
 
+---
+
 ## Prérequis
 
 - Node.js >= 24
-- Docker + Docker Compose (pour le lancement Docker)
-- Clé API TMDB — https://www.themoviedb.org/settings/api
+- PostgreSQL (local ou hébergé)
+- Clé API TMDB — <https://www.themoviedb.org/settings/api>
+
+---
+
+## Stack technique
+
+| Couche          | Technologie                          |
+|-----------------|--------------------------------------|
+| Front           | React 19, React Router 7, Vite 6, Sass |
+| Back            | Node.js 24, Express 5, Prisma 7      |
+| Base de données | PostgreSQL                           |
+| Auth            | JWT + Argon2                         |
+| Images          | Sharp (WebP, compression automatique)|
+| Emails          | Nodemailer                           |
+| Tests           | Vitest, Testing Library              |
+| Déploiement     | Railway                              |
+
+---
 
 ## Tests
 
@@ -81,25 +104,28 @@ cd api && npm run test
 cd client && npm run test:run
 ```
 
-## Stack technique
-
-| Couche | Technologie |
-|---|---|
-| Front | React 19, React Router 7, Vite, Sass |
-| Back | Node.js, Express 5, Prisma 7 |
-| Base de données | PostgreSQL 18 |
-| Auth | JWT + Argon2 |
-| Images | Sharp (WebP) |
-| Emails | Nodemailer |
-| Tests | Vitest, Testing Library |
+---
 
 ## Contribuer
 
-1. Créer une branche depuis `develop` : `git checkout -b fix/mon-correctif`
-2. Commits atomiques en anglais : `fix: description courte`
+Le projet suit un workflow Git par branches thématiques :
+
+1. Créer une branche depuis `develop` : `git checkout -b fix/ma-correction`
+2. Commits atomiques en anglais : `fix: short description`
 3. Lancer lint et tests avant push
 4. Ouvrir une Pull Request vers `develop`
 
 ---
 
-Projet réalisé dans le cadre de la formation CDA — O'clock.
+## Déploiement
+
+L'application est déployée sur Railway :
+
+| Service | URL                                                          |
+|---------|--------------------------------------------------------------|
+| Front   | <https://graceful-quietude-production.up.railway.app>        |
+| API     | <https://cines-delices-production.up.railway.app>            |
+
+---
+
+*Projet réalisé dans le cadre de la formation CDA — O'clock.*
