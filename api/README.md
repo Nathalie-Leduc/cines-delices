@@ -1,6 +1,8 @@
-# Ciné Délices — API
+# 🎬 Ciné Délices — API
 
-API REST Node.js/Express pour l'application Ciné Délices.
+API REST de Ciné Délices : le moteur qui alimente le catalogue de recettes inspirées du cinéma.
+
+---
 
 ## Stack
 
@@ -8,16 +10,20 @@ API REST Node.js/Express pour l'application Ciné Délices.
 - Express 5
 - Prisma 7 + PostgreSQL
 - JWT + Argon2
-- Zod
-- Swagger UI (documentation interactive)
+- Zod (validation)
+- Swagger (documentation auto)
 - Nodemailer (emails)
-- Sharp (images WebP)
+- Sharp (conversion et compression WebP)
+
+---
 
 ## Prérequis
 
 - Node.js >= 24
-- PostgreSQL (ou Docker)
+- PostgreSQL (local ou hébergé)
 - Clé API TMDB : https://www.themoviedb.org/settings/api
+
+---
 
 ## Installation
 
@@ -28,167 +34,85 @@ cp .env.example .env
 npm install
 ```
 
+---
+
 ## Variables d'environnement
 
-| Variable | Description | Exemple |
-|---|---|---|
-| `PORT` | Port du serveur | `3000` |
-| `DATABASE_URL` | URL PostgreSQL | `postgresql://user:pass@localhost:5432/db` |
-| `JWT_SECRET` | Clé secrète JWT | chaîne aléatoire 64 hex |
-| `JWT_EXPIRES_IN` | Durée du token | `7h` |
-| `TMDB_API_KEY` | Clé API TMDB | — |
-| `TMDB_BASE_URL` | URL base TMDB | `https://api.themoviedb.org/3` |
-| `CLIENT_URL` | URL du front (CORS) | `http://localhost:5173` |
-| `API_BASE_URL` | URL publique du back | `http://localhost:3000` |
-| `SMTP_HOST` | Hôte SMTP | `sandbox.smtp.mailtrap.io` |
-| `SMTP_PORT` | Port SMTP | `587` |
-| `SMTP_USER` | Utilisateur SMTP | — |
-| `SMTP_PASS` | Mot de passe SMTP | — |
-| `SMTP_FROM` | Expéditeur email | `Ciné Délices <noreply@...>` |
+| Variable         | Description                      | Exemple                                      |
+|------------------|----------------------------------|----------------------------------------------|
+| `PORT`           | Port du serveur                  | `3000`                                       |
+| `DATABASE_URL`   | URL PostgreSQL                   | `postgresql://user:pass@localhost:5432/db`   |
+| `JWT_SECRET`     | Clé secrète JWT                  | chaîne aléatoire 64 hex                      |
+| `JWT_EXPIRES_IN` | Durée du token                   | `7h`                                         |
+| `TMDB_API_KEY`   | Clé API TMDB                     | —                                            |
+| `TMDB_BASE_URL`  | URL base TMDB                    | `https://api.themoviedb.org/3`               |
+| `CLIENT_URL`     | URL du front (CORS)              | `http://localhost:5173`                      |
+| `API_BASE_URL`   | URL publique du back             | `http://localhost:3000`                      |
+| `SMTP_HOST`      | Hôte SMTP                        | `sandbox.smtp.mailtrap.io`                   |
+| `SMTP_PORT`      | Port SMTP                        | `587`                                        |
+| `SMTP_USER`      | Utilisateur SMTP                 | —                                            |
+| `SMTP_PASS`      | Mot de passe SMTP                | —                                            |
+| `SMTP_FROM`      | Expéditeur email                 | `Ciné Délices <noreply@...>`                 |
 
 Générer un JWT_SECRET solide :
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
+---
+
 ## Scripts
 
-| Commande | Action |
-|---|---|
-| `npm run dev` | Serveur en développement (nodemon) |
-| `npm run start` | Serveur en production |
-| `npm run lint` | Lint ESLint |
-| `npm run db:generate` | Génère le Prisma Client |
-| `npm run db:migrate` | Crée et applique une migration |
-| `npm run db:push` | Synchronise le schéma (sans migration) |
-| `npm run db:seed` | Injecte les données de seed |
-| `npm run db:reset` | Reset complet + seed |
-| `npm run db:studio` | Ouvre Prisma Studio |
-| `npm run test` | Lance les tests d'intégration |
-| `npm run convert:images` | Convertit les images uploadées en WebP |
-| `npm run convert:posters` | Convertit les posters TMDB en WebP |
-| `npm run fix:media` | Corrige les métadonnées médias manquantes |
+| Commande                  | Action                                        |
+|---------------------------|-----------------------------------------------|
+| `npm run dev`             | Serveur en développement (nodemon)            |
+| `npm run start`           | Serveur en production                         |
+| `npm run lint`            | Lint ESLint                                   |
+| `npm run db:generate`     | Génère le Prisma Client                       |
+| `npm run db:migrate`      | Crée et applique une migration                |
+| `npm run db:push`         | Synchronise le schéma (sans migration)        |
+| `npm run db:seed`         | Injecte les données de seed                   |
+| `npm run db:reset`        | Reset complet + seed                          |
+| `npm run db:studio`       | Ouvre Prisma Studio (<http://localhost:5555>) |
+| `npm run test`            | Lance les tests d'intégration                 |
+| `npm run convert:images`  | Convertit les images uploadées en WebP        |
+| `npm run convert:posters` | Convertit les posters TMDB en WebP            |
+| `npm run fix:media`       | Corrige les métadonnées médias manquantes     |
 
-## Documentation interactive
-
-**Swagger UI** disponible sur : http://localhost:3000/api-docs
-
-Tu peux tester toutes les routes directement depuis l'interface.
-Pour les routes protégées, clique sur **Authorize** et colle ton JWT.
+---
 
 ## Routes principales
 
 Base URL : `http://localhost:3000/api`
 
-### Auth (public)
+| Méthode | Route                          | Description                    | Auth       |
+|---------|--------------------------------|--------------------------------|------------|
+| GET     | `/health`                      | Vérification serveur           | —          |
+| POST    | `/auth/register`               | Inscription                    | —          |
+| POST    | `/auth/login`                  | Connexion                      | —          |
+| GET     | `/auth/me`                     | Profil connecté                | JWT        |
+| PATCH   | `/auth/me`                     | Modifier profil                | JWT        |
+| DELETE  | `/auth/me`                     | Supprimer compte               | JWT        |
+| GET     | `/recipes`                     | Catalogue recettes publiées    | —          |
+| POST    | `/recipes`                     | Créer une recette              | JWT        |
+| GET     | `/recipes/:slug`               | Détail d'une recette           | —          |
+| PATCH   | `/recipes/:id`                 | Modifier une recette           | JWT        |
+| DELETE  | `/recipes/:id`                 | Supprimer une recette          | JWT        |
+| GET     | `/users/me/recipes`            | Recettes du membre connecté    | JWT        |
+| GET     | `/categories`                  | Liste des catégories           | —          |
+| GET     | `/ingredients/search`          | Rechercher un ingrédient       | —          |
+| GET     | `/tmdb/medias/search`          | Rechercher un film/série       | —          |
+| GET     | `/admin/recipes`               | Toutes les recettes (admin)    | JWT Admin  |
+| GET     | `/admin/recipes/pending`       | Recettes en attente            | JWT Admin  |
+| PATCH   | `/admin/recipes/:id/publish`   | Valider une recette            | JWT Admin  |
+| PATCH   | `/admin/recipes/:id/reject`    | Refuser une recette            | JWT Admin  |
+| DELETE  | `/admin/recipes/:id`           | Supprimer une recette          | JWT Admin  |
 
-| Méthode | Route | Description |
-|---|---|---|
-| POST | `/auth/register` | Inscription |
-| POST | `/auth/login` | Connexion → retourne un JWT |
-| GET | `/auth/logout` | Déconnexion |
-| GET | `/auth/me` | Profil connecté 🔒 |
-| PUT | `/auth/me` | Modifier profil 🔒 |
-| PUT | `/auth/me/password` | Modifier mot de passe 🔒 |
-| DELETE | `/auth/me` | Supprimer son compte 🔒 |
+Documentation complète : **<http://localhost:3000/api-docs>** (Swagger)
 
-### Recettes (public + membre)
-
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/recipes` | Catalogue recettes publiées |
-| GET | `/recipes/:id` | Détail d'une recette |
-| POST | `/recipes` | Créer une recette 🔒 |
-| PATCH | `/recipes/:id` | Modifier une recette 🔒 |
-| DELETE | `/recipes/:id` | Supprimer une recette 🔒 |
-| PATCH | `/recipes/:id/submit` | Soumettre en validation 🔒 |
-
-### Utilisateurs (membre)
-
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/users/me` | Profil du membre 🔒 |
-| GET | `/users/me/recipes` | Recettes du membre 🔒 |
-| GET | `/users/me/notifications` | Notifications 🔒 |
-| DELETE | `/users/me/notifications/:id` | Supprimer une notification 🔒 |
-
-### Catégories
-
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/categories` | Liste des catégories |
-| POST | `/categories` | Créer une catégorie 🔒 Admin |
-| PATCH | `/categories/:id` | Modifier une catégorie 🔒 Admin |
-| DELETE | `/categories/:id` | Supprimer une catégorie 🔒 Admin |
-
-### Ingrédients
-
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/ingredients/search` | Rechercher un ingrédient |
-| POST | `/ingredients` | Soumettre un ingrédient 🔒 |
-
-### Médias (films & séries)
-
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/media/movies` | Catalogue des films |
-| GET | `/media/movies/:slug` | Détail d'un film |
-| GET | `/media/series` | Catalogue des séries |
-| GET | `/media/series/:slug` | Détail d'une série |
-
-### TMDB
-
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/tmdb/medias/search` | Rechercher film/série sur TMDB |
-| GET | `/tmdb/medias/:type` | Catalogue par type (movie/tv) |
-| GET | `/tmdb/medias/:type/:id` | Détail d'un média TMDB |
-
-### Contact
-
-| Méthode | Route | Description |
-|---|---|---|
-| POST | `/contact` | Envoyer un message de contact |
-
-### Admin 🔒
-
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/admin/recipes` | Toutes les recettes publiées |
-| GET | `/admin/recipes/pending` | Recettes en attente |
-| PATCH | `/admin/recipes/:id` | Modifier une recette |
-| PATCH | `/admin/recipes/:id/publish` | Valider une recette |
-| PATCH | `/admin/recipes/:id/reject` | Refuser une recette |
-| DELETE | `/admin/recipes/:id` | Supprimer + notifier le membre |
-| GET | `/admin/users` | Liste des utilisateurs |
-| GET | `/admin/users/:id/recipes` | Recettes d'un membre |
-| PATCH | `/admin/users/:id/role` | Modifier le rôle |
-| DELETE | `/admin/users/:id` | Supprimer un utilisateur |
-| GET | `/admin/notifications` | Notifications admin |
-| DELETE | `/admin/notifications/:id` | Supprimer une notification |
-| GET | `/admin/categories` | Catégories (admin) |
-| POST | `/admin/categories` | Créer une catégorie |
-| PATCH | `/admin/categories/:id` | Modifier une catégorie |
-| DELETE | `/admin/categories/:id` | Supprimer une catégorie |
-| GET | `/admin/categories/:id/recipes` | Recettes d'une catégorie |
-| GET | `/admin/ingredients` | Ingrédients en attente |
-| GET | `/admin/ingredients/validated` | Ingrédients validés |
-| POST | `/admin/ingredients` | Créer un ingrédient validé |
-| POST | `/admin/ingredients/merge` | Fusionner deux ingrédients |
-| PATCH | `/admin/ingredients/:id` | Modifier un ingrédient |
-| PATCH | `/admin/ingredients/:id/approve` | Approuver un ingrédient |
-| DELETE | `/admin/ingredients/:id` | Refuser + supprimer |
-| GET | `/admin/ingredients/:id/recipes` | Recettes utilisant un ingrédient |
+---
 
 ## Base de données
-
-### Lancement avec Docker (recommandé)
-
-```bash
-# Depuis la racine du projet
-docker compose up db
-```
 
 ### Premier lancement
 
@@ -198,37 +122,72 @@ npm run db:push
 npm run db:seed
 ```
 
-### Prisma Studio
+### Prisma Studio (interface visuelle)
 
 ```bash
 npm run db:studio
 # Ouvre http://localhost:5555
 ```
 
-## Scripts utilitaires
+---
 
-| Fichier | Description |
-|---|---|
-| `scripts/convert-images-to-webp.mjs` | Convertit les images uploadées en WebP |
-| `scripts/convert-static-images.mjs` | Convertit les images statiques en WebP |
-| `scripts/migrate-posters-to-webp.mjs` | Migre les posters TMDB en WebP |
-| `scripts/fix-media-details.mjs` | Corrige les métadonnées médias manquantes |
-| `prisma/debug-seed.js` | Diagnostic de la connexion BDD |
-| `prisma/fix-db.js` | Patch ponctuel de schéma |
-| `tests/test-api.js` | Tests d'intégration API |
+## Architecture
+
+```text
+api/src/
+├── app.js                  # Point d'entrée Express
+├── controllers/            # Logique métier
+│   ├── recipesController.js      # CRUD recettes + ingrédients
+│   ├── authController.js         # Inscription, connexion, profil
+│   ├── adminRecipesController.js # Validation recettes (admin)
+│   ├── adminUsersController.js   # Gestion utilisateurs (admin)
+│   ├── adminIngredientsController.js # Validation ingrédients
+│   ├── adminCategoriesController.js  # Gestion catégories
+│   ├── mediaController.js        # Films et séries
+│   ├── tmdbController.js         # Proxy TMDB
+│   └── adminHelpers.js           # Utilitaires partagés admin
+├── routes/                 # Définition des routes Express
+├── middlewares/            # Auth, admin, validation, upload, erreurs
+├── lib/                    # Services transverses
+│   ├── prisma.js           # Instance Prisma singleton
+│   ├── mailer.js           # Envoi d'emails
+│   ├── posterService.js    # Téléchargement et cache des posters TMDB
+│   ├── responseHelper.js   # asyncHandler + successResponse
+│   └── tmdbCache.js        # Cache mémoire des requêtes TMDB
+├── validators/             # Schémas Zod
+├── mappers/                # Transformation des données API
+├── swagger/                # Configuration Swagger
+├── utils/                  # Utilitaires (slug)
+└── jobs/                   # Cron (vérification inactivité comptes)
+```
+
+---
+
+## Images uploadées
+
+Les images de recettes sont stockées dans `public/uploads/recipes/` et servies avec :
+
+- Header `Cross-Origin-Resource-Policy: cross-origin` (accès cross-origin autorisé)
+- Header `Cache-Control: public, max-age=604800` (cache 7 jours navigateur)
+
+---
 
 ## Dépannage
 
-**Erreur de connexion PostgreSQL**
-```bash
-docker compose ps
-# Vérifier DATABASE_URL dans api/.env
-```
+### Erreur de connexion PostgreSQL
 
-**Erreur Prisma P2021 (table manquante)**
+Vérifier `DATABASE_URL` dans `api/.env`.
+
+### Erreur Prisma P2021 (table manquante)
+
 ```bash
 npm run db:push
 ```
 
-**Token JWT expiré en dev**
-Augmenter `JWT_EXPIRES_IN` dans `.env` (ex: `30d`).
+### Token JWT expiré en dev
+
+Augmenter `JWT_EXPIRES_IN` dans `.env` (ex: `30d` pour le développement).
+
+### Images uploadées non visibles
+
+Vérifier que `API_BASE_URL` est défini dans `api/.env` et correspond à l'URL publique du serveur.
