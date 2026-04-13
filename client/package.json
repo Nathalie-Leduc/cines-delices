@@ -10,6 +10,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "caddy run --config /app/Caddyfile --adapter caddyfile",
     "lint": "eslint .",
     "test": "vitest",
     "test:run": "vitest run"
