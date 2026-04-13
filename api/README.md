@@ -63,21 +63,26 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
 ## Scripts
 
-| Commande                  | Action                                        |
-|---------------------------|-----------------------------------------------|
-| `npm run dev`             | Serveur en développement (nodemon)            |
-| `npm run start`           | Serveur en production                         |
-| `npm run lint`            | Lint ESLint                                   |
-| `npm run db:generate`     | Génère le Prisma Client                       |
-| `npm run db:migrate`      | Crée et applique une migration                |
-| `npm run db:push`         | Synchronise le schéma (sans migration)        |
-| `npm run db:seed`         | Injecte les données de seed                   |
-| `npm run db:reset`        | Reset complet + seed                          |
-| `npm run db:studio`       | Ouvre Prisma Studio (http://localhost:5555)   |
-| `npm run test`            | Lance les tests d'intégration                 |
-| `npm run convert:images`  | Convertit les images uploadées en WebP        |
-| `npm run convert:posters` | Convertit les posters TMDB en WebP            |
-| `npm run fix:media`       | Corrige les métadonnées médias manquantes     |
+| Commande                  | Action                                           |
+|---------------------------|--------------------------------------------------|
+| `npm run dev`             | Serveur en développement (nodemon)               |
+| `npm run start`           | Serveur en production                            |
+| `npm run lint`            | Lint ESLint                                      |
+| `npm run db:generate`     | Génère le Prisma Client                          |
+| `npm run db:migrate`      | Crée et applique une migration                   |
+| `npm run db:push`         | Synchronise le schéma (sans migration)           |
+| `npm run db:seed`         | Injecte les données de seed                      |
+| `npm run db:reset`        | Reset complet + seed                             |
+| `npm run db:studio`       | Ouvre Prisma Studio (http://localhost:5555)      |
+| `npm run test`            | Tests d'intégration (test-api.js)                |
+| `npm run test:security`   | Tests sécurité, JWT, RGPD, ingrédients           |
+| `npm run test:all`        | Les deux suites de tests à la suite              |
+| `npm run convert:images`  | Convertit les images uploadées en WebP           |
+| `npm run convert:posters` | Convertit les posters TMDB en WebP               |
+| `npm run fix:media`       | Corrige les métadonnées médias manquantes        |
+
+Les tests d'intégration nécessitent `API_BASE_URL` pointant vers une API démarrée.
+Les scripts `test`, `test:security` et `test:all` utilisent automatiquement Railway.
 
 ---
 
@@ -92,7 +97,7 @@ Base URL : `http://localhost:3000/api`
 | POST    | `/auth/login`                  | Connexion                      | —          |
 | GET     | `/auth/me`                     | Profil connecté                | JWT        |
 | PATCH   | `/auth/me`                     | Modifier profil                | JWT        |
-| DELETE  | `/auth/me`                     | Supprimer compte               | JWT        |
+| DELETE  | `/auth/me`                     | Supprimer compte (RGPD)        | JWT        |
 | GET     | `/recipes`                     | Catalogue recettes publiées    | —          |
 | POST    | `/recipes`                     | Créer une recette              | JWT        |
 | GET     | `/recipes/:slug`               | Détail d'une recette           | —          |
@@ -101,6 +106,7 @@ Base URL : `http://localhost:3000/api`
 | GET     | `/users/me/recipes`            | Recettes du membre connecté    | JWT        |
 | GET     | `/categories`                  | Liste des catégories           | —          |
 | GET     | `/ingredients/search`          | Rechercher un ingrédient       | —          |
+| POST    | `/ingredients`                 | Créer un ingrédient            | JWT        |
 | GET     | `/tmdb/medias/search`          | Rechercher un film/série       | —          |
 | GET     | `/admin/recipes`               | Toutes les recettes (admin)    | JWT Admin  |
 | GET     | `/admin/recipes/pending`       | Recettes en attente            | JWT Admin  |
@@ -135,30 +141,29 @@ npm run db:studio
 
 ```
 api/src/
-├── app.js                  # Point d'entrée Express
-├── controllers/            # Logique métier
-│   ├── recipesController.js      # CRUD recettes + ingrédients
+├── app.js                        # Point d'entrée Express
+├── controllers/                  # Logique métier
 │   ├── authController.js         # Inscription, connexion, profil
+│   ├── recipesController.js      # CRUD recettes + ingrédients
+│   ├── ingredientsController.js  # Recherche + création (avec singularisation)
 │   ├── adminRecipesController.js # Validation recettes (admin)
 │   ├── adminUsersController.js   # Gestion utilisateurs (admin)
-│   ├── adminIngredientsController.js # Validation ingrédients
-│   ├── adminCategoriesController.js  # Gestion catégories
+│   ├── adminIngredientsController.js
+│   ├── adminCategoriesController.js
 │   ├── mediaController.js        # Films et séries
-│   ├── tmdbController.js         # Proxy TMDB
-│   └── adminHelpers.js           # Utilitaires partagés admin
-├── routes/                 # Définition des routes Express
-├── middlewares/            # Auth, admin, validation, upload, erreurs
-├── lib/                    # Services transverses
-│   ├── prisma.js           # Instance Prisma singleton
-│   ├── mailer.js           # Envoi d'emails
-│   ├── posterService.js    # Téléchargement et cache des posters TMDB
-│   ├── responseHelper.js   # asyncHandler + successResponse
-│   └── tmdbCache.js        # Cache mémoire des requêtes TMDB
-├── validators/             # Schémas Zod
-├── mappers/                # Transformation des données API
-├── swagger/                # Configuration Swagger
-├── utils/                  # Utilitaires (slug)
-└── jobs/                   # Cron (vérification inactivité comptes)
+│   └── tmdbController.js         # Proxy TMDB
+├── routes/                       # Définition des routes Express
+│   ├── ingredientsRoutes.js      # GET /search (public) + POST / (JWT requis)
+│   └── ...
+├── middlewares/                  # Auth, admin, validation, upload, erreurs
+├── lib/                          # Services transverses
+│   ├── prisma.js                 # Instance Prisma singleton
+│   ├── mailer.js                 # Envoi d'emails
+│   ├── posterService.js          # Téléchargement et cache des posters TMDB
+│   └── tmdbCache.js              # Cache mémoire des requêtes TMDB
+├── validators/                   # Schémas Zod
+├── mappers/                      # Transformation des données API
+└── jobs/                         # Cron RGPD (vérification inactivité comptes)
 ```
 
 ---
@@ -166,8 +171,25 @@ api/src/
 ## Images uploadées
 
 Les images de recettes sont stockées dans `public/uploads/recipes/` et servies avec :
-- Header `Cross-Origin-Resource-Policy: cross-origin` (accès cross-origin autorisé)
-- Header `Cache-Control: public, max-age=604800` (cache 7 jours navigateur)
+- `Cross-Origin-Resource-Policy: cross-origin` (accès cross-origin autorisé)
+- `Cache-Control: public, max-age=604800` (cache 7 jours navigateur)
+
+---
+
+## Tests
+
+Deux suites de tests dans `api/tests/` :
+
+| Fichier                  | Type         | Couvre                                           |
+|--------------------------|--------------|--------------------------------------------------|
+| `test-api.js`            | Intégration  | Admin users, catégories, contact, notifications  |
+| `test-api-security.js`   | Intégration  | Sécurité HTTP, injections, CORS, JWT, RGPD, ingrédients, recettes |
+
+Les comptes de test sont recréés automatiquement si supprimés lors d'un run précédent.
+
+```bash
+npm run test:all
+```
 
 ---
 
@@ -182,7 +204,10 @@ npm run db:push
 ```
 
 **Token JWT expiré en dev**
-Augmenter `JWT_EXPIRES_IN` dans `.env` (ex: `30d` pour le développement).
+Augmenter `JWT_EXPIRES_IN` dans `.env` (ex: `30d`).
 
 **Images uploadées non visibles**
 Vérifier que `API_BASE_URL` est défini dans `api/.env` et correspond à l'URL publique du serveur.
+
+**Tests : Login failed**
+Les comptes de test ont peut-être été supprimés. `ensureTestUsers()` les recrée automatiquement au prochain `npm run test:all`.

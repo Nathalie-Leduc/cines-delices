@@ -11,8 +11,9 @@ Cuisinez comme vos personnages préférés, explorez le catalogue et partagez vo
 
 ```
 .
-├── api/        # API REST — la cuisine se prépare ici (Node.js/Express/Prisma)
-└── client/     # Front React — la salle de cinéma (React/Vite)
+├── api/              # API REST — la cuisine se prépare ici (Node.js/Express/Prisma)
+├── client/           # Front React — la salle de cinéma (React/Vite)
+└── docker-compose.yml
 ```
 
 → [Documentation API](./api/README.md)
@@ -25,11 +26,9 @@ Cuisinez comme vos personnages préférés, explorez le catalogue et partagez vo
 ### Avec Docker (recommandé pour le dev)
 
 ```bash
-# Copier les variables d'environnement
 cp api/.env.example api/.env
 # Remplir api/.env (TMDB_API_KEY obligatoire)
 
-# Lancer tous les services
 docker compose up --build
 ```
 
@@ -74,57 +73,55 @@ npm run dev
 ## Prérequis
 
 - Node.js >= 24
-- PostgreSQL (local ou hébergé)
+- Docker + Docker Compose (pour le lancement Docker)
 - Clé API TMDB — https://www.themoviedb.org/settings/api
-
----
-
-## Stack technique
-
-| Couche          | Technologie                          |
-|-----------------|--------------------------------------|
-| Front           | React 19, React Router 7, Vite 6, Sass |
-| Back            | Node.js 24, Express 5, Prisma 7      |
-| Base de données | PostgreSQL                           |
-| Auth            | JWT + Argon2                         |
-| Images          | Sharp (WebP, compression automatique)|
-| Emails          | Nodemailer                           |
-| Tests           | Vitest, Testing Library              |
-| Déploiement     | Railway                              |
 
 ---
 
 ## Tests
 
 ```bash
-# API
-cd api && npm run test
+# API — tests d'intégration (nécessite l'API Railway déployée)
+cd api && npm run test          # test-api.js
+cd api && npm run test:security # test-api-security.js (sécurité, JWT, RGPD, ingrédients)
+cd api && npm run test:all      # les deux à la suite
 
-# Client
-cd client && npm run test:run
+# Client — tests unitaires (sans serveur)
+cd client && pnpm run test:run
 ```
 
 ---
 
-## Contribuer
+## Stack technique
 
-Le projet suit un workflow Git par branches thématiques :
-
-1. Créer une branche depuis `develop` : `git checkout -b fix/ma-correction`
-2. Commits atomiques en anglais : `fix: short description`
-3. Lancer lint et tests avant push
-4. Ouvrir une Pull Request vers `develop`
+| Couche          | Technologie                           |
+|-----------------|---------------------------------------|
+| Front           | React 19, React Router 7, Vite 6, Sass |
+| Back            | Node.js 24, Express 5, Prisma 7       |
+| Base de données | PostgreSQL                            |
+| Auth            | JWT + Argon2                          |
+| Images          | Sharp (WebP, compression automatique) |
+| Emails          | Nodemailer                            |
+| Tests           | Vitest + Testing Library (client), Node assert (API) |
+| Déploiement     | Railway                               |
 
 ---
 
 ## Déploiement
 
-L'application est déployée sur Railway :
-
 | Service | URL |
 |---------|-----|
 | Front   | https://graceful-quietude-production.up.railway.app |
 | API     | https://cines-delices-production.up.railway.app     |
+
+---
+
+## Contribuer
+
+1. Créer une branche depuis `develop` : `git checkout -b fix/mon-correctif`
+2. Commits atomiques en anglais : `fix: description courte`
+3. Lancer lint et tests avant push
+4. Ouvrir une Pull Request vers `develop`
 
 ---
 

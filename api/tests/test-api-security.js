@@ -331,7 +331,7 @@ async function testRGPD() {
   // 5.6 Un admin ne peut pas supprimer son propre compte via DELETE /api/auth/me
   // (cas limite : protection contre suppression accidentelle du dernier admin)
   // Ce test vérifie juste que la route existe et répond
-  const adminToken = await login('admin@cinesdelices.fr', 'Admin1234!');
+  const adminToken = await login('luca.bernard@cinesdelices.fr', 'Admin1234!');
   const adminDeleteSelf = await request('/api/auth/me', {
     method: 'DELETE',
     headers: authHeaders(adminToken),
@@ -505,7 +505,7 @@ async function testRecipes() {
   section('7. Recettes — Workflow et sécurité');
 
   const memberToken = await login('marie@cinesdelices.fr', 'Member1234!');
-  const adminToken = await login('admin@cinesdelices.fr', 'Admin1234!');
+  const adminToken = await login('sophie.martin@cinesdelices.fr', 'Admin1234!');
 
   // 7.1 GET /api/recipes est public
   const publicRecipes = await request('/api/recipes');
@@ -569,12 +569,90 @@ async function testRecipes() {
 }
 
 // ─────────────────────────────────────────────
+// AUTO-SETUP DES UTILISATEURS DE TEST
+// ─────────────────────────────────────────────
+
+async function ensureTestUsers() {
+  const usersToEnsure = [
+    { email: 'admin@cinesdelices.fr',         password: 'Admin1234!', nom: 'Delices',  prenom: 'Admin',   pseudo: 'Admin',    role: 'ADMIN'  },
+    { email: 'sophie.martin@cinesdelices.fr', password: 'Admin1234!', nom: 'Martin',   prenom: 'Sophie',  pseudo: 'Sophie',   role: 'ADMIN'  },
+    { email: 'luca.bernard@cinesdelices.fr',  password: 'Admin1234!', nom: 'Bernard',  prenom: 'Luca',    pseudo: 'Luca',     role: 'ADMIN'  },
+    { email: 'marie@cinesdelices.fr',         password: 'Member1234!', nom: 'Dubois',  prenom: 'Marie',   pseudo: 'Marie',    role: 'MEMBER' },
+    { email: 'remy@cinesdelices.fr',          password: 'Member1234!', nom: 'Martin',  prenom: 'Rémy',    pseudo: 'ReMyChef', role: 'MEMBER' },
+  ];
+
+  // On cherche un admin fonctionnel pour promouvoir les autres
+  let bootstrapToken = null;
+  for (const u of usersToEnsure.filter(u => u.role === 'ADMIN')) {
+    try {
+      const { response, payload } = await request('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: u.email, password: u.password }),
+      });
+      if (response.status === 200 && payload?.token) {
+        bootstrapToken = payload.token;
+        break;
+      }
+    } catch { /* continuer */ }
+  }
+
+  for (const u of usersToEnsure) {
+    // Tenter le login
+    const { response: loginRes } = await request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: u.email, password: u.password }),
+    });
+
+    if (loginRes.status === 200) continue; // Le compte existe déjà
+
+    // Le compte n'existe pas — on le recrée
+    console.log(`  → Recréation de ${u.email}...`);
+    const { response: regRes, payload: regPayload } = await request('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: u.email,
+        nom: u.nom,
+        prenom: u.prenom,
+        pseudo: u.pseudo,
+        password: u.password,
+        acceptedPolicies: true,
+      }),
+    });
+
+    if (regRes.status !== 201) {
+      console.warn(`  ⚠️  Impossible de recréer ${u.email} (${regRes.status})`);
+      continue;
+    }
+
+    // Si c'est un admin et qu'on a un token bootstrap, on le promeut
+    if (u.role === 'ADMIN' && bootstrapToken) {
+      const userId = regPayload?.user?.id;
+      if (userId) {
+        await request(`/api/admin/users/${userId}/role`, {
+          method: 'PATCH',
+          headers: authHeaders(bootstrapToken, true),
+          body: JSON.stringify({ role: 'ADMIN' }),
+        });
+        console.log(`  ✅ ${u.email} recréé et promu ADMIN`);
+      }
+    } else {
+      console.log(`  ✅ ${u.email} recréé`);
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
 // RUNNER PRINCIPAL
 // ─────────────────────────────────────────────
 
 async function run() {
   console.log(`\n🎬 Ciné Délices — Tests sécurité, JWT, RGPD, Ingrédients`);
   console.log(`📡 API : ${API_BASE_URL}\n`);
+
+  await ensureTestUsers();
 
   const suites = [
     { name: 'Headers HTTP',       fn: testSecurityHeaders },
