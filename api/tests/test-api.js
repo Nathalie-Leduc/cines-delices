@@ -87,22 +87,100 @@ async function deleteUserAsAdmin(adminToken, userId) {
   });
 }
 
-async function cleanupContactNotifications() {
-  process.env.DATABASE_URL = 'postgresql://cinesdelices:cinesdelices@localhost:5433/cinesdelices';
+// Recrée les comptes de test s'ils ont été supprimés lors d'un run précédent.
+// Analogie : comme un régisseur qui remet les décors en place avant chaque tournage.
+async function ensureTestUsers() {
+  const usersToEnsure = [
+    { email: 'admin@cinesdelices.fr',         password: 'Admin1234!', nom: 'Delices',  prenom: 'Admin',   pseudo: 'Admin',    role: 'ADMIN'  },
+    { email: 'sophie.martin@cinesdelices.fr', password: 'Admin1234!', nom: 'Martin',   prenom: 'Sophie',  pseudo: 'Sophie',   role: 'ADMIN'  },
+    { email: 'luca.bernard@cinesdelices.fr',  password: 'Admin1234!', nom: 'Bernard',  prenom: 'Luca',    pseudo: 'Luca',     role: 'ADMIN'  },
+    { email: 'marie@cinesdelices.fr',         password: 'Member1234!', nom: 'Dubois',  prenom: 'Marie',   pseudo: 'Marie',    role: 'MEMBER' },
+    { email: 'remy@cinesdelices.fr',          password: 'Member1234!', nom: 'Martin',  prenom: 'Rémy',    pseudo: 'ReMyChef', role: 'MEMBER' },
+  ];
 
-  const { prisma } = await import('../src/lib/prisma.js');
+  // On cherche un admin fonctionnel pour promouvoir les autres
+  let bootstrapToken = null;
+  for (const u of usersToEnsure.filter(u => u.role === 'ADMIN')) {
+    try {
+      const { response, payload } = await request('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: u.email, password: u.password }),
+      });
+      if (response.status === 200 && payload?.token) {
+        bootstrapToken = payload.token;
+        break;
+      }
+    } catch { /* continuer */ }
+  }
 
-  try {
-    await prisma.notification.deleteMany({
-      where: {
-        OR: [
-          { message: { contains: visitorContactMessage } },
-          { message: { contains: memberContactMessage } },
-        ],
-      },
+  for (const u of usersToEnsure) {
+    // Tenter le login
+    const { response: loginRes } = await request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: u.email, password: u.password }),
     });
-  } finally {
-    await prisma.$disconnect();
+
+    if (loginRes.status === 200) continue; // Le compte existe déjà
+
+    // Le compte n'existe pas — on le recrée
+    console.log(`  → Recréation de ${u.email}...`);
+    const { response: regRes, payload: regPayload } = await request('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: u.email,
+        nom: u.nom,
+        prenom: u.prenom,
+        pseudo: u.pseudo,
+        password: u.password,
+        acceptedPolicies: true,
+      }),
+    });
+
+    if (regRes.status !== 201) {
+      console.warn(`  ⚠️  Impossible de recréer ${u.email} (${regRes.status})`);
+      continue;
+    }
+
+    // Si c'est un admin et qu'on a un token bootstrap, on le promeut
+    if (u.role === 'ADMIN' && bootstrapToken) {
+      const userId = regPayload?.user?.id;
+      if (userId) {
+        await request(`/api/admin/users/${userId}/role`, {
+          method: 'PATCH',
+          headers: authHeaders(bootstrapToken, true),
+          body: JSON.stringify({ role: 'ADMIN' }),
+        });
+        console.log(`  ✅ ${u.email} recréé et promu ADMIN`);
+      }
+    } else {
+      console.log(`  ✅ ${u.email} recréé`);
+    }
+  }
+}
+
+async function cleanupContactNotifications() {
+// Nettoyage via HTTP — pas de connexion Prisma directe
+  try {
+    const adminToken = await login('admin@cinesdelices.fr', 'Admin1234!');
+    const { payload } = await request('/api/admin/notifications', {
+      headers: authHeaders(adminToken),
+    });
+    const notifications = Array.isArray(payload?.notifications) ? payload.notifications : [];
+    const toMark = notifications.filter(n =>
+      String(n?.message || '').includes(visitorContactMessage) ||
+      String(n?.message || '').includes(memberContactMessage)
+    );
+    for (const n of toMark) {
+      await request(`/api/admin/notifications/${n.id}/read`, {
+        method: 'PATCH',
+        headers: authHeaders(adminToken),
+      });
+    }
+  } catch {
+    // Pas bloquant si le cleanup échoue
   }
 }
 
@@ -110,6 +188,7 @@ async function run() {
   console.log(`Testing admin and categories API on ${API_BASE_URL}`);
 
   try {
+    await ensureTestUsers();
     await cleanupContactNotifications();
 
     const memberToken = await login('marie@cinesdelices.fr', 'Member1234!');

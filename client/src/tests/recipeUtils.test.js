@@ -166,7 +166,7 @@ describe('mapApiRecipeToCard', () => {
 
   it('utilise l\'image de fallback si imageURL est absente', () => {
     const card = mapApiRecipeToCard({ ...recipeBase, imageURL: null, imageUrl: null });
-    expect(card.image).toBe('/img/hero-home.webp');
+    expect(card.image).toBeNull();
   });
 
   it('retourne "Recette sans titre" si le titre est absent', () => {

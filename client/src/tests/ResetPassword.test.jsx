@@ -14,7 +14,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import ResetPassword from '../pages/resetPassword/resetPassword.jsx';
+import ResetPassword from '../pages/ResetPassword/ResetPassword.jsx';
 
 // Mock du service d'auth
 const mockResetPassword = vi.fn();
