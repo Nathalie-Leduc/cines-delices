@@ -33,12 +33,12 @@ npm install
 
 ## Variables d'environnement
 
-| Variable                          | Description                  | Défaut                                          |
-|-----------------------------------|------------------------------|-------------------------------------------------|
-| `VITE_API_URL`                    | URL de base de l'API         | `http://localhost:3000`                         |
-| `VITE_INGREDIENT_SEARCH_API_URL`  | Route recherche ingrédients  | `http://localhost:3000/api/ingredients/search`  |
-| `VITE_RECIPE_API_URL`             | Route recettes               | `http://localhost:3000/api/recipes`             |
-| `VITE_USER_API_URL`               | Route utilisateurs           | `http://localhost:3000/api/users`               |
+| Variable                        | Description                     | Défaut                           |
+|---------------------------------|---------------------------------|----------------------------------|
+| `VITE_API_URL`                  | URL de base de l'API            | `http://localhost:3000`          |
+| `VITE_INGREDIENT_SEARCH_API_URL`| Route recherche ingrédients     | `http://localhost:3000/api/ingredients/search` |
+| `VITE_RECIPE_API_URL`           | Route recettes                  | `http://localhost:3000/api/recipes` |
+| `VITE_USER_API_URL`             | Route utilisateurs              | `http://localhost:3000/api/users` |
 
 ---
 
@@ -98,11 +98,11 @@ client/src/
 
 ## Rôles utilisateur
 
-| Rôle     | Accès                                                           |
-|----------|-----------------------------------------------------------------|
-| Visiteur | Catalogue recettes, détail recette, films, séries               |
-| Membre   | + Créer/modifier ses recettes, notifications, espace personnel  |
-| Admin    | + Validation recettes/ingrédients, gestion complète             |
+| Rôle     | Accès                                                          |
+|----------|----------------------------------------------------------------|
+| Visiteur | Catalogue recettes, détail recette, films, séries              |
+| Membre   | + Créer/modifier ses recettes, notifications, espace personnel |
+| Admin    | + Validation recettes/ingrédients, gestion complète           |
 
 ---
 

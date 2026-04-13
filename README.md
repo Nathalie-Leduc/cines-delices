@@ -33,13 +33,13 @@ cp api/.env.example api/.env
 docker compose up --build
 ```
 
-| Service    | URL                                       |
-|------------|-------------------------------------------|
-| Front      | <http://localhost:5173>                   |
-| API        | <http://localhost:3000>                   |
-| Health     | <http://localhost:3000/api/health>        |
-| Swagger    | <http://localhost:3000/api-docs>          |
-| PostgreSQL | `localhost:5432`                          |
+| Service    | URL                              |
+|------------|----------------------------------|
+| Front      | http://localhost:5173            |
+| API        | http://localhost:3000            |
+| Health     | http://localhost:3000/api/health |
+| Swagger    | http://localhost:3000/api-docs   |
+| PostgreSQL | localhost:5432                   |
 
 Arrêt :
 ```bash
@@ -75,7 +75,7 @@ npm run dev
 
 - Node.js >= 24
 - PostgreSQL (local ou hébergé)
-- Clé API TMDB — <https://www.themoviedb.org/settings/api>
+- Clé API TMDB — https://www.themoviedb.org/settings/api
 
 ---
 
@@ -121,10 +121,10 @@ Le projet suit un workflow Git par branches thématiques :
 
 L'application est déployée sur Railway :
 
-| Service | URL                                                          |
-|---------|--------------------------------------------------------------|
-| Front   | <https://graceful-quietude-production.up.railway.app>        |
-| API     | <https://cines-delices-production.up.railway.app>            |
+| Service | URL |
+|---------|-----|
+| Front   | https://graceful-quietude-production.up.railway.app |
+| API     | https://cines-delices-production.up.railway.app     |
 
 ---
 

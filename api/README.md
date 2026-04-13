@@ -73,7 +73,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 | `npm run db:push`         | Synchronise le schéma (sans migration)        |
 | `npm run db:seed`         | Injecte les données de seed                   |
 | `npm run db:reset`        | Reset complet + seed                          |
-| `npm run db:studio`       | Ouvre Prisma Studio (<http://localhost:5555>) |
+| `npm run db:studio`       | Ouvre Prisma Studio (http://localhost:5555)   |
 | `npm run test`            | Lance les tests d'intégration                 |
 | `npm run convert:images`  | Convertit les images uploadées en WebP        |
 | `npm run convert:posters` | Convertit les posters TMDB en WebP            |
@@ -108,7 +108,7 @@ Base URL : `http://localhost:3000/api`
 | PATCH   | `/admin/recipes/:id/reject`    | Refuser une recette            | JWT Admin  |
 | DELETE  | `/admin/recipes/:id`           | Supprimer une recette          | JWT Admin  |
 
-Documentation complète : **<http://localhost:3000/api-docs>** (Swagger)
+Documentation complète : **http://localhost:3000/api-docs** (Swagger)
 
 ---
 
@@ -133,7 +133,7 @@ npm run db:studio
 
 ## Architecture
 
-```text
+```
 api/src/
 ├── app.js                  # Point d'entrée Express
 ├── controllers/            # Logique métier
@@ -166,7 +166,6 @@ api/src/
 ## Images uploadées
 
 Les images de recettes sont stockées dans `public/uploads/recipes/` et servies avec :
-
 - Header `Cross-Origin-Resource-Policy: cross-origin` (accès cross-origin autorisé)
 - Header `Cache-Control: public, max-age=604800` (cache 7 jours navigateur)
 
@@ -174,20 +173,16 @@ Les images de recettes sont stockées dans `public/uploads/recipes/` et servies 
 
 ## Dépannage
 
-### Erreur de connexion PostgreSQL
-
+**Erreur de connexion PostgreSQL**
 Vérifier `DATABASE_URL` dans `api/.env`.
 
-### Erreur Prisma P2021 (table manquante)
-
+**Erreur Prisma P2021 (table manquante)**
 ```bash
 npm run db:push
 ```
 
-### Token JWT expiré en dev
-
+**Token JWT expiré en dev**
 Augmenter `JWT_EXPIRES_IN` dans `.env` (ex: `30d` pour le développement).
 
-### Images uploadées non visibles
-
+**Images uploadées non visibles**
 Vérifier que `API_BASE_URL` est défini dans `api/.env` et correspond à l'URL publique du serveur.
