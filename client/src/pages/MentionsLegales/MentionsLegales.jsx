@@ -19,13 +19,13 @@ export default function MentionsLegales() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>🎥 Scène 1 — La production</h2>
         <p>
-          CinésDélices est une production indépendante réalisée dans le cadre
+          CinéDélices est une production indépendante réalisée dans le cadre
           de la formation Concepteur Développeur d'Applications (CDA)
           de l'école O'Clock. Comme tout bon film indé, il est fait avec
           passion, du café et beaucoup de commits Git.
         </p>
         <ul className={styles.list}>
-          <li><span className={styles.label}>Production :</span> CinésDélices</li>
+          <li><span className={styles.label}>Production :</span> CinéDélices</li>
           <li><span className={styles.label}>Genre :</span> Projet pédagogique (non commercial)</li>
           <li><span className={styles.label}>Studio :</span> O'Clock</li>
           <li><span className={styles.label}>Année de sortie :</span> 2026</li>
@@ -58,7 +58,7 @@ export default function MentionsLegales() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>©️ Scène 3 — Les droits d'auteur</h2>
         <p>
-          Les recettes publiées sur CinésDélices sont les scénarios originaux
+          Les recettes publiées sur CinéDélices sont les scénarios originaux
           de nos membres-scénaristes et restent leur propriété. Les affiches
           et données sur les films et séries proviennent de l'API TMDB
           (The Movie Database) — nos fournisseurs d'accessoires officiels.

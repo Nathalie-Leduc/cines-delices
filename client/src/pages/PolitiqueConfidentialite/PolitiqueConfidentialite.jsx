@@ -16,12 +16,12 @@ export default function PolitiqueConfidentialite() {
       {/* ── Introduction ── */}
       <section className={styles.section}>
         <p>
-          Bienvenue dans les coulisses de CinésDélices ! Ce document
+          Bienvenue dans les coulisses de CinéDélices ! Ce document
           explique comment on gère vos données personnelles. Spoiler
           alert : on les protège mieux que le One Ring dans le Mordor.
         </p>
         <p>
-          CinésDélices est une production pédagogique O'Clock 2026.
+          CinéDélices est une production pédagogique O'Clock 2026.
           Pas de studio hollywoodien derrière, juste une équipe de
           développeurs passionnés de cinéma et de cuisine.
         </p>
@@ -31,8 +31,8 @@ export default function PolitiqueConfidentialite() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>🎬 Scène 1 — Le réalisateur des données</h2>
         <ul className={styles.list}>
-          <li><span className={styles.label}>Production :</span> CinésDélices</li>
-          <li><span className={styles.label}>Réalisateur :</span> Équipe CinésDélices — O'Clock 2026</li>
+          <li><span className={styles.label}>Production :</span> CinéDélices</li>
+          <li><span className={styles.label}>Réalisateur :</span> Équipe CinéDélices — O'Clock 2026</li>
           <li>
             <span className={styles.label}>Contacter le réalisateur :</span> via
             la <Link to="/contact" className={styles.link}>page Contact</Link>

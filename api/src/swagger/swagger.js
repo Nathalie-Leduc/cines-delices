@@ -5,9 +5,9 @@ const options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'CinésDélices API',
+      title: 'CinéDélices API',
       version: '1.0.0',
-      description: "Documentation de l'API CinésDélices",
+      description: "Documentation de l'API CinéDélices",
     },
     servers: [
       {

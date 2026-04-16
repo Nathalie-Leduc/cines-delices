@@ -1,7 +1,7 @@
 {
   "name": "cines-delices-client",
   "version": "1.0.0",
-  "description": "CinésDélices — Client",
+  "description": "CinéDélices — Client",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
