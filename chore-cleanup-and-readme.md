@@ -75,9 +75,9 @@ echo "docs/" >> .gitignore
 Créer le fichier `api/README.md` avec ce contenu exact :
 
 ```markdown
-# Ciné Délices — API
+# Cinés Délices — API
 
-API REST Node.js/Express pour l'application Ciné Délices.
+API REST Node.js/Express pour l'application Cinés Délices.
 
 ## Stack
 
@@ -121,7 +121,7 @@ npm install
 | `SMTP_PORT` | Port SMTP | `587` |
 | `SMTP_USER` | Utilisateur SMTP | — |
 | `SMTP_PASS` | Mot de passe SMTP | — |
-| `SMTP_FROM` | Expéditeur email | `Ciné Délices <noreply@...>` |
+| `SMTP_FROM` | Expéditeur email | `Cinés Délices <noreply@...>` |
 
 Générer un JWT_SECRET solide :
 ```bash
@@ -236,9 +236,9 @@ Augmenter `JWT_EXPIRES_IN` dans `.env` (ex: `30d` pour le développement).
 Créer le fichier `client/README.md` avec ce contenu exact :
 
 ```markdown
-# Ciné Délices — Client
+# Cinés Délices — Client
 
-Interface utilisateur React/Vite pour l'application Ciné Délices.
+Interface utilisateur React/Vite pour l'application Cinés Délices.
 
 ## Stack
 
@@ -330,7 +330,7 @@ Vérifier que `API_BASE_URL` est bien défini dans `api/.env`.
 Remplacer le contenu de `README.md` par :
 
 ```markdown
-# Ciné Délices
+# Cinés Délices
 
 Application web de recettes inspirées du cinéma et des séries.
 
