@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.js';
 import routes from './routes/index.js'
 import { errorMiddleware } from './middlewares/errorMiddleware.js';
 import { startInactivityCron } from './jobs/inactivityCheck.js';
+import { ensurePostersExist } from './lib/startupPosters.js';
 
 
 import { sendResetPasswordMail } from './lib/mailer.js';
@@ -77,4 +78,6 @@ app.listen(PORT, () => {
   console.log(`Origine client autorisée : ${CLIENT_URL}`);
 });
 
+
 startInactivityCron();
+ensurePostersExist();
