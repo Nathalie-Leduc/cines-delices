@@ -15,10 +15,10 @@ export default function MemberContact() {
           <span className={styles.supportBadge}>Support membre</span>
           <p className={styles.introText}>
             Utilise ce formulaire sans quitter ton espace membre pour contacter
-            l&apos;équipe Cine Delices. La page publique de contact reste dédiée
+            l&apos;équipe Cinés Delices. La page publique de contact reste dédiée
             aux visiteurs.
           </p>
-          <p className={styles.supportEmail}>help@support.cine-delices.com</p>
+          <p className={styles.supportEmail}>help@support.cines-delices.com</p>
         </div>
 
         <ContactForm

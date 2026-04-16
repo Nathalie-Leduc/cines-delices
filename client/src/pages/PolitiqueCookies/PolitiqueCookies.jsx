@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styles from './PolitiqueCookies.module.scss';
 
 // ============================================================
-// PAGE POLITIQUE COOKIES — Ciné Délices
+// PAGE POLITIQUE COOKIES — Cinés Délices
 // ============================================================
 // Détail de tous les cookies et technologies de suivi utilisés,
 // conformément aux recommandations CNIL d'octobre 2020.

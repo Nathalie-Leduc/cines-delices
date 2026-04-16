@@ -1,6 +1,7 @@
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma.js';
+import { sendPasswordChangedMail } from '../lib/mailer.js';
 
 // Helper : signe un JWT
 function signToken(user) {
@@ -227,6 +228,7 @@ export const updateMyPassword = async (req, res) => {
       data: { passwordHash },
     });
 
+    await sendPasswordChangedMail(req.user.email);
     res.json({ message: 'Mot de passe mis à jour' });
   } catch (error) {
     console.error('[updateMyPassword]', error);

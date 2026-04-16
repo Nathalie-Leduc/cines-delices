@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styles from './MentionsLegales.module.scss';
 
 // ============================================================
-// PAGE MENTIONS LÉGALES — Ciné Délices
+// PAGE MENTIONS LÉGALES — Cinés Délices
 // ============================================================
 // Mise à jour : mars 2026
 // Couvre : éditeur, hébergement, propriété intellectuelle,

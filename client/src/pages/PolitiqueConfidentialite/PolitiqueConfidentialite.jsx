@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styles from './PolitiqueConfidentialite.module.scss';
 
 // ============================================================
-// PAGE POLITIQUE DE CONFIDENTIALITÉ — Ciné Délices
+// PAGE POLITIQUE DE CONFIDENTIALITÉ — Cinés Délices
 // ============================================================
 // Complète les mentions légales avec le détail du traitement
 // des données personnelles (RGPD).

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styles from './ReglesModeration.module.scss';
 
 // ============================================================
-// PAGE RÈGLES DE MODÉRATION — Ciné Délices
+// PAGE RÈGLES DE MODÉRATION — Cinés Délices
 // ============================================================
 // Ton : principalement fun avec des références cinéma partout.
 // L'admin est le réalisateur, les membres sont les acteurs,
@@ -17,7 +17,7 @@ export default function ReglesModeration() {
       {/* ── Introduction ── */}
       <section className={styles.section}>
         <p>
-          Bienvenue sur le plateau de Ciné Délices ! Ici, chaque membre
+          Bienvenue sur le plateau de Cinés Délices ! Ici, chaque membre
           est un <strong>acteur</strong> et chaque recette est
           un <strong>scénario</strong>. Mais comme sur tout bon tournage,
           il y a un <strong>réalisateur</strong> (l'admin) qui décide
@@ -294,7 +294,7 @@ export default function ReglesModeration() {
           🎤 Épilogue — Le mot du réalisateur
         </h2>
         <p>
-          Ciné Délices, c'est avant tout une aventure collective. Chaque
+          Cinés Délices, c'est avant tout une aventure collective. Chaque
           recette que vous partagez enrichit notre catalogue et fait vivre
           la communauté. Ces règles ne sont pas là pour brider votre
           créativité, mais pour que chaque contribution soit digne

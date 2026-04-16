@@ -1,6 +1,6 @@
-# 🎬 Ciné Délices — Client
+# 🎬 Cinés Délices — Client
 
-Interface utilisateur de Ciné Délices : le catalogue de recettes inspirées du cinéma et des séries.
+Interface utilisateur de Cinés Délices : le catalogue de recettes inspirées du cinéma et des séries.
 
 ---
 

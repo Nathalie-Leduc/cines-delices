@@ -18,7 +18,7 @@
  *         email:
  *           type: string
  *           format: email
- *           example: marie@cinedelices.fr
+ *           example: marie@cinesdelices.fr
  *         nom:
  *           type: string
  *           nullable: true
@@ -101,7 +101,7 @@
  *               email:
  *                 type: string
  *                 format: email
- *                 example: marie@cinedelices.fr
+ *                 example: marie@cinesdelices.fr
  *               nom:
  *                 type: string
  *                 example: Dupont
@@ -171,7 +171,7 @@
  *               email:
  *                 type: string
  *                 format: email
- *                 example: marie@cinedelices.fr
+ *                 example: marie@cinesdelices.fr
  *               password:
  *                 type: string
  *                 format: password
@@ -290,7 +290,7 @@
  *               email:
  *                 type: string
  *                 format: email
- *                 example: marie@cinedelices.fr
+ *                 example: marie@cinesdelices.fr
  *     responses:
  *       200:
  *         description: Profil mis a jour
@@ -353,7 +353,7 @@
  *               email:
  *                 type: string
  *                 format: email
- *                 example: marie@cinedelices.fr
+ *                 example: marie@cinesdelices.fr
  *     responses:
  *       200:
  *         description: Profil mis a jour

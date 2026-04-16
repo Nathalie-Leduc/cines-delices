@@ -1,5 +1,5 @@
 // ============================================================
-// SCHÉMA PRISMA — Ciné Délices (version corrigée)
+// SCHÉMA PRISMA — Cinés Délices (version corrigée)
 // ============================================================
 // CORRECTIONS APPLIQUÉES :
 //   1. Recipe → User : Cascade → SetNull (les recettes publiées

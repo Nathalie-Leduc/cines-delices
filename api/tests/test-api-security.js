@@ -1,7 +1,7 @@
 /**
  * test-api-security.js
  * Tests d'intégration — Sécurité, JWT, RGPD, Ingrédients
- * Ciné Délices — Apothéose CDA O'Clock
+ * Cinés Délices — Apothéose CDA O'Clock
  *
  * Usage : API_BASE_URL=https://... node api/tests/test-api-security.js
  * (l'API doit être démarrée avec le seed v4)
@@ -649,7 +649,7 @@ async function ensureTestUsers() {
 // ─────────────────────────────────────────────
 
 async function run() {
-  console.log(`\n🎬 Ciné Délices — Tests sécurité, JWT, RGPD, Ingrédients`);
+  console.log(`\n🎬 Cinés Délices — Tests sécurité, JWT, RGPD, Ingrédients`);
   console.log(`📡 API : ${API_BASE_URL}\n`);
 
   await ensureTestUsers();

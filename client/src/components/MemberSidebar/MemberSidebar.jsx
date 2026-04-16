@@ -232,7 +232,7 @@ export default function MemberSidebar({ className = '', onNavigate, mobile = fal
     {
       icon: '/icon/Contact.svg',
       label: 'Contact',
-      sub: 'help@support.cine-delices.com',
+      sub: 'help@support.cines-delices.com',
       to: '/membre/contact',
       end: true,
     },

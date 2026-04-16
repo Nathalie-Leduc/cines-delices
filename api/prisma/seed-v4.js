@@ -107,7 +107,7 @@ async function downloadAndConvertImage(url, dir, prefix) {
 // MAIN
 // ─────────────────────────────────────────────────────────
 async function main() {
-  console.log('🌱 Démarrage du seed Ciné Délices v4...\n');
+  console.log('🌱 Démarrage du seed Cinés Délices v4...\n');
   console.log('📦 Images : téléchargement + conversion WebP activés\n');
 
   // ── 1. Catégories ─────────────────────────────────────

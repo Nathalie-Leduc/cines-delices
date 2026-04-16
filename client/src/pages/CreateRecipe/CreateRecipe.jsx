@@ -1,5 +1,5 @@
 // ============================================================
-// PAGE CRÉATION DE RECETTE — Ciné Délices
+// PAGE CRÉATION DE RECETTE — Cinés Délices
 // ============================================================
 // Formulaire complet pour créer une recette :
 //   - Titre, film/série (recherche TMDB), catégorie
