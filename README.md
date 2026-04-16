@@ -1,4 +1,4 @@
-# 🎬 Ciné Délices
+# 🎬 Cinés Délices
 
 > *"La cuisine, c'est l'art. Le cinéma aussi. Ici, les deux se rencontrent dans l'assiette."*
 

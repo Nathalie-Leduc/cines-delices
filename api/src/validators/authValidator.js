@@ -51,7 +51,7 @@ export const registerSchema = z.object({
 
     email: z
       .string({ required_error: 'L\'email est obligatoire' })
-      .email('Format email invalide (ex: marie@cinedelices.fr)')
+      .email('Format email invalide (ex: marie@cinesdelices.fr)')
       .toLowerCase()      // normalise automatiquement en minuscules
       .trim(),
 

@@ -1,7 +1,7 @@
 /**
  * recipeUtils.test.js
  * Tests unitaires — Fonctions utilitaires recettes
- * Ciné Délices — Apothéose CDA O'Clock
+ * Cinés Délices — Apothéose CDA O'Clock
  *
  * Couvre :
  * - formatMinutes (RecipeCard)

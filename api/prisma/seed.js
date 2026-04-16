@@ -19,7 +19,7 @@ const prisma = new PrismaClient({ adapter });
 
 
 async function main() {
-  console.log('🌱 Démarrage du seed Ciné Délices v3...\n');
+  console.log('🌱 Démarrage du seed Cinés Délices v3...\n');
   
   //utilisation de "upsert" => crée si absent, ne touche pas si déjà présent
 

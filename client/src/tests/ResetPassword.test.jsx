@@ -1,7 +1,7 @@
 /**
  * ResetPassword.test.jsx
  * Tests unitaires — Page réinitialisation mot de passe
- * Ciné Délices — Apothéose CDA O'Clock
+ * Cinés Délices — Apothéose CDA O'Clock
  *
  * Couvre :
  * - Affichage sans token dans l'URL

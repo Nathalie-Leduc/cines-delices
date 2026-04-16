@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import styles from './PolitiqueCookies.module.scss';
 
 // ============================================================
-// PAGE POLITIQUE COOKIES — Ciné Délices
+// PAGE POLITIQUE COOKIES — Cinés Délices
 // ============================================================
 // Détail de tous les cookies et technologies de suivi utilisés,
 // conformément aux recommandations CNIL d'octobre 2020.
@@ -16,7 +16,7 @@ export default function PolitiqueCookies() {
       {/* ── Introduction ── */}
       <section className={styles.section}>
         <p>
-          Bienvenue au buffet ! Chez CinéDélices, on ne vous force pas
+          Bienvenue au buffet ! Chez CinésDélices, on ne vous force pas
           à tout manger. Cette carte vous explique ce qu'il y a sur la
           table, ce qui est inclus dans le menu, et ce que vous pouvez
           refuser. Le tout en conformité avec la{' '}
@@ -281,7 +281,7 @@ export default function PolitiqueCookies() {
           </li>
           <li>
             <Link to="/mentions-legales" className={styles.link}>
-              Mentions légales de CinéDélices (le making-off)
+              Mentions légales de CinésDélices (le making-off)
             </Link>
           </li>
           <li>

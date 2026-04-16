@@ -13,7 +13,7 @@ export const transporter = nodemailer.createTransport({
   
 export async function sendResetPasswordMail(to, resetLink) {
   try {const info = await transporter.sendMail({
-    from: '"CinéDélices" <no-reply@cinedelices.fr>',
+    from: '"CinésDélices" <no-reply@cinesdelices.fr>',
     to,
     subject: 'Réinitialisation de votre mot de passe',
     text: `Pour réinitialiser votre mot de passe, cliquez sur ce lien : ${resetLink}`,
@@ -28,7 +28,7 @@ export async function sendResetPasswordMail(to, resetLink) {
 
 export async function sendPasswordChangedMail(to) {
   const info = await transporter.sendMail({
-    from: '"CinéDélices" <no-reply@cinedelices.fr>',
+    from: '"CinésDélices" <no-reply@cinesdelices.fr>',
     to,
     subject: 'Votre mot de passe a été modifié',
     text: 'Votre mot de passe a bien été modifié.',
@@ -75,7 +75,7 @@ export async function sendEmail({ to, subject, html }) {
 
   try {
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"Ciné Délices" <noreply@cine-delices.fr>',
+      from: process.env.SMTP_FROM || '"Cinés Délices" <noreply@cines-delices.fr>',
       to,
       subject,
       html,

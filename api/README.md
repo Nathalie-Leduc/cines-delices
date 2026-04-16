@@ -1,6 +1,6 @@
-# 🎬 Ciné Délices — API
+# 🎬 Cinés Délices — API
 
-API REST de Ciné Délices : le moteur qui alimente le catalogue de recettes inspirées du cinéma.
+API REST de Cinés Délices : le moteur qui alimente le catalogue de recettes inspirées du cinéma.
 
 ---
 
@@ -52,7 +52,7 @@ npm install
 | `SMTP_PORT`      | Port SMTP                        | `587`                                        |
 | `SMTP_USER`      | Utilisateur SMTP                 | —                                            |
 | `SMTP_PASS`      | Mot de passe SMTP                | —                                            |
-| `SMTP_FROM`      | Expéditeur email                 | `Ciné Délices <noreply@...>`                 |
+| `SMTP_FROM`      | Expéditeur email                 | `Cinés Délices <noreply@...>`                 |
 
 Générer un JWT_SECRET solide :
 ```bash

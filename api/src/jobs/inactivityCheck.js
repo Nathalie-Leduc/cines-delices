@@ -39,14 +39,14 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 function buildWarningEmail(user) {
   return {
     to: user.email,
-    subject: 'Ciné Délices — Votre compte sera bientôt supprimé',
+    subject: 'Cinés Délices — Votre compte sera bientôt supprimé',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;
                   background: #FAF7F2; padding: 32px; border-radius: 8px;">
 
         <div style="text-align: center; margin-bottom: 24px;">
           <h1 style="color: #8E1F2F; font-size: 24px; margin: 0;">
-            🎬 Ciné Délices
+            🎬 Cinés Délices
           </h1>
         </div>
 
@@ -56,7 +56,7 @@ function buildWarningEmail(user) {
 
         <p style="color: #444; line-height: 1.6;">
           Nous constatons que vous ne vous êtes pas connecté(e) à
-          <strong>Ciné Délices</strong> depuis plus de 11 mois.
+          <strong>Cinés Délices</strong> depuis plus de 11 mois.
         </p>
 
         <p style="color: #444; line-height: 1.6;">
@@ -83,7 +83,7 @@ function buildWarningEmail(user) {
         <hr style="border: none; border-top: 1px solid #E0DDD5; margin: 24px 0;" />
 
         <p style="color: #888; font-size: 12px; line-height: 1.5;">
-          Cet email a été envoyé automatiquement par Ciné Délices.
+          Cet email a été envoyé automatiquement par Cinés Délices.
           Pour toute question, consultez nos
           <a href="${CLIENT_URL}/mentions-legales" style="color: #C9A45C;">
             mentions légales
@@ -104,14 +104,14 @@ function buildWarningEmail(user) {
 function buildDeletionEmail(user) {
   return {
     to: user.email,
-    subject: 'Ciné Délices — Votre compte a été supprimé',
+    subject: 'Cinés Délices — Votre compte a été supprimé',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;
                   background: #FAF7F2; padding: 32px; border-radius: 8px;">
 
         <div style="text-align: center; margin-bottom: 24px;">
           <h1 style="color: #8E1F2F; font-size: 24px; margin: 0;">
-            🎬 Ciné Délices
+            🎬 Cinés Délices
           </h1>
         </div>
 
@@ -122,7 +122,7 @@ function buildDeletionEmail(user) {
         <p style="color: #444; line-height: 1.6;">
           Suite à une inactivité de plus de 12 mois et conformément
           à notre politique de protection des données (RGPD),
-          <strong>votre compte Ciné Délices a été supprimé</strong>.
+          <strong>votre compte Cinés Délices a été supprimé</strong>.
         </p>
 
         <p style="color: #444; line-height: 1.6;">
@@ -134,7 +134,7 @@ function buildDeletionEmail(user) {
         <p style="color: #444; line-height: 1.6;">
           Vous pouvez à tout moment créer un nouveau compte sur
           <a href="${CLIENT_URL}/signup" style="color: #C9A45C;">
-            Ciné Délices
+            Cinés Délices
           </a>.
         </p>
 

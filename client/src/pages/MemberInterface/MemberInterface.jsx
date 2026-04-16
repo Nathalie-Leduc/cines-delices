@@ -265,7 +265,7 @@ export default function Membre() {
     {
       icon: '/icon/Contact.svg',
       label: 'Contact',
-      sub: 'help@support.cine-delices.com',
+      sub: 'help@support.cines-delices.com',
       path: '/membre/contact',
     },
   ];

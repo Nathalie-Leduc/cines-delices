@@ -409,7 +409,7 @@ function Home() {
       <section className={styles.hero}>
         <img
           src="/img/hero-home.webp"
-          alt="CinéDélices"
+          alt="CinésDélices"
           className={styles.heroImage}
           fetchPriority="high"
         />

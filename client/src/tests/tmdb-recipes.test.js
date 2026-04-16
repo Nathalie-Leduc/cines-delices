@@ -1,7 +1,7 @@
 /**
  * tmdb-recipes.test.js
  * Tests unitaires — Services recettes et médias
- * Ciné Délices — Apothéose CDA O'Clock
+ * Cinés Délices — Apothéose CDA O'Clock
  *
  * L'API est mockée via vi.mock — pas besoin d'un serveur démarré.
  * Analogie : on teste le script d'un acteur (le service),

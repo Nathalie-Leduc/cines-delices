@@ -9,7 +9,7 @@ export default function Contact() {
   return (
     <AuthShell
       title="Contact"
-      subtitle="help@support.cine-delices.com"
+      subtitle="help@support.cines-delices.com"
       contentClassName={styles.shellContent}
       bodyClassName={styles.shellBody}
       showBrand={false}
