@@ -4,7 +4,7 @@
 #
 # PIPELINE EN 4 JOBS :
 #
-#  push / PR    ┌─ 1. lint-client      ESLint sur le frontend
+#  push / PR   ┌─ 1. lint-client      ESLint sur le frontend
 #   sur         ├─ 2. test-client      Vitest (tests unitaires)
 #  toutes       └─ 3. lint-api         ESLint sur le backend
 #  les branches
@@ -179,6 +179,19 @@ jobs:
 
       - name: Attendre stabilisation Railway (30s)
         run: sleep 30
+
+      # Rejoue le seed sur la base Railway pour garantir l'état des données de test.
+      # Sans ça, un compte de test dont le mot de passe a été modifié en prod
+      # ferait échouer les tests de login.
+      # Le seed utilise upsert : il ne supprime pas les données existantes,
+      # il remet juste les comptes de test à leur état initial.
+      - name: Rejouer le seed (reset données de test)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node prisma/seed-v4.js
+        # Si DATABASE_URL n'est pas défini, on skip silencieusement
+        # (les tests essaieront quand même de tourner)
+        continue-on-error: true
 
       - name: Lancer les tests d'intégration API
         env:
