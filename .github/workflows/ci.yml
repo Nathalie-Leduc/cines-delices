@@ -1,0 +1,197 @@
+# =============================================================================
+# CI/CD — Cinés Délices
+# =============================================================================
+#
+# PIPELINE EN 4 JOBS :
+#
+#  push / PR   ┌─ 1. lint-client      ESLint sur le frontend
+#   sur         ├─ 2. test-client      Vitest (tests unitaires)
+#  toutes       └─ 3. lint-api         ESLint sur le backend
+#  les branches
+#
+#  push sur    └─ 4. test-api-integration   Frappe la prod Railway
+#  main/develop                              (tests d'intégration réels)
+#
+# SECRETS REQUIS (à ajouter dans GitHub → Settings → Secrets → Actions) :
+#
+#   RAILWAY_TOKEN          Token Railway (pour déclenchement futur du deploy)
+#   API_BASE_URL           URL de l'API de prod (ex: https://cines-delices-production.up.railway.app)
+#
+# =============================================================================
+
+name: CI/CD — Cinés Délices
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+# Un seul run à la fois par branche/PR : annule les runs obsolètes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# ─────────────────────────────────────────────────────────────
+# JOB 1 — Lint Frontend (React / Vite)
+# ─────────────────────────────────────────────────────────────
+jobs:
+  lint-client:
+    name: 🎨 Lint — Client
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: client/pnpm-lock.yaml
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Lancer ESLint
+        run: pnpm lint
+
+# ─────────────────────────────────────────────────────────────
+# JOB 2 — Tests unitaires Frontend (Vitest)
+# ─────────────────────────────────────────────────────────────
+  test-client:
+    name: 🧪 Tests unitaires — Client (Vitest)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: client
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: client/pnpm-lock.yaml
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Lancer les tests Vitest
+        run: pnpm test:run
+
+# ─────────────────────────────────────────────────────────────
+# JOB 3 — Lint Backend (Node.js / Express)
+# ─────────────────────────────────────────────────────────────
+  lint-api:
+    name: 🔍 Lint — API
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: api/pnpm-lock.yaml
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Lancer ESLint
+        run: pnpm lint
+
+# ─────────────────────────────────────────────────────────────
+# JOB 4 — Tests d'intégration API (frappe la prod Railway)
+#
+# Lancé UNIQUEMENT sur push vers main ou develop (pas sur les PRs)
+# car les tests frappent directement l'URL Railway de production.
+#
+# ANALOGIE : c'est le "test de dégustation" du chef après service —
+# on ne le fait pas pendant la mise en place, seulement une fois le
+# plat envoyé en salle.
+# ─────────────────────────────────────────────────────────────
+  test-api-integration:
+    name: 🚀 Tests d'intégration — API (Railway)
+    runs-on: ubuntu-latest
+
+    # Dépend des 3 jobs précédents : on ne teste l'intégration que si
+    # lint et tests unitaires sont au vert.
+    needs: [lint-client, test-client, lint-api]
+
+    # Uniquement sur push direct (pas les pull_request events)
+    if: github.event_name == 'push'
+
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installer Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: api/pnpm-lock.yaml
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      # Attendre 30s pour laisser le temps à Railway de déployer
+      # si un push vient de déclencher un redéploiement automatique.
+      - name: Attendre stabilisation Railway (30s)
+        run: sleep 30
+
+      - name: Lancer les tests d'intégration API
+        env:
+          # Utilise le secret si défini, sinon l'URL codée en dur du package.json
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://cines-delices-production.up.railway.app' }}
+        run: node tests/test-api.js
+
+      - name: Lancer les tests de sécurité API
+        env:
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://cines-delices-production.up.railway.app' }}
+        run: node tests/test-api-security.js
