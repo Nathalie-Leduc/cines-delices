@@ -32,7 +32,18 @@ export default [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     },
   },
+  // Config files Node.js (vite.config.js, etc.) : besoin de process, __dirname...
   {
-    ignores: ['node_modules/', 'dist/'],
+    files: ['*.config.js', '*.config.ts'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
+    // FIX lint : ignorer public/ (contient tarteaucitron minifié non lintable)
+    // et les dossiers standards
+    ignores: ['node_modules/', 'dist/', 'public/'],
   },
 ];
