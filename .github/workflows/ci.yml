@@ -185,12 +185,14 @@ jobs:
       # ferait échouer les tests de login.
       # Le seed utilise upsert : il ne supprime pas les données existantes,
       # il remet juste les comptes de test à leur état initial.
+      - name: Générer le client Prisma
+        run: npx prisma generate
+        continue-on-error: true
+
       - name: Rejouer le seed (reset données de test)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: node prisma/seed-v4.js
-        # Si DATABASE_URL n'est pas défini, on skip silencieusement
-        # (les tests essaieront quand même de tourner)
         continue-on-error: true
 
       - name: Lancer les tests d'intégration API
