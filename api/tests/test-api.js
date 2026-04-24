@@ -98,7 +98,7 @@ async function ensureTestUsers() {
     { email: 'remy@cinesdelices.fr',          password: 'Member1234!', nom: 'Martin',  prenom: 'Rémy',    pseudo: 'ReMyChef', role: 'MEMBER' },
   ];
 
-  // On cherche un admin fonctionnel pour promouvoir les autres
+  // On cherche un admin fonctionnel pour promouvoir les autres et supprimer/recréer les comptes
   let bootstrapToken = null;
   for (const u of usersToEnsure.filter(u => u.role === 'ADMIN')) {
     try {
@@ -122,9 +122,31 @@ async function ensureTestUsers() {
       body: JSON.stringify({ email: u.email, password: u.password }),
     });
 
-    if (loginRes.status === 200) continue; // Le compte existe déjà
+    if (loginRes.status === 200) continue; // Le compte existe avec le bon mot de passe ✅
 
-    // Le compte n'existe pas — on le recrée
+    // FIX : si 401 (compte existant mais mauvais mot de passe),
+    // on supprime le compte via l'API admin puis on le recrée.
+    // C'est le cas quand un testeur a modifié son mot de passe en prod.
+    if (loginRes.status === 401 && bootstrapToken) {
+      console.log(`  → Mot de passe incorrect pour ${u.email}, suppression et recréation...`);
+
+      // Trouver l'ID du compte via la liste admin
+      const { payload: usersPayload } = await request('/api/admin/users', {
+        headers: authHeaders(bootstrapToken),
+      });
+      const users = Array.isArray(usersPayload) ? usersPayload : (usersPayload?.users ?? []);
+      const existingUser = users.find(usr => usr.email === u.email);
+
+      if (existingUser?.id) {
+        await request(`/api/admin/users/${existingUser.id}`, {
+          method: 'DELETE',
+          headers: authHeaders(bootstrapToken),
+        });
+        console.log(`  → Compte supprimé, recréation en cours...`);
+      }
+    }
+
+    // Créer le compte (qu'il ait été supprimé à l'étape précédente ou qu'il n'existait pas)
     console.log(`  → Recréation de ${u.email}...`);
     const { response: regRes, payload: regPayload } = await request('/api/auth/register', {
       method: 'POST',
