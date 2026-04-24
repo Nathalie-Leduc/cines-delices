@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import AdminModal from '../../components/AdminModal';
 import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
-import { getApiOrigin } from '../../services/api.js';
+import { buildApiUrl, getApiOrigin } from '../../services/api.js';
 import {
   buildCategoryFilters,
   LIMIT_OPTIONS,
@@ -18,9 +18,45 @@ import {
   getAdminCategories,
   getAdminIngredients,
   getPendingRecipes,
+  getValidatedAdminIngredients,
   rejectAdminRecipe,
+  updateAdminRecipe,
 } from '../../services/adminService.js';
+import {
+  getMediaSuggestionMeta,
+  MEDIA_SUGGESTION_POSTER_FALLBACK,
+  normalizeTmdbSearchResult,
+} from '../../utils/mediaSearch.js';
 import styles from './AdminPages.module.scss';
+
+// ---- Constantes pour la modale d'édition (identiques à Recettes.jsx) ----
+const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
+  || import.meta.env.VITE_FILM_SEARCH_API
+  || buildApiUrl('/api/tmdb/medias/search');
+const INGREDIENT_CREATE_API = import.meta.env.VITE_INGREDIENT_CREATE_API
+  || buildApiUrl('/api/ingredients');
+const UNITES_OPTIONS = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
+
+function parseTimeToMinutes(value) {
+  if (value === '' || value === null || value === undefined) return undefined;
+  const str = String(value).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '.');
+  const hMatch = str.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
+  if (hMatch) {
+    const total = Math.round(parseFloat(hMatch[1]) * 60 + parseInt(hMatch[2] || '0', 10));
+    return total > 0 ? total : undefined;
+  }
+  const colonMatch = str.match(/^(\d+):(\d+)(?::\d+)?$/);
+  if (colonMatch) {
+    const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
+    return total > 0 ? total : undefined;
+  }
+  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|m)?$/);
+  if (minMatch) {
+    const parsed = Math.round(parseFloat(minMatch[1]));
+    return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
+  }
+  return undefined;
+}
 
 const API_ORIGIN = getApiOrigin();
 
@@ -139,6 +175,29 @@ function AdminDashboard() {
   const [recipeToDelete, setRecipeToDelete] = useState(null);
   const [isDeletingRecipe, setIsDeletingRecipe] = useState(false);
   const [deleteNotifMessage, setDeleteNotifMessage] = useState('');
+
+  // ---- States pour la modale d'édition locale ----
+  // FIX : openEditFromValidation naviguait vers /admin/recettes qui ne charge
+  // que les recettes publiées — les PENDING n'y sont jamais trouvées.
+  // Solution : ouvrir la modale directement ici, la recette est déjà dans pendingRecipes.
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
+  const [editDraft, setEditDraft] = useState({
+    id: null, title: '', category: 'Entrée', categoryId: null,
+    movieId: null, selectedTmdbMedia: null, movie: '', media: 'F',
+    nbPersonnes: '', ingredients: [], tempsPreparation: '',
+    tempsCuisson: '', etapes: [''], image: '', imageFile: null,
+  });
+  const [filmResults, setFilmResults] = useState([]);
+  const [filmSearchLoading, setFilmSearchLoading] = useState(false);
+  const [filmSearchError, setFilmSearchError] = useState('');
+  const [editIngredientSearchResults, setEditIngredientSearchResults] = useState({});
+  const [editIngredientSearchLoading, setEditIngredientSearchLoading] = useState({});
+  const [editIngredientSearchError, setEditIngredientSearchError] = useState({});
+  const [creatingIngredient, setCreatingIngredient] = useState({});
+  const [editImageError, setEditImageError] = useState('');
+  const filmSearchTimeoutRef = useRef(null);
+  const ingredientSearchTimeouts = useRef({});
 
   useEffect(() => {
     const loadPendingRecipes = async () => {
@@ -381,19 +440,259 @@ function AdminDashboard() {
   }
 
   function openEditFromValidation(recipe) {
-    if (!recipe?.id) {
-      return;
+    if (!recipe?.id) return;
+
+    // FIX : au lieu de naviguer vers /admin/recettes (où la recette PENDING
+    // n'est pas chargée), on ouvre directement une modale d'édition ici.
+    setEditDraft({
+      id: recipe.id,
+      title: recipe.title || '',
+      category: recipe.category || 'Entrée',
+      categoryId: recipe.categoryId || null,
+      movieId: recipe.movieId || null,
+      selectedTmdbMedia: null,
+      movie: recipe.movie || '',
+      media: recipe.media || 'F',
+      nbPersonnes: recipe.nbPersonnes ?? recipe.people ?? '',
+      ingredients: Array.isArray(recipe.ingredients)
+        ? recipe.ingredients.map(item => ({
+            ingredientId: item?.ingredientId ?? item?.id ?? null,
+            nom: typeof item === 'string' ? item : (item?.name ?? item?.nom ?? ''),
+            quantite: typeof item === 'string' ? '' : (item?.quantity ?? item?.quantite ?? ''),
+            unite: typeof item === 'string' ? '' : (item?.unit ?? item?.unite ?? ''),
+          }))
+        : [],
+      tempsPreparation: recipe.tempsPreparation ?? recipe.preparationTime ?? '',
+      tempsCuisson: recipe.tempsCuisson ?? recipe.cookingTime ?? '',
+      etapes: Array.isArray(recipe.etapes) && recipe.etapes.length > 0
+        ? recipe.etapes
+        : (recipe.instructions?.split('\n') || ['']),
+      image: recipe.image || '',
+      imageFile: null,
+    });
+    setFilmResults([]);
+    setFilmSearchError('');
+    setEditImageError('');
+    setEditIngredientSearchResults({});
+    setEditIngredientSearchLoading({});
+    setEditIngredientSearchError({});
+    setCreatingIngredient({});
+    setShowEditModal(true);
+  }
+
+  // ---- Handlers du formulaire d'édition (repris de Recettes.jsx) ----
+
+  function handleEditDraftChange(field, value) {
+    setEditDraft(prev => ({
+      ...prev,
+      [field]: value,
+      ...(field === 'movie' ? { movieId: null, selectedTmdbMedia: null } : {}),
+      ...(field === 'image' ? { imageFile: null } : {}),
+    }));
+    if (error) setError('');
+  }
+
+  async function searchFilms(q) {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) { setFilmResults([]); setFilmSearchLoading(false); setFilmSearchError(''); return; }
+    setFilmSearchLoading(true);
+    setFilmSearchError('');
+    try {
+      const response = await fetch(`${FILM_SEARCH_API}?searchTerm=${encodeURIComponent(trimmed)}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      const rawList = Array.isArray(payload) ? payload : payload.data || [];
+      const normalized = rawList.map(normalizeTmdbSearchResult).filter(item => item.title);
+      setFilmResults(normalized.slice(0, 8));
+    } catch (err) {
+      setFilmResults([]);
+      setFilmSearchError(err?.message || "Impossible de rechercher les films/séries.");
+    } finally {
+      setFilmSearchLoading(false);
+    }
+  }
+
+  function handleFilmInput(value) {
+    handleEditDraftChange('movie', value);
+    clearTimeout(filmSearchTimeoutRef.current);
+    filmSearchTimeoutRef.current = setTimeout(() => searchFilms(value), 300);
+  }
+
+  function selectFilm(film) {
+    const normalizedType = String(film?.type || '').toLowerCase();
+    setEditDraft(prev => ({
+      ...prev,
+      selectedTmdbMedia: { id: film.id, title: film.title, type: film.type, poster: film.poster || null },
+      movieId: null,
+      movie: film.title,
+      media: normalizedType === 'movie' ? 'F'
+        : (normalizedType === 'tv' || normalizedType === 'series' || normalizedType === 'série') ? 'S'
+        : prev.media,
+    }));
+    setFilmResults([]);
+  }
+
+  function clearIngredientSearchState(index) {
+    setEditIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
+    setEditIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
+    setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+  }
+
+  async function searchIngredients(index, q) {
+    const trimmed = q.trim();
+    if (trimmed.length < 2) { clearIngredientSearchState(index); return; }
+    setEditIngredientSearchLoading(prev => ({ ...prev, [index]: true }));
+    setEditIngredientSearchError(prev => ({ ...prev, [index]: '' }));
+    try {
+      const payload = await getValidatedAdminIngredients(trimmed);
+      const rawList = Array.isArray(payload) ? payload : payload.data || [];
+      const normalized = rawList.map(item => ({ id: item.id, name: item.name || item.nom || '' })).filter(item => item.name);
+      const exactMatch = normalized.find(item => item.name.trim().toLowerCase() === trimmed.toLowerCase());
+      if (exactMatch) { selectIngredient(index, exactMatch); return; }
+      setEditIngredientSearchResults(prev => ({ ...prev, [index]: normalized }));
+    } catch {
+      setEditIngredientSearchResults(prev => ({ ...prev, [index]: [] }));
+      setEditIngredientSearchError(prev => ({ ...prev, [index]: "Impossible de rechercher les ingrédients." }));
+    } finally {
+      setEditIngredientSearchLoading(prev => ({ ...prev, [index]: false }));
+    }
+  }
+
+  function handleIngredientChange(index, field, value) {
+    const updated = [...editDraft.ingredients];
+    updated[index][field] = value;
+    if (field === 'nom') updated[index].ingredientId = null;
+    setEditDraft(prev => ({ ...prev, ingredients: updated }));
+  }
+
+  function handleIngredientNameInput(index, value) {
+    handleIngredientChange(index, 'nom', value);
+    clearTimeout(ingredientSearchTimeouts.current[index]);
+    ingredientSearchTimeouts.current[index] = setTimeout(() => searchIngredients(index, value), 300);
+  }
+
+  function selectIngredient(index, ingredient) {
+    const updated = [...editDraft.ingredients];
+    updated[index].ingredientId = ingredient.id || null;
+    updated[index].nom = ingredient.name;
+    setEditDraft(prev => ({ ...prev, ingredients: updated }));
+    clearIngredientSearchState(index);
+  }
+
+  async function createIngredient(index) {
+    const name = editDraft.ingredients[index]?.nom?.trim();
+    if (!name) return;
+    setCreatingIngredient(prev => ({ ...prev, [index]: true }));
+    try {
+      const response = await fetch(INGREDIENT_CREATE_API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const created = await response.json();
+      selectIngredient(index, { id: created.id, name: created.name || created.nom || name });
+    } catch {
+      setEditIngredientSearchError(prev => ({ ...prev, [index]: "Impossible de créer l'ingrédient." }));
+    } finally {
+      setCreatingIngredient(prev => ({ ...prev, [index]: false }));
+    }
+  }
+
+  function addIngredient() {
+    setEditDraft(prev => ({ ...prev, ingredients: [...prev.ingredients, { ingredientId: null, nom: '', quantite: '', unite: '' }] }));
+  }
+
+  function removeIngredient(index) {
+    setEditDraft(prev => ({ ...prev, ingredients: prev.ingredients.filter((_, i) => i !== index) }));
+    clearIngredientSearchState(index);
+  }
+
+  function handleEtapeChange(index, value) {
+    const updated = [...editDraft.etapes];
+    updated[index] = value;
+    setEditDraft(prev => ({ ...prev, etapes: updated }));
+  }
+
+  function addEtape() {
+    setEditDraft(prev => ({ ...prev, etapes: [...prev.etapes, ''] }));
+  }
+
+  function removeEtape(index) {
+    setEditDraft(prev => ({ ...prev, etapes: prev.etapes.filter((_, i) => i !== index) }));
+  }
+
+  function handleImageChange(file) {
+    if (!file) return;
+    const lowerName = file.name.toLowerCase();
+    const allowed = ['image/png', 'image/jpeg', 'image/webp'].includes(file.type)
+      || lowerName.endsWith('.png') || lowerName.endsWith('.jpg')
+      || lowerName.endsWith('.jpeg') || lowerName.endsWith('.webp');
+    if (!allowed) { setEditImageError('Veuillez utiliser une image .png, .jpg, .jpeg ou .webp.'); return; }
+    setEditImageError('');
+    setEditDraft(prev => ({ ...prev, imageFile: file }));
+  }
+
+  function openEditConfirmModal() {
+    if (!editDraft.title.trim()) { setError('Le nom de la recette est obligatoire.'); return; }
+    setShowEditConfirmModal(true);
+  }
+
+  function handleSaveConfirmed() {
+    setShowEditConfirmModal(false);
+    setError('');
+    const cleanIngredients = editDraft.ingredients.filter(ing => String(ing.nom || '').trim() !== '');
+    const payload = {
+      titre: editDraft.title,
+      instructions: editDraft.etapes.filter(Boolean).join('\n'),
+      nombrePersonnes: editDraft.nbPersonnes,
+      tempsPreparation: parseTimeToMinutes(editDraft.tempsPreparation),
+      tempsCuisson: parseTimeToMinutes(editDraft.tempsCuisson),
+      categoryId: editDraft.categoryId,
+      categoryName: editDraft.category,
+      imageUrl: String(editDraft.image || '').trim() || undefined,
+      ingredients: cleanIngredients,
+      ...(editDraft.selectedTmdbMedia
+        ? { tmdbId: editDraft.selectedTmdbMedia.id, mediaTitle: editDraft.movie, mediaType: editDraft.media }
+        : editDraft.movieId ? { mediaId: editDraft.movieId } : {}),
+    };
+
+    let requestBody = payload;
+    if (editDraft.imageFile instanceof File) {
+      const formData = new FormData();
+      formData.append('titre', payload.titre);
+      formData.append('instructions', payload.instructions);
+      formData.append('categoryId', String(payload.categoryId || ''));
+      formData.append('categoryName', String(payload.categoryName || ''));
+      formData.append('ingredients', JSON.stringify(cleanIngredients));
+      formData.append('image', editDraft.imageFile);
+      if (payload.nombrePersonnes) formData.append('nombrePersonnes', String(payload.nombrePersonnes));
+      if (payload.tempsPreparation) formData.append('tempsPreparation', String(payload.tempsPreparation));
+      if (payload.tempsCuisson) formData.append('tempsCuisson', String(payload.tempsCuisson));
+      if (payload.tmdbId) formData.append('tmdbId', String(payload.tmdbId));
+      if (payload.mediaTitle) formData.append('mediaTitle', String(payload.mediaTitle));
+      if (payload.mediaType) formData.append('mediaType', String(payload.mediaType));
+      if (payload.mediaId) formData.append('mediaId', String(payload.mediaId));
+      requestBody = formData;
     }
 
-    navigate('/admin/recettes', {
-      state: {
-        openEditRecipeId: recipe.id,
-        returnTo: {
-          pathname: '/admin/validation-recettes',
-          state: { openRecipeId: recipe.id },
-        },
-      },
-    });
+    updateAdminRecipe(editDraft.id, requestBody)
+      .then((updatedRecipe) => {
+        // Mettre à jour la recette dans pendingRecipes pour refléter les modifs
+        setPendingRecipes(prev => prev.map(r =>
+          r.id === updatedRecipe.id
+            ? { ...r, ...updatedRecipe, nbPersonnes: updatedRecipe.people, tempsPreparation: updatedRecipe.preparationTime, tempsCuisson: updatedRecipe.cookingTime, etapes: updatedRecipe.instructions?.split('\n') || [] }
+            : r
+        ));
+        // Mettre aussi à jour selectedRecipe si on est sur la vue détail
+        if (selectedRecipe?.id === updatedRecipe.id) {
+          setSelectedRecipe(prev => ({ ...prev, ...updatedRecipe, nbPersonnes: updatedRecipe.people, tempsPreparation: updatedRecipe.preparationTime, tempsCuisson: updatedRecipe.cookingTime, etapes: updatedRecipe.instructions?.split('\n') || [] }));
+        }
+        setShowEditModal(false);
+      })
+      .catch((saveError) => {
+        setError(saveError.message || 'Sauvegarde impossible.');
+      });
   }
 
   return (
@@ -878,6 +1177,188 @@ function AdminDashboard() {
             />
           </label>
         </AdminModal>
+      )}
+
+      {/* ---- Modale d'édition locale (FIX : évite la navigation vers /admin/recettes) ---- */}
+      {showEditModal && (
+        <div className={styles.adminEditOverlay} onClick={() => setShowEditModal(false)}>
+          <div className={styles.adminEditModal} onClick={e => e.stopPropagation()}>
+            <h2 className={styles.adminEditTitle}>Modifier la recette</h2>
+            <div className={styles.adminEditFields}>
+
+              <label className={styles.adminEditLabel}>
+                Titre *
+                <input className={styles.adminEditInput} type="text" value={editDraft.title}
+                  onChange={e => handleEditDraftChange('title', e.target.value)} />
+              </label>
+
+              <label className={styles.adminEditLabel}>
+                Catégorie
+                <select className={styles.adminEditInput} value={editDraft.categoryId || ''}
+                  onChange={e => {
+                    const cat = categories.find(c => String(c.id) === e.target.value);
+                    setEditDraft(prev => ({ ...prev, categoryId: cat?.id || null, category: cat?.name || cat?.nom || '' }));
+                  }}>
+                  {categories.map(cat => (
+                    <option key={cat.id} value={cat.id}>{cat.name || cat.nom}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={styles.adminEditLabel}>
+                Film ou série (TMDB)
+                <input className={styles.adminEditInput} type="text" value={editDraft.movie}
+                  onChange={e => handleFilmInput(e.target.value)} />
+              </label>
+              {(filmSearchLoading || filmSearchError || filmResults.length > 0) && (
+                <div className={styles.adminFilmSearchBox}>
+                  {filmSearchLoading && <p className={styles.adminFilmSearchText}>Recherche en cours...</p>}
+                  {filmSearchError && <p className={styles.adminEditErrorText}>{filmSearchError}</p>}
+                  {filmResults.length > 0 && (
+                    <ul className={styles.adminFilmSuggestionList}>
+                      {filmResults.map(result => (
+                        <li key={result.id || result.title}>
+                          <button type="button" className={styles.adminFilmSuggestionBtn} onClick={() => selectFilm(result)}>
+                            <img src={result.poster || MEDIA_SUGGESTION_POSTER_FALLBACK} alt="" aria-hidden className={styles.adminFilmSuggestionPoster} />
+                            <span>{result.title} — {getMediaSuggestionMeta(result)}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              <label className={styles.adminEditLabel}>
+                Type
+                <select className={styles.adminEditInput} value={editDraft.media}
+                  onChange={e => handleEditDraftChange('media', e.target.value)}>
+                  <option value="F">Film</option>
+                  <option value="S">Série</option>
+                </select>
+              </label>
+
+              <label className={styles.adminEditLabel}>
+                Nombre de personnes
+                <input className={styles.adminEditInput} type="number" value={editDraft.nbPersonnes}
+                  onChange={e => handleEditDraftChange('nbPersonnes', e.target.value)} />
+              </label>
+
+              <div className={styles.adminEditLabelBlock}>
+                <span className={styles.adminEditLabelTitle}>Ingrédients</span>
+                {editDraft.ingredients.map((ing, index) => (
+                  <div key={index} className={styles.adminEditIngredientRow}>
+                    <input className={styles.adminEditInput} type="text" placeholder="Rechercher un ingrédient..."
+                      value={ing.nom} onChange={e => handleIngredientNameInput(index, e.target.value)} />
+                    {(editIngredientSearchResults[index]?.length > 0) && (
+                      <ul className={styles.adminFilmSuggestionList}>
+                        {editIngredientSearchResults[index].map(result => (
+                          <li key={result.id || result.name}>
+                            <button type="button" className={styles.adminFilmSuggestionBtn}
+                              onClick={() => selectIngredient(index, result)}>{result.name}</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {!editIngredientSearchLoading[index] && !ing.ingredientId && ing.nom.trim().length >= 2
+                      && (!editIngredientSearchResults[index] || editIngredientSearchResults[index].length === 0) && (
+                        <button type="button" className={styles.adminCreateIngredientBtn}
+                          onClick={() => createIngredient(index)} disabled={creatingIngredient[index]}>
+                          {creatingIngredient[index] ? 'Création...' : `Créer l'ingrédient "${ing.nom.trim()}"`}
+                        </button>
+                      )}
+                    <div className={styles.adminEditIngredientBottom}>
+                      <input className={`${styles.adminEditInput} ${styles.adminEditQuantiteInput}`} type="number"
+                        placeholder="Qté" value={ing.quantite}
+                        onChange={e => handleIngredientChange(index, 'quantite', e.target.value)} />
+                      <select className={styles.adminEditInput} value={ing.unite}
+                        onChange={e => handleIngredientChange(index, 'unite', e.target.value)}>
+                        <option value="">Unité</option>
+                        {UNITES_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                      <button type="button" className={styles.adminRemoveSmallBtn}
+                        aria-label={`Supprimer l'ingrédient ${index + 1}`}
+                        onClick={() => removeIngredient(index)}>−</button>
+                    </div>
+                  </div>
+                ))}
+                <button type="button" className={styles.adminAddSmallBtn} onClick={addIngredient}>
+                  + Ajouter un ingrédient
+                </button>
+              </div>
+
+              <label className={styles.adminEditLabel}>
+                Temps de préparation
+                <input className={styles.adminEditInput} type="text" value={editDraft.tempsPreparation}
+                  onChange={e => handleEditDraftChange('tempsPreparation', e.target.value)} />
+              </label>
+
+              <label className={styles.adminEditLabel}>
+                Temps de cuisson
+                <input className={styles.adminEditInput} type="text" value={editDraft.tempsCuisson}
+                  onChange={e => handleEditDraftChange('tempsCuisson', e.target.value)} />
+              </label>
+
+              <div className={styles.adminEditLabelBlock}>
+                <span className={styles.adminEditLabelTitle}>Étapes de préparation</span>
+                {editDraft.etapes.map((etape, index) => (
+                  <div key={index} className={styles.adminEditEtapeRow}>
+                    <span className={styles.adminEditEtapeNumber}>{index + 1}</span>
+                    <textarea className={styles.adminEditTextarea} placeholder={`Étape ${index + 1}...`}
+                      value={etape} onChange={e => handleEtapeChange(index, e.target.value)} rows={2} />
+                    {editDraft.etapes.length > 1 && (
+                      <button type="button" className={styles.adminRemoveSmallBtn}
+                        onClick={() => removeEtape(index)}>−</button>
+                    )}
+                  </div>
+                ))}
+                <button type="button" className={styles.adminAddSmallBtn} onClick={addEtape}>
+                  + Ajouter une étape
+                </button>
+              </div>
+
+              <label className={`${styles.adminEditLabel} ${styles.adminEditLabelMedia}`}>
+                Image (.png, .jpg, .jpeg, .webp)
+                <input className={styles.adminEditInput} type="file"
+                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
+                  onChange={e => handleImageChange(e.target.files?.[0])} />
+              </label>
+
+              <label className={`${styles.adminEditLabel} ${styles.adminEditLabelMedia}`}>
+                Ou URL image
+                <input className={styles.adminEditInput} type="url" value={editDraft.image}
+                  onChange={e => handleEditDraftChange('image', e.target.value)} />
+              </label>
+
+              {editImageError && <p className={styles.adminEditErrorText}>{editImageError}</p>}
+              {error && <p className={styles.adminEditErrorText}>{error}</p>}
+            </div>
+
+            <div className={styles.adminModalButtons}>
+              <button type="button" className={styles.adminCancelBtn}
+                onClick={() => { setShowEditModal(false); setError(''); }}>
+                Annuler
+              </button>
+              <button type="button" className={styles.adminConfirmBtn} onClick={openEditConfirmModal}>
+                Enregistrer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditConfirmModal && (
+        <div className={`${styles.adminEditOverlay} ${styles.adminConfirmOverlay}`}>
+          <div className={styles.adminConfirmModal}>
+            <p className={styles.adminModalText}>Voulez-vous confirmer les modifications de cette recette ?</p>
+            <div className={styles.adminModalButtons}>
+              <button type="button" className={styles.adminCancelBtn}
+                onClick={() => setShowEditConfirmModal(false)}>Annuler</button>
+              <button type="button" className={styles.adminConfirmBtn}
+                onClick={handleSaveConfirmed}>Confirmer</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
