@@ -4,7 +4,7 @@
 #
 # PIPELINE EN 4 JOBS :
 #
-#  push / PR   ┌─ 1. lint-client      ESLint sur le frontend
+#  push / PR    ┌─ 1. lint-client      ESLint sur le frontend
 #   sur         ├─ 2. test-client      Vitest (tests unitaires)
 #  toutes       └─ 3. lint-api         ESLint sur le backend
 #  les branches
@@ -35,6 +35,11 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# Force l'utilisation de Node 24 pour les actions GitHub (checkout, setup-node, etc.)
+# Sans ça, GitHub utilise Node 20 par défaut → warning de dépréciation
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 # ─────────────────────────────────────────────────────────────
 # JOB 1 — Lint Frontend (React / Vite)

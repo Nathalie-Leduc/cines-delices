@@ -268,17 +268,17 @@ async function main() {
   const memberHash = await argon2.hash('Member1234!');
 
   // ── 3 Admins ──
-  const userAdmin = await prisma.user.upsert({
+  const _userAdmin = await prisma.user.upsert({
     where: { email: 'admin@cinesdelices.fr' },
     update: { nom: 'Delices', pseudo: 'Admin', passwordHash: adminHash, role: 'ADMIN' },
     create: { email: 'admin@cinesdelices.fr', nom: 'Delices', pseudo: 'Admin', passwordHash: adminHash, role: 'ADMIN' },
   });
-  const userSophie = await prisma.user.upsert({
+  const _userSophie = await prisma.user.upsert({
     where: { email: 'sophie.martin@cinesdelices.fr' },
     update: { nom: 'Martin', pseudo: 'SophieAdmin', passwordHash: adminHash, role: 'ADMIN' },
     create: { email: 'sophie.martin@cinesdelices.fr', nom: 'Martin', pseudo: 'SophieAdmin', passwordHash: adminHash, role: 'ADMIN' },
   });
-  const userLuca = await prisma.user.upsert({
+  const _userLuca = await prisma.user.upsert({
     where: { email: 'luca.bernard@cinesdelices.fr' },
     update: { nom: 'Bernard', pseudo: 'LucaAdmin', passwordHash: adminHash, role: 'ADMIN' },
     create: { email: 'luca.bernard@cinesdelices.fr', nom: 'Bernard', pseudo: 'LucaAdmin', passwordHash: adminHash, role: 'ADMIN' },
