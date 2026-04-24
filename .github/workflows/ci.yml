@@ -12,10 +12,10 @@
 #  push sur    └─ 4. test-api-integration   Frappe la prod Railway
 #  main/develop                              (tests d'intégration réels)
 #
-# SECRETS REQUIS (à ajouter dans GitHub → Settings → Secrets → Actions) :
+# SECRETS REQUIS (GitHub → Settings → Secrets → Actions) :
 #
-#   RAILWAY_TOKEN          Token Railway (pour déclenchement futur du deploy)
-#   API_BASE_URL           URL de l'API de prod (ex: https://cines-delices-production.up.railway.app)
+#   API_BASE_URL    URL de l'API de prod (ex: https://cines-delices-production.up.railway.app)
+#   RAILWAY_TOKEN   Token Railway workspace (optionnel)
 #
 # =============================================================================
 
@@ -52,17 +52,19 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
+      # FIX : pnpm/action-setup AVANT actions/setup-node
+      # setup-node a besoin de pnpm déjà installé pour activer le cache
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Installer Node.js 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: client/pnpm-lock.yaml
-
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
       - name: Installer les dépendances
         run: pnpm install --frozen-lockfile
@@ -85,17 +87,17 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Installer Node.js 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: client/pnpm-lock.yaml
-
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
       - name: Installer les dépendances
         run: pnpm install --frozen-lockfile
@@ -118,17 +120,17 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Installer Node.js 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: api/pnpm-lock.yaml
-
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
 
       - name: Installer les dépendances
         run: pnpm install --frozen-lockfile
@@ -138,23 +140,13 @@ jobs:
 
 # ─────────────────────────────────────────────────────────────
 # JOB 4 — Tests d'intégration API (frappe la prod Railway)
-#
-# Lancé UNIQUEMENT sur push vers main ou develop (pas sur les PRs)
-# car les tests frappent directement l'URL Railway de production.
-#
-# ANALOGIE : c'est le "test de dégustation" du chef après service —
-# on ne le fait pas pendant la mise en place, seulement une fois le
-# plat envoyé en salle.
+# Lancé UNIQUEMENT sur push (pas sur les PRs).
 # ─────────────────────────────────────────────────────────────
   test-api-integration:
     name: 🚀 Tests d'intégration — API (Railway)
     runs-on: ubuntu-latest
 
-    # Dépend des 3 jobs précédents : on ne teste l'intégration que si
-    # lint et tests unitaires sont au vert.
     needs: [lint-client, test-client, lint-api]
-
-    # Uniquement sur push direct (pas les pull_request events)
     if: github.event_name == 'push'
 
     defaults:
@@ -165,6 +157,11 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
       - name: Installer Node.js 24
         uses: actions/setup-node@v4
         with:
@@ -172,22 +169,14 @@ jobs:
           cache: pnpm
           cache-dependency-path: api/pnpm-lock.yaml
 
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
       - name: Installer les dépendances
         run: pnpm install --frozen-lockfile
 
-      # Attendre 30s pour laisser le temps à Railway de déployer
-      # si un push vient de déclencher un redéploiement automatique.
       - name: Attendre stabilisation Railway (30s)
         run: sleep 30
 
       - name: Lancer les tests d'intégration API
         env:
-          # Utilise le secret si défini, sinon l'URL codée en dur du package.json
           API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://cines-delices-production.up.railway.app' }}
         run: node tests/test-api.js
 
