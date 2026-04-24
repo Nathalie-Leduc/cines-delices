@@ -1,24 +1,6 @@
 # =============================================================================
 # CI/CD — Cinés Délices
 # =============================================================================
-#
-# PIPELINE EN 4 JOBS :
-#
-#  push / PR   ┌─ 1. lint-client      ESLint sur le frontend
-#   sur         ├─ 2. test-client      Vitest (tests unitaires)
-#  toutes       └─ 3. lint-api         ESLint sur le backend
-#  les branches
-#
-#  push sur    └─ 4. test-api-integration   Frappe la prod Railway
-#  main/develop                              (tests d'intégration réels)
-#
-# SECRETS REQUIS (GitHub → Settings → Secrets → Actions) :
-#
-#   API_BASE_URL    URL de l'API de prod (ex: https://cines-delices-production.up.railway.app)
-#   RAILWAY_TOKEN   Token Railway workspace (optionnel)
-#
-# =============================================================================
-
 name: CI/CD — Cinés Délices
 
 on:
@@ -31,51 +13,35 @@ on:
       - main
       - develop
 
-# Un seul run à la fois par branche/PR : annule les runs obsolètes
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Force l'utilisation de Node 24 pour les actions GitHub (checkout, setup-node, etc.)
-# Sans ça, GitHub utilise Node 20 par défaut → warning de dépréciation
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 # ─────────────────────────────────────────────────────────────
-# JOB 1 — Lint Frontend (React / Vite)
+# JOB 1 — Lint Frontend
 # ─────────────────────────────────────────────────────────────
 jobs:
   lint-client:
     name: 🎨 Lint — Client
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: client
-
     steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
-
-      # FIX : pnpm/action-setup AVANT actions/setup-node
-      # setup-node a besoin de pnpm déjà installé pour activer le cache
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: latest
-
-      - name: Installer Node.js 24
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: client/pnpm-lock.yaml
-
-      - name: Installer les dépendances
-        run: pnpm install --frozen-lockfile
-
-      - name: Lancer ESLint
-        run: pnpm lint
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
 
 # ─────────────────────────────────────────────────────────────
 # JOB 2 — Tests unitaires Frontend (Vitest)
@@ -83,92 +49,64 @@ jobs:
   test-client:
     name: 🧪 Tests unitaires — Client (Vitest)
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: client
-
     steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
-
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: latest
-
-      - name: Installer Node.js 24
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: client/pnpm-lock.yaml
-
-      - name: Installer les dépendances
-        run: pnpm install --frozen-lockfile
-
-      - name: Lancer les tests Vitest
-        run: pnpm test:run
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test:run
 
 # ─────────────────────────────────────────────────────────────
-# JOB 3 — Lint Backend (Node.js / Express)
+# JOB 3 — Lint Backend
 # ─────────────────────────────────────────────────────────────
   lint-api:
     name: 🔍 Lint — API
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: api
-
     steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
-
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: latest
-
-      - name: Installer Node.js 24
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: api/pnpm-lock.yaml
-
-      - name: Installer les dépendances
-        run: pnpm install --frozen-lockfile
-
-      - name: Lancer ESLint
-        run: pnpm lint
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
 
 # ─────────────────────────────────────────────────────────────
-# JOB 4 — Tests d'intégration API (frappe la prod Railway)
-# Lancé UNIQUEMENT sur push (pas sur les PRs).
+# JOB 4 — Tests d'intégration API (Railway)
+# Lancé UNIQUEMENT sur push (pas sur les PRs)
 # ─────────────────────────────────────────────────────────────
   test-api-integration:
     name: 🚀 Tests d'intégration — API (Railway)
     runs-on: ubuntu-latest
-
     needs: [lint-client, test-client, lint-api]
     if: github.event_name == 'push'
-
     defaults:
       run:
         working-directory: api
-
     steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Installer pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: latest
 
-      - name: Installer Node.js 24
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
@@ -180,11 +118,6 @@ jobs:
       - name: Attendre stabilisation Railway (30s)
         run: sleep 30
 
-      # Rejoue le seed sur la base Railway pour garantir l'état des données de test.
-      # Sans ça, un compte de test dont le mot de passe a été modifié en prod
-      # ferait échouer les tests de login.
-      # Le seed utilise upsert : il ne supprime pas les données existantes,
-      # il remet juste les comptes de test à leur état initial.
       - name: Générer le client Prisma
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
@@ -193,15 +126,14 @@ jobs:
           npx prisma generate
         continue-on-error: true
 
-      - name: Debug DATABASE_URL (vérifie présence sans exposer la valeur)
+      - name: Debug DATABASE_URL
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
-            echo "❌ DATABASE_URL est VIDE — secret manquant ou mal nommé dans GitHub"
+            echo "❌ DATABASE_URL est VIDE"
           else
-            echo "✅ DATABASE_URL est défini (longueur: ${#DATABASE_URL} chars)"
-            echo "   Début: ${DATABASE_URL:0:20}..."
+            echo "✅ DATABASE_URL défini (${#DATABASE_URL} chars), début: ${DATABASE_URL:0:20}..."
           fi
 
       - name: Rejouer le seed (reset données de test)
