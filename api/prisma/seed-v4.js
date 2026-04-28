@@ -259,7 +259,6 @@ for (const def of mediaDefs) {
   });
   process.stdout.write(` ✅\n`);
 }
-  }
   console.log(`✅ ${Object.keys(medias).length} médias créés/mis à jour\n`);
 
   // ── 4. Utilisateurs ───────────────────────────────────
