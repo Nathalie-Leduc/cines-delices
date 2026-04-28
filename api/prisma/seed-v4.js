@@ -235,30 +235,30 @@ async function main() {
 ];
 
   const medias = {};
-  for (const def of mediaDefs) {
-    process.stdout.write(`  → ${def.titre} : poster...`);
-    const localPosterUrl = await downloadAndConvertImage(def.poster, POSTERS_DIR, 'poster-');
+for (const def of mediaDefs) {
+  process.stdout.write(`  → ${def.titre} : poster...`);
 
-    const slug = await generateUniqueSlug(
-      `${def.titre} ${def.annee}`,
-      (s) => prisma.media.findUnique({ where: { slug: s } }),
-    );
+  const slug = await generateUniqueSlug(
+    `${def.titre} ${def.annee}`,
+    (s) => prisma.media.findUnique({ where: { slug: s } }),
+  );
 
-    medias[def.tmdbId] = await prisma.media.upsert({
-      where: { tmdbId_type: { tmdbId: def.tmdbId, type: def.type } },
-      update: {
-        synopsis: def.synopsis,
-        posterUrl: localPosterUrl || def.poster,
-        realisateur: def.realisateur,
-      },
-      create: {
-        tmdbId: def.tmdbId, titre: def.titre, slug, type: def.type,
-        posterUrl: localPosterUrl || def.poster,
-        synopsis: def.synopsis, annee: def.annee, realisateur: def.realisateur,
-        genres: { create: def.genres.map(gId => ({ genreId: gId })) },
-      },
-    });
-    process.stdout.write(` ✅\n`);
+  medias[def.tmdbId] = await prisma.media.upsert({
+    where: { tmdbId_type: { tmdbId: def.tmdbId, type: def.type } },
+    update: {
+      synopsis: def.synopsis,
+      posterUrl: def.poster, // ← URL directe, pas de fetch !
+      realisateur: def.realisateur,
+    },
+    create: {
+      tmdbId: def.tmdbId, titre: def.titre, slug, type: def.type,
+      posterUrl: def.poster, // ← URL directe, pas de fetch !
+      synopsis: def.synopsis, annee: def.annee, realisateur: def.realisateur,
+      genres: { create: def.genres.map(gId => ({ genreId: gId })) },
+    },
+  });
+  process.stdout.write(` ✅\n`);
+}
   }
   console.log(`✅ ${Object.keys(medias).length} médias créés/mis à jour\n`);
 
