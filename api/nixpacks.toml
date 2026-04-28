@@ -5,7 +5,7 @@ nixPkgs = ["nodejs_20", "pnpm-9_x"]
 cmds = ["pnpm install --ignore-workspace --ignore-scripts"]
 
 [phases.build]
-cmds = ["npx prisma generate"]
+cmds = ["echo 'build skipped'"]
 
 [start]
 cmd = "node src/app.js"
