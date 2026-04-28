@@ -136,103 +136,103 @@ async function main() {
   console.log('\n🎬 Médias (posters WebP)...');
 
   const mediaDefs = [
-    {
-      tmdbId: 2062, titre: 'Ratatouille', realisateur: 'Brad Bird', annee: 2007, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/iFcWBdTPeHQDS3OQxBcH3QaYXYv.jpg',
-      synopsis: "Rémy est un jeune rat qui rêve de devenir un grand chef français. Ni l'opposition de sa famille, ni le fait d'être un rongeur dans une profession qui les déteste ne le démotivent. Rémy est prêt à tout pour vivre sa passion de la cuisine — et le fait d'habiter dans les égouts du restaurant ultra-coté d'Auguste Gusteau va lui en donner l'occasion.",
-      genres: [genreAnimation.id, genreComedy.id],
-    },
-    {
-      tmdbId: 392, titre: 'Le Chocolat', realisateur: 'Lasse Hallström', annee: 2000, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/7RBG3RzAqQvF6XtTsQqLzdsyAvR.jpg',
-      synopsis: "Dans un village tranquille de la France profonde, une mystérieuse étrangère, Vianne Thierry, ouvre une chocolaterie juste au début du Carême. Ses chocolats semblent avoir des vertus magiques qui bouleversent la vie des habitants et défient l'ordre moral établi par le comte de Reynaud.",
-      genres: [genreDrame.id, genreRomance.id],
-    },
-    {
-      tmdbId: 1396, titre: 'Breaking Bad', realisateur: 'Vince Gilligan', annee: 2008, type: 'SERIES',
-      poster: 'https://image.tmdb.org/t/p/w500/4YLQj5XRrMJ7gp8eb0h6umd0iNx.jpg',
-      synopsis: "Walter White, professeur de chimie au lycée d'Albuquerque, apprend qu'il est atteint d'un cancer du poumon en phase terminale. Désespéré, il s'associe à Jesse Pinkman, un ancien élève devenu petit dealer, pour fabriquer et vendre de la méthamphétamine de haute qualité afin d'assurer l'avenir financier de sa famille.",
-      genres: [genreDrame.id, genreThriller.id],
-    },
-    {
-      tmdbId: 24094, titre: 'Julie & Julia', realisateur: 'Nora Ephron', annee: 2009, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/rtZquHKuEntFq3YTO3v4L5RtANw.jpg',
-      synopsis: "En 2002, Julie Powell, secrétaire à New York, décide de cuisiner en un an les 524 recettes du livre emblématique de Julia Child, « Mastering the Art of French Cooking », et de tenir un blog sur ses aventures culinaires. Le film entrecroise son histoire avec celle de Julia Child dans le Paris des années 1950.",
-      genres: [genreDrame.id, genreComedy.id],
-    },
-    {
-      tmdbId: 11832, titre: 'Le Festin de Babette', realisateur: 'Gabriel Axel', annee: 1987, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/zuZT3kE2Eb6Ln7ec5Ln4IcDwynf.jpg',
-      synopsis: "Au XIXe siècle, au Jutland danois, deux vieilles sœurs dévotes recueillent Babette, une réfugiée française. Cuisinière de talent, Babette gagne à la loterie et décide de dépenser toute sa fortune pour offrir à la communauté austère un somptueux festin gastronomique français — le repas de sa vie.",
-      genres: [genreDrame.id],
-    },
-    {
-      tmdbId: 31175, titre: 'Soul Kitchen', realisateur: 'Fatih Akin', annee: 2009, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/9UZIiJtPxNonMtIWisXm8O7zgnX.jpg',
-      synopsis: "Zinos Kazantsakis gère tant bien que mal son restaurant hambourgeois « Soul Kitchen » quand un chef étoilé et excentrique débarque dans sa cuisine. Entre galères financières, problèmes de dos, petite amie partie à Shanghaï et frère à peine sorti de prison, Zinos va devoir se battre pour garder son établissement.",
-      genres: [genreComedy.id],
-    },
-    {
-      tmdbId: 136315, titre: 'The Bear', realisateur: 'Christopher Storer', annee: 2022, type: 'SERIES',
-      poster: 'https://image.tmdb.org/t/p/w500/pjQUpBEsg89EbL4QWcjfH0s7Txz.jpg',
-      synopsis: "Carmen Berzatto, dit « Carmy », chef étoilé formé dans les plus grands restaurants du monde, rentre à Chicago pour reprendre l'Original Beef, le sandwich shop familial laissé par son frère décédé. Il doit apprendre à gérer une équipe chaotique tout en tentant de transformer l'établissement en restaurant digne de son talent.",
-      genres: [genreDrame.id],
-    },
-    {
-      tmdbId: 680, titre: 'Pulp Fiction', realisateur: 'Quentin Tarantino', annee: 1994, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/4TBdF7nFw2aKNM0gPOlDNq3v3se.jpg',
-      synopsis: "Les destins croisés de plusieurs personnages gravitant autour du monde du crime à Los Angeles : deux tueurs à gages philosophes, leur patron gangster et sa femme, un boxeur qui trahit son commanditaire, et deux petits braqueurs impulsifs. Une plongée dans une Amérique pop, violente et décalée.",
-      genres: [genreDrame.id, genreThriller.id, genreCrime.id],
-    },
-    {
-      tmdbId: 120, titre: 'Le Seigneur des Anneaux', realisateur: 'Peter Jackson', annee: 2001, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/5OPg6M0yHr21Ovs1fni2H1xpKuF.jpg',
-      synopsis: "Le hobbit Frodon Sacquet hérite d'un anneau magique qui s'avère être l'Anneau Unique, forgé par le Seigneur des Ténèbres Sauron pour asservir tous les peuples de la Terre du Milieu. Accompagné de la Communauté de l'Anneau, Frodon entreprend un voyage périlleux pour détruire l'anneau dans les feux de la Montagne du Destin.",
-      genres: [genreAction.id, genreFantasy.id],
-    },
-    {
-      tmdbId: 475557, titre: 'Joker', realisateur: 'Todd Phillips', annee: 2019, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/tWjJ3ILjsbTwKgXxEv48QAbYZ19.jpg',
-      synopsis: "À Gotham City dans les années 1980, Arthur Fleck, humoriste raté atteint d'un trouble neurologique qui le fait rire de façon incontrôlable, est marginalisé et maltraité par la société. Sa descente aux enfers progressive le conduit à embrasser le chaos et à devenir le Joker, symbole de la révolte des laissés-pour-compte.",
-      genres: [genreDrame.id, genreThriller.id, genreCrime.id],
-    },
-    {
-      tmdbId: 120467, titre: 'The Grand Budapest Hotel', realisateur: 'Wes Anderson', annee: 2014, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/qcWTuWPu6x6t2MKt0MTfbResJiV.jpg',
-      synopsis: "Les aventures de Gustave H., concierge légendaire d'un grand hôtel européen de l'entre-deux-guerres, et de Zero Moustafa, le groom qui devient son fidèle ami. L'histoire tourne autour du vol d'une précieuse peinture Renaissance et d'une bataille pour un immense héritage familial.",
-      genres: [genreComedy.id, genreDrame.id],
-    },
-    {
-      tmdbId: 38167, titre: 'Mange, Prie, Aime', realisateur: 'Ryan Murphy', annee: 2010, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/yoOyDKXjJIDBdnzQUrUjP0EtcZo.jpg',
-      synopsis: "Après un divorce douloureux et une dépression, Elizabeth Gilbert décide de tout quitter pour un voyage initiatique d'un an à travers trois pays : l'Italie pour les plaisirs de la table, l'Inde pour la spiritualité, et Bali pour trouver l'équilibre entre les deux et peut-être l'amour.",
-      genres: [genreDrame.id, genreRomance.id],
-    },
-    {
-      tmdbId: 238, titre: 'Le Parrain', realisateur: 'Francis Ford Coppola', annee: 1972, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/k3uIbYtiuK8pwbCcbma29nTqmgG.jpg',
-      synopsis: "Vito Corleone, vieux parrain d'une puissante famille de la mafia new-yorkaise, tente de conserver son empire criminel pendant que ses fils se battent pour prendre sa succession. Son fils cadet Michael, d'abord étranger au monde du crime, va progressivement s'y plonger jusqu'à en devenir le nouveau parrain.",
-      genres: [genreDrame.id, genreCrime.id],
-    },
-    {
-      tmdbId: 671, titre: "Harry Potter à l'école des sorciers", realisateur: 'Chris Columbus', annee: 2001, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/fbxQ44VRdM2PVzHSNajUseUteem.jpg',
-      synopsis: "Harry Potter, orphelin élevé par son oncle et sa tante qui lui rendent la vie impossible, découvre le jour de ses onze ans qu'il est un sorcier. Admis à l'école Poudlard, il y apprend la magie, se lie d'amitié avec Ron et Hermione, et découvre la vérité sur la mort de ses parents et sur la mystérieuse cicatrice en éclair sur son front.",
-      genres: [genreFantasy.id, genreAction.id],
-    },
-    {
-      tmdbId: 1668, titre: 'Friends', realisateur: 'Marta Kauffman', annee: 1994, type: 'SERIES',
-      poster: 'https://image.tmdb.org/t/p/w500/2koX1xLkpTQM4IZebYvKysFW1Nh.jpg',
-      synopsis: "La vie quotidienne de six amis inséparables vivant à New York : Rachel, Monica, Phoebe, Ross, Chandler et Joey. Pendant dix saisons, ils partagent amours, ruptures, carrières et fous rires dans leurs appartements du Village et au Central Perk, leur café habituel.",
-      genres: [genreComedy.id, genreRomance.id],
-    },
-    {
-      tmdbId: 129, titre: 'Le Voyage de Chihiro', realisateur: 'Hayao Miyazaki', annee: 2001, type: 'MOVIE',
-      poster: 'https://image.tmdb.org/t/p/w500/12TAqK0AUgdcYE9ZYZ9r7ASbH5Q.jpg',
-      synopsis: "Chihiro, une fillette de dix ans, se retrouve piégée dans un monde fantastique peuplé d'esprits et de dieux lorsque ses parents sont transformés en cochons par la sorcière Yubaba. Pour les sauver, elle doit travailler dans les thermes de Yubaba et apprendre à se débrouiller seule dans ce monde mystérieux et dangereux.",
-      genres: [genreAnimation.id, genreFantasy.id],
-    },
-  ];
+  {
+    tmdbId: 2062, titre: 'Ratatouille', realisateur: 'Brad Bird', annee: 2007, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-iFcWBdTPeHQDS3OQxBcH3QaYXYv.webp`,
+    synopsis: "Rémy est un jeune rat qui rêve de devenir un grand chef français. Ni l'opposition de sa famille, ni le fait d'être un rongeur dans une profession qui les déteste ne le démotivent. Rémy est prêt à tout pour vivre sa passion de la cuisine — et le fait d'habiter dans les égouts du restaurant ultra-coté d'Auguste Gusteau va lui en donner l'occasion.",
+    genres: [genreAnimation.id, genreComedy.id],
+  },
+  {
+    tmdbId: 392, titre: 'Le Chocolat', realisateur: 'Lasse Hallström', annee: 2000, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-7RBG3RzAqQvF6XtTsQqLzdsyAvR.webp`,
+    synopsis: "Dans un village tranquille de la France profonde, une mystérieuse étrangère, Vianne Thierry, ouvre une chocolaterie juste au début du Carême. Ses chocolats semblent avoir des vertus magiques qui bouleversent la vie des habitants et défient l'ordre moral établi par le comte de Reynaud.",
+    genres: [genreDrame.id, genreRomance.id],
+  },
+  {
+    tmdbId: 1396, titre: 'Breaking Bad', realisateur: 'Vince Gilligan', annee: 2008, type: 'SERIES',
+    poster: `${API_BASE_URL}/uploads/posters/poster-4YLQj5XRrMJ7gp8eb0h6umd0iNx.webp`,
+    synopsis: "Walter White, professeur de chimie au lycée d'Albuquerque, apprend qu'il est atteint d'un cancer du poumon en phase terminale. Désespéré, il s'associe à Jesse Pinkman, un ancien élève devenu petit dealer, pour fabriquer et vendre de la méthamphétamine de haute qualité afin d'assurer l'avenir financier de sa famille.",
+    genres: [genreDrame.id, genreThriller.id],
+  },
+  {
+    tmdbId: 24094, titre: 'Julie & Julia', realisateur: 'Nora Ephron', annee: 2009, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-rtZquHKuEntFq3YTO3v4L5RtANw.webp`,
+    synopsis: "En 2002, Julie Powell, secrétaire à New York, décide de cuisiner en un an les 524 recettes du livre emblématique de Julia Child, « Mastering the Art of French Cooking », et de tenir un blog sur ses aventures culinaires. Le film entrecroise son histoire avec celle de Julia Child dans le Paris des années 1950.",
+    genres: [genreDrame.id, genreComedy.id],
+  },
+  {
+    tmdbId: 11832, titre: 'Le Festin de Babette', realisateur: 'Gabriel Axel', annee: 1987, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-zuZT3kE2Eb6Ln7ec5Ln4IcDwynf.webp`,
+    synopsis: "Au XIXe siècle, au Jutland danois, deux vieilles sœurs dévotes recueillent Babette, une réfugiée française. Cuisinière de talent, Babette gagne à la loterie et décide de dépenser toute sa fortune pour offrir à la communauté austère un somptueux festin gastronomique français — le repas de sa vie.",
+    genres: [genreDrame.id],
+  },
+  {
+    tmdbId: 31175, titre: 'Soul Kitchen', realisateur: 'Fatih Akin', annee: 2009, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-9UZIiJtPxNonMtIWisXm8O7zgnX.webp`,
+    synopsis: "Zinos Kazantsakis gère tant bien que mal son restaurant hambourgeois « Soul Kitchen » quand un chef étoilé et excentrique débarque dans sa cuisine. Entre galères financières, problèmes de dos, petite amie partie à Shanghaï et frère à peine sorti de prison, Zinos va devoir se battre pour garder son établissement.",
+    genres: [genreComedy.id],
+  },
+  {
+    tmdbId: 136315, titre: 'The Bear', realisateur: 'Christopher Storer', annee: 2022, type: 'SERIES',
+    poster: `${API_BASE_URL}/uploads/posters/poster-pjQUpBEsg89EbL4QWcjfH0s7Txz.webp`,
+    synopsis: "Carmen Berzatto, dit « Carmy », chef étoilé formé dans les plus grands restaurants du monde, rentre à Chicago pour reprendre l'Original Beef, le sandwich shop familial laissé par son frère décédé. Il doit apprendre à gérer une équipe chaotique tout en tentant de transformer l'établissement en restaurant digne de son talent.",
+    genres: [genreDrame.id],
+  },
+  {
+    tmdbId: 680, titre: 'Pulp Fiction', realisateur: 'Quentin Tarantino', annee: 1994, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-4TBdF7nFw2aKNM0gPOlDNq3v3se.webp`,
+    synopsis: "Les destins croisés de plusieurs personnages gravitant autour du monde du crime à Los Angeles : deux tueurs à gages philosophes, leur patron gangster et sa femme, un boxeur qui trahit son commanditaire, et deux petits braqueurs impulsifs. Une plongée dans une Amérique pop, violente et décalée.",
+    genres: [genreDrame.id, genreThriller.id, genreCrime.id],
+  },
+  {
+    tmdbId: 120, titre: 'Le Seigneur des Anneaux', realisateur: 'Peter Jackson', annee: 2001, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-5OPg6M0yHr21Ovs1fni2H1xpKuF.webp`,
+    synopsis: "Le hobbit Frodon Sacquet hérite d'un anneau magique qui s'avère être l'Anneau Unique, forgé par le Seigneur des Ténèbres Sauron pour asservir tous les peuples de la Terre du Milieu. Accompagné de la Communauté de l'Anneau, Frodon entreprend un voyage périlleux pour détruire l'anneau dans les feux de la Montagne du Destin.",
+    genres: [genreAction.id, genreFantasy.id],
+  },
+  {
+    tmdbId: 475557, titre: 'Joker', realisateur: 'Todd Phillips', annee: 2019, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-tWjJ3ILjsbTwKgXxEv48QAbYZ19.webp`,
+    synopsis: "À Gotham City dans les années 1980, Arthur Fleck, humoriste raté atteint d'un trouble neurologique qui le fait rire de façon incontrôlable, est marginalisé et maltraité par la société. Sa descente aux enfers progressive le conduit à embrasser le chaos et à devenir le Joker, symbole de la révolte des laissés-pour-compte.",
+    genres: [genreDrame.id, genreThriller.id, genreCrime.id],
+  },
+  {
+    tmdbId: 120467, titre: 'The Grand Budapest Hotel', realisateur: 'Wes Anderson', annee: 2014, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-qcWTuWPu6x6t2MKt0MTfbResJiV.webp`,
+    synopsis: "Les aventures de Gustave H., concierge légendaire d'un grand hôtel européen de l'entre-deux-guerres, et de Zero Moustafa, le groom qui devient son fidèle ami. L'histoire tourne autour du vol d'une précieuse peinture Renaissance et d'une bataille pour un immense héritage familial.",
+    genres: [genreComedy.id, genreDrame.id],
+  },
+  {
+    tmdbId: 38167, titre: 'Mange, Prie, Aime', realisateur: 'Ryan Murphy', annee: 2010, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-yoOyDKXjJIDBdnzQUrUjP0EtcZo.webp`,
+    synopsis: "Après un divorce douloureux et une dépression, Elizabeth Gilbert décide de tout quitter pour un voyage initiatique d'un an à travers trois pays : l'Italie pour les plaisirs de la table, l'Inde pour la spiritualité, et Bali pour trouver l'équilibre entre les deux et peut-être l'amour.",
+    genres: [genreDrame.id, genreRomance.id],
+  },
+  {
+    tmdbId: 238, titre: 'Le Parrain', realisateur: 'Francis Ford Coppola', annee: 1972, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-k3uIbYtiuK8pwbCcbma29nTqmgG.webp`,
+    synopsis: "Vito Corleone, vieux parrain d'une puissante famille de la mafia new-yorkaise, tente de conserver son empire criminel pendant que ses fils se battent pour prendre sa succession. Son fils cadet Michael, d'abord étranger au monde du crime, va progressivement s'y plonger jusqu'à en devenir le nouveau parrain.",
+    genres: [genreDrame.id, genreCrime.id],
+  },
+  {
+    tmdbId: 671, titre: "Harry Potter à l'école des sorciers", realisateur: 'Chris Columbus', annee: 2001, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-fbxQ44VRdM2PVzHSNajUseUteem.webp`,
+    synopsis: "Harry Potter, orphelin élevé par son oncle et sa tante qui lui rendent la vie impossible, découvre le jour de ses onze ans qu'il est un sorcier. Admis à l'école Poudlard, il y apprend la magie, se lie d'amitié avec Ron et Hermione, et découvre la vérité sur la mort de ses parents et sur la mystérieuse cicatrice en éclair sur son front.",
+    genres: [genreFantasy.id, genreAction.id],
+  },
+  {
+    tmdbId: 1668, titre: 'Friends', realisateur: 'Marta Kauffman', annee: 1994, type: 'SERIES',
+    poster: `${API_BASE_URL}/uploads/posters/poster-2koX1xLkpTQM4IZebYvKysFW1Nh.webp`,
+    synopsis: "La vie quotidienne de six amis inséparables vivant à New York : Rachel, Monica, Phoebe, Ross, Chandler et Joey. Pendant dix saisons, ils partagent amours, ruptures, carrières et fous rires dans leurs appartements du Village et au Central Perk, leur café habituel.",
+    genres: [genreComedy.id, genreRomance.id],
+  },
+  {
+    tmdbId: 129, titre: 'Le Voyage de Chihiro', realisateur: 'Hayao Miyazaki', annee: 2001, type: 'MOVIE',
+    poster: `${API_BASE_URL}/uploads/posters/poster-12TAqK0AUgdcYE9ZYZ9r7ASbH5Q.webp`,
+    synopsis: "Chihiro, une fillette de dix ans, se retrouve piégée dans un monde fantastique peuplé d'esprits et de dieux lorsque ses parents sont transformés en cochons par la sorcière Yubaba. Pour les sauver, elle doit travailler dans les thermes de Yubaba et apprendre à se débrouiller seule dans ce monde mystérieux et dangereux.",
+    genres: [genreAnimation.id, genreFantasy.id],
+  },
+];
 
   const medias = {};
   for (const def of mediaDefs) {
