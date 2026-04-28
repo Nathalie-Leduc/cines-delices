@@ -1,0 +1,11 @@
+[options]
+pnpmVersion = "10.33.0"
+
+[phases.setup]
+nixPkgs = ["caddy"]
+
+[phases.build]
+cmds = ["pnpm install", "pnpm run build"]
+
+[start]
+cmd = "caddy run --config /app/Caddyfile --adapter caddyfile"
