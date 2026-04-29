@@ -140,6 +140,7 @@ jobs:
       - name: Rejouer le seed (reset données de test)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |
           touch .env
           node prisma/seed-v4.js
@@ -147,10 +148,10 @@ jobs:
 
       - name: Lancer les tests d'intégration API
         env:
-          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://cines-delices-production.up.railway.app' }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://cines-delicesapi-production.up.railway.app' }}
         run: node tests/test-api.js
 
       - name: Lancer les tests de sécurité API
         env:
-          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://cines-delices-production.up.railway.app' }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL || 'https://cines-delicesapi-production.up.railway.app' }}
         run: node tests/test-api-security.js

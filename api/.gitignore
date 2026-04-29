@@ -28,5 +28,5 @@ Thumbs.db
 dist/
 
 # Uploads locaux (conserver le dossier vide)
-public/uploads/*
+public/uploads/user/*
 !public/uploads/.gitkeep
