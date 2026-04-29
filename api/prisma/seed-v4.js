@@ -578,7 +578,7 @@ for (const def of mediaDefs) {
       { ingredientId: ing("huile d'olive").id,      quantity: '4',  unit: 'c.à.s'  },
       { ingredientId: ing('herbes de provence').id, quantity: '1',  unit: 'c.à.c'  },
     ]},
-  }, 'https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=800');
+  }, 'https://plus.unsplash.com/premium_photo-1713635953194-ab8a625b2477?w=800');
 
   await createRecipe({
     titre: 'Boeuf bourguignon de Julia Child',
@@ -709,7 +709,7 @@ for (const def of mediaDefs) {
       { ingredientId: ing('beurre').id,   quantity: '40', unit: 'g'      },
       { ingredientId: ing('persil').id,   quantity: '1',  unit: 'botte'  },
     ]},
-  }, 'https://plus.unsplash.com/premium_photo-1707227204741-20ae518a357a?w=800');
+  }, 'https://plus.unsplash.com/premium_photo-1707695882668-5dc6f92e6f70?w=800');
 
   await createRecipe({
     titre: 'Pâtes à la Corleone',
@@ -914,7 +914,7 @@ for (const def of mediaDefs) {
       { ingredientId: ing('sucre').id,              quantity: '100', unit: 'g'     },
       { ingredientId: ing('extrait de vanille').id, quantity: '1',   unit: 'c.à.c' },
     ]},
-  }, 'https://plus.unsplash.com/premium_photo-1764355119672-d37d2ba8efdb?w=800');
+  }, 'https://images.unsplash.com/photo-1643311927292-46c6478ad4e8?w=800');
 
   // ════════════════════════════════════════════════════
   // BOISSONS — 12 recettes
@@ -1029,7 +1029,7 @@ for (const def of mediaDefs) {
       { ingredientId: ing('vin blanc').id,         quantity: '75', unit: 'cl'   },
       { ingredientId: ing('sirop de grenadine').id,quantity: '4',  unit: 'c.à.s'},
     ]},
-  }, 'https://plus.unsplash.com/premium_photo-1721929720315-379fc22f526a?w=800');
+  }, 'https://images.unsplash.com/photo-1567759131595-5e952a1b9a4e?w=800');
 
   await createRecipe({
     titre: 'Smoothie vert détox de Julie Child',
@@ -1084,7 +1084,7 @@ for (const def of mediaDefs) {
       { ingredientId: ing('lait entier').id, quantity: '20', unit: 'cl'    },
       { ingredientId: ing('citron').id,      quantity: '1',  unit: 'pièce' },
     ]},
-  }, 'https://images.unsplash.com/photo-1589308051-0b4c6b182b8c?w=800');
+  }, 'https://images.unsplash.com/photo-1605909388460-74ec8b204127?w=800');
 
   await createRecipe({
     titre: 'Dessert chocolaté',
