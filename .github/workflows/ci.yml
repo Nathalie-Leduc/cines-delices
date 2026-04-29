@@ -137,14 +137,14 @@ jobs:
           fi
 
     #   Si besoin de relancer le seed
-      - name: Rejouer le seed (reset données de test)
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          API_BASE_URL: ${{ secrets.API_BASE_URL }}
-        run: |
-          touch .env
-          node prisma/seed-v4.js
-        continue-on-error: true
+    #  - name: Rejouer le seed (reset données de test)
+    #    env:
+    #      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    #      API_BASE_URL: ${{ secrets.API_BASE_URL }}
+    #    run: |
+    #      touch .env
+    #      node prisma/seed-v4.js
+    #    continue-on-error: true
 
       - name: Lancer les tests d'intégration API
         env:
