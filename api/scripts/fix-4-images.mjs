@@ -13,6 +13,7 @@ const fixes = [
   { slug: 'kir-champetre-de-ratatouille', url: 'https://images.unsplash.com/photo-1567759131595-5e952a1b9a4e?w=800' },
   { slug: 'moules-marinieres-du-joker', url: 'https://plus.unsplash.com/premium_photo-1707695882668-5dc6f92e6f70?w=800' },
   { slug: 'choux-a-la-creme-de-poudlard', url: 'https://images.unsplash.com/photo-1643311927292-46c6478ad4e8?w=800' },
+  { slug: 'bruschetta-facon-ratatouille', url: 'https://images.unsplash.com/photo-1594978583693-8dfdfc93f052?w=800' },
 ];
 
 async function main() {
