@@ -112,7 +112,7 @@ cd client && pnpm run test:run
 | Service | URL |
 |---------|-----|
 | Front   | https://graceful-quietude-production.up.railway.app |
-| API     | https://cines-delices-production.up.railway.app     |
+| API     | https://cines-delicesapi-production.up.railway.app     |
 
 ---
 

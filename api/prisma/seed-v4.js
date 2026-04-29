@@ -401,7 +401,7 @@ for (const def of mediaDefs) {
       { ingredientId: ing("huile d'olive").id,  quantity: '3',  unit: 'c.à.s'   },
       { ingredientId: ing('sel').id,            quantity: null, unit: null      },
     ]},
-  }, 'https://images.unsplash.com/photo-1572453800999-e8d2d1589b7c?w=800');
+  }, 'https://images.unsplash.com/photo-1594978583693-8dfdfc93f052?w=800');
 
   await createRecipe({
     titre: 'Gaspacho de Breaking Bad',
