@@ -22,4 +22,4 @@ coverage/
 .vscode/
 
 # Documentation (repo séparé cines-delices-docs)
-docs/
+docs/api/scripts/
