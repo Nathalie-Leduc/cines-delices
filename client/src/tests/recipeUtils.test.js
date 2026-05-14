@@ -19,6 +19,7 @@ import {
   parsePositiveInt,
   toCategoryFilterKey,
 } from '../components/RecipeCatalogView/recipeCatalog.shared.js';
+import { parseTimeToMinutes } from '../utils/recipeUtils.js';
 
 // ─────────────────────────────────────────────
 // Reproduction locale de formatMinutes
@@ -280,5 +281,112 @@ describe('toCategoryFilterKey', () => {
   it('retourne une chaîne vide pour une valeur nulle', () => {
     expect(toCategoryFilterKey(null)).toBe('');
     expect(toCategoryFilterKey(undefined)).toBe('');
+  });
+});
+
+// ─────────────────────────────────────────────
+// 7. parseTimeToMinutes
+// Analogie : un assistant qui comprend toutes les façons
+// de dire un temps (1h30, 1:30, 90min, 90, 1.5h)
+// et répond toujours en minutes pour la BDD.
+// ─────────────────────────────────────────────
+
+describe('parseTimeToMinutes', () => {
+  // ─── Pattern 1 : format "h" (heures + minutes optionnelles) ───
+  it('comprend "1h30" → 90', () => {
+    expect(parseTimeToMinutes('1h30')).toBe(90);
+  });
+
+  it('comprend "1h" → 60 (sans minutes)', () => {
+    expect(parseTimeToMinutes('1h')).toBe(60);
+  });
+
+  it('comprend "2h" → 120', () => {
+    expect(parseTimeToMinutes('2h')).toBe(120);
+  });
+
+  it('comprend "1.5h" → 90 (heures décimales)', () => {
+    expect(parseTimeToMinutes('1.5h')).toBe(90);
+  });
+
+  it('comprend "1,5h" → 90 (virgule acceptée)', () => {
+    expect(parseTimeToMinutes('1,5h')).toBe(90);
+  });
+
+  it('comprend "1h10min" → 70 (suffixe min explicite)', () => {
+    expect(parseTimeToMinutes('1h10min')).toBe(70);
+  });
+
+  // ─── Pattern 2 : format "h:m" ───
+  it('comprend "1:30" → 90', () => {
+    expect(parseTimeToMinutes('1:30')).toBe(90);
+  });
+
+  it('comprend "01:30" → 90 (zéro de tête)', () => {
+    expect(parseTimeToMinutes('01:30')).toBe(90);
+  });
+
+  it('comprend "2:00" → 120', () => {
+    expect(parseTimeToMinutes('2:00')).toBe(120);
+  });
+
+  // ─── Pattern 3 : format "min" (minutes seules) ───
+  it('comprend "30" → 30 (entier seul)', () => {
+    expect(parseTimeToMinutes('30')).toBe(30);
+  });
+
+  it('comprend "30min" → 30', () => {
+    expect(parseTimeToMinutes('30min')).toBe(30);
+  });
+
+  it('comprend "30mn" → 30 (suffixe français)', () => {
+    expect(parseTimeToMinutes('30mn')).toBe(30);
+  });
+
+  it('comprend "30m" → 30 (suffixe court)', () => {
+    expect(parseTimeToMinutes('30m')).toBe(30);
+  });
+
+  // ─── Normalisation ───
+  it('ignore les espaces autour et au milieu', () => {
+    expect(parseTimeToMinutes('  1h 30  ')).toBe(90);
+    expect(parseTimeToMinutes(' 30 min ')).toBe(30);
+  });
+
+  it('accepte les majuscules', () => {
+    expect(parseTimeToMinutes('1H30')).toBe(90);
+    expect(parseTimeToMinutes('30MIN')).toBe(30);
+  });
+
+  // ─── Cas invalides → undefined ───
+  it('rejette une chaîne vide', () => {
+    expect(parseTimeToMinutes('')).toBeUndefined();
+  });
+
+  it('rejette null', () => {
+    expect(parseTimeToMinutes(null)).toBeUndefined();
+  });
+
+  it('rejette undefined', () => {
+    expect(parseTimeToMinutes(undefined)).toBeUndefined();
+  });
+
+  it('rejette une valeur non numérique', () => {
+    expect(parseTimeToMinutes('abc')).toBeUndefined();
+    expect(parseTimeToMinutes('truc')).toBeUndefined();
+  });
+
+  it('rejette "0" (durée nulle)', () => {
+    expect(parseTimeToMinutes('0')).toBeUndefined();
+  });
+
+  it('rejette "0h" (durée nulle en heures)', () => {
+    expect(parseTimeToMinutes('0h')).toBeUndefined();
+  });
+
+  it('rejette les formats invalides', () => {
+    expect(parseTimeToMinutes('1h30m45s')).toBeUndefined();   // pas pattern reconnu
+    expect(parseTimeToMinutes('--30')).toBeUndefined();
+    expect(parseTimeToMinutes('30x')).toBeUndefined();        // suffixe inconnu
   });
 });
