@@ -24,7 +24,7 @@ import {
   MEDIA_SUGGESTION_POSTER_FALLBACK,
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
-
+import { parseTimeToMinutes } from '../../utils/recipeUtils.js';  
 
 const defaultCategoriesOptions = ['Entrée', 'Plat', 'Dessert', 'Boisson'];
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)', 'tasse'];
@@ -680,29 +680,6 @@ async function createIngredient() {
   }
 
   function buildRecipePayload() {
-    // ✅ parseTimeToMinutes — comprend "1h10", "1:10", "70min", "70" → minutes entières
-    // Analogie : un assistant qui comprend toutes les façons de dire un temps.
-    const parseTimeToMinutes = (value) => {
-      if (value === '' || value === null || value === undefined) return undefined;
-      const str = String(value).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '.');
-      const hMatch = str.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
-      if (hMatch) {
-        const total = Math.round(parseFloat(hMatch[1]) * 60 + parseInt(hMatch[2] || '0', 10));
-        return total > 0 ? total : undefined;
-      }
-      const colonMatch = str.match(/^(\d+):(\d+)(?::\d+)?$/);
-      if (colonMatch) {
-        const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
-        return total > 0 ? total : undefined;
-      }
-      const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|mn|m)?$/);
-      if (minMatch) {
-        const parsed = Math.round(parseFloat(minMatch[1]));
-        return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
-      }
-      return undefined;
-    };
-
     // Reste utilisé pour nbPersonnes (entier simple)
     const parseNullableNumber = (value) => {
       if (value === '' || value === null || value === undefined) return undefined;

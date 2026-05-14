@@ -19,7 +19,7 @@ import {
   normalizeTmdbSearchResult,
 } from '../../utils/mediaSearch.js';
 import { buildCategoryFilters, LIMIT_OPTIONS } from '../../components/RecipeCatalogView/recipeCatalog.shared.js';
-import { normalizeCategoryLabel } from '../../utils/recipeUtils.js';
+import { normalizeCategoryLabel, parseTimeToMinutes } from '../../utils/recipeUtils.js';
 const FILM_SEARCH_API = import.meta.env.VITE_TMDB_SEARCH_API
   || import.meta.env.VITE_FILM_SEARCH_API
   || buildApiUrl('/api/tmdb/medias/search');
@@ -35,34 +35,6 @@ const CATEGORIES_API = buildApiUrl('/api/categories');
 const CONTACT_PREVIEW_LIMIT = 110;
 const unitesOptions = ['g', 'kg', 'ml', 'L', 'cl', 'pièce(s)', 'cuillère(s) à soupe', 'cuillère(s) à café', 'pincée(s)'];
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-// ✅ CORRECTIF TEMPS — remplace parseOptionalPositiveInteger pour les temps.
-// Comprend tous les formats courants et les convertit en minutes (entier).
-// Exemples : "70" → 70, "30min" → 30, "1h" → 60, "1h10" → 70, "1:10" → 70
-// Analogie : un assistant qui comprend toutes les façons de dire un temps
-// et répond toujours en minutes pour la BDD.
-function parseTimeToMinutes(value) {
-  if (value === '' || value === null || value === undefined) return undefined;
-  const str = String(value).trim().toLowerCase().replace(/\s+/g, '').replace(/,/g, '.');
-  // "1h10", "1h10min", "1h"
-  const hMatch = str.match(/^(\d+(?:\.\d+)?)h(?:(\d+)(?:min)?)?$/);
-  if (hMatch) {
-    const total = Math.round(parseFloat(hMatch[1]) * 60 + parseInt(hMatch[2] || '0', 10));
-    return total > 0 ? total : undefined;
-  }
-  // "1:10"
-  const colonMatch = str.match(/^(\d+):(\d+)(?::\d+)?$/);
-  if (colonMatch) {
-    const total = parseInt(colonMatch[1], 10) * 60 + parseInt(colonMatch[2], 10);
-    return total > 0 ? total : undefined;
-  }
-  // "30min", "30m", "30"
-  const minMatch = str.match(/^(\d+(?:\.\d+)?)(?:min|mn|m)?$/);
-  if (minMatch) {
-    const parsed = Math.round(parseFloat(minMatch[1]));
-    return Number.isNaN(parsed) || parsed <= 0 ? undefined : parsed;
-  }
-  return undefined;
-}
 
 // Reste utilisé pour nbPersonnes uniquement
 function parseOptionalPositiveInteger(value) {
