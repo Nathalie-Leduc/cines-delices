@@ -167,6 +167,22 @@ async function resolveMediaFromTmdb({ tmdbId, title, mediaType }) {
  * Crée une nouvelle recette
  * POST /api/recipes
  */
+/**
+ * Crée une nouvelle recette
+ * POST /api/recipes
+ *
+ * ✅ NOUVEAU comportement avec rétablissement du brouillon :
+ *   - Si submitForReview === true  → recette créée en PENDING (envoyée
+ *     directement en modération admin + notification admin déclenchée)
+ *   - Si submitForReview === false → recette créée en DRAFT (brouillon
+ *     personnel, pas de notification admin, pas visible en modération)
+ *   - Par défaut (champ absent) → DRAFT (on n'envoie en modération que
+ *     si l'utilisateur l'a explicitement demandé via le bouton).
+ *
+ * Analogie 🍽️ : c'est comme la salle d'un restaurant. Le cuisinier
+ * (membre) prépare son plat dans sa cuisine privée (DRAFT) puis décide
+ * lui-même s'il veut le mettre à la carte (soumettre → PENDING).
+ */
 export const createRecipe = async (req, res) => {
   try {
     const {
@@ -185,6 +201,7 @@ export const createRecipe = async (req, res) => {
       tempsPreparation,
       tempsCuisson,
       ingredients,
+      submitForReview,                                     // ✅ NOUVEAU
     } = req.body;
     const userId = req.user?.id;
 
@@ -279,6 +296,12 @@ export const createRecipe = async (req, res) => {
       (s) => prisma.recipe.findUnique({ where: { slug: s } }),
     );
 
+    // ✅ NOUVEAU — choix du statut initial selon le bouton cliqué côté front.
+    // Par défaut DRAFT (sécurité : on n'envoie en modération que si demandé).
+    // Analogie 🍽️ : "Enregistrer en brouillon" = je garde mon plat dans ma cuisine ;
+    //               "Soumettre pour validation" = je l'envoie au chef-modérateur.
+    const initialStatus = submitForReview === true ? 'PENDING' : 'DRAFT';
+
     const recipe = await prisma.recipe.create({
       data: {
         titre,
@@ -291,7 +314,7 @@ export const createRecipe = async (req, res) => {
         nombrePersonnes: normalizedNombrePersonnes,
         tempsPreparation,
         tempsCuisson,
-        status: 'PENDING',
+        status: initialStatus,                             // ✅ NOUVEAU
       },
       include: recipeRelationsInclude,
     });
@@ -333,6 +356,13 @@ export const createRecipe = async (req, res) => {
       }
     }
 
+    // ✅ NOUVEAU — Les notifications admin sont envoyées UNIQUEMENT si la
+    // recette part en modération (PENDING). Un brouillon (DRAFT) reste
+    // privé : aucun admin n'est notifié tant que le membre n'a pas cliqué
+    // sur "Soumettre" depuis "Mes recettes".
+    // Note : les ingrédients nouvellement créés sont notifiés dans tous
+    // les cas (le brouillon a quand même créé l'ingrédient en base, donc
+    // l'admin doit pouvoir le modérer indépendamment de la recette).
     const adminUsers = await prisma.user.findMany({
       where: { role: 'ADMIN' },
       select: { id: true },
@@ -347,21 +377,31 @@ export const createRecipe = async (req, res) => {
         }))
       );
 
-      await prisma.notification.createMany({
-        data: [
-          ...adminUsers.map((admin) => ({
+      // Notification "recette soumise" UNIQUEMENT si la recette part en PENDING
+      const recipeNotifications = initialStatus === 'PENDING'
+        ? adminUsers.map((admin) => ({
             type: 'RECIPE_SUBMITTED',
             message: `Nouvelle recette soumise: ${titre}`,
             userId: admin.id,
             recipeId: recipe.id,
-          })),
-          ...ingredientNotifications,
-        ],
-      });
+          }))
+        : [];
+
+      const allNotifications = [...recipeNotifications, ...ingredientNotifications];
+      if (allNotifications.length > 0) {
+        await prisma.notification.createMany({
+          data: allNotifications,
+        });
+      }
     }
 
+    // ✅ NOUVEAU — message de réponse adapté au statut
+    const responseMessage = initialStatus === 'PENDING'
+      ? 'Recette créée avec succès. Elle sera vérifiée par un administrateur.'
+      : 'Recette enregistrée en brouillon. Vous pouvez la soumettre depuis "Mes recettes".';
+
     return res.status(201).json({
-      message: 'Recette créée avec succès. Elle sera vérifiée par un administrateur.',
+      message: responseMessage,
       recipe,
     });
   } catch (error) {
@@ -369,6 +409,7 @@ export const createRecipe = async (req, res) => {
     return res.status(500).json({ message: 'Erreur serveur lors de la création de la recette.' });
   }
 };
+
 
 /**
  * Récupère une recette par ID ou slug

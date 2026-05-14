@@ -70,6 +70,12 @@ export default function CreerRecette() {
     ? location.state.initialTitle.trim()
     : '';
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  // ✅ NOUVEAU — quand le membre clique sur un des deux boutons (brouillon ou soumission),
+  // on mémorise son choix ici. La modale de confirmation s'adapte en fonction,
+  // et le payload envoyé au serveur inclut le champ `submitForReview`.
+  //   - 'draft'  → la recette sera créée en DRAFT (brouillon personnel)
+  //   - 'submit' → la recette sera créée en PENDING (envoyée en modération)
+  const [submitAction, setSubmitAction] = useState('submit');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alert, setAlert] = useState({ type: 'info', message: '' });
   const [isDraggingImage, setIsDraggingImage] = useState(false);
@@ -832,13 +838,23 @@ async function createIngredient() {
         formData.append('etapes', JSON.stringify(payload.etapes));
         formData.append('image', form.image);
 
+        // ✅ NOUVEAU — on transmet l'intention de l'utilisateur au back.
+        // En multipart toutes les valeurs sont des strings : on envoie "true" ou "false",
+        // le Validator Zod côté serveur coerce cela en booléen.
+        formData.append('submitForReview', String(submitAction === 'submit'));
+
         requestInit.body = formData;
       } else {
         requestInit.headers = {
           ...headers,
           'Content-Type': 'application/json',
         };
-        requestInit.body = JSON.stringify(payload);
+        // ✅ NOUVEAU — en JSON pur on envoie un vrai booléen.
+        // Le back lit le même champ qu'en multipart : `submitForReview`.
+        requestInit.body = JSON.stringify({
+          ...payload,
+          submitForReview: submitAction === 'submit',
+        });
       }
 
       const response = await fetch(RECIPE_CREATE_API, requestInit);
@@ -867,7 +883,14 @@ async function createIngredient() {
         return;
       }
 
-      showAlertAtTop('success', 'La recette a bien été enregistrée. Elle apparaîtra après validation.');
+      // ✅ NOUVEAU — message + redirection adaptés au choix de l'utilisateur :
+      //   - 'submit' → message "soumis pour validation" + redirect vers /recettes-en-validation
+      //   - 'draft'  → message "enregistré en brouillon" + redirect vers /mes-recettes
+      const successMessage = submitAction === 'submit'
+        ? 'La recette a bien été soumise. Elle apparaîtra après validation.'
+        : 'La recette a bien été enregistrée en brouillon. Vous pouvez la soumettre depuis "Mes recettes".';
+
+      showAlertAtTop('success', successMessage);
       setLastSubmittedSignature(submissionSignature);
       setShowSubmitModal(false);
       setImageError('');
@@ -878,7 +901,11 @@ async function createIngredient() {
       setIngredientSearchError('');
       setCreatingIngredient(false);
       setForm(INITIAL_FORM);
-      navigate('/membre/mes-recettes/recettes-en-validation', { replace: true });
+
+      const targetRoute = submitAction === 'submit'
+        ? '/membre/mes-recettes/recettes-en-validation'
+        : '/membre/mes-recettes';
+      navigate(targetRoute, { replace: true });
     } catch {
       setShowSubmitModal(false);
       showAlertAtTop('error', 'Impossible de joindre le serveur. Réessaie dans quelques instants.');
@@ -887,11 +914,16 @@ async function createIngredient() {
     }
   }
 
-  function openSubmitModal() {
+  // ✅ NOUVEAU — la fonction reçoit maintenant le type d'action choisi par l'utilisateur :
+  //   - 'draft'  → bouton "Enregistrer en brouillon"
+  //   - 'submit' → bouton "Soumettre pour validation"
+  // L'état submitAction est mémorisé pour adapter la modale ET le payload envoyé au back.
+  function openSubmitModal(action = 'submit') {
     if (isSubmitting) {
       return;
     }
 
+    setSubmitAction(action);
     setShowSubmitModal(true);
   }
 
@@ -900,9 +932,18 @@ async function createIngredient() {
       {showSubmitModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
-            <h2 className={styles.modalTitle}>Publier la recette</h2>
+            {/* ✅ NOUVEAU — la modale s'adapte selon le bouton cliqué.
+                Deux versions : enregistrement en brouillon OU envoi en modération.
+                Analogie 🍽️ : "garder dans ma cuisine" vs "envoyer au chef-modérateur". */}
+            <h2 className={styles.modalTitle}>
+              {submitAction === 'submit'
+                ? 'Soumettre la recette pour validation'
+                : 'Enregistrer la recette en brouillon'}
+            </h2>
             <p className={styles.modalText}>
-              Voulez-vous confirmer l&apos;envoi de cette recette pour validation ?
+              {submitAction === 'submit'
+                ? 'Voulez-vous confirmer l\u2019envoi de cette recette pour validation par un administrateur ? Une fois soumise, vous pourrez la modifier mais elle repassera en validation.'
+                : 'Voulez-vous enregistrer cette recette comme brouillon ? Elle restera privée et vous pourrez la modifier ou la soumettre plus tard depuis "Mes recettes".'}
             </p>
             <div className={styles.modalButtons}>
               <button
@@ -915,11 +956,17 @@ async function createIngredient() {
               </button>
               <button
                 className={styles.confirmBtn}
-                aria-label="Valider la création de la recette"
+                aria-label={
+                  submitAction === 'submit'
+                    ? 'Confirmer la soumission de la recette'
+                    : 'Confirmer l\u2019enregistrement en brouillon'
+                }
                 onClick={handleSubmit}
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Création...' : 'Valider'}
+                {isSubmitting
+                  ? (submitAction === 'submit' ? 'Soumission...' : 'Enregistrement...')
+                  : (submitAction === 'submit' ? 'Soumettre' : 'Enregistrer')}
               </button>
             </div>
           </div>
@@ -1301,15 +1348,28 @@ async function createIngredient() {
         </div>
       </div>
 
-      {/* SUBMIT */}
-      <button
-        className={styles.submitBtn}
-        aria-label="Ouvrir la confirmation de creation de recette"
-        onClick={openSubmitModal}
-        disabled={isSubmitting}
-      >
-        Valider
-      </button>
+      {/* SUBMIT — ✅ NOUVEAU : 2 boutons distincts
+          - "Enregistrer en brouillon" (gris/secondaire) → status DRAFT
+          - "Soumettre pour validation" (bordeaux/primaire) → status PENDING
+          Analogie 🍽️ : "ranger dans le tiroir" vs "envoyer à la modération". */}
+      <div className={styles.submitActions}>
+        <button
+          className={styles.draftBtn}
+          aria-label="Enregistrer la recette en brouillon"
+          onClick={() => openSubmitModal('draft')}
+          disabled={isSubmitting}
+        >
+          Enregistrer en brouillon
+        </button>
+        <button
+          className={styles.submitBtn}
+          aria-label="Soumettre la recette pour validation"
+          onClick={() => openSubmitModal('submit')}
+          disabled={isSubmitting}
+        >
+          Soumettre pour validation
+        </button>
+      </div>
 
     </div>
   );

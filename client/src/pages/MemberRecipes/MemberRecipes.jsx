@@ -225,21 +225,24 @@ function getRecipeModerationBadge(recipe) {
     };
   }
 
-// AVANT — badge "Refusée" seulement si rejectionReason renseigné
-// if (status === 'DRAFT' && rejectionReason) {
+// ✅ NOUVEAU comportement (brouillon rétabli) :
+  // Une recette en DRAFT peut être :
+  //   - un VRAI brouillon (jamais soumise) → badge "Brouillon"
+  //   - une recette REFUSÉE (était PENDING, refusée par admin) → badge "Refusée"
+  // Le test pour distinguer : la présence d'un rejectionReason renseigné.
+  //
+  // Analogie 🍽️ : un plat "dans la cuisine" peut être :
+  //   - un plat en préparation (brouillon)
+  //   - un plat refusé par le chef (motif obligatoire au refus)
+  if (status === 'DRAFT' && rejectionReason) {
+    return {
+      label: 'Refusée',
+      tone: 'rejected',
+      title: `Recette refusée : ${rejectionReason}`,
+    };
+  }
 
-// APRÈS — badge "Refusée" dès que DRAFT
-// (motif optionnel : affiché si disponible, sinon badge quand même)
-if (status === 'DRAFT') {
-  return {
-    label: 'Refusée',
-    tone: 'rejected',
-    title: rejectionReason
-      ? `Recette refusée : ${rejectionReason}`
-      : 'Recette refusée par l\'admin',
-  };
-}
-
+  // DRAFT sans rejectionReason = vrai brouillon jamais soumis
   return {
     label: 'Brouillon',
     tone: 'draft',
