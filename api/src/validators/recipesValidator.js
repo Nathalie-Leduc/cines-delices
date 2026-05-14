@@ -20,6 +20,21 @@ const optionalTrimmedString = z.preprocess((value) => {
   return normalized === '' ? undefined : normalized;
 }, z.string().optional());
 
+// ✅ NOUVEAU — coercition booléenne tolérante.
+// Indispensable parce que le front envoie tantôt en JSON (booléen pur)
+// tantôt en multipart/form-data (toutes les valeurs deviennent des strings).
+// Analogie : on accepte "true", "false", true, false, et "" → false par défaut.
+const booleanFromInput = z.preprocess((value) => {
+  if (value === undefined || value === null || value === '') {
+    return false;
+  }
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  const str = String(value).trim().toLowerCase();
+  return str === 'true' || str === '1';
+}, z.boolean());
+
 const recipeIdentifierSchema = z
   .string({ required_error: 'L\'identifiant de la recette est obligatoire' })
   .trim()
@@ -88,6 +103,13 @@ export const createRecipeSchema = z.object({
     ingredients: z
       .array(ingredientSchema)
       .optional(),
+
+    // ✅ NOUVEAU — Le membre choisit au moment du clic :
+    //   true  → recette directement envoyée en modération (PENDING)
+    //   false → recette gardée en brouillon personnel (DRAFT)
+    //   absent → par défaut DRAFT (sécurité : on n'envoie en modération
+    //            que si l'utilisateur l'a explicitement demandé)
+    submitForReview: booleanFromInput.optional(),
   })
     .refine((data) => Boolean(data.categoryId || data.categorie), {
       message: 'La catégorie est obligatoire',
