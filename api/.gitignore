@@ -30,3 +30,7 @@ dist/
 # Uploads locaux (conserver le dossier vide)
 public/uploads/user/*
 !public/uploads/.gitkeepapi/scripts/
+
+# Pas de lockfile npm dans un monorepo pnpm
+package-lock.json
+**/package-lock.json

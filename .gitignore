@@ -23,3 +23,8 @@ coverage/
 
 # Documentation (repo séparé cines-delices-docs)
 docs/api/scripts/
+
+
+# Pas de lockfile npm dans un monorepo pnpm
+package-lock.json
+**/package-lock.json

@@ -1,2 +1,6 @@
 # Variables d'environnement
 .env
+
+# Pas de lockfile npm dans un monorepo pnpm
+package-lock.json
+**/package-lock.json
