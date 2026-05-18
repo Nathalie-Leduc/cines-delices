@@ -47,7 +47,8 @@ function normalizeImageUrl(value) {
   }
 
   if (rawValue.startsWith('/')) {
-    return `${API_BASE_URL}${rawValue}`;
+    // 🔹 Chemin relatif (ex: "/uploads/posters/x.webp") → préfixer avec l'origine de l'API
+    return `${API_ORIGIN}${rawValue}`;
   }
 
   try {

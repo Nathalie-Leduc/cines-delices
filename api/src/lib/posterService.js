@@ -13,10 +13,10 @@ import path from 'node:path';
 //   4. Chargement plus rapide (servies depuis votre serveur)
 //
 // Usage dans resolveAdminMediaId ou le seed :
-//   const localUrl = await downloadAndConvertPoster(
+//   const localPath = await downloadAndConvertPoster(
 //     'https://image.tmdb.org/t/p/w500/posterpath.jpg',
-//     req  // optionnel, pour construire l'URL publique
 //   );
+//   // → "/uploads/posters/poster-posterpath.webp" (chemin relatif)
 // ============================================================
 
 const UPLOADS_DIR = path.resolve(process.cwd(), 'public', 'uploads');
@@ -55,10 +55,12 @@ fs.mkdirSync(POSTERS_DIR, { recursive: true });
  *
  * @param {string} tmdbImageUrl   - URL complète de l'image TMDB
  *                                  (ex: "https://image.tmdb.org/t/p/w500/abc.jpg")
- * @param {Object} [req]          - Objet request Express (pour construire l'URL publique)
- * @returns {Promise<string|null>} - URL publique locale du poster WebP, ou null si échec
+ * @returns {Promise<string|null>} - Chemin public RELATIF du poster WebP
+ *                                   (ex: "/uploads/posters/poster-abc.webp"),
+ *                                   ou null si échec. Le client préfixe avec
+ *                                   l'origine API au moment du rendu.
  */
-export async function downloadAndConvertPoster(tmdbImageUrl, req) {
+export async function downloadAndConvertPoster(tmdbImageUrl) {
   if (!tmdbImageUrl) {
     return null;
   }
@@ -76,10 +78,10 @@ export async function downloadAndConvertPoster(tmdbImageUrl, req) {
     const filename = `poster-${originalName}.webp`;
     const outputPath = path.join(POSTERS_DIR, filename);
 
-    // Si le poster est déjà converti, on renvoie directement l'URL
+    // Si le poster est déjà converti, on renvoie directement le chemin
     // (évite de re-télécharger à chaque fois)
     if (fs.existsSync(outputPath)) {
-      return buildPosterUrl(req, filename);
+      return buildPosterUrl(filename);
     }
 
     // Télécharger l'image depuis TMDB
@@ -112,7 +114,7 @@ export async function downloadAndConvertPoster(tmdbImageUrl, req) {
       `[POSTER] ✅ ${filename} (${(originalSize / 1024).toFixed(0)} KB → ${(newSize / 1024).toFixed(0)} KB, -${savings}%)`
     );
 
-    return buildPosterUrl(req, filename);
+    return buildPosterUrl(filename);
   } catch (error) {
     console.error(`[POSTER] ❌ Erreur conversion poster :`, error.message);
     return null; // En cas d'erreur, on garde l'URL TMDB originale
@@ -120,17 +122,22 @@ export async function downloadAndConvertPoster(tmdbImageUrl, req) {
 }
 
 /**
- * Construit l'URL publique d'un poster local.
+ * Construit le chemin public (relatif) d'un poster local.
+ *
+ * On stocke volontairement un chemin RELATIF en BDD (ex: "/uploads/posters/xxx.webp"),
+ * pas une URL absolue. Raisons :
+ *   1. Portabilité : la même donnée fonctionne en dev (localhost), en preview Railway
+ *      et en prod, sans dépendre d'une variable d'env API_BASE_URL.
+ *   2. Migration sereine : changer de domaine ne casse pas les URLs en base.
+ *   3. Cohérence avec le code client (buildApiAssetUrl) qui sait préfixer un chemin
+ *      relatif avec l'origine de l'API au moment du rendu.
+ *
+ * Analogie : on écrit "le sel est dans le placard de la cuisine", pas "le sel est
+ * dans le placard de la cuisine du 24 rue Pasteur à Saint-Cyr-sur-Mer". Si on
+ * déménage, l'instruction reste valide.
  */
-function buildPosterUrl(req, filename) {
-  if (req) {
-    const baseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`;
-    return `${baseUrl}/uploads/${POSTERS_SUBDIR}/${filename}`;
-  }
-
-  // Fallback sans req (scripts, seed, cron)
-  const baseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-  return `${baseUrl}/uploads/${POSTERS_SUBDIR}/${filename}`;
+function buildPosterUrl(filename) {
+  return `/uploads/${POSTERS_SUBDIR}/${filename}`;
 }
 
 /**
