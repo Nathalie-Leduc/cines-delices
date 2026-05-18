@@ -177,12 +177,26 @@ export default function CreerRecette() {
       || lowerName.endsWith('.webp');
   }
 
+  // Liste blanche des CDN d'images connus.
+  // Ces services servent des images via des endpoints dynamiques (sans extension
+  // dans l'URL), le type d'image est renvoyé via le header HTTP Content-Type.
+  // Exemple : https://images.unsplash.com/photo-1624299831638-82c15fcafd2b?w=500
+  const TRUSTED_IMAGE_HOSTS = [
+    'images.unsplash.com',
+    'image.tmdb.org',         // cohérent avec posterService (affiches de films)
+    'res.cloudinary.com',
+    'images.pexels.com',
+    'cdn.pixabay.com',
+    'i.imgur.com',
+  ];
+
   function isAllowedImageUrl(url) {
     if (!url) {
       return false;
     }
 
     const normalizedUrl = url.trim().toLowerCase();
+    // Cas 1 : data URI inline (ex: data:image/png;base64,...)
     if (normalizedUrl.startsWith('data:image/png') || normalizedUrl.startsWith('data:image/jpeg') || normalizedUrl.startsWith('data:image/webp')) {
       return true;
     }
@@ -190,7 +204,22 @@ export default function CreerRecette() {
     try {
       const parsedUrl = new URL(url.trim());
       const pathname = parsedUrl.pathname.toLowerCase();
-      return pathname.endsWith('.png') || pathname.endsWith('.jpg') || pathname.endsWith('.jpeg') || pathname.endsWith('.webp');
+      const hostname = parsedUrl.hostname.toLowerCase();
+
+      // Cas 2 : URL classique avec extension explicite (ex: monsite.fr/photo.jpg)
+      const hasImageExtension = pathname.endsWith('.png')
+        || pathname.endsWith('.jpg')
+        || pathname.endsWith('.jpeg')
+        || pathname.endsWith('.webp');
+      if (hasImageExtension) {
+        return true;
+      }
+
+      // Cas 3 : CDN d'images reconnu (ex: Unsplash, TMDB, Cloudinary)
+      // On accepte uniquement les schémas HTTP/HTTPS pour éviter file://, javascript:, etc.
+      const isHttp = parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:';
+      const isTrustedHost = TRUSTED_IMAGE_HOSTS.includes(hostname);
+      return isHttp && isTrustedHost;
     } catch {
       return false;
     }
@@ -224,7 +253,7 @@ export default function CreerRecette() {
     }
 
     if (!isAllowedImageUrl(form.imageUrl)) {
-      setImageError('Veuillez coller une URL valide qui pointe vers une image .png, .jpg, .jpeg ou .webp.');
+      setImageError('URL invalide. Collez un lien direct vers une image (.png, .jpg, .jpeg, .webp) ou depuis Unsplash, TMDB, Cloudinary, Pexels, Pixabay ou Imgur.');
       return;
     }
 
@@ -1085,8 +1114,8 @@ async function createIngredient() {
           <input
             className={styles.input}
             type="url"
-            aria-label="URL de l'image PNG, JPG ou WEBP"
-            placeholder="Ou collez l'URL d'une image .png/.jpg/.webp"
+            aria-label="URL de l'image (.png, .jpg, .webp ou lien Unsplash/TMDB)"
+            placeholder="Ou collez l'URL d'une image (.png/.jpg/.webp, Unsplash, TMDB...)"
             value={form.imageUrl}
             onChange={e => handleImageUrlChange(e.target.value)}
             onBlur={validateImageUrl}
