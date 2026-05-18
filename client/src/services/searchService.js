@@ -1,5 +1,8 @@
 import { getMoviesCatalog, getSeriesCatalog } from "./mediaService";
 import { getRecipesCatalog } from "./recipesService";
+// 🔹 buildApiAssetUrl : transforme un chemin relatif servi par l'API
+//    (ex: "/uploads/posters/x.webp") en URL absolue compatible avec <img src>.
+import { buildApiAssetUrl } from "./api";
 
 const RECIPE_SEARCH_LIMIT = 4;
 const MEDIA_SEARCH_LIMIT = 3;
@@ -86,7 +89,7 @@ function mapRecipeSearchResult(recipe) {
     title: recipe?.titre || "Recette sans titre",
     mediaTitle,
     meta: mediaTitle ? `Inspirée par ${mediaTitle}` : "Accéder au détail de la recette",
-    image: recipe?.imageURL || recipe?.imageUrl || recipe?.media?.posterUrl || "/img/hero-home.webp",
+    image: buildApiAssetUrl(recipe?.imageURL || recipe?.imageUrl || recipe?.media?.posterUrl) || "/img/hero-home.webp",
     to: `/recipes/${slugOrId}`,
   };
 }

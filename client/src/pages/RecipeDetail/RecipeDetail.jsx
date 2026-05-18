@@ -7,6 +7,9 @@ import useHeroReveal from "../../hooks/useHeroReveal";
 // 🔹 Import de getRecipeBySlug pour charger UNE recette (tâche f-04)
 // 🔹 Import de getRecipesCatalog pour charger le catalogue (recettes similaires)
 import { getRecipeBySlug, getRecipesCatalog } from "../../services/recipesService";
+// 🔹 buildApiAssetUrl préfixe un chemin relatif servi par l'API (ex: /uploads/posters/x.webp)
+//    avec l'origine actuelle (localhost en dev, domaine Railway en prod).
+import { buildApiAssetUrl } from "../../services/api";
 import { formatMinutes, normalizeCategoryLabel, toFiniteNumber } from "../../utils/recipeUtils.js";
 import styles from "./RecipeDetail.module.scss";
 
@@ -64,8 +67,10 @@ function normalizeApiRecipe(apiRecipe) {
     // Image uploadée par l'utilisateur — null si absente, jamais remplacée par le poster
     image: apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image || null,
     heroImage: apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image || null,
-    // Poster du film (TMDB) — champ séparé, jamais mélangé avec l'image recette
-    posterImage: apiRecipe.media?.posterUrl || null,
+    // Poster du film (TMDB) — champ séparé, jamais mélangé avec l'image recette.
+    // buildApiAssetUrl transforme "/uploads/posters/x.webp" → "https://api.../uploads/posters/x.webp"
+    // et laisse passer les URLs déjà absolues (http://...) sans les modifier.
+    posterImage: buildApiAssetUrl(apiRecipe.media?.posterUrl) || null,
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
     duration: totalTime,
