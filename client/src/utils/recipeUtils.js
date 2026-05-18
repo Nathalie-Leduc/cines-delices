@@ -4,6 +4,11 @@
 // Admin/Dashboard, Admin/Recettes, etc.
 // Évite la duplication de ces helpers dans chaque composant/page.
 
+// 🔹 buildApiAssetUrl : prefixe un chemin relatif servi par l'API
+//    (ex: "/uploads/abc.webp") avec l'origine de l'API, et laisse passer
+//    les URLs deja absolues (Unsplash, TMDB) telles quelles.
+import { buildApiAssetUrl } from '../services/api.js';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // parseTimeToMinutes — convertit une saisie utilisateur en minutes entières
 //
@@ -125,6 +130,8 @@ export function mapApiRecipeToCard(recipe) {
     mediaTitle: recipe?.media?.titre ?? recipe?.movie ?? 'Sans média',
     mediaType: recipe?.media?.type === 'SERIES' ? 'série' : 'film',
     duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL ?? recipe?.imageUrl ?? recipe?.image ?? null,
+    // buildApiAssetUrl retourne "" pour null/undefined/"" → on convertit en null
+    // pour que les composants affichent le placeholder au lieu d'un <img src="">.
+    image: buildApiAssetUrl(recipe?.imageURL ?? recipe?.imageUrl ?? recipe?.image) || null,
   };
 }

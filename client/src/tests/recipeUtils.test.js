@@ -152,7 +152,10 @@ describe('mapApiRecipeToCard', () => {
     expect(card.mediaTitle).toBe('Ratatouille');
     expect(card.mediaType).toBe('film');
     expect(card.duration).toBe(75); // 30 + 45
-    expect(card.image).toBe('/uploads/recipes/ratatouille.webp');
+    // Le chemin relatif est maintenant prefixe par l'origine de l'API.
+    // En mode test, VITE_API_URL n'est pas defini, donc on utilise le fallback
+    // DEFAULT_API_ORIGIN = 'http://localhost:3000' (cf services/api.js).
+    expect(card.image).toBe('http://localhost:3000/uploads/recipes/ratatouille.webp');
   });
 
   it('calcule la durée totale correctement', () => {

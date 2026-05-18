@@ -1,5 +1,9 @@
 import MediaCatalog from "../MediaCatalog";
 import { getSeriesCatalog } from "../../services/mediaService";
+// 🔹 buildApiAssetUrl : meme principe que dans Movies.jsx — prefixe un chemin
+//    relatif servi par l'API avec son origine, pour que <img src> aille bien
+//    chercher l'image sur le serveur API et non sur l'origine du client.
+import { buildApiAssetUrl } from "../../services/api";
 
 function mapSeriesToCard(series) {
   return {
@@ -7,7 +11,7 @@ function mapSeriesToCard(series) {
     slug: series?.slug,
     to: series?.slug ? `/series/${series.slug}` : undefined,
     title: series?.title || "Série sans titre",
-    poster: series?.poster || "/img/stranger-thing-poster.webp",
+    poster: buildApiAssetUrl(series?.poster) || "/img/stranger-thing-poster.webp",
     fallbackPoster: "/img/stranger-thing-poster.webp",
     genre: series?.genre || "Genre non renseigné",
     creator: series?.creator || "Créateur non renseigné",

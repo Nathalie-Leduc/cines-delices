@@ -64,12 +64,12 @@ function normalizeApiRecipe(apiRecipe) {
     slug: apiRecipe.slug,
     title: apiRecipe.title || apiRecipe.titre || 'Recette sans titre',
     category: normalizeCategoryLabel(apiRecipe.category?.nom || apiRecipe.category),
-    // Image uploadée par l'utilisateur — null si absente, jamais remplacée par le poster
-    image: apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image || null,
-    heroImage: apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image || null,
-    // Poster du film (TMDB) — champ séparé, jamais mélangé avec l'image recette.
-    // buildApiAssetUrl transforme "/uploads/posters/x.webp" → "https://api.../uploads/posters/x.webp"
-    // et laisse passer les URLs déjà absolues (http://...) sans les modifier.
+    // Image uploadee par l'utilisateur — null si absente, jamais remplacee par le poster.
+    // buildApiAssetUrl prefixe les chemins relatifs (/uploads/xxx.webp) avec l'origine
+    // de l'API et laisse passer les URLs absolues (Unsplash, TMDB) telles quelles.
+    image: buildApiAssetUrl(apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image) || null,
+    heroImage: buildApiAssetUrl(apiRecipe.imageURL || apiRecipe.imageUrl || apiRecipe.image) || null,
+    // Poster du film (TMDB) — champ separe, jamais melange avec l'image recette.
     posterImage: buildApiAssetUrl(apiRecipe.media?.posterUrl) || null,
     mediaTitle: apiRecipe.mediaTitle || apiRecipe.movie || apiRecipe.media?.titre || '',
     mediaType: apiRecipe.mediaType || (apiRecipe.media?.type === 'SERIES' ? 'serie' : 'film'),
@@ -103,7 +103,7 @@ function mapApiRecipeToCard(recipe) {
     mediaTitle: recipe?.media?.titre || "Sans média",
     mediaType: recipe?.media?.type === "SERIES" ? "série" : "film",
     duration: duration > 0 ? duration : 0,
-    image: recipe?.imageURL || recipe?.imageUrl || null,
+    image: buildApiAssetUrl(recipe?.imageURL || recipe?.imageUrl) || null,
     fallbackImage: null,
   };
 }

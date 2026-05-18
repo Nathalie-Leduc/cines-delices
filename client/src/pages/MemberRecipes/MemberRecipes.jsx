@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import RecipeEditModal from '../../components/RecipeEditModal';
 import styles from './MemberRecipes.module.scss';
-import { buildApiUrl } from '../../services/api.js';
+import { buildApiUrl, buildApiAssetUrl } from '../../services/api.js';
 import {
   deleteMyNotification,
   deleteMyRecipe,
@@ -135,7 +135,8 @@ function normalizeRecipe(rawRecipe) {
     // On ne garde que l'image uploadée par le membre.
     // media?.posterUrl et l'URL Unsplash sont retirés intentionnellement :
     // si pas d'image propre → null → RecipeCard affiche le placeholder SVG.
-    image: rawRecipe?.image || rawRecipe?.imageURL || rawRecipe?.imageUrl || null,
+    // buildApiAssetUrl prefixe les chemins relatifs avec l'origine de l'API.
+    image: buildApiAssetUrl(rawRecipe?.image || rawRecipe?.imageURL || rawRecipe?.imageUrl) || null,
     nbPersonnes: rawRecipe?.nbPersonnes || rawRecipe?.nombrePersonnes || '',
     ingredients: normalizedIngredients,
     etapes: Array.isArray(rawRecipe?.etapes)

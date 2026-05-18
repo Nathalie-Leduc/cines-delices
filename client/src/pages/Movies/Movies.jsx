@@ -1,5 +1,9 @@
 import MediaCatalog from "../MediaCatalog";
 import { getMoviesCatalog } from "../../services/mediaService";
+// 🔹 buildApiAssetUrl : prefixe un chemin relatif (ex: "/uploads/posters/x.webp")
+//    avec l'origine de l'API (cines-delicesapi-production.up.railway.app),
+//    et laisse passer les URLs deja absolues (TMDB) telles quelles.
+import { buildApiAssetUrl } from "../../services/api";
 
 function mapMovieToCard(movie) {
   return {
@@ -7,7 +11,9 @@ function mapMovieToCard(movie) {
     slug: movie?.slug,
     to: movie?.slug ? `/films/${movie.slug}` : undefined,
     title: movie?.title || "Film sans titre",
-    poster: movie?.poster || "/img/parrain-poster.webp",
+    // On prefixe le chemin relatif servi par l'API avec son origine
+    // pour que <img src> aille bien chercher l'image sur le bon serveur.
+    poster: buildApiAssetUrl(movie?.poster) || "/img/parrain-poster.webp",
     fallbackPoster: "/img/parrain-poster.webp",
     genre: movie?.genre || "Genre non renseigné",
     creator: movie?.director || movie?.creator || "Réalisateur non renseigné",

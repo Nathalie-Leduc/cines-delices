@@ -111,9 +111,22 @@ async function convertToWebp(buffer) {
 // ─────────────────────────────────────────────
 // URL publique
 // ─────────────────────────────────────────────
-function buildPublicImageUrl(req, filename) {
-  const baseUrl = process.env.API_BASE_URL || `${req.protocol}://${req.get('host')}`;
-  return `${baseUrl}/uploads/${filename}`;
+/**
+ * Construit le chemin public (relatif) d'une image recette uploadee.
+ *
+ * On stocke volontairement un chemin RELATIF en BDD (ex: "/uploads/x.webp"),
+ * pas une URL absolue. Memes raisons que posterService.js :
+ *   1. Portabilite : la donnee fonctionne en dev, preview Railway, prod,
+ *      sans dependre d'une variable API_BASE_URL.
+ *   2. Migration : changer de domaine ne casse pas les URLs en base.
+ *   3. Coherence avec le client (buildApiAssetUrl) qui sait prefixer un
+ *      chemin relatif avec l'origine API au moment du rendu.
+ *
+ * Le req est conserve dans la signature pour eviter de casser d'eventuels
+ * appelants, mais il n'est plus utilise.
+ */
+function buildPublicImageUrl(_req, filename) {
+  return `/uploads/${filename}`;
 }
 
 // ─────────────────────────────────────────────
