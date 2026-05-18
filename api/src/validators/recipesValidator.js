@@ -196,7 +196,12 @@ export const updateRecipeSchema = z.object({
       .array(ingredientSchema)
       .optional(),
 
-    imageUrl: z.string().url().optional().or(z.literal('')),
+    // APRÈS — accepte les URLs absolues OU les chemins relatifs "/uploads/..."
+imageUrl: z.union([
+  z.string().url(),
+  z.string().regex(/^\/uploads\//, 'Chemin d\'upload invalide'),
+  z.literal(''),
+]).optional(),
   }),
 });
 

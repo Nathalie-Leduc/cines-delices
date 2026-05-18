@@ -8,6 +8,7 @@ import {
   deleteMyRecipe,
   getMyNotifications,
   getMyRecipes,
+  submitMyRecipe,
   updateMyRecipe,
 } from '../../services/recipesService';
 import RecipeCard from '../../components/RecipeCard';
@@ -982,7 +983,13 @@ export default function MesRecettes() {
 
   async function handleSubmitRecipe(recipeId) {
   try {
-    await updateMyRecipe(recipeId, { status: 'PENDING' });
+    // 🔹 On utilise l'endpoint DEDIE PATCH /api/recipes/:id/submit
+    //    et pas PATCH /api/recipes/:id avec { status: 'PENDING' } :
+    //    - Le controller updateRecipe NE LIT PAS le champ status du body
+    //      (il est destructure sans status, donc ignore silencieusement).
+    //    - Le controller submitRecipe gere lui correctement la transition
+    //      DRAFT -> PENDING ET notifie les admins via createMany.
+    await submitMyRecipe(recipeId);
     setRecipes(prev => prev.map(r =>
       r.id === recipeId ? { ...r, status: 'PENDING' } : r
     ));

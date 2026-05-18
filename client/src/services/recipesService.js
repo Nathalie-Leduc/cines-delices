@@ -37,6 +37,17 @@ export function updateMyRecipe(recipeId, data) {
   });
 }
 
+// Soumet une recette DRAFT pour validation (passage en PENDING).
+// Cet endpoint dedie fait deux choses que PATCH /api/recipes/:id ne fait pas :
+//   1. Il change effectivement le status DRAFT → PENDING
+//   2. Il notifie les admins via prisma.notification.createMany
+// Analogie : c'est la "ligne directe" vers la moderation, pas l'interphone general.
+export function submitMyRecipe(recipeId) {
+  return request(`/api/recipes/${recipeId}/submit`, {
+    method: 'PATCH',
+  });
+}
+
 // Supprime une recette de l'utilisateur connecté (persisté en base)
 export function deleteMyRecipe(recipeId) {
   return request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
