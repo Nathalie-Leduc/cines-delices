@@ -26,7 +26,7 @@ Interface utilisateur de Cinés Délices : le catalogue de recettes inspirées d
 ```bash
 cd client
 cp .env.example .env
-npm install
+pnpm install
 ```
 
 ---
@@ -46,12 +46,12 @@ npm install
 
 | Commande            | Action                               |
 |---------------------|--------------------------------------|
-| `npm run dev`       | Lance Vite en développement          |
-| `npm run build`     | Build de production (chunks séparés) |
-| `npm run preview`   | Prévisualise le build                |
-| `npm run lint`      | Lint ESLint                          |
-| `npm run test`      | Lance Vitest en watch                |
-| `npm run test:run`  | Exécute les tests une fois           |
+| `pnpm run dev`      | Lance Vite en développement          |
+| `pnpm run build`    | Build de production (chunks séparés) |
+| `pnpm run preview`  | Prévisualise le build                |
+| `pnpm run lint`     | Lint ESLint                          |
+| `pnpm run test`     | Lance Vitest en watch                |
+| `pnpm run test:run` | Exécute les tests une fois           |
 
 ---
 

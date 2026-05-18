@@ -31,7 +31,7 @@ API REST de Cinés Délices : le moteur qui alimente le catalogue de recettes in
 cd api
 cp .env.example .env
 # Remplir les variables dans .env
-npm install
+pnpm install
 ```
 
 ---
@@ -65,21 +65,21 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 
 | Commande                  | Action                                           |
 |---------------------------|--------------------------------------------------|
-| `npm run dev`             | Serveur en développement (nodemon)               |
-| `npm run start`           | Serveur en production                            |
-| `npm run lint`            | Lint ESLint                                      |
-| `npm run db:generate`     | Génère le Prisma Client                          |
-| `npm run db:migrate`      | Crée et applique une migration                   |
-| `npm run db:push`         | Synchronise le schéma (sans migration)           |
-| `npm run db:seed`         | Injecte les données de seed                      |
-| `npm run db:reset`        | Reset complet + seed                             |
-| `npm run db:studio`       | Ouvre Prisma Studio (http://localhost:5555)      |
-| `npm run test`            | Tests d'intégration (test-api.js)                |
-| `npm run test:security`   | Tests sécurité, JWT, RGPD, ingrédients           |
-| `npm run test:all`        | Les deux suites de tests à la suite              |
-| `npm run convert:images`  | Convertit les images uploadées en WebP           |
-| `npm run convert:posters` | Convertit les posters TMDB en WebP               |
-| `npm run fix:media`       | Corrige les métadonnées médias manquantes        |
+| `pnpm run dev`            | Serveur en développement (nodemon)               |
+| `pnpm run start`          | Serveur en production                            |
+| `pnpm run lint`           | Lint ESLint                                      |
+| `pnpm run db:generate`    | Génère le Prisma Client                          |
+| `pnpm run db:migrate`     | Crée et applique une migration                   |
+| `pnpm run db:push`        | Synchronise le schéma (sans migration)           |
+| `pnpm run db:seed`        | Injecte les données de seed                      |
+| `pnpm run db:reset`       | Reset complet + seed                             |
+| `pnpm run db:studio`      | Ouvre Prisma Studio (http://localhost:5555)      |
+| `pnpm run test`           | Tests d'intégration (test-api.js)                |
+| `pnpm run test:security`  | Tests sécurité, JWT, RGPD, ingrédients           |
+| `pnpm run test:all`       | Les deux suites de tests à la suite              |
+| `pnpm run convert:images` | Convertit les images uploadées en WebP           |
+| `pnpm run convert:posters`| Convertit les posters TMDB en WebP               |
+| `pnpm run fix:media`      | Corrige les métadonnées médias manquantes        |
 
 Les tests d'intégration nécessitent `API_BASE_URL` pointant vers une API démarrée.
 Les scripts `test`, `test:security` et `test:all` utilisent automatiquement Railway.
@@ -123,15 +123,15 @@ Documentation complète : **http://localhost:3000/api-docs** (Swagger)
 ### Premier lancement
 
 ```bash
-npm run db:generate
-npm run db:push
-npm run db:seed
+pnpm run db:generate
+pnpm run db:push
+pnpm run db:seed
 ```
 
 ### Prisma Studio (interface visuelle)
 
 ```bash
-npm run db:studio
+pnpm run db:studio
 # Ouvre http://localhost:5555
 ```
 
@@ -200,14 +200,14 @@ Vérifier `DATABASE_URL` dans `api/.env`.
 
 **Erreur Prisma P2021 (table manquante)**
 ```bash
-npm run db:push
+pnpm run db:push
 ```
 
 **Token JWT expiré en dev**
 Augmenter `JWT_EXPIRES_IN` dans `.env` (ex: `30d`).
 
 **Images uploadées non visibles**
-Vérifier que `API_BASE_URL` est défini dans `api/.env` et correspond à l'URL publique du serveur.
+Les chemins d'images sont stockés en relatif (`/uploads/...`) et préfixés côté client via `buildApiAssetUrl()`. Vérifier que `VITE_API_URL` est défini côté front et pointe vers la bonne origine API.
 
 **Tests : Login failed**
-Les comptes de test ont peut-être été supprimés. `ensureTestUsers()` les recrée automatiquement au prochain `npm run test:all`.
+Les comptes de test ont peut-être été supprimés. `ensureTestUsers()` les recrée automatiquement au prochain `pnpm run test:all`.
