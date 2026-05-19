@@ -231,14 +231,6 @@ export const createRecipe = async (req, res) => {
         },
       });
 
-      if (!category && normalizedCategoryName) {
-        category = await prisma.category.create({
-          data: {
-            nom: normalizedCategoryName,
-          },
-        });
-      }
-
       categoryId = category?.id;
     }
 
