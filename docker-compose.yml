@@ -14,7 +14,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: sh -c "npm install && npx prisma generate && npx prisma db push && npm run dev"
+    command: sh -c "corepack enable && pnpm install && pnpm exec prisma generate && pnpm exec prisma db push && pnpm run dev"
 
   client:
     image: node:24-alpine
@@ -26,7 +26,7 @@ services:
       VITE_API_PROXY_TARGET: http://api:3000
     ports:
       - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host"
+    command: sh -c "corepack enable && pnpm install && pnpm run dev -- --host"
 
   db:
     image: postgres:18-alpine

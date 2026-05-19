@@ -53,19 +53,19 @@ docker compose down
 ```bash
 cd api
 cp .env.example .env   # remplir les variables (TMDB_API_KEY obligatoire)
-npm install
-npm run db:generate
-npm run db:push
-npm run db:seed
-npm run dev
+pnpm install
+pnpm run db:generate
+pnpm run db:push
+pnpm run db:seed
+pnpm run dev
 ```
 
 **3. Client**
 ```bash
 cd client
 cp .env.example .env
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 ---
@@ -82,9 +82,9 @@ npm run dev
 
 ```bash
 # API — tests d'intégration (nécessite l'API Railway déployée)
-cd api && npm run test          # test-api.js
-cd api && npm run test:security # test-api-security.js (sécurité, JWT, RGPD, ingrédients)
-cd api && npm run test:all      # les deux à la suite
+cd api && pnpm run test          # test-api.js
+cd api && pnpm run test:security # test-api-security.js (sécurité, JWT, RGPD, ingrédients)
+cd api && pnpm run test:all      # les deux à la suite
 
 # Client — tests unitaires (sans serveur)
 cd client && pnpm run test:run
@@ -109,10 +109,26 @@ cd client && pnpm run test:run
 
 ## Déploiement
 
-| Service | URL |
-|---------|-----|
-| Front   | https://graceful-quietude-production.up.railway.app |
-| API     | https://cines-delicesapi-production.up.railway.app     |
+| Service     | URL                                                          |
+|-------------|--------------------------------------------------------------|
+| Front       | https://graceful-quietude-production.up.railway.app          |
+| API         | https://cines-delicesapi-production.up.railway.app           |
+| Swagger     | https://cines-delicesapi-production.up.railway.app/api/docs  |
+
+### Comptes de test (seed v-4)
+
+| Rôle    | Email                              | Mot de passe   |
+|---------|------------------------------------|----------------|
+| Admin   | `admin@cinesdelices.fr`            | `Admin1234!`   |
+| Membre  | `marie@cinesdelices.fr`            | `Member1234!`  |
+| Membre  | `remy@cinesdelices.fr`             | `Member1234!`  |
+
+Pour tester l'API via Swagger : `POST /api/auth/login` avec ces identifiants → copier le `token` de la réponse → cliquer sur **Authorize** (cadenas en haut à droite) → coller le token dans `bearerAuth` → tester les routes protégées.
+
+### Prérequis Node
+
+- Node.js >= 24 (utilisé en local et sur Railway)
+- pnpm >= 10 (`npm install -g pnpm`)
 
 ---
 
