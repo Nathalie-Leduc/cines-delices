@@ -12,7 +12,11 @@ const options = {
     servers: [
       {
         url: process.env.API_BASE_URL || 'http://localhost:3000',
-        description: 'Serveur de développement',
+        description: 'Serveur local de développement',
+      },
+      {
+        url:'https://cines-delicesapi-production.up.railway.app',
+        description: 'Serveur de production (Railway)'
       },
     ],
   },
