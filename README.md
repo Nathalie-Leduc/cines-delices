@@ -113,7 +113,7 @@ cd client && pnpm run test:run
 |-------------|--------------------------------------------------------------|
 | Front       | https://graceful-quietude-production.up.railway.app          |
 | API         | https://cines-delicesapi-production.up.railway.app           |
-| Swagger     | https://cines-delicesapi-production.up.railway.app/api/docs  |
+| Swagger     | https://cines-delicesapi-production.up.railway.app/api-docs  |
 
 ### Comptes de test (seed v-4)
 
@@ -127,7 +127,8 @@ Pour tester l'API via Swagger : `POST /api/auth/login` avec ces identifiants →
 
 ### Prérequis Node
 
-- Node.js >= 24 (utilisé en local et sur Railway)
+- Node.js >= 24 en local et dans le CI (GitHub Actions)
+- Sur Railway : l'API tourne en **Node 22** (Dockerfile `node:22-slim`), le front est buildé via **Nixpacks**
 - pnpm >= 10 (`npm install -g pnpm`)
 
 ---
