@@ -122,7 +122,7 @@ cd client && pnpm run test:run
 | Admin   | `admin@cinesdelices.fr`            | `Admin1234!`   |
 | Membre  | `marie@cinesdelices.fr`            | `Member1234!`  |
 | Membre  | `remy@cinesdelices.fr`             | `Member1234!`  |
-
+git 
 Pour tester l'API via Swagger : `POST /api/auth/login` avec ces identifiants → copier le `token` de la réponse → cliquer sur **Authorize** (cadenas en haut à droite) → coller le token dans `bearerAuth` → tester les routes protégées.
 
 ### Prérequis Node
