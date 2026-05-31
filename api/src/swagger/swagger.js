@@ -1,6 +1,8 @@
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 
+function setupSwagger(app) {
+
 const options = {
   definition: {
     openapi: '3.0.0',
@@ -22,21 +24,19 @@ const options = {
 };
 
 
-export const swaggerSpec = swaggerJSDoc(options);
+const swaggerSpec = swaggerJSDoc(options);
 
+const checkSwaggerKey = (req, res, next) => {
+  // On laisse passer les fichiers statiques (css, js, png...)
+  const isStaticAsset = req.path.match(/\.(css|js|png|ico|json)$/);
+  if (isStaticAsset) return next();
 
-function setupSwagger(app) {
-  const checkSwaggerKey = (req, res, next) => {
-    // On laisse passer les fichiers statiques (css, js, png...)
-    const isStaticAsset = req.path.match(/\.(css|js|png|ico|json)$/);
-    if (isStaticAsset) return next();
+  // En dev : toujours accessible
+  if (process.env.NODE_ENV !== 'production') return next();
 
-    // En dev : toujours accessible
-    if (process.env.NODE_ENV !== 'production') return next();
-
-    // En prod : clé obligatoire sur la page principale
-    const key = req.query.key;
-    if (key && key === process.env.SWAGGER_API_KEY) return next();
+  // En prod : clé obligatoire sur la page principale
+  const key = req.query.key;
+  if (key && key === process.env.SWAGGER_API_KEY) return next();
 
     return res.status(404).json({ error: 'Not found' });
   };
