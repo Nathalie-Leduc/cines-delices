@@ -13,7 +13,9 @@ const options = {
     },
     servers: [
       {
-        url: `${process.env.API_BASE_URL || 'http://localhost:3000'}`,
+        url: process.env.NODE_ENV === 'production'
+          ? 'https://cines-delicesapi-production.up.railway.app'
+          : 'http://localhost:3000',
         description: process.env.NODE_ENV === 'production'
           ? 'Serveur de production'
           : 'Serveur de développement',
