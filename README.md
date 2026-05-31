@@ -113,7 +113,12 @@ cd client && pnpm run test:run
 |-------------|--------------------------------------------------------------|
 | Front       | https://graceful-quietude-production.up.railway.app          |
 | API         | https://cines-delicesapi-production.up.railway.app           |
-| Swagger     | https://cines-delicesapi-production.up.railway.app/api-docs  |
+| Swagger     | https://cines-delicesapi-production.up.railway.app/api-docs?key=SWAGGER_API_KEY |
+
+Pour tester l'API via Swagger : accéder à l'URL Swagger avec la clé fournie.
+`POST /api/auth/login` avec ces identifiants → copier le `token` de la réponse → 
+cliquer sur **Authorize** (cadenas en haut à droite) → coller le token dans 
+`bearerAuth` → tester les routes protégées.
 
 ### Comptes de test (seed v-4)
 

@@ -44,6 +44,7 @@ pnpm install
 | `DATABASE_URL`   | URL PostgreSQL                   | `postgresql://user:pass@localhost:5432/db`   |
 | `JWT_SECRET`     | Clé secrète JWT                  | chaîne aléatoire 64 hex                      |
 | `JWT_EXPIRES_IN` | Durée du token                   | `7h`                                         |
+| `SWAGGER_API_KEY` | Clé Swagger                     | —                                            |
 | `TMDB_API_KEY`   | Clé API TMDB                     | —                                            |
 | `TMDB_BASE_URL`  | URL base TMDB                    | `https://api.themoviedb.org/3`               |
 | `CLIENT_URL`     | URL du front (CORS)              | `http://localhost:5173`                      |
@@ -114,8 +115,11 @@ Base URL : `http://localhost:3000/api`
 | PATCH   | `/admin/recipes/:id/reject`    | Refuser une recette            | JWT Admin  |
 | DELETE  | `/admin/recipes/:id`           | Supprimer une recette          | JWT Admin  |
 
-Documentation complète : **http://localhost:3000/api-docs** (Swagger)
-
+Documentation complète : **https://cines-delicesapi-production.up.railway.app/api/docs?key=jury2026cinesdelices** (Swagger — protégé par clé en production)
+Pour tester l'API via Swagger : accéder à l'URL Swagger avec la clé fournie → 
+`POST /api/auth/login` avec ces identifiants → copier le `token` de la réponse → 
+cliquer sur **Authorize** (cadenas en haut à droite) → coller le token dans 
+`bearerAuth` → tester les routes protégées.
 ---
 
 ## Base de données
