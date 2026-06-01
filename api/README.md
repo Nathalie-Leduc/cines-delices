@@ -115,7 +115,7 @@ Base URL : `http://localhost:3000/api`
 | PATCH   | `/admin/recipes/:id/reject`    | Refuser une recette            | JWT Admin  |
 | DELETE  | `/admin/recipes/:id`           | Supprimer une recette          | JWT Admin  |
 
-Documentation complète : **https://cines-delicesapi-production.up.railway.app/api/docs?key=jury2026cinesdelices** (Swagger — protégé par clé en production)
+Documentation complète : **https://cines-delicesapi-production.up.railway.app/api/docs?key=SWAGGER_API_KEY** (Swagger — protégé par clé en production)
 Pour tester l'API via Swagger : accéder à l'URL Swagger avec la clé fournie → 
 `POST /api/auth/login` avec ces identifiants → copier le `token` de la réponse → 
 cliquer sur **Authorize** (cadenas en haut à droite) → coller le token dans 
