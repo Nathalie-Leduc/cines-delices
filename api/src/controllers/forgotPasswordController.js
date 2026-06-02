@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma.js';
 import { sendResetPasswordMail } from '../lib/mailer.js';
 import 'dotenv/config';
 
-console.log('FORGOT CONTROLLER OK');
+
 
 // Fonction appelée quand l'utilisateur demande "mot de passe oublié"
 

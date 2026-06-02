@@ -70,7 +70,7 @@ export default function CreerRecette() {
     ? location.state.initialTitle.trim()
     : '';
   const [showSubmitModal, setShowSubmitModal] = useState(false);
-  // ✅ NOUVEAU — quand le membre clique sur un des deux boutons (brouillon ou soumission),
+  // ✅ Quand le membre clique sur un des deux boutons (brouillon ou soumission),
   // on mémorise son choix ici. La modale de confirmation s'adapte en fonction,
   // et le payload envoyé au serveur inclut le champ `submitForReview`.
   //   - 'draft'  → la recette sera créée en DRAFT (brouillon personnel)
@@ -80,6 +80,15 @@ export default function CreerRecette() {
   const [alert, setAlert] = useState({ type: 'info', message: '' });
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [imageError, setImageError] = useState('');
+  // ── NOUVEAU — prévisualisation image ─────────────────────────────────────
+  // Contient une URL blob locale créée par URL.createObjectURL(File),
+  // ou null quand aucun fichier n'est sélectionné.
+  // Pour l'URL distante (form.imageUrl), on lit directement form.imageUrl dans le JSX.
+  //
+  // Analogie : c'est comme un miroir dans une cabine d'essayage.
+  // Tu vois le rendu instantanément — aucun octet ne transite sur le réseau
+  // avant la soumission du formulaire.
+  const [imagePreview, setImagePreview] = useState(null);
   const [filmSearchResults, setFilmSearchResults] = useState([]);
   const [filmSearchLoading, setFilmSearchLoading] = useState(false);
   const [filmSearchError, setFilmSearchError] = useState('');
@@ -96,6 +105,7 @@ export default function CreerRecette() {
   const [lastSubmittedSignature, setLastSubmittedSignature] = useState('');
   //Média sélectionné depuis TMDB
   const [selectedMedia, setSelectedMedia] = useState(null); // état pour stocker le média choisi
+
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') {
@@ -158,6 +168,17 @@ export default function CreerRecette() {
     };
   }, []);
 
+  // ── NOUVEAU — cleanup de l'URL blob au démontage du composant ─────────────
+  // Sans ce nettoyage, le navigateur garde la référence mémoire indéfiniment
+  // après que le composant disparaît — fuite mémoire classique en React.
+  // On ne libère que les URLs blob (blob:…), pas les URLs distantes.
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
 
   // ===== HANDLERS GÉNÉRAUX =====
   function handleChange(field, value) {
@@ -225,6 +246,13 @@ export default function CreerRecette() {
     }
   }
 
+  // ── MODIFIÉ — handleImageSelection ───────────────────────────────────────
+  // Ajout par rapport à l'original :
+  //   - Révoquer l'ancienne URL blob avant d'en créer une nouvelle
+  //   - Créer l'URL blob locale pour l'aperçu immédiat (URL.createObjectURL)
+  //   - Effacer la preview si le fichier est invalide
+  // La logique de validation (isAllowedImageFile, imageError) est inchangée.
+
   function handleImageSelection(file) {
     if (!file) {
       return;
@@ -233,15 +261,40 @@ export default function CreerRecette() {
     if (!isAllowedImageFile(file)) {
       setImageError('Veuillez utiliser une image au format .png, .jpg, .jpeg ou .webp.');
       setForm(prev => ({ ...prev, image: null }));
+      // Nettoyer la preview si le nouveau fichier est invalide
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImagePreview(null);
       return;
     }
 
     setImageError('');
     setForm(prev => ({ ...prev, image: file, imageUrl: '' }));
+
+    // Révoquer l'ancienne URL blob avant d'en créer une nouvelle
+    // (évite l'accumulation de références en mémoire)
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    // Créer l'URL blob locale — aucun octet sur le réseau avant la soumission
+    setImagePreview(URL.createObjectURL(file));
   }
 
+    // ── MODIFIÉ — handleImageUrlChange ───────────────────────────────────────
+  // Ajout : quand l'utilisateur saisit une URL distante, on libère le blob
+  // précédent et on efface form.image pour que les deux modes s'excluent.
+  // La logique existante (imageError sur chaîne vide) est inchangée.
   function handleImageUrlChange(value) {
-    setForm(prev => ({ ...prev, imageUrl: value }));
+    // Si on tape une URL, on abandonne le fichier uploadé et son blob
+    if (value.trim() !== '' && imagePreview && imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+      setForm(prev => ({ ...prev, image: null, imageUrl: value }));
+    } else {
+      setForm(prev => ({ ...prev, imageUrl: value }));
+    }
+
     if (value.trim() === '') {
       setImageError('');
     }
@@ -844,7 +897,7 @@ async function createIngredient() {
         formData.append('etapes', JSON.stringify(payload.etapes));
         formData.append('image', form.image);
 
-        // ✅ NOUVEAU — on transmet l'intention de l'utilisateur au back.
+        // ✅ On transmet l'intention de l'utilisateur au back.
         // En multipart toutes les valeurs sont des strings : on envoie "true" ou "false",
         // le Validator Zod côté serveur coerce cela en booléen.
         formData.append('submitForReview', String(submitAction === 'submit'));
@@ -855,7 +908,7 @@ async function createIngredient() {
           ...headers,
           'Content-Type': 'application/json',
         };
-        // ✅ NOUVEAU — en JSON pur on envoie un vrai booléen.
+        // ✅ En JSON pur on envoie un vrai booléen.
         // Le back lit le même champ qu'en multipart : `submitForReview`.
         requestInit.body = JSON.stringify({
           ...payload,
@@ -889,7 +942,7 @@ async function createIngredient() {
         return;
       }
 
-      // ✅ NOUVEAU — message + redirection adaptés au choix de l'utilisateur :
+      // ✅  Message + redirection adaptés au choix de l'utilisateur :
       //   - 'submit' → message "soumis pour validation" + redirect vers /recettes-en-validation
       //   - 'draft'  → message "enregistré en brouillon" + redirect vers /mes-recettes
       const successMessage = submitAction === 'submit'
@@ -908,6 +961,13 @@ async function createIngredient() {
       setCreatingIngredient(false);
       setForm(INITIAL_FORM);
 
+      // Remise à zéro de la prévisualisation après succès ───────
+      // On libère la mémoire du blob avant de passer à null
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImagePreview(null);
+
       const targetRoute = submitAction === 'submit'
         ? '/membre/mes-recettes/recettes-en-validation'
         : '/membre/mes-recettes';
@@ -920,7 +980,7 @@ async function createIngredient() {
     }
   }
 
-  // ✅ NOUVEAU — la fonction reçoit maintenant le type d'action choisi par l'utilisateur :
+  // ✅ La fonction reçoit maintenant le type d'action choisi par l'utilisateur :
   //   - 'draft'  → bouton "Enregistrer en brouillon"
   //   - 'submit' → bouton "Soumettre pour validation"
   // L'état submitAction est mémorisé pour adapter la modale ET le payload envoyé au back.
@@ -938,7 +998,7 @@ async function createIngredient() {
       {showSubmitModal && (
         <div className={styles.overlay}>
           <div className={styles.modal}>
-            {/* ✅ NOUVEAU — la modale s'adapte selon le bouton cliqué.
+            {/* ✅ La modale s'adapte selon le bouton cliqué.
                 Deux versions : enregistrement en brouillon OU envoi en modération.
                 Analogie 🍽️ : "garder dans ma cuisine" vs "envoyer au chef-modérateur". */}
             <h2 className={styles.modalTitle}>
@@ -1122,6 +1182,49 @@ async function createIngredient() {
           />
         </div>
         {imageError && <p className={styles.errorText}>{imageError}</p>}
+
+        {/* ── NOUVEAU — Bloc de prévisualisation ────────────────────────────
+          Affiché quand :
+            • un fichier est sélectionné  → imagePreview = "blob:http://…"
+            • une URL distante est saisie → form.imageUrl non vide
+
+          Le onError masque silencieusement l'<img> si l'URL est inaccessible
+          (évite l'icône cassée du navigateur).
+
+          Analogie : miroir de cabine d'essayage — tu vois le rendu avant
+          d'avoir envoyé quoi que ce soit au serveur.
+        ── */}
+        {(imagePreview || form.imageUrl) && (
+          <div className={styles.imagePreview}>
+            <div className={styles.imagePreviewWrapper}>
+              <img
+                src={imagePreview ?? form.imageUrl}
+                alt="Prévisualisation de l'image de la recette"
+                className={styles.imagePreviewImg}
+                onError={e => { e.currentTarget.style.display = 'none'; }}
+              />
+              {/* Bouton ✕ en overlay pour supprimer l'image choisie */}
+              <button
+                type="button"
+                className={styles.imagePreviewRemove}
+                aria-label="Supprimer l'image sélectionnée"
+                title="Supprimer l'image"
+                onClick={() => {
+                  if (imagePreview && imagePreview.startsWith('blob:')) {
+                    URL.revokeObjectURL(imagePreview);
+                  }
+                  setImagePreview(null);
+                  setForm(prev => ({ ...prev, image: null, imageUrl: '' }));
+                  setImageError('');
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+          </div>
+        )}
+        {/* ── Fin bloc prévisualisation ─────────────────────────────────── */}
       </div>
 
       {/* CATÉGORIE */}
@@ -1354,7 +1457,7 @@ async function createIngredient() {
         </div>
       </div>
 
-      {/* SUBMIT — ✅ NOUVEAU : 2 boutons distincts
+      {/* SUBMIT — ✅ 2 boutons distincts
           - "Enregistrer en brouillon" (gris/secondaire) → status DRAFT
           - "Soumettre pour validation" (bordeaux/primaire) → status PENDING
           Analogie 🍽️ : "ranger dans le tiroir" vs "envoyer à la modération". */}

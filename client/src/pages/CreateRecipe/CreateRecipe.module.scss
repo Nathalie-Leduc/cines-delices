@@ -591,7 +591,7 @@
 
 /* ===== SUBMIT ===== */
 
-/* ✅ NOUVEAU — Conteneur flex pour les 2 boutons côte à côte
+/* — Conteneur flex pour les 2 boutons côte à côte
    (brouillon + soumission). Sur mobile, les boutons passent en colonne. */
 .submitActions {
   display: flex;
@@ -609,7 +609,7 @@
   }
 }
 
-/* ✅ NOUVEAU — Bouton secondaire "Enregistrer en brouillon" :
+/* — Bouton secondaire "Enregistrer en brouillon" :
    style gris/discret pour bien le distinguer du bouton principal (bordeaux). */
 .draftBtn {
   @include ui.solid-button(
@@ -650,7 +650,7 @@
   color: #FFFFFF;
   font-family: 'Inter', sans-serif;
   font-weight: 700;
-  /* ✅ NOUVEAU — le margin auto a été déplacé sur .submitActions
+  /*  — le margin auto a été déplacé sur .submitActions
      (conteneur parent) pour que les 2 boutons soient alignés ensemble. */
   margin: 0;
 
@@ -758,6 +758,140 @@
   &:active {
     transform: translateY(0);
   }
+}
+
+/* ===== PRÉVISUALISATION IMAGE ===== */
+/*
+ *
+ * S'affiche quand :
+ *   - un fichier local est sélectionné → imagePreview = "blob:http://…"
+ *   - une URL distante est saisie      → form.imageUrl non vide
+ *
+ * Nommage BEM cohérent avec le reste du fichier (camelCase CSS Modules) :
+ *   imagePreview, imagePreviewWrapper, imagePreviewImg,
+ *   imagePreviewRemove, imagePreviewCaption,
+ *   imagePreviewBadge, imagePreviewBadgeUrl, imagePreviewSize
+ *
+ * Palette respectée : #1F1D1E fond, #C9A45C or, #6E8B5B vert, #8E1F2F rouge
+ */
+
+.imagePreview {
+  margin-top: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.imagePreviewWrapper {
+  /* position relative pour que le bouton ✕ se positionne par rapport à l'image */
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: 14px;
+  /* overflow hidden pour clipper l'image et le bouton dans le border-radius */
+  overflow: hidden;
+
+  /* Bordure or discrète — feedback visuel que l'image est chargée */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(201, 164, 92, 0.65);
+    border-radius: 14px;
+    pointer-events: none;
+  }
+}
+
+.imagePreviewImg {
+  display: block;
+  max-width: 100%;
+  /* Hauteur max pour ne pas écraser le formulaire, surtout sur mobile */
+  max-height: 260px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 14px;
+  /* Fond sombre pendant le chargement — cohérent avec #1F1D1E */
+  background: rgba(74, 52, 40, 0.6);
+}
+
+.imagePreviewRemove {
+  /* Croix en overlay, coin supérieur droit */
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 13, 16, 0.68);
+  color: #F6F1E8;
+  border: 1px solid rgba(246, 241, 232, 0.3);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  transition: background 0.2s ease, transform 0.15s ease;
+
+  &:hover {
+    background: #8E1F2F;
+    border-color: #F08A95;
+    transform: scale(1.1);
+  }
+
+  /* Focus visible clavier — WCAG 2.1 AA */
+  &:focus-visible {
+    outline: 2px solid #C9A45C;
+    outline-offset: 2px;
+  }
+}
+
+.imagePreviewCaption {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  color: rgba(246, 241, 232, 0.52);
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* Badge "Aperçu local" — vert, cohérent avec .addIngredientBtn et .etapeNumber */
+.imagePreviewBadge {
+  display: inline-block;
+  padding: 0.1rem 0.42rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6E8B5B;
+  background: rgba(110, 139, 91, 0.18);
+  border: 1px solid rgba(110, 139, 91, 0.4);
+  margin-right: 0.2rem;
+}
+
+/* Badge "URL distante" — or discret, cohérent avec la palette #C9A45C */
+.imagePreviewBadgeUrl {
+  display: inline-block;
+  padding: 0.1rem 0.42rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #C9A45C;
+  background: rgba(201, 164, 92, 0.12);
+  border: 1px solid rgba(201, 164, 92, 0.35);
+  margin-right: 0.2rem;
+}
+
+/* Poids du fichier — légère mise en valeur or */
+.imagePreviewSize {
+  color: #C9A45C;
+  font-style: normal;
+  font-weight: 600;
 }
 
 /* ===== DESKTOP ===== */
