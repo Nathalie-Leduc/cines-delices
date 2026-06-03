@@ -8,6 +8,15 @@ import { vi, beforeEach, afterEach } from 'vitest';
 // Mock window.scrollTo — non implémenté par jsdom
 window.scrollTo = () => {};
 
+// Mock URL.createObjectURL / revokeObjectURL — non implémentés par jsdom.
+// Utilisés dans CreateRecipe.jsx pour la prévisualisation locale des images.
+// En prod : crée une URL blob pointant vers la mémoire navigateur.
+// En test  : retourne une URL factice — le comportement de prévisualisation
+//            n'est pas testé ici (test unitaire, pas E2E).
+globalThis.URL.createObjectURL = vi.fn(() => 'blob:mock-url-for-test');
+globalThis.URL.revokeObjectURL = vi.fn();
+
+
 // Mock tarteaucitron — bibliothèque de cookies chargée via <script> en prod.
 // Sans ce mock, CookieConsent tente un fetch réseau vers /tarteaucitron/tarteaucitron.js
 // qui échoue avec ECONNREFUSED dans l'environnement jsdom du CI.
