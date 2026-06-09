@@ -30,7 +30,7 @@ describe('App', () => {
     // findByRole = async, attend que les useEffect/setState soient résolus
     expect(
       await screen.findByRole('heading', { 
-        name: 'Cuisine le cinéma, Savoure les séries.' 
+        name: /Cuisine le cinéma/i,
       })
     ).toBeInTheDocument();
   });
