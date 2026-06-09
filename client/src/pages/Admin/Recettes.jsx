@@ -5,6 +5,7 @@ import Alert from '../../components/Alert/Alert.jsx';
 import RecipeCard from '../../components/RecipeCard';
 import StatusBlock from '../../components/StatusBlock/StatusBlock.jsx';
 import { buildApiUrl } from '../../services/api.js';
+import { buildApiAssetUrl } from '../../services/api.js';
 import {
   getMediaSuggestionMeta,
   MEDIA_SUGGESTION_POSTER_FALLBACK,
@@ -672,7 +673,7 @@ function AdminRecettes() {
 
         <div className={styles.sectionTitle}>
           <h3>{activeFilter === 'Tous' ? 'Liste des recettes' : `${activeFilter}s`}</h3>
-        </div>
+        </div>import { buildApiAssetUrl } from '../../services/api.js';
 
         {isLoading ? (
           <StatusBlock
