@@ -98,7 +98,11 @@ export const createRecipeSchema = z.object({
 
     tempsCuisson: optionalIntFromInput,
 
-    imageUrl: z.string().url().optional().or(z.literal('')),
+    imageUrl: z.union([
+  z.string().url(),
+  z.string().regex(/^\/uploads\//, 'Chemin d\'upload invalide'),
+  z.literal(''),
+]).optional(),
 
     ingredients: z
       .array(ingredientSchema)
